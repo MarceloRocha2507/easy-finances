@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { useCartoesDashboard, CartaoDashboard } from "@/hooks/useDashboardCompleto";
+import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { formatCurrency } from "@/lib/formatters";
 
@@ -30,6 +29,7 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
     <div
       onClick={onClick}
       className="p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer group"
+      style={{ borderColor: `${corCartao}30` }}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -67,14 +67,17 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
 
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Disponível</span>
-          <span className="font-semibold text-income">
+          <span className="font-semibold" style={{ color: corCartao }}>
             {formatCurrency(cartao.disponivel)}
           </span>
         </div>
 
         <Progress
           value={cartao.usoPct}
-          className={`h-1.5 ${limiteAlto ? "[&>div]:bg-red-500" : ""}`}
+          className="h-1.5"
+          style={{ 
+            "--progress-color": limiteAlto ? "hsl(var(--destructive))" : corCartao 
+          } as React.CSSProperties}
         />
 
         <p className="text-xs text-muted-foreground text-right">
@@ -115,7 +118,7 @@ function CartaoSkeleton() {
 ====================================================== */
 
 export function DashboardCartoes() {
-  const { data, isLoading, refetch } = useCartoesDashboard();
+  const { data, isLoading, refetch } = useDashboardCompleto();
 
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoDashboard | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
