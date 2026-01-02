@@ -16,6 +16,7 @@ interface CartaoCardProps {
     bandeira?: string | null;
     dia_fechamento: number;
     dia_vencimento: number;
+    cor?: string;
   };
   statusFatura: StatusFatura;
   onClick?: (mesSelecionado: Date) => void;
@@ -73,6 +74,16 @@ function monthLabel(d: Date) {
   }).format(d);
 }
 
+// Helper to convert hex to RGB values
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
 /* ======================================================
    Component
 ====================================================== */
@@ -82,6 +93,10 @@ export function CartaoCard({
   statusFatura,
   onClick,
 }: CartaoCardProps) {
+  const corCartao = cartao.cor || "#6366f1";
+  const rgb = hexToRgb(corCartao);
+  const rgbString = rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : "99, 102, 241";
+
   const [mesRef, setMesRef] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -126,10 +141,10 @@ export function CartaoCard({
 
   const corBarra =
     percentualReal < 60
-      ? "bg-emerald-500"
+      ? corCartao
       : percentualReal < 85
-      ? "bg-yellow-400"
-      : "bg-red-500";
+      ? "#facc15"
+      : "#ef4444";
 
   const {
     dataFechamento,
@@ -157,13 +172,11 @@ export function CartaoCard({
       : statusFatura === "ABERTA"
       ? {
           label: "Aberta",
-          className:
-            "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20",
+          className: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20",
         }
       : {
           label: "Fechada",
-          className:
-            "bg-slate-500/15 text-slate-300 border border-slate-500/20",
+          className: "bg-slate-500/15 text-slate-300 border border-slate-500/20",
         };
 
   return (
@@ -172,22 +185,33 @@ export function CartaoCard({
       className="
         relative cursor-pointer
         rounded-[28px] p-6
-        bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950
         text-slate-100
-        shadow-xl shadow-black/30
+        shadow-xl
         hover:-translate-y-1 hover:shadow-2xl
         transition-all duration-300
         overflow-hidden
       "
+      style={{
+        background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, rgba(${rgbString}, 0.3) 100%)`,
+        boxShadow: `0 20px 40px -10px rgba(${rgbString}, 0.3)`,
+      }}
     >
       {/* Glow */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-emerald-500/10 pointer-events-none" />
+      <div 
+        className="absolute inset-0 pointer-events-none" 
+        style={{
+          background: `linear-gradient(135deg, rgba(${rgbString}, 0.1) 0%, transparent 50%, rgba(${rgbString}, 0.05) 100%)`,
+        }}
+      />
 
       {/* Header */}
       <div className="relative flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center">
-            <CreditCard className="h-6 w-6 text-indigo-300" />
+          <div 
+            className="h-12 w-12 rounded-2xl backdrop-blur flex items-center justify-center"
+            style={{ backgroundColor: `rgba(${rgbString}, 0.2)` }}
+          >
+            <CreditCard className="h-6 w-6" style={{ color: corCartao }} />
           </div>
 
           <div>
@@ -267,8 +291,11 @@ export function CartaoCard({
 
         <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
           <div
-            className={`h-full rounded-full ${corBarra} transition-all duration-700`}
-            style={{ width: `${percentualAnimado}%` }}
+            className="h-full rounded-full transition-all duration-700"
+            style={{ 
+              width: `${percentualAnimado}%`,
+              backgroundColor: corBarra,
+            }}
           />
         </div>
 
@@ -298,7 +325,7 @@ export function CartaoCard({
 
         <div className="text-right">
           <p className="text-slate-400">Disponível</p>
-          <p className="font-semibold text-emerald-300">
+          <p className="font-semibold" style={{ color: corCartao }}>
             R$ {disponivel.toFixed(2)}
           </p>
         </div>

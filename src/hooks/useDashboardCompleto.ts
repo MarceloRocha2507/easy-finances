@@ -12,6 +12,7 @@ export type CartaoDashboard = {
   limite: number;
   dia_fechamento: number;
   dia_vencimento: number;
+  cor: string;
   totalMes: number;
   totalPendente: number;
   totalPago: number;
@@ -142,7 +143,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
       // ========== 1. BUSCAR CARTÕES ==========
       const { data: cartoes, error: cartoesError } = await (supabase as any)
         .from("cartoes")
-        .select("id, nome, bandeira, limite, dia_fechamento, dia_vencimento");
+        .select("id, nome, bandeira, limite, dia_fechamento, dia_vencimento, cor");
 
       if (cartoesError) throw cartoesError;
 
@@ -221,6 +222,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           limite,
           dia_fechamento: cartao.dia_fechamento || 1,
           dia_vencimento: cartao.dia_vencimento || 10,
+          cor: cartao.cor || "#6366f1",
           totalMes: totais.total,
           totalPendente: totais.pendente,
           totalPago: totais.pago,
@@ -449,3 +451,6 @@ function getEmptyDashboard(): DashboardData {
     metas: [],
   };
 }
+
+// Alias for backward compatibility
+export const useCartoesDashboard = useDashboardCompleto;

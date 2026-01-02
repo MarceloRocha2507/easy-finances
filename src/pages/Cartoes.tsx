@@ -59,8 +59,8 @@ export default function Cartoes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {cartoes.map((cartao) => (
             <CartaoCard
+              key={cartao.id}
               cartao={cartao}
-              totalGasto={cartao.totalGasto}
               statusFatura="ABERTA"
               onClick={() => {
                 setCartaoSelecionadoId(cartao.id);

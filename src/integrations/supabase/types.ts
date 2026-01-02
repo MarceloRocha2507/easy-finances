@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      cartoes: {
+        Row: {
+          bandeira: string | null
+          cor: string
+          created_at: string
+          dia_fechamento: number
+          dia_vencimento: number
+          id: string
+          limite: number
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bandeira?: string | null
+          cor?: string
+          created_at?: string
+          dia_fechamento?: number
+          dia_vencimento?: number
+          id?: string
+          limite?: number
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bandeira?: string | null
+          cor?: string
+          created_at?: string
+          dia_fechamento?: number
+          dia_vencimento?: number
+          id?: string
+          limite?: number
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -49,6 +88,85 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      compras_cartao: {
+        Row: {
+          cartao_id: string
+          created_at: string
+          descricao: string
+          id: string
+          parcelas: number
+          user_id: string
+          valor_total: number
+        }
+        Insert: {
+          cartao_id: string
+          created_at?: string
+          descricao: string
+          id?: string
+          parcelas?: number
+          user_id: string
+          valor_total: number
+        }
+        Update: {
+          cartao_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          parcelas?: number
+          user_id?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_cartao_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcelas_cartao: {
+        Row: {
+          compra_id: string
+          created_at: string
+          id: string
+          mes_referencia: string
+          numero_parcela: number
+          paga: boolean
+          total_parcelas: number
+          valor: number
+        }
+        Insert: {
+          compra_id: string
+          created_at?: string
+          id?: string
+          mes_referencia: string
+          numero_parcela: number
+          paga?: boolean
+          total_parcelas: number
+          valor: number
+        }
+        Update: {
+          compra_id?: string
+          created_at?: string
+          id?: string
+          mes_referencia?: string
+          numero_parcela?: number
+          paga?: boolean
+          total_parcelas?: number
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcelas_cartao_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "compras_cartao"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

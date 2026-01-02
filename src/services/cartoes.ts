@@ -7,6 +7,7 @@ export type Cartao = {
   limite: number;
   dia_fechamento: number;
   dia_vencimento: number;
+  cor: string;
   created_at?: string;
 };
 
