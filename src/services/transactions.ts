@@ -192,6 +192,11 @@ export async function criarCompraParcelada(data: {
   diaFechamento: number;
   categoriaId?: string | null;
 }) {
+  // Obter usuário autenticado
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error("Usuário não autenticado");
+
   const {
     cartaoId,
     descricao,
@@ -200,7 +205,7 @@ export async function criarCompraParcelada(data: {
     diaFechamento,
   } = data;
 
-  // Criar compra (sem user_id - RLS via cartao_id)
+  // Criar compra COM user_id
   const { data: compraRaw, error: compraError } = await (supabase as any)
     .from("compras_cartao")
     .insert({
@@ -208,6 +213,7 @@ export async function criarCompraParcelada(data: {
       descricao,
       valor_total: valorTotal,
       parcelas,
+      user_id: user.id,
     })
     .select("id, cartao_id, descricao, valor_total, parcelas")
     .single();
