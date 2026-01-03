@@ -8,6 +8,7 @@ export type Cartao = {
   dia_fechamento: number;
   dia_vencimento: number;
   cor: string;
+  user_id?: string;
   created_at?: string;
 };
 
@@ -29,11 +30,19 @@ export async function listarCartoes(): Promise<Cartao[]> {
  * Criar cartão
  */
 export async function criarCartao(
-  cartao: Omit<Cartao, "id">
+  cartao: Omit<Cartao, "id" | "user_id" | "created_at">
 ) {
+  // Pegar o user_id do usuário logado
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error("Usuário não autenticado");
+
   const { error } = await supabase
     .from("cartoes" as any)
-    .insert(cartao);
+    .insert({
+      ...cartao,
+      user_id: user.id,  // <-- ISSO QUE ESTAVA FALTANDO!
+    });
 
   if (error) throw error;
 }

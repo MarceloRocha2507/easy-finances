@@ -5,7 +5,7 @@ import {
   marcarParcelaComoPaga,
   pagarFaturaDoMes,
 } from "@/services/transactions";
-import { Categoria, listarCategorias } from "@/services/categorias";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   Dialog,
@@ -83,6 +83,53 @@ import {
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
+
+/* ======================================================
+   Tipo Categoria local
+====================================================== */
+type Categoria = {
+  id: string;
+  nome: string;
+  cor: string;
+  icone?: string;
+};
+
+/* ======================================================
+   Função para listar categorias (com fallback)
+====================================================== */
+async function listarCategoriasSafe(): Promise<Categoria[]> {
+  try {
+    // Tenta tabela 'categories' primeiro
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, color, icon")
+      .order("name");
+
+    if (!error && data) {
+      return data.map((c: any) => ({
+        id: c.id,
+        nome: c.name,
+        cor: c.color || "#6366f1",
+        icone: c.icon,
+      }));
+    }
+
+    // Fallback: tenta tabela 'categorias'
+    const { data: data2, error: error2 } = await (supabase as any)
+      .from("categorias")
+      .select("id, nome, cor, icone")
+      .order("nome");
+
+    if (!error2 && data2) {
+      return data2;
+    }
+
+    return [];
+  } catch (e) {
+    console.log("Erro ao carregar categorias:", e);
+    return [];
+  }
+}
 
 /* ======================================================
    Mapa de ícones para categorias
@@ -204,7 +251,7 @@ export function DetalhesCartaoDialog({
     try {
       const [parcelasData, categoriasData] = await Promise.all([
         listarParcelasDaFatura(cartao.id, mesRef),
-        listarCategorias(),
+        listarCategoriasSafe(),
       ]);
       setParcelas(parcelasData ?? []);
       setCategorias(categoriasData ?? []);

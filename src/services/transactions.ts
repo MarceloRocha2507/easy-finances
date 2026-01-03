@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /* ======================================================
-   TIPOS (LEGADO)
+   TIPOS
 ====================================================== */
 
 export type Transaction = {
@@ -10,10 +10,6 @@ export type Transaction = {
   amount: number;
   created_at: string;
 };
-
-/* ======================================================
-   TIPOS (NOVO - PARCELAMENTO)
-====================================================== */
 
 export type CompraCartao = {
   id: string;
@@ -42,62 +38,7 @@ export type ParcelaFatura = {
 };
 
 /* ======================================================
-   LEGADO (transactions) — NÃO MEXE
-====================================================== */
-
-export async function listarGastosDoCartao(
-  cartaoId: string
-): Promise<Transaction[]> {
-  const { data, error } = await (supabase as any)
-    .from("transactions")
-    .select("id, description, amount, created_at")
-    .eq("cartao_id", cartaoId)
-    .eq("tipo_pagamento", "CARTAO")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []) as Transaction[];
-}
-
-export async function criarCompraNoCartao(data: {
-  description: string;
-  amount: number;
-  cartao_id: string;
-}) {
-  const { error } = await (supabase as any).from("transactions").insert({
-    description: data.description,
-    amount: data.amount,
-    tipo_pagamento: "CARTAO",
-    cartao_id: data.cartao_id,
-    type: "EXPENSE",
-  });
-
-  if (error) throw error;
-}
-
-export async function atualizarTransacao(
-  id: string,
-  dados: Partial<Transaction>
-) {
-  const { error } = await (supabase as any)
-    .from("transactions")
-    .update(dados)
-    .eq("id", id);
-
-  if (error) throw error;
-}
-
-export async function excluirTransacao(id: string) {
-  const { error } = await (supabase as any)
-    .from("transactions")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw error;
-}
-
-/* ======================================================
-   NOVO PADRÃO — PARCELAMENTO REAL
+   HELPERS
 ====================================================== */
 
 function toDateOnly(d: Date) {
@@ -124,6 +65,122 @@ function calcularMesReferencia(
 }
 
 /* ======================================================
+   LISTAR GASTOS DO CARTÃO
+====================================================== */
+
+export async function listarGastosDoCartao(
+  cartaoId: string
+): Promise<Transaction[]> {
+  try {
+    // 1. Buscar compras do cartão
+    const { data: compras, error: comprasError } = await (supabase as any)
+      .from("compras_cartao")
+      .select("id, descricao")
+      .eq("cartao_id", cartaoId);
+
+    if (comprasError || !compras?.length) {
+      return [];
+    }
+
+    const compraIds = compras.map((c: any) => c.id);
+    const compraMap = Object.fromEntries(compras.map((c: any) => [c.id, c.descricao]));
+
+    // 2. Buscar parcelas do mês atual
+    const agora = new Date();
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+
+    const { data: parcelas, error: parcelasError } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("id, compra_id, valor, created_at")
+      .in("compra_id", compraIds)
+      .gte("mes_referencia", inicioMes.toISOString().slice(0, 10))
+      .lt("mes_referencia", fimMes.toISOString().slice(0, 10));
+
+    if (parcelasError) {
+      console.log("Erro ao buscar parcelas:", parcelasError.message);
+      return [];
+    }
+
+    return (parcelas ?? []).map((p: any) => ({
+      id: p.id,
+      description: compraMap[p.compra_id] || "Sem descrição",
+      amount: Number(p.valor) || 0,
+      created_at: p.created_at,
+    }));
+  } catch (err) {
+    console.log("Erro ao listar gastos:", err);
+    return [];
+  }
+}
+
+/* ======================================================
+   CALCULAR TOTAL GASTO DO CARTÃO NO MÊS
+====================================================== */
+
+export async function calcularTotalGastoCartao(cartaoId: string): Promise<number> {
+  try {
+    // 1. Buscar compras do cartão
+    const { data: compras, error: comprasError } = await (supabase as any)
+      .from("compras_cartao")
+      .select("id")
+      .eq("cartao_id", cartaoId);
+
+    if (comprasError || !compras?.length) {
+      return 0;
+    }
+
+    const compraIds = compras.map((c: any) => c.id);
+
+    // 2. Buscar parcelas do mês atual
+    const agora = new Date();
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+
+    const { data: parcelas, error: parcelasError } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("valor")
+      .in("compra_id", compraIds)
+      .gte("mes_referencia", inicioMes.toISOString().slice(0, 10))
+      .lt("mes_referencia", fimMes.toISOString().slice(0, 10));
+
+    if (parcelasError) {
+      console.log("Erro ao calcular total:", parcelasError.message);
+      return 0;
+    }
+
+    return (parcelas ?? []).reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
+  } catch (err) {
+    console.log("Erro ao calcular total:", err);
+    return 0;
+  }
+}
+
+/* ======================================================
+   CRIAR COMPRA NO CARTÃO (LEGADO)
+====================================================== */
+
+export async function criarCompraNoCartao(data: {
+  description: string;
+  amount: number;
+  cartao_id: string;
+}) {
+  const { data: cartao } = await (supabase as any)
+    .from("cartoes")
+    .select("dia_fechamento")
+    .eq("id", data.cartao_id)
+    .single();
+
+  await criarCompraParcelada({
+    cartaoId: data.cartao_id,
+    descricao: data.description,
+    valorTotal: Math.abs(data.amount),
+    parcelas: 1,
+    diaFechamento: cartao?.dia_fechamento || 1,
+  });
+}
+
+/* ======================================================
    CRIAR COMPRA PARCELADA
 ====================================================== */
 
@@ -141,9 +198,9 @@ export async function criarCompraParcelada(data: {
     valorTotal,
     parcelas,
     diaFechamento,
-    categoriaId,
   } = data;
 
+  // Criar compra (sem user_id - RLS via cartao_id)
   const { data: compraRaw, error: compraError } = await (supabase as any)
     .from("compras_cartao")
     .insert({
@@ -151,7 +208,6 @@ export async function criarCompraParcelada(data: {
       descricao,
       valor_total: valorTotal,
       parcelas,
-      categoria_id: categoriaId || null,
     })
     .select("id, cartao_id, descricao, valor_total, parcelas")
     .single();
@@ -187,78 +243,79 @@ export async function criarCompraParcelada(data: {
 }
 
 /* ======================================================
-   LISTAR PARCELAS DA FATURA (COM CATEGORIA)
+   LISTAR PARCELAS DA FATURA
 ====================================================== */
 
 export async function listarParcelasDaFatura(
   cartaoId: string,
   mesReferencia: Date
 ): Promise<ParcelaFatura[]> {
-  const inicio = new Date(
-    mesReferencia.getFullYear(),
-    mesReferencia.getMonth(),
-    1
-  );
-  const fim = new Date(
-    mesReferencia.getFullYear(),
-    mesReferencia.getMonth() + 1,
-    1
-  );
+  try {
+    const inicio = new Date(
+      mesReferencia.getFullYear(),
+      mesReferencia.getMonth(),
+      1
+    );
+    const fim = new Date(
+      mesReferencia.getFullYear(),
+      mesReferencia.getMonth() + 1,
+      1
+    );
 
-  const inicioStr = firstDayOfMonth(inicio);
-  const fimStr = firstDayOfMonth(fim);
+    const inicioStr = firstDayOfMonth(inicio);
+    const fimStr = firstDayOfMonth(fim);
 
-  const { data, error } = await (supabase as any)
-    .from("parcelas_cartao")
-    .select(
-      `
-      id,
-      compra_id,
-      valor,
-      numero_parcela,
-      total_parcelas,
-      mes_referencia,
-      paga,
-      created_at,
-      compras_cartao!inner (
-        id,
-        cartao_id,
-        descricao,
-        categoria_id,
-        categorias (
-          id,
-          nome,
-          cor,
-          icone
-        )
-      )
-    `
-    )
-    .eq("compras_cartao.cartao_id", cartaoId)
-    .gte("mes_referencia", inicioStr)
-    .lt("mes_referencia", fimStr)
-    .order("mes_referencia", { ascending: true })
-    .order("numero_parcela", { ascending: true });
+    // 1. Buscar compras do cartão
+    const { data: compras, error: comprasError } = await (supabase as any)
+      .from("compras_cartao")
+      .select("id, descricao")
+      .eq("cartao_id", cartaoId);
 
-  if (error) throw error;
+    if (comprasError || !compras?.length) {
+      return [];
+    }
 
-  return (
-    data?.map((r: any) => ({
-      id: String(r.id),
-      compra_id: String(r.compra_id),
-      valor: Number(r.valor ?? 0),
-      numero_parcela: Number(r.numero_parcela ?? 1),
-      total_parcelas: Number(r.total_parcelas ?? 1),
-      mes_referencia: String(r.mes_referencia ?? ""),
-      paga: r.paga ?? false,
-      created_at: r.created_at,
-      descricao: r.compras_cartao?.descricao ?? "Sem descrição",
-      categoria_id: r.compras_cartao?.categoria_id ?? null,
-      categoria_nome: r.compras_cartao?.categorias?.nome ?? null,
-      categoria_cor: r.compras_cartao?.categorias?.cor ?? null,
-      categoria_icone: r.compras_cartao?.categorias?.icone ?? null,
-    })) ?? []
-  );
+    const compraIds = compras.map((c: any) => c.id);
+    const compraMap = Object.fromEntries(
+      compras.map((c: any) => [c.id, { descricao: c.descricao }])
+    );
+
+    // 2. Buscar parcelas do mês
+    const { data: parcelas, error: parcelasError } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("id, compra_id, valor, numero_parcela, total_parcelas, mes_referencia, paga, created_at")
+      .in("compra_id", compraIds)
+      .gte("mes_referencia", inicioStr)
+      .lt("mes_referencia", fimStr)
+      .order("numero_parcela", { ascending: true });
+
+    if (parcelasError) {
+      console.log("Erro ao buscar parcelas:", parcelasError.message);
+      return [];
+    }
+
+    return (parcelas ?? []).map((r: any) => {
+      const compra = compraMap[r.compra_id] || {};
+      return {
+        id: String(r.id),
+        compra_id: String(r.compra_id),
+        valor: Number(r.valor ?? 0),
+        numero_parcela: Number(r.numero_parcela ?? 1),
+        total_parcelas: Number(r.total_parcelas ?? 1),
+        mes_referencia: String(r.mes_referencia ?? ""),
+        paga: r.paga ?? false,
+        created_at: r.created_at,
+        descricao: compra.descricao ?? "Sem descrição",
+        categoria_id: null,
+        categoria_nome: null,
+        categoria_cor: null,
+        categoria_icone: null,
+      };
+    });
+  } catch (err) {
+    console.log("Erro ao listar parcelas:", err);
+    return [];
+  }
 }
 
 /* ======================================================
@@ -268,17 +325,7 @@ export async function listarParcelasDaFatura(
 export async function buscarCompraPorId(compraId: string) {
   const { data, error } = await (supabase as any)
     .from("compras_cartao")
-    .select(
-      `
-      id,
-      cartao_id,
-      descricao,
-      valor_total,
-      parcelas,
-      categoria_id,
-      created_at
-    `
-    )
+    .select("id, cartao_id, descricao, valor_total, parcelas, created_at")
     .eq("id", compraId)
     .single();
 
@@ -287,26 +334,23 @@ export async function buscarCompraPorId(compraId: string) {
 }
 
 /* ======================================================
-   ATUALIZAR COMPRA (descrição e categoria)
+   ATUALIZAR COMPRA
 ====================================================== */
 
 export async function atualizarCompraCartao(
   compraId: string,
-  dados: {
-    descricao?: string;
-    categoria_id?: string | null;
-  }
+  dados: { descricao?: string }
 ): Promise<void> {
   const { error } = await (supabase as any)
     .from("compras_cartao")
-    .update(dados)
+    .update({ descricao: dados.descricao })
     .eq("id", compraId);
 
   if (error) throw error;
 }
 
 /* ======================================================
-   ATUALIZAR VALOR DA COMPRA (recalcula parcelas)
+   ATUALIZAR VALOR DA COMPRA
 ====================================================== */
 
 export async function atualizarValorCompra(
@@ -341,10 +385,17 @@ export async function atualizarValorCompra(
 }
 
 /* ======================================================
-   EXCLUIR COMPRA (PAI)
+   EXCLUIR COMPRA
 ====================================================== */
 
 export async function excluirCompraCartao(compraId: string) {
+  // Primeiro excluir as parcelas
+  await (supabase as any)
+    .from("parcelas_cartao")
+    .delete()
+    .eq("compra_id", compraId);
+
+  // Depois excluir a compra
   const { error } = await (supabase as any)
     .from("compras_cartao")
     .delete()
@@ -404,6 +455,31 @@ export async function pagarFaturaDoMes(
     .gte("mes_referencia", inicioStr)
     .lt("mes_referencia", fimStr)
     .eq("paga", false);
+
+  if (error) throw error;
+}
+
+/* ======================================================
+   LEGADO - TRANSACTIONS
+====================================================== */
+
+export async function atualizarTransacao(
+  id: string,
+  dados: Partial<Transaction>
+) {
+  const { error } = await (supabase as any)
+    .from("transactions")
+    .update(dados)
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
+export async function excluirTransacao(id: string) {
+  const { error } = await (supabase as any)
+    .from("transactions")
+    .delete()
+    .eq("id", id);
 
   if (error) throw error;
 }
