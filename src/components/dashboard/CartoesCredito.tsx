@@ -160,9 +160,6 @@ interface Props {
 }
 
 export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Props) {
-  // Debug: verificar se os cartões estão chegando
-  console.log("CartoesCredito - cartoes:", cartoes, "isLoading:", isLoading);
-  
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
