@@ -38,7 +38,8 @@ interface CartaoCardProps {
 }
 
 function CartaoCard({ cartao, onClick }: CartaoCardProps) {
-  const corCartao = getCorCartao(cartao.bandeira);
+  // Usar cor personalizada do cartão ou fallback para cor da bandeira
+  const corCartao = cartao.cor || getCorCartao(cartao.bandeira);
   const limiteAlto = cartao.usoPct >= 80;
   const venceEmBreve = cartao.diasParaVencimento <= 3 && cartao.diasParaVencimento >= 0;
 
@@ -159,6 +160,9 @@ interface Props {
 }
 
 export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Props) {
+  // Debug: verificar se os cartões estão chegando
+  console.log("CartoesCredito - cartoes:", cartoes, "isLoading:", isLoading);
+  
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
