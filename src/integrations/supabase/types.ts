@@ -127,6 +127,44 @@ export type Database = {
           },
         ]
       }
+      orcamentos: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          mes_referencia: string
+          updated_at: string
+          user_id: string
+          valor_limite: number
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          mes_referencia: string
+          updated_at?: string
+          user_id: string
+          valor_limite?: number
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          mes_referencia?: string
+          updated_at?: string
+          user_id?: string
+          valor_limite?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parcelas_cartao: {
         Row: {
           compra_id: string
