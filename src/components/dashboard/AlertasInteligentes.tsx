@@ -12,37 +12,37 @@ import { Alerta } from "@/hooks/useDashboardCompleto";
 import { useState } from "react";
 
 const ICONE_MAP: Record<string, React.ReactNode> = {
-  "alert-triangle": <AlertTriangle className="h-5 w-5" />,
-  "alert-circle": <AlertCircle className="h-5 w-5" />,
-  calendar: <Calendar className="h-5 w-5" />,
-  info: <Info className="h-5 w-5" />,
-  "check-circle": <CheckCircle className="h-5 w-5" />,
+  "alert-triangle": <AlertTriangle className="h-4 w-4" />,
+  "alert-circle": <AlertCircle className="h-4 w-4" />,
+  calendar: <Calendar className="h-4 w-4" />,
+  info: <Info className="h-4 w-4" />,
+  "check-circle": <CheckCircle className="h-4 w-4" />,
 };
 
 const CORES_TIPO: Record<string, { bg: string; border: string; text: string; icon: string }> = {
   danger: {
-    bg: "bg-red-500/10",
-    border: "border-red-500/30",
-    text: "text-red-600 dark:text-red-400",
-    icon: "text-red-500",
+    bg: "bg-expense/5",
+    border: "border-expense/20",
+    text: "text-expense",
+    icon: "text-expense",
   },
   warning: {
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    text: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/5",
+    border: "border-amber-500/20",
+    text: "text-amber-600 dark:text-amber-500",
     icon: "text-amber-500",
   },
   info: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/30",
-    text: "text-blue-600 dark:text-blue-400",
-    icon: "text-blue-500",
+    bg: "bg-primary/5",
+    border: "border-primary/20",
+    text: "text-primary",
+    icon: "text-primary",
   },
   success: {
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    text: "text-emerald-600 dark:text-emerald-400",
-    icon: "text-emerald-500",
+    bg: "bg-income/5",
+    border: "border-income/20",
+    text: "text-income",
+    icon: "text-income",
   },
 };
 
@@ -58,23 +58,23 @@ export function AlertasInteligentes({ alertas }: Props) {
   if (alertasVisiveis.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {alertasVisiveis.map((alerta) => {
         const cores = CORES_TIPO[alerta.tipo] || CORES_TIPO.info;
 
         return (
           <Card
             key={alerta.id}
-            className={`${cores.bg} ${cores.border} border shadow-sm`}
+            className={`${cores.bg} ${cores.border} border`}
           >
-            <CardContent className="p-4 flex items-start justify-between gap-3">
+            <CardContent className="p-3 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className={cores.icon}>
-                  {ICONE_MAP[alerta.icone] || <Info className="h-5 w-5" />}
+                  {ICONE_MAP[alerta.icone] || <Info className="h-4 w-4" />}
                 </div>
                 <div>
-                  <p className={`font-semibold ${cores.text}`}>{alerta.titulo}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className={`text-sm font-medium ${cores.text}`}>{alerta.titulo}</p>
+                  <p className="text-xs text-muted-foreground">
                     {alerta.mensagem}
                   </p>
                 </div>
@@ -82,10 +82,10 @@ export function AlertasInteligentes({ alertas }: Props) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={() => setDispensados((prev) => [...prev, alerta.id])}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </Button>
             </CardContent>
           </Card>

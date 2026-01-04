@@ -25,7 +25,6 @@ import {
   Target,
   Calendar as CalendarIcon,
   Palette,
-  PiggyBank,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -38,25 +37,14 @@ interface NovaMetaDialogProps {
 }
 
 const CORES_DISPONIVEIS = [
-  "#6366f1", // Roxo
-  "#22c55e", // Verde
-  "#ef4444", // Vermelho
-  "#f59e0b", // Amarelo
-  "#3b82f6", // Azul
-  "#ec4899", // Rosa
-  "#14b8a6", // Teal
-  "#8b5cf6", // Violeta
-];
-
-const ICONES_DISPONIVEIS = [
-  { value: "piggy-bank", label: "🐷 Cofrinho" },
-  { value: "home", label: "🏠 Casa" },
-  { value: "car", label: "🚗 Carro" },
-  { value: "plane", label: "✈️ Viagem" },
-  { value: "graduation", label: "🎓 Educação" },
-  { value: "heart", label: "❤️ Saúde" },
-  { value: "gift", label: "🎁 Presente" },
-  { value: "star", label: "⭐ Outro" },
+  "#64748b",
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#14b8a6",
+  "#ec4899",
 ];
 
 export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialogProps) {
@@ -69,7 +57,6 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
   const [valorAtual, setValorAtual] = useState("");
   const [dataLimite, setDataLimite] = useState<Date | undefined>();
   const [cor, setCor] = useState(CORES_DISPONIVEIS[0]);
-  const [icone, setIcone] = useState("piggy-bank");
 
   const criarMeta = useMutation({
     mutationFn: async () => {
@@ -80,7 +67,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
         valor_atual: parseFloat(valorAtual) || 0,
         data_limite: dataLimite ? format(dataLimite, "yyyy-MM-dd") : null,
         cor,
-        icone,
+        icone: "target",
         concluida: false,
       });
 
@@ -88,8 +75,8 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
     },
     onSuccess: () => {
       toast({
-        title: "Meta criada!",
-        description: "Sua meta de economia foi criada com sucesso.",
+        title: "Meta criada",
+        description: "Sua meta foi criada com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
       resetForm();
@@ -111,7 +98,6 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
     setValorAtual("");
     setDataLimite(undefined);
     setCor(CORES_DISPONIVEIS[0]);
-    setIcone("piggy-bank");
   }
 
   function handleSubmit() {
@@ -140,16 +126,16 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Nova Meta de Economia
+          <DialogTitle className="flex items-center gap-2 text-base font-medium">
+            <Target className="w-4 h-4" />
+            Nova Meta
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Título */}
           <div className="space-y-2">
-            <Label>Título da Meta</Label>
+            <Label className="text-sm">Título</Label>
             <Input
               placeholder="Ex: Viagem de férias"
               value={titulo}
@@ -159,7 +145,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
 
           {/* Valor Alvo */}
           <div className="space-y-2">
-            <Label>Quanto você quer economizar? (R$)</Label>
+            <Label className="text-sm">Valor alvo (R$)</Label>
             <Input
               type="number"
               step="0.01"
@@ -171,7 +157,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
 
           {/* Valor Atual */}
           <div className="space-y-2">
-            <Label>Quanto você já tem? (R$)</Label>
+            <Label className="text-sm">Valor atual (R$)</Label>
             <Input
               type="number"
               step="0.01"
@@ -183,7 +169,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
 
           {/* Data Limite */}
           <div className="space-y-2">
-            <Label>Data limite (opcional)</Label>
+            <Label className="text-sm">Data limite (opcional)</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -213,8 +199,8 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
 
           {/* Cor */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
+            <Label className="text-sm flex items-center gap-2">
+              <Palette className="w-3.5 h-3.5" />
               Cor
             </Label>
             <div className="flex gap-2 flex-wrap">
@@ -223,10 +209,8 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
                   key={c}
                   type="button"
                   className={cn(
-                    "w-8 h-8 rounded-full transition-all",
-                    cor === c
-                      ? "ring-2 ring-offset-2 ring-primary scale-110"
-                      : "hover:scale-105"
+                    "w-7 h-7 rounded-full transition-all",
+                    cor === c ? "ring-2 ring-offset-2 ring-primary" : "hover:scale-105"
                   )}
                   style={{ backgroundColor: c }}
                   onClick={() => setCor(c)}
@@ -235,43 +219,18 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
             </div>
           </div>
 
-          {/* Ícone */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <PiggyBank className="w-4 h-4" />
-              Ícone
-            </Label>
-            <div className="grid grid-cols-4 gap-2">
-              {ICONES_DISPONIVEIS.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  className={cn(
-                    "p-2 rounded-lg border text-center transition-all text-sm",
-                    icone === item.value
-                      ? "border-primary bg-primary/10"
-                      : "hover:bg-muted"
-                  )}
-                  onClick={() => setIcone(item.value)}
-                >
-                  {item.label.split(" ")[0]}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Preview */}
-          <div className="p-4 rounded-xl border bg-muted/30">
-            <p className="text-xs text-muted-foreground mb-2">Preview</p>
+          <div className="p-3 rounded-md border bg-secondary/30">
+            <p className="text-xs text-muted-foreground mb-2">Prévia</p>
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                style={{ backgroundColor: `${cor}20` }}
+                className="w-8 h-8 rounded-md flex items-center justify-center"
+                style={{ backgroundColor: `${cor}15` }}
               >
-                {ICONES_DISPONIVEIS.find((i) => i.value === icone)?.label.split(" ")[0] || "🐷"}
+                <Target className="h-4 w-4" style={{ color: cor }} />
               </div>
               <div>
-                <p className="font-medium">{titulo || "Minha meta"}</p>
+                <p className="text-sm font-medium">{titulo || "Minha meta"}</p>
                 <p className="text-xs text-muted-foreground">
                   R$ {parseFloat(valorAtual || "0").toFixed(2)} de R${" "}
                   {parseFloat(valorAlvo || "0").toFixed(2)}
@@ -285,12 +244,8 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
           <DialogClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DialogClose>
-          <Button
-            onClick={handleSubmit}
-            disabled={criarMeta.isPending}
-            className="gradient-primary"
-          >
-            {criarMeta.isPending ? "Criando..." : "Criar Meta"}
+          <Button onClick={handleSubmit} disabled={criarMeta.isPending}>
+            {criarMeta.isPending ? "Criando..." : "Criar"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,11 +7,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const EMOJI_OPTIONS = ['💰', '💼', '📈', '🏷️', '💵', '🍔', '🚗', '🏠', '💡', '🎮', '🛒', '💊', '📚', '📦', '✈️', '👕', '💄', '🎁', '🏋️', '🎬'];
-const COLOR_OPTIONS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#a855f7', '#ec4899'];
+const ICON_OPTIONS = [
+  { value: 'dollar-sign', label: 'Dinheiro', icon: DollarSign },
+  { value: 'wallet', label: 'Carteira', icon: Wallet },
+  { value: 'briefcase', label: 'Trabalho', icon: Briefcase },
+  { value: 'shopping-cart', label: 'Compras', icon: ShoppingCart },
+  { value: 'home', label: 'Casa', icon: Home },
+  { value: 'car', label: 'Transporte', icon: Car },
+  { value: 'utensils', label: 'Alimentação', icon: Utensils },
+  { value: 'heart', label: 'Saúde', icon: Heart },
+  { value: 'graduation-cap', label: 'Educação', icon: GraduationCap },
+  { value: 'gift', label: 'Presente', icon: Gift },
+  { value: 'plane', label: 'Viagem', icon: Plane },
+  { value: 'gamepad', label: 'Lazer', icon: Gamepad2 },
+  { value: 'shirt', label: 'Vestuário', icon: Shirt },
+  { value: 'pill', label: 'Farmácia', icon: Pill },
+  { value: 'book', label: 'Livros', icon: Book },
+  { value: 'package', label: 'Outros', icon: Package },
+  { value: 'zap', label: 'Serviços', icon: Zap },
+];
+
+const COLOR_OPTIONS = ['#64748b', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#ec4899', '#0ea5e9', '#f97316'];
 
 interface CategoryFormData {
   name: string;
@@ -22,10 +41,15 @@ interface CategoryFormData {
 
 const initialFormData: CategoryFormData = {
   name: '',
-  icon: '📦',
-  color: '#6366f1',
+  icon: 'package',
+  color: '#64748b',
   type: 'expense',
 };
+
+function getIconComponent(iconValue: string) {
+  const iconData = ICON_OPTIONS.find(i => i.value === iconValue);
+  return iconData?.icon || Package;
+}
 
 export default function Categories() {
   const [formData, setFormData] = useState<CategoryFormData>(initialFormData);
@@ -73,8 +97,8 @@ export default function Categories() {
   const handleEdit = (category: Category) => {
     setFormData({
       name: category.name,
-      icon: category.icon || '📦',
-      color: category.color || '#6366f1',
+      icon: category.icon || 'package',
+      color: category.color || '#64748b',
       type: category.type,
     });
     setEditingId(category.id);
@@ -85,63 +109,67 @@ export default function Categories() {
     deleteMutation.mutate(id);
   };
 
-  const CategoryCard = ({ category }: { category: Category }) => (
-    <div 
-      className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-center gap-3">
-        <div 
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-          style={{ backgroundColor: `${category.color}20` }}
-        >
-          {category.icon}
+  const CategoryCard = ({ category }: { category: Category }) => {
+    const IconComponent = getIconComponent(category.icon || 'package');
+    
+    return (
+      <div className="flex items-center justify-between p-3 rounded-md border hover:bg-secondary/30 transition-colors">
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-8 h-8 rounded-md flex items-center justify-center"
+            style={{ backgroundColor: `${category.color}15` }}
+          >
+            <IconComponent className="w-4 h-4" style={{ color: category.color || '#64748b' }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">{category.name}</p>
+            {category.is_default && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                Padrão
+              </span>
+            )}
+          </div>
         </div>
-        <div>
-          <p className="font-medium text-foreground">{category.name}</p>
-          {category.is_default && (
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              Padrão
-            </span>
+        <div className="flex items-center gap-1">
+          <div 
+            className="w-3 h-3 rounded-full" 
+            style={{ backgroundColor: category.color || '#64748b' }}
+          />
+          {!category.is_default && (
+            <>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Excluir a categoria "{category.name}"? Transações vinculadas ficarão sem categoria.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(category.id)} className="bg-destructive text-destructive-foreground">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        <div 
-          className="w-4 h-4 rounded-full" 
-          style={{ backgroundColor: category.color || '#6366f1' }}
-        />
-        {!category.is_default && (
-          <>
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-destructive">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja excluir a categoria "{category.name}"? Transações vinculadas ficarão sem categoria.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDelete(category.id)} className="bg-destructive text-destructive-foreground">
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
+
+  const SelectedIcon = getIconComponent(formData.icon);
 
   return (
     <Layout>
@@ -149,20 +177,22 @@ export default function Categories() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Categorias</h1>
-            <p className="text-muted-foreground">Organize suas transações por categorias</p>
+            <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
+            <p className="text-sm text-muted-foreground">Organize suas transações</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gradient-primary">
+              <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Categoria
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>{editingId ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
+                <DialogTitle className="text-base font-medium">
+                  {editingId ? 'Editar Categoria' : 'Nova Categoria'}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 {/* Type Toggle */}
@@ -170,7 +200,7 @@ export default function Categories() {
                   <Button
                     type="button"
                     variant={formData.type === 'income' ? 'default' : 'outline'}
-                    className={formData.type === 'income' ? 'gradient-income flex-1' : 'flex-1'}
+                    className="flex-1"
                     onClick={() => setFormData({ ...formData, type: 'income' })}
                   >
                     <TrendingUp className="w-4 h-4 mr-2" />
@@ -179,7 +209,7 @@ export default function Categories() {
                   <Button
                     type="button"
                     variant={formData.type === 'expense' ? 'default' : 'outline'}
-                    className={formData.type === 'expense' ? 'gradient-expense flex-1' : 'flex-1'}
+                    className="flex-1"
                     onClick={() => setFormData({ ...formData, type: 'expense' })}
                   >
                     <TrendingDown className="w-4 h-4 mr-2" />
@@ -189,7 +219,7 @@ export default function Categories() {
 
                 {/* Name */}
                 <div className="space-y-2">
-                  <Label>Nome da Categoria</Label>
+                  <Label className="text-sm">Nome</Label>
                   <Input
                     placeholder="Ex: Alimentação"
                     value={formData.name}
@@ -197,31 +227,35 @@ export default function Categories() {
                   />
                 </div>
 
-                {/* Emoji Picker */}
+                {/* Icon Picker */}
                 <div className="space-y-2">
-                  <Label>Ícone</Label>
+                  <Label className="text-sm">Ícone</Label>
                   <div className="flex flex-wrap gap-2">
-                    {EMOJI_OPTIONS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, icon: emoji })}
-                        className={cn(
-                          "w-10 h-10 rounded-lg text-lg flex items-center justify-center border-2 transition-all",
-                          formData.icon === emoji 
-                            ? 'border-primary bg-primary/10' 
-                            : 'border-border hover:border-primary/50'
-                        )}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                    {ICON_OPTIONS.map((item) => {
+                      const IconComp = item.icon;
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, icon: item.value })}
+                          className={cn(
+                            "w-9 h-9 rounded-md flex items-center justify-center border transition-all",
+                            formData.icon === item.value 
+                              ? 'border-primary bg-primary/10' 
+                              : 'border-border hover:border-primary/50'
+                          )}
+                          title={item.label}
+                        >
+                          <IconComp className="w-4 h-4" />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Color Picker */}
                 <div className="space-y-2">
-                  <Label>Cor</Label>
+                  <Label className="text-sm">Cor</Label>
                   <div className="flex flex-wrap gap-2">
                     {COLOR_OPTIONS.map((color) => (
                       <button
@@ -229,7 +263,7 @@ export default function Categories() {
                         type="button"
                         onClick={() => setFormData({ ...formData, color })}
                         className={cn(
-                          "w-8 h-8 rounded-full border-2 transition-all",
+                          "w-7 h-7 rounded-full transition-all",
                           formData.color === color ? 'ring-2 ring-primary ring-offset-2' : ''
                         )}
                         style={{ backgroundColor: color }}
@@ -240,17 +274,17 @@ export default function Categories() {
 
                 {/* Preview */}
                 <div className="space-y-2">
-                  <Label>Pré-visualização</Label>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+                  <Label className="text-sm">Prévia</Label>
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-secondary/50">
                     <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                      style={{ backgroundColor: `${formData.color}20` }}
+                      className="w-8 h-8 rounded-md flex items-center justify-center"
+                      style={{ backgroundColor: `${formData.color}15` }}
                     >
-                      {formData.icon}
+                      <SelectedIcon className="w-4 h-4" style={{ color: formData.color }} />
                     </div>
-                    <span className="font-medium">{formData.name || 'Nome da categoria'}</span>
+                    <span className="text-sm font-medium">{formData.name || 'Nome da categoria'}</span>
                     <div 
-                      className="w-4 h-4 rounded-full ml-auto" 
+                      className="w-3 h-3 rounded-full ml-auto" 
                       style={{ backgroundColor: formData.color }}
                     />
                   </div>
@@ -263,7 +297,6 @@ export default function Categories() {
                 <Button 
                   onClick={handleSubmit} 
                   disabled={!formData.name || createMutation.isPending || updateMutation.isPending}
-                  className="gradient-primary"
                 >
                   {editingId ? 'Salvar' : 'Criar'}
                 </Button>
@@ -274,28 +307,28 @@ export default function Categories() {
 
         {/* Categories Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[...Array(2)].map((_, i) => (
-              <Card key={i} className="border-0 shadow-lg animate-pulse">
+              <Card key={i} className="border animate-pulse">
                 <CardContent className="p-6">
-                  <div className="h-48 bg-muted rounded" />
+                  <div className="h-40 bg-muted rounded" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Income Categories */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-income">
-                  <TrendingUp className="w-5 h-5" />
-                  Categorias de Receita
+            <Card className="border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2 text-income">
+                  <TrendingUp className="w-4 h-4" />
+                  Receitas
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 {incomeCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">Nenhuma categoria de receita</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
                 ) : (
                   incomeCategories.map((category) => (
                     <CategoryCard key={category.id} category={category} />
@@ -305,16 +338,16 @@ export default function Categories() {
             </Card>
 
             {/* Expense Categories */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-expense">
-                  <TrendingDown className="w-5 h-5" />
-                  Categorias de Despesa
+            <Card className="border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2 text-expense">
+                  <TrendingDown className="w-4 h-4" />
+                  Despesas
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 {expenseCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">Nenhuma categoria de despesa</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
                 ) : (
                   expenseCategories.map((category) => (
                     <CategoryCard key={category.id} category={category} />

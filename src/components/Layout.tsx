@@ -28,7 +28,6 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-// Menu items principais
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: ArrowLeftRight, label: "Transações", href: "/transactions" },
@@ -36,7 +35,6 @@ const mainMenuItems = [
   { icon: CreditCard, label: "Cartões", href: "/cartoes" },
 ];
 
-// Menu Economia com subitens
 const economiaMenu = {
   icon: PiggyBank,
   label: "Economia",
@@ -72,47 +70,46 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b z-50 flex items-center justify-between px-4">
-        <h1 className="text-xl font-bold text-primary">FinanceApp</h1>
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b z-50 flex items-center justify-between px-4">
+        <span className="text-base font-semibold text-foreground">Fina</span>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </header>
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-64 bg-card border-r z-40 transition-transform duration-300",
+          "fixed top-0 left-0 h-full w-60 bg-card border-r z-40 transition-transform duration-200",
           "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b">
-            <h1 className="text-xl font-bold text-primary">FinanceApp</h1>
+          <div className="h-14 flex items-center px-5 border-b">
+            <span className="text-base font-semibold text-foreground">Fina</span>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
-            {/* Menu principal */}
+          <nav className="flex-1 p-3 space-y-0.5">
             {mainMenuItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                   isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
             ))}
@@ -122,38 +119,38 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors",
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                     isEconomiaActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-secondary/50 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <economiaMenu.icon className="h-5 w-5" />
+                    <economiaMenu.icon className="h-4 w-4" />
                     {economiaMenu.label}
                   </div>
                   {economiaOpen ? (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   )}
                 </button>
               </CollapsibleTrigger>
 
-              <CollapsibleContent className="pl-4 mt-1 space-y-1">
+              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
                 {economiaMenu.subItems.map((subItem) => (
                   <Link
                     key={subItem.href}
                     to={subItem.href}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm",
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                       isActive(subItem.href)
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                     )}
                   >
-                    <subItem.icon className="h-4 w-4" />
+                    <subItem.icon className="h-3.5 w-3.5" />
                     {subItem.label}
                   </Link>
                 ))}
@@ -161,7 +158,7 @@ export function Layout({ children }: LayoutProps) {
             </Collapsible>
 
             {/* Separador */}
-            <div className="my-4 border-t" />
+            <div className="my-3 border-t" />
 
             {/* Menu secundário */}
             {bottomMenuItems.map((item) => (
@@ -170,26 +167,26 @@ export function Layout({ children }: LayoutProps) {
                 to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                   isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
             ))}
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t">
+          <div className="p-3 border-t">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground"
               onClick={() => signOut()}
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
               Sair
             </Button>
           </div>
@@ -199,13 +196,13 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-foreground/20 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen">
+      <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen">
         <div className="p-6">{children}</div>
       </main>
     </div>
