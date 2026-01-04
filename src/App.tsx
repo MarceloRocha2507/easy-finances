@@ -14,7 +14,11 @@ import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Cartoes from "./pages/Cartoes";
-import Economia from "@/pages/Economia";
+import Economia from "./pages/Economia";
+
+// Importar Metas como lazy para evitar conflito de case
+import { lazy, Suspense } from "react";
+const MetasPage = lazy(() => import("./pages/Metas"));
 
 const queryClient = new QueryClient();
 
@@ -70,6 +74,17 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Economia />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/economia/metas"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <MetasPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />

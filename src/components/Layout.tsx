@@ -1,123 +1,212 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  Wallet,
   LayoutDashboard,
   ArrowLeftRight,
-  Tag,
-  FileText,
+  Tags,
+  BarChart3,
+  CreditCard,
+  PiggyBank,
+  Target,
   User,
   LogOut,
   Menu,
-  CreditCard,
-  PiggyBank,
+  X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/transactions", label: "Registros", icon: ArrowLeftRight },
-  { to: "/categories", label: "Categorias", icon: Tag },
-  { to: "/cartoes", label: "Cartões", icon: CreditCard },
-  { to: "/economia", label: "Economia", icon: PiggyBank },
-  { to: "/reports", label: "Relatórios", icon: FileText },
-  { to: "/profile", label: "Perfil", icon: User },
+// Menu items principais
+const mainMenuItems = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: ArrowLeftRight, label: "Transações", href: "/transactions" },
+  { icon: Tags, label: "Categorias", href: "/categories" },
+  { icon: CreditCard, label: "Cartões", href: "/cartoes" },
+];
+
+// Menu Economia com subitens
+const economiaMenu = {
+  icon: PiggyBank,
+  label: "Economia",
+  href: "/economia",
+  subItems: [
+    { icon: PiggyBank, label: "Visão Geral", href: "/economia" },
+    { icon: Target, label: "Metas", href: "/economia/metas" },
+  ],
+};
+
+const bottomMenuItems = [
+  { icon: BarChart3, label: "Relatórios", href: "/reports" },
+  { icon: User, label: "Perfil", href: "/profile" },
 ];
 
 export function Layout({ children }: LayoutProps) {
-  const { signOut } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <>
-      {navItems.map((item) => {
-        const isActive = location.pathname.startsWith(item.to);
-
-        return (
-          <Link key={item.to} to={item.to} onClick={onNavigate}>
-            <Button
-              variant={isActive ? "secondary" : "ghost"}
-              size="sm"
-              className={`w-full justify-start ${
-                isActive ? "bg-primary/10 text-primary" : ""
-              }`}
-            >
-              <item.icon className="w-4 h-4 mr-2" />
-              {item.label}
-            </Button>
-          </Link>
-        );
-      })}
-    </>
+  const { signOut } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [economiaOpen, setEconomiaOpen] = useState(
+    location.pathname.startsWith("/economia")
   );
+
+  const isActive = (href: string) => {
+    if (href === "/economia") {
+      return location.pathname === "/economia";
+    }
+    return location.pathname === href;
+  };
+
+  const isEconomiaActive = location.pathname.startsWith("/economia");
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground">
-              FinanceApp
-            </h1>
-          </div>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            <NavLinks />
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="hidden md:flex"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-
-            {/* Mobile Menu */}
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="sm">
-                  <Menu className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="w-64">
-                <div className="flex flex-col gap-2 mt-8">
-                  <NavLinks onNavigate={() => setMobileOpen(false)} />
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={signOut}
-                    className="justify-start text-destructive"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sair
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b z-50 flex items-center justify-between px-4">
+        <h1 className="text-xl font-bold text-primary">FinanceApp</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </Button>
       </header>
 
-      {/* Conteúdo */}
-      <main className="container mx-auto px-4 py-8">
-        {children}
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed top-0 left-0 h-full w-64 bg-card border-r z-40 transition-transform duration-300",
+          "lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="h-16 flex items-center px-6 border-b">
+            <h1 className="text-xl font-bold text-primary">FinanceApp</h1>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-1">
+            {/* Menu principal */}
+            {mainMenuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+
+            {/* Menu Economia com submenu */}
+            <Collapsible open={economiaOpen} onOpenChange={setEconomiaOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors",
+                    isEconomiaActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <economiaMenu.icon className="h-5 w-5" />
+                    {economiaMenu.label}
+                  </div>
+                  {economiaOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="pl-4 mt-1 space-y-1">
+                {economiaMenu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm",
+                      isActive(subItem.href)
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <subItem.icon className="h-4 w-4" />
+                    {subItem.label}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Separador */}
+            <div className="my-4 border-t" />
+
+            {/* Menu secundário */}
+            {bottomMenuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Logout */}
+          <div className="p-4 border-t">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              onClick={() => signOut()}
+            >
+              <LogOut className="h-5 w-5" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen">
+        <div className="p-6">{children}</div>
       </main>
     </div>
   );
