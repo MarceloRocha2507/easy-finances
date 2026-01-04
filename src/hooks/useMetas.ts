@@ -56,6 +56,8 @@ export function useMetas() {
       }));
     },
     enabled: !!user,
+    retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

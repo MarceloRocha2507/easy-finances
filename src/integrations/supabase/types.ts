@@ -127,6 +127,48 @@ export type Database = {
           },
         ]
       }
+      metas: {
+        Row: {
+          concluida: boolean
+          cor: string
+          created_at: string
+          data_limite: string | null
+          icone: string
+          id: string
+          titulo: string
+          updated_at: string
+          user_id: string
+          valor_alvo: number
+          valor_atual: number
+        }
+        Insert: {
+          concluida?: boolean
+          cor?: string
+          created_at?: string
+          data_limite?: string | null
+          icone?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+          valor_alvo?: number
+          valor_atual?: number
+        }
+        Update: {
+          concluida?: boolean
+          cor?: string
+          created_at?: string
+          data_limite?: string | null
+          icone?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+          valor_alvo?: number
+          valor_atual?: number
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           category_id: string
