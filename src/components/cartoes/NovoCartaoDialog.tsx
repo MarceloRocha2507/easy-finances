@@ -8,9 +8,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { criarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
-import { Check } from "lucide-react";
+import { DaySelector } from "@/components/ui/day-selector";
+import { Check, Plus } from "lucide-react";
 
 const CORES_PREDEFINIDAS = [
   { nome: "Inter", cor: "#00A859" },
@@ -27,20 +29,36 @@ const CORES_PREDEFINIDAS = [
   { nome: "Esmeralda", cor: "#10b981" },
 ];
 
-export function NovoCartaoDialog({ onSaved }: { onSaved: () => void }) {
+interface NovoCartaoDialogProps {
+  onSaved: () => void;
+}
+
+export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
     bandeira: "",
     limite: 0,
-    dia_fechamento: 1,
-    dia_vencimento: 10,
+    dia_fechamento: 5,
+    dia_vencimento: 12,
     cor: "#6366f1",
   });
 
   async function salvar() {
+    if (!form.nome.trim()) {
+      toast({ title: "Informe o nome do cartão", variant: "destructive" });
+      return;
+    }
+
+    if (form.limite <= 0) {
+      toast({ title: "Informe o limite do cartão", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
     try {
       await criarCartao(form);
       toast({ title: "Cartão cadastrado com sucesso" });
@@ -49,82 +67,90 @@ export function NovoCartaoDialog({ onSaved }: { onSaved: () => void }) {
         nome: "",
         bandeira: "",
         limite: 0,
-        dia_fechamento: 1,
-        dia_vencimento: 10,
+        dia_fechamento: 5,
+        dia_vencimento: 12,
         cor: "#6366f1",
       });
       onSaved();
     } catch {
       toast({ title: "Erro ao salvar cartão", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Novo Cartão</Button>
+        <Button size="sm">
+          <Plus className="h-4 w-4 mr-1.5" />
+          Novo Cartão
+        </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo Cartão</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Adicione as informações do seu cartão de crédito
+          </p>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <Input 
-            placeholder="Nome" 
-            value={form.nome}
-            onChange={e => setForm({ ...form, nome: e.target.value })} 
-          />
-          <Input 
-            placeholder="Bandeira" 
-            value={form.bandeira}
-            onChange={e => setForm({ ...form, bandeira: e.target.value })} 
-          />
-          <Input 
-            type="number" 
-            placeholder="Limite" 
-            value={form.limite || ""}
-            onChange={e => setForm({ ...form, limite: Number(e.target.value) })} 
-          />
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-muted-foreground">Dia fechamento</label>
-              <select
-                value={form.dia_fechamento}
-                onChange={(e) => setForm({ ...form, dia_fechamento: Number(e.target.value) })}
-                className="rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={dia}>Dia {dia}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-muted-foreground">Dia vencimento</label>
-              <select
-                value={form.dia_vencimento}
-                onChange={(e) => setForm({ ...form, dia_vencimento: Number(e.target.value) })}
-                className="rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={dia}>Dia {dia}</option>
-                ))}
-              </select>
-            </div>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="nome">Nome do cartão</Label>
+            <Input
+              id="nome"
+              placeholder="Ex: Nubank, Inter, Itaú..."
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bandeira">Bandeira</Label>
+            <Input
+              id="bandeira"
+              placeholder="Ex: Mastercard, Visa..."
+              value={form.bandeira}
+              onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="limite">Limite (R$)</Label>
+            <Input
+              id="limite"
+              type="number"
+              placeholder="0,00"
+              value={form.limite || ""}
+              onChange={(e) => setForm({ ...form, limite: Number(e.target.value) })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <DaySelector
+              label="Dia de fechamento"
+              value={form.dia_fechamento}
+              onChange={(day) => setForm({ ...form, dia_fechamento: day })}
+            />
+            <DaySelector
+              label="Dia de vencimento"
+              value={form.dia_vencimento}
+              onChange={(day) => setForm({ ...form, dia_vencimento: day })}
+            />
           </div>
 
           {/* Seletor de Cor */}
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Cor do cartão</label>
+            <Label>Cor do cartão</Label>
             <div className="grid grid-cols-6 gap-2">
               {CORES_PREDEFINIDAS.map((item) => (
                 <button
                   key={item.cor}
                   type="button"
                   onClick={() => setForm({ ...form, cor: item.cor })}
-                  className="relative w-10 h-10 rounded-xl transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  className="relative w-10 h-10 rounded-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                   style={{ backgroundColor: item.cor }}
                   title={item.nome}
                 >
@@ -137,18 +163,21 @@ export function NovoCartaoDialog({ onSaved }: { onSaved: () => void }) {
           </div>
 
           {/* Preview do card */}
-          <div 
-            className="p-4 rounded-xl text-white text-center"
-            style={{ 
+          <div
+            className="p-4 rounded-lg text-white text-center"
+            style={{
               background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${form.cor}50 100%)`,
             }}
           >
-            <p className="text-sm opacity-70">Preview</p>
+            <p className="text-xs opacity-70 mb-1">Preview</p>
             <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
+            {form.bandeira && (
+              <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
+            )}
           </div>
 
-          <Button className="w-full" onClick={salvar}>
-            Salvar
+          <Button className="w-full" onClick={salvar} disabled={loading}>
+            {loading ? "Salvando..." : "Salvar cartão"}
           </Button>
         </div>
       </DialogContent>

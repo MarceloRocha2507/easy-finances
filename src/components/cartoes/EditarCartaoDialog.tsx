@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Cartao, atualizarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
+import { DaySelector } from "@/components/ui/day-selector";
 import { Check } from "lucide-react";
 
 const CORES_PREDEFINIDAS = [
@@ -41,6 +43,7 @@ export function EditarCartaoDialog({
   onSaved,
 }: Props) {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
@@ -51,7 +54,7 @@ export function EditarCartaoDialog({
     cor: "#6366f1",
   });
 
-  // 🔥 ESSENCIAL: sincroniza o form sempre que o cartão mudar
+  // Sincroniza o form sempre que o cartão mudar
   useEffect(() => {
     if (!cartao) return;
 
@@ -66,6 +69,12 @@ export function EditarCartaoDialog({
   }, [cartao, open]);
 
   async function salvar() {
+    if (!form.nome.trim()) {
+      toast({ title: "Informe o nome do cartão", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
     try {
       await atualizarCartao(cartao.id, {
         nome: form.nome,
@@ -81,20 +90,22 @@ export function EditarCartaoDialog({
         description: "As informações foram salvas com sucesso.",
       });
 
-      onSaved();           // recarrega lista
-      onOpenChange(false); // fecha modal
+      onSaved();
+      onOpenChange(false);
     } catch {
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível salvar o cartão.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar cartão</DialogTitle>
           <DialogDescription>
@@ -102,64 +113,62 @@ export function EditarCartaoDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <Input
-            placeholder="Nome"
-            value={form.nome}
-            onChange={(e) =>
-              setForm({ ...form, nome: e.target.value })
-            }
-          />
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="nome">Nome do cartão</Label>
+            <Input
+              id="nome"
+              placeholder="Ex: Nubank, Inter, Itaú..."
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            />
+          </div>
 
-          <Input
-            placeholder="Bandeira"
-            value={form.bandeira}
-            onChange={(e) =>
-              setForm({ ...form, bandeira: e.target.value })
-            }
-          />
+          <div className="space-y-2">
+            <Label htmlFor="bandeira">Bandeira</Label>
+            <Input
+              id="bandeira"
+              placeholder="Ex: Mastercard, Visa..."
+              value={form.bandeira}
+              onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
+            />
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Limite"
-            value={form.limite}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                limite: Number(e.target.value),
-              })
-            }
-          />
+          <div className="space-y-2">
+            <Label htmlFor="limite">Limite (R$)</Label>
+            <Input
+              id="limite"
+              type="number"
+              placeholder="0,00"
+              value={form.limite || ""}
+              onChange={(e) => setForm({ ...form, limite: Number(e.target.value) })}
+            />
+          </div>
 
-          {/* Dias do mês */}
-          <div className="grid grid-cols-2 gap-3">
-            <SelectDiaMes
+          {/* Seletores de dia com calendário visual */}
+          <div className="grid grid-cols-2 gap-4">
+            <DaySelector
               label="Dia de fechamento"
               value={form.dia_fechamento}
-              onChange={(value) =>
-                setForm({ ...form, dia_fechamento: value })
-              }
+              onChange={(day) => setForm({ ...form, dia_fechamento: day })}
             />
-
-            <SelectDiaMes
+            <DaySelector
               label="Dia de vencimento"
               value={form.dia_vencimento}
-              onChange={(value) =>
-                setForm({ ...form, dia_vencimento: value })
-              }
+              onChange={(day) => setForm({ ...form, dia_vencimento: day })}
             />
           </div>
 
           {/* Seletor de Cor */}
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Cor do cartão</label>
+            <Label>Cor do cartão</Label>
             <div className="grid grid-cols-6 gap-2">
               {CORES_PREDEFINIDAS.map((item) => (
                 <button
                   key={item.cor}
                   type="button"
                   onClick={() => setForm({ ...form, cor: item.cor })}
-                  className="relative w-10 h-10 rounded-xl transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  className="relative w-10 h-10 rounded-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                   style={{ backgroundColor: item.cor }}
                   title={item.nome}
                 >
@@ -172,55 +181,24 @@ export function EditarCartaoDialog({
           </div>
 
           {/* Preview do card */}
-          <div 
-            className="p-4 rounded-xl text-white text-center"
-            style={{ 
+          <div
+            className="p-4 rounded-lg text-white text-center"
+            style={{
               background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${form.cor}50 100%)`,
             }}
           >
-            <p className="text-sm opacity-70">Preview</p>
+            <p className="text-xs opacity-70 mb-1">Preview</p>
             <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
+            {form.bandeira && (
+              <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
+            )}
           </div>
 
-          <Button className="w-full" onClick={salvar}>
-            Salvar alterações
+          <Button className="w-full" onClick={salvar} disabled={loading}>
+            {loading ? "Salvando..." : "Salvar alterações"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/* ---------- COMPONENTE AUXILIAR ---------- */
-
-interface SelectDiaMesProps {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}
-
-function SelectDiaMes({
-  label,
-  value,
-  onChange,
-}: SelectDiaMesProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-muted-foreground">
-        {label}
-      </label>
-
-      <select
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-      >
-        {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-          <option key={dia} value={dia}>
-            Dia {dia}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
