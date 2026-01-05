@@ -30,9 +30,12 @@ export type CompraCartaoInput = {
   descricao: string;
   valorTotal: number;
   parcelas: number;
+  parcelaInicial: number;
+  mesFatura: Date;
+  tipoLancamento: "unica" | "parcelada" | "fixa";
   dataCompra: Date;
   categoriaId?: string;
-  responsavelId: string; // OBRIGATÓRIO
+  responsavelId: string;
 };
 
 export type ResumoResponsavel = {
@@ -46,41 +49,12 @@ export type ResumoResponsavel = {
 };
 
 /* ======================================================
-   HELPERS
-====================================================== */
-
-function calcularMesReferencia(dataCompra: Date, diaFechamento: number): Date {
-  const ano = dataCompra.getFullYear();
-  const mes = dataCompra.getMonth();
-  const dia = dataCompra.getDate();
-
-  // Se comprou antes do fechamento, entra na fatura do mês atual
-  // Se comprou depois do fechamento, entra na fatura do próximo mês
-  if (dia <= diaFechamento) {
-    return new Date(ano, mes, 1);
-  } else {
-    return new Date(ano, mes + 1, 1);
-  }
-}
-
-/* ======================================================
    CRIAR COMPRA COM PARCELAS
 ====================================================== */
 
 export async function criarCompraCartao(input: CompraCartaoInput): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
-
-  // Buscar dia de fechamento do cartão
-  const { data: cartao, error: cartaoError } = await (supabase as any)
-    .from("cartoes")
-    .select("dia_fechamento")
-    .eq("id", input.cartaoId)
-    .single();
-
-  if (cartaoError || !cartao) throw new Error("Cartão não encontrado");
-
-  const diaFechamento = cartao.dia_fechamento || 1;
 
   // 1. Criar a compra
   const { data: compra, error: compraError } = await (supabase as any)
@@ -91,9 +65,12 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
       descricao: input.descricao,
       valor_total: input.valorTotal,
       parcelas: input.parcelas,
+      parcela_inicial: input.parcelaInicial,
+      tipo_lancamento: input.tipoLancamento,
+      mes_inicio: input.mesFatura.toISOString().split("T")[0],
       data_compra: input.dataCompra.toISOString().split("T")[0],
       categoria_id: input.categoriaId || null,
-      responsavel_id: input.responsavelId, // NOVO CAMPO
+      responsavel_id: input.responsavelId,
     })
     .select()
     .single();
@@ -101,20 +78,28 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
   if (compraError) throw compraError;
 
   // 2. Criar as parcelas
+  // Calcular quantas parcelas vão ser criadas (do parcelaInicial até o total)
+  const numParcelasACriar = input.parcelas - input.parcelaInicial + 1;
   const valorParcela = input.valorTotal / input.parcelas;
   const parcelasData = [];
 
-  for (let i = 0; i < input.parcelas; i++) {
-    // Calcular mês de referência da parcela
-    const mesBase = calcularMesReferencia(input.dataCompra, diaFechamento);
-    const mesReferencia = new Date(mesBase.getFullYear(), mesBase.getMonth() + i, 1);
+  for (let i = 0; i < numParcelasACriar; i++) {
+    const numeroParcela = input.parcelaInicial + i;
+    // Usar mesFatura como base e adicionar i meses
+    const mesReferencia = new Date(
+      input.mesFatura.getFullYear(),
+      input.mesFatura.getMonth() + i,
+      1
+    );
 
     parcelasData.push({
       compra_id: compra.id,
-      numero_parcela: i + 1,
+      numero_parcela: numeroParcela,
+      total_parcelas: input.parcelas,
       valor: valorParcela,
       mes_referencia: mesReferencia.toISOString().split("T")[0],
       paga: false,
+      tipo_recorrencia: input.tipoLancamento === "fixa" ? "fixa" : "normal",
     });
   }
 
