@@ -53,6 +53,16 @@ export default function Profile() {
   };
 
   const handleChangePassword = async () => {
+    // Validate current password is provided
+    if (!currentPassword) {
+      toast({
+        title: 'Erro',
+        description: 'Digite sua senha atual.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast({
         title: 'Erro',
@@ -71,8 +81,33 @@ export default function Profile() {
       return;
     }
 
+    if (newPassword.length > 72) {
+      toast({
+        title: 'Erro',
+        description: 'A senha deve ter no máximo 72 caracteres.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsChangingPassword(true);
     try {
+      // First verify current password by attempting to sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      });
+
+      if (authError) {
+        toast({
+          title: 'Erro',
+          description: 'Senha atual incorreta.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Then update to new password
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -218,6 +253,15 @@ export default function Profile() {
                   <DialogTitle>Alterar Senha</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Senha Atual</Label>
+                    <Input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Digite sua senha atual"
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label>Nova Senha</Label>
                     <Input

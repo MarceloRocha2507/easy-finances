@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { AtualizarValorCompraSchema } from "@/lib/validations";
 
 /* ======================================================
    TIPOS
@@ -368,28 +369,41 @@ export async function atualizarValorCompra(
   compraId: string,
   novoValorTotal: number
 ): Promise<void> {
+  // Validate input
+  const validationResult = AtualizarValorCompraSchema.safeParse({
+    compraId,
+    novoValorTotal,
+  });
+
+  if (!validationResult.success) {
+    const firstError = validationResult.error.errors[0];
+    throw new Error(firstError.message);
+  }
+
+  const { compraId: validCompraId, novoValorTotal: validValor } = validationResult.data;
+
   const { data: compra, error: compraError } = await (supabase as any)
     .from("compras_cartao")
     .select("parcelas")
-    .eq("id", compraId)
+    .eq("id", validCompraId)
     .single();
 
   if (compraError) throw compraError;
 
   const numParcelas = compra.parcelas || 1;
-  const novoValorParcela = Number((novoValorTotal / numParcelas).toFixed(2));
+  const novoValorParcela = Number((validValor / numParcelas).toFixed(2));
 
   const { error: updateCompraError } = await (supabase as any)
     .from("compras_cartao")
-    .update({ valor_total: novoValorTotal })
-    .eq("id", compraId);
+    .update({ valor_total: validValor })
+    .eq("id", validCompraId);
 
   if (updateCompraError) throw updateCompraError;
 
   const { error: updateParcelasError } = await (supabase as any)
     .from("parcelas_cartao")
     .update({ valor: novoValorParcela })
-    .eq("compra_id", compraId)
+    .eq("compra_id", validCompraId)
     .eq("paga", false);
 
   if (updateParcelasError) throw updateParcelasError;

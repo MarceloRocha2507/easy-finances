@@ -3,6 +3,7 @@ import {
   calcularMesReferenciaParcela, 
   formatarDataISO 
 } from "@/lib/dateUtils";
+import { CompraSchema } from "@/lib/validations";
 
 export type TipoLancamento = "unica" | "parcelada" | "fixa";
 
@@ -46,6 +47,14 @@ interface ParcelaInsert {
  * Cria uma nova compra no cartão com suas respectivas parcelas
  */
 export async function criarCompra(params: CriarCompraParams): Promise<void> {
+  // Validate input using Zod schema
+  const validationResult = CompraSchema.safeParse(params);
+  
+  if (!validationResult.success) {
+    const firstError = validationResult.error.errors[0];
+    throw new Error(firstError.message);
+  }
+
   const {
     cartaoId,
     descricao,
@@ -56,24 +65,7 @@ export async function criarCompra(params: CriarCompraParams): Promise<void> {
     parcelaInicial = 1,
     categoriaId,
     mesesFuturos = 12,
-  } = params;
-
-  // Validações
-  if (!descricao.trim()) {
-    throw new Error("Descrição é obrigatória");
-  }
-
-  if (valorTotal <= 0) {
-    throw new Error("Valor deve ser maior que zero");
-  }
-
-  if (tipoLancamento === "parcelada" && parcelas < 2) {
-    throw new Error("Compra parcelada deve ter pelo menos 2 parcelas");
-  }
-
-  if (parcelaInicial < 1 || parcelaInicial > parcelas) {
-    throw new Error("Parcela inicial inválida");
-  }
+  } = validationResult.data;
 
   // Obtém o usuário atual
   const { data: userData, error: userError } = await supabase.auth.getUser();
