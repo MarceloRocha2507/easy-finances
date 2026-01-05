@@ -373,8 +373,11 @@ export async function editarCompra(
   compraId: string,
   dados: {
     descricao?: string;
+    valorTotal?: number;
     categoriaId?: string;
     responsavelId?: string;
+    mesFatura?: Date;
+    parcelaInicial?: number;
   }
 ): Promise<void> {
   const updateData: any = {};
@@ -383,12 +386,119 @@ export async function editarCompra(
   if (dados.categoriaId !== undefined) updateData.categoria_id = dados.categoriaId || null;
   if (dados.responsavelId !== undefined) updateData.responsavel_id = dados.responsavelId;
 
-  const { error } = await (supabase as any)
-    .from("compras_cartao")
-    .update(updateData)
-    .eq("id", compraId);
+  // Atualizar compra principal
+  if (Object.keys(updateData).length > 0) {
+    const { error } = await (supabase as any)
+      .from("compras_cartao")
+      .update(updateData)
+      .eq("id", compraId);
 
-  if (error) throw error;
+    if (error) throw error;
+  }
+
+  // Se mudou valor total, recalcular parcelas
+  if (dados.valorTotal !== undefined) {
+    const { data: compraAtual } = await (supabase as any)
+      .from("compras_cartao")
+      .select("valor_total, parcelas")
+      .eq("id", compraId)
+      .single();
+
+    if (compraAtual && compraAtual.valor_total !== dados.valorTotal) {
+      const numParcelas = compraAtual.parcelas || 1;
+      const novoValorParcela = Number((dados.valorTotal / numParcelas).toFixed(2));
+
+      // Atualizar valor_total na compra
+      await (supabase as any)
+        .from("compras_cartao")
+        .update({ valor_total: dados.valorTotal })
+        .eq("id", compraId);
+
+      // Atualizar parcelas não pagas
+      await (supabase as any)
+        .from("parcelas_cartao")
+        .update({ valor: novoValorParcela })
+        .eq("compra_id", compraId)
+        .eq("paga", false);
+    }
+  }
+
+  // Se mudou mês da fatura ou parcela inicial, recalcular meses das parcelas
+  if (dados.mesFatura !== undefined || dados.parcelaInicial !== undefined) {
+    // Buscar dados atuais da compra
+    const { data: compra } = await (supabase as any)
+      .from("compras_cartao")
+      .select("parcelas, parcela_inicial, mes_inicio, valor_total")
+      .eq("id", compraId)
+      .single();
+
+    if (!compra) throw new Error("Compra não encontrada");
+
+    const novoMesFatura = dados.mesFatura || new Date(compra.mes_inicio);
+    const novaParcelaInicial = dados.parcelaInicial ?? compra.parcela_inicial;
+    const totalParcelas = compra.parcelas;
+
+    // Atualizar compra com novos valores
+    await (supabase as any)
+      .from("compras_cartao")
+      .update({
+        mes_inicio: novoMesFatura.toISOString().split("T")[0],
+        parcela_inicial: novaParcelaInicial,
+      })
+      .eq("id", compraId);
+
+    // Deletar parcelas antigas não pagas
+    await (supabase as any)
+      .from("parcelas_cartao")
+      .delete()
+      .eq("compra_id", compraId)
+      .eq("paga", false);
+
+    // Buscar parcelas já pagas
+    const { data: parcelasPagas } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("numero_parcela")
+      .eq("compra_id", compraId)
+      .eq("paga", true);
+
+    const numerosJaPagos = new Set((parcelasPagas || []).map((p: any) => p.numero_parcela));
+
+    // Recriar parcelas não pagas com novos meses
+    const numParcelasTotal = totalParcelas - novaParcelaInicial + 1;
+    const valorParcela = compra.valor_total / totalParcelas;
+    const novasParcelas = [];
+
+    for (let i = 0; i < numParcelasTotal; i++) {
+      const numeroParcela = novaParcelaInicial + i;
+      
+      // Pular se já está paga
+      if (numerosJaPagos.has(numeroParcela)) continue;
+
+      const mesReferencia = new Date(
+        novoMesFatura.getFullYear(),
+        novoMesFatura.getMonth() + i,
+        1
+      );
+
+      novasParcelas.push({
+        compra_id: compraId,
+        numero_parcela: numeroParcela,
+        total_parcelas: totalParcelas,
+        valor: valorParcela,
+        mes_referencia: mesReferencia.toISOString().split("T")[0],
+        paga: false,
+        tipo_recorrencia: "normal",
+      });
+    }
+
+    if (novasParcelas.length > 0) {
+      const { error: insertError } = await (supabase as any)
+        .from("parcelas_cartao")
+        .insert(novasParcelas);
+
+      if (insertError) throw insertError;
+    }
+  }
 }
 
 /* ======================================================

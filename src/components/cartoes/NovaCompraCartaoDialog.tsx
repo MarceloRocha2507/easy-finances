@@ -26,6 +26,8 @@ import { CreditCard, Calendar, Tag, Repeat, Hash } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { NovoResponsavelDialog } from "./NovoResponsavelDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Categoria = {
   id: string;
@@ -50,9 +52,11 @@ export function NovaCompraCartaoDialog({
   onSaved,
 }: Props) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: titularData } = useResponsavelTitular();
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
 
   // Gerar opções de mês da fatura (próximos 12 meses)
   const opcoesMesFatura = useMemo(() => {
@@ -381,6 +385,7 @@ export function NovaCompraCartaoDialog({
             label="Quem fez a compra?"
             value={form.responsavelId}
             onChange={(id) => setForm({ ...form, responsavelId: id || "" })}
+            onAddNew={() => setNovoResponsavelOpen(true)}
             required
           />
 
@@ -460,6 +465,15 @@ export function NovaCompraCartaoDialog({
           </Button>
         </div>
       </DialogContent>
+
+      <NovoResponsavelDialog
+        open={novoResponsavelOpen}
+        onOpenChange={setNovoResponsavelOpen}
+        onCreated={(novoId) => {
+          setForm({ ...form, responsavelId: novoId });
+          queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
+        }}
+      />
     </Dialog>
   );
 }
