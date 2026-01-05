@@ -91,29 +91,44 @@ export type Database = {
       }
       compras_cartao: {
         Row: {
+          ativo: boolean
           cartao_id: string
+          categoria_id: string | null
           created_at: string
           descricao: string
           id: string
+          mes_inicio: string
+          parcela_inicial: number
           parcelas: number
+          tipo_lancamento: string
           user_id: string
           valor_total: number
         }
         Insert: {
+          ativo?: boolean
           cartao_id: string
+          categoria_id?: string | null
           created_at?: string
           descricao: string
           id?: string
+          mes_inicio?: string
+          parcela_inicial?: number
           parcelas?: number
+          tipo_lancamento?: string
           user_id: string
           valor_total: number
         }
         Update: {
+          ativo?: boolean
           cartao_id?: string
+          categoria_id?: string | null
           created_at?: string
           descricao?: string
           id?: string
+          mes_inicio?: string
+          parcela_inicial?: number
           parcelas?: number
+          tipo_lancamento?: string
           user_id?: string
           valor_total?: number
         }
@@ -123,6 +138,13 @@ export type Database = {
             columns: ["cartao_id"]
             isOneToOne: false
             referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_cartao_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -209,32 +231,38 @@ export type Database = {
       }
       parcelas_cartao: {
         Row: {
+          ativo: boolean
           compra_id: string
           created_at: string
           id: string
           mes_referencia: string
           numero_parcela: number
           paga: boolean
+          tipo_recorrencia: string
           total_parcelas: number
           valor: number
         }
         Insert: {
+          ativo?: boolean
           compra_id: string
           created_at?: string
           id?: string
           mes_referencia: string
           numero_parcela: number
           paga?: boolean
+          tipo_recorrencia?: string
           total_parcelas: number
           valor: number
         }
         Update: {
+          ativo?: boolean
           compra_id?: string
           created_at?: string
           id?: string
           mes_referencia?: string
           numero_parcela?: number
           paga?: boolean
+          tipo_recorrencia?: string
           total_parcelas?: number
           valor?: number
         }

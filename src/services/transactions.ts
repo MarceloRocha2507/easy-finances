@@ -35,6 +35,8 @@ export type ParcelaFatura = {
   categoria_cor?: string | null;
   categoria_icone?: string | null;
   created_at?: string;
+  tipo_recorrencia?: string;
+  ativo?: boolean;
 };
 
 /* ======================================================
@@ -286,13 +288,14 @@ export async function listarParcelasDaFatura(
       compras.map((c: any) => [c.id, { descricao: c.descricao }])
     );
 
-    // 2. Buscar parcelas do mês
+    // 2. Buscar parcelas do mês (apenas ativas)
     const { data: parcelas, error: parcelasError } = await (supabase as any)
       .from("parcelas_cartao")
-      .select("id, compra_id, valor, numero_parcela, total_parcelas, mes_referencia, paga, created_at")
+      .select("id, compra_id, valor, numero_parcela, total_parcelas, mes_referencia, paga, created_at, tipo_recorrencia, ativo")
       .in("compra_id", compraIds)
       .gte("mes_referencia", inicioStr)
       .lt("mes_referencia", fimStr)
+      .eq("ativo", true)
       .order("numero_parcela", { ascending: true });
 
     if (parcelasError) {
@@ -316,6 +319,8 @@ export async function listarParcelasDaFatura(
         categoria_nome: null,
         categoria_cor: null,
         categoria_icone: null,
+        tipo_recorrencia: r.tipo_recorrencia ?? "normal",
+        ativo: r.ativo ?? true,
       };
     });
   } catch (err) {
