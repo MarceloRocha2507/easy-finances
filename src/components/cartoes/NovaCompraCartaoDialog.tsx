@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cartao } from "@/services/cartoes";
-import { criarCompraCartao } from "@/services/transactions";
+import { criarCompraCartao } from "@/services/compras-cartao";
 import { useToast } from "@/hooks/use-toast";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
