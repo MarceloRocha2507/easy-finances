@@ -14,10 +14,9 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
-import { useMetas } from "@/hooks/useMetas";
+import { useMetas, Meta } from "@/hooks/useMetas";
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
-import { Meta } from "@/hooks/useDashboardCompleto";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
