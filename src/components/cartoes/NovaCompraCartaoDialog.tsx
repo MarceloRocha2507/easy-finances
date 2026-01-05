@@ -119,7 +119,7 @@ export function NovaCompraCartaoDialog({
         valorTotal: valor,
         parcelas: parseInt(form.parcelas),
         dataCompra: new Date(form.dataCompra),
-        categoriaId: form.categoriaId || undefined,
+        categoriaId: form.categoriaId && form.categoriaId !== "none" ? form.categoriaId : undefined,
         responsavelId: form.responsavelId,
       });
 
@@ -231,7 +231,7 @@ export function NovaCompraCartaoDialog({
                 <SelectValue placeholder="Selecionar categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sem categoria</SelectItem>
+                <SelectItem value="none">Sem categoria</SelectItem>
                 {categorias.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     <div className="flex items-center gap-2">
