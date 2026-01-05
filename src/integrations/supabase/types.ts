@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      acertos_fatura: {
+        Row: {
+          cartao_id: string
+          created_at: string
+          data_acerto: string | null
+          id: string
+          mes_referencia: string
+          observacao: string | null
+          responsavel_id: string
+          status: string
+          user_id: string
+          valor_devido: number
+          valor_pago: number
+        }
+        Insert: {
+          cartao_id: string
+          created_at?: string
+          data_acerto?: string | null
+          id?: string
+          mes_referencia: string
+          observacao?: string | null
+          responsavel_id: string
+          status?: string
+          user_id: string
+          valor_devido?: number
+          valor_pago?: number
+        }
+        Update: {
+          cartao_id?: string
+          created_at?: string
+          data_acerto?: string | null
+          id?: string
+          mes_referencia?: string
+          observacao?: string | null
+          responsavel_id?: string
+          status?: string
+          user_id?: string
+          valor_devido?: number
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acertos_fatura_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acertos_fatura_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cartoes: {
         Row: {
           bandeira: string | null
@@ -95,11 +152,13 @@ export type Database = {
           cartao_id: string
           categoria_id: string | null
           created_at: string
+          data_compra: string | null
           descricao: string
           id: string
           mes_inicio: string
           parcela_inicial: number
           parcelas: number
+          responsavel_id: string | null
           tipo_lancamento: string
           user_id: string
           valor_total: number
@@ -109,11 +168,13 @@ export type Database = {
           cartao_id: string
           categoria_id?: string | null
           created_at?: string
+          data_compra?: string | null
           descricao: string
           id?: string
           mes_inicio?: string
           parcela_inicial?: number
           parcelas?: number
+          responsavel_id?: string | null
           tipo_lancamento?: string
           user_id: string
           valor_total: number
@@ -123,11 +184,13 @@ export type Database = {
           cartao_id?: string
           categoria_id?: string | null
           created_at?: string
+          data_compra?: string | null
           descricao?: string
           id?: string
           mes_inicio?: string
           parcela_inicial?: number
           parcelas?: number
+          responsavel_id?: string | null
           tipo_lancamento?: string
           user_id?: string
           valor_total?: number
@@ -145,6 +208,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_cartao_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
             referencedColumns: ["id"]
           },
         ]
@@ -298,6 +368,42 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      responsaveis: {
+        Row: {
+          apelido: string | null
+          ativo: boolean
+          created_at: string
+          id: string
+          is_titular: boolean
+          nome: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apelido?: string | null
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          is_titular?: boolean
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apelido?: string | null
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          is_titular?: boolean
+          nome?: string
+          telefone?: string | null
           updated_at?: string
           user_id?: string
         }
