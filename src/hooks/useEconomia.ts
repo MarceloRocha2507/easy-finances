@@ -147,7 +147,7 @@ function gerarInsights(
     insights.push({
       id: "gasto-maior-receita",
       tipo: "alerta",
-      titulo: "⚠️ Gastos maiores que receitas!",
+      titulo: "Gastos maiores que receitas!",
       mensagem: `Você está gastando R$${(totalGasto - totalReceitas).toFixed(2)} a mais do que ganha. Revise seus gastos urgentemente.`,
       icone: "alert-octagon",
       cor: "#ef4444",
@@ -159,7 +159,7 @@ function gerarInsights(
     insights.push({
       id: "reducao-gastos",
       tipo: "conquista",
-      titulo: `🎉 Você reduziu ${Math.abs(comparativo.percentual).toFixed(0)}% dos gastos!`,
+      titulo: `Você reduziu ${Math.abs(comparativo.percentual).toFixed(0)}% dos gastos!`,
       mensagem: `Comparado ao mês passado, você economizou R$${Math.abs(comparativo.diferenca).toFixed(2)}. Excelente progresso!`,
       icone: "trending-down",
       cor: "#22c55e",
@@ -260,7 +260,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
             gastosPorCategoria[catId] = {
               categoriaId: catId,
               categoriaNome: cat?.name || "Sem categoria",
-              categoriaIcone: cat?.icon || "📦",
+              categoriaIcone: cat?.icon || "tag",
               categoriaCor: cat?.color || "#6366f1",
               total: 0,
               quantidade: 0,
@@ -411,7 +411,7 @@ export function useOrcamentos(mesReferencia?: Date) {
           id: o.id,
           categoryId: o.category_id,
           categoriaNome: o.categories?.name || "Categoria",
-          categoriaIcone: o.categories?.icon || "📦",
+          categoriaIcone: o.categories?.icon || "tag",
           categoriaCor: o.categories?.color || "#6366f1",
           valorLimite: limite,
           gastoAtual: gasto,
@@ -436,22 +436,34 @@ export function useSalvarOrcamento() {
 
   return useMutation({
     mutationFn: async (data: {
+      id?: string;
       categoryId: string;
       valorLimite: number;
       mesReferencia: Date;
     }) => {
-      const { error } = await (supabase as any)
-        .from("orcamentos")
-        .upsert({
-          user_id: user?.id,
-          category_id: data.categoryId,
-          valor_limite: data.valorLimite,
-          mes_referencia: firstDayOfMonth(data.mesReferencia),
-        }, {
-          onConflict: "user_id,category_id,mes_referencia",
-        });
+      if (data.id) {
+        // Atualizar orçamento existente
+        const { error } = await (supabase as any)
+          .from("orcamentos")
+          .update({ valor_limite: data.valorLimite })
+          .eq("id", data.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Criar novo orçamento
+        const { error } = await (supabase as any)
+          .from("orcamentos")
+          .upsert({
+            user_id: user?.id,
+            category_id: data.categoryId,
+            valor_limite: data.valorLimite,
+            mes_referencia: firstDayOfMonth(data.mesReferencia),
+          }, {
+            onConflict: "user_id,category_id,mes_referencia",
+          });
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
@@ -465,6 +477,41 @@ export function useSalvarOrcamento() {
       toast({
         title: "Erro",
         description: "Não foi possível salvar o orçamento.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+/* ======================================================
+   MUTATION: Excluir Orçamento
+====================================================== */
+
+export function useExcluirOrcamento() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("orcamentos")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["analise-gastos"] });
+      toast({
+        title: "Orçamento excluído",
+        description: "O limite foi removido com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o orçamento.",
         variant: "destructive",
       });
     },

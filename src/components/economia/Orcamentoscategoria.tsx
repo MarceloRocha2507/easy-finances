@@ -20,16 +20,179 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Wallet,
   Plus,
   AlertTriangle,
   CheckCircle,
   AlertCircle,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  ShoppingBag,
+  Utensils,
+  Car,
+  Home,
+  Gamepad2,
+  HeartPulse,
+  GraduationCap,
+  Plane,
+  Gift,
+  Coffee,
+  Smartphone,
+  Tv,
+  Music,
+  Book,
+  Dumbbell,
+  Shirt,
+  Baby,
+  Dog,
+  Scissors,
+  Wrench,
+  Zap,
+  Droplets,
+  Wifi,
+  CreditCard,
+  PiggyBank,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Receipt,
+  Tag,
+  Folder,
+  Briefcase,
+  LucideIcon,
 } from "lucide-react";
-import { Orcamento, useSalvarOrcamento } from "@/hooks/useEconomia";
+import { Orcamento, useSalvarOrcamento, useExcluirOrcamento } from "@/hooks/useEconomia";
 import { useCategories } from "@/hooks/useCategories";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+
+// Mapa de nomes de ícones para componentes Lucide
+const iconMap: Record<string, LucideIcon> = {
+  wallet: Wallet,
+  briefcase: Briefcase,
+  "shopping-bag": ShoppingBag,
+  shoppingbag: ShoppingBag,
+  shopping: ShoppingBag,
+  utensils: Utensils,
+  food: Utensils,
+  alimentacao: Utensils,
+  car: Car,
+  carro: Car,
+  transporte: Car,
+  home: Home,
+  casa: Home,
+  moradia: Home,
+  "gamepad-2": Gamepad2,
+  gamepad: Gamepad2,
+  lazer: Gamepad2,
+  entertainment: Gamepad2,
+  "heart-pulse": HeartPulse,
+  heartpulse: HeartPulse,
+  health: HeartPulse,
+  saude: HeartPulse,
+  "graduation-cap": GraduationCap,
+  graduationcap: GraduationCap,
+  education: GraduationCap,
+  educacao: GraduationCap,
+  plane: Plane,
+  travel: Plane,
+  viagem: Plane,
+  gift: Gift,
+  presente: Gift,
+  coffee: Coffee,
+  cafe: Coffee,
+  smartphone: Smartphone,
+  phone: Smartphone,
+  celular: Smartphone,
+  tv: Tv,
+  television: Tv,
+  music: Music,
+  musica: Music,
+  book: Book,
+  livro: Book,
+  dumbbell: Dumbbell,
+  gym: Dumbbell,
+  fitness: Dumbbell,
+  academia: Dumbbell,
+  shirt: Shirt,
+  clothes: Shirt,
+  roupa: Shirt,
+  vestuario: Shirt,
+  baby: Baby,
+  bebe: Baby,
+  filho: Baby,
+  dog: Dog,
+  pet: Dog,
+  animal: Dog,
+  scissors: Scissors,
+  beauty: Scissors,
+  beleza: Scissors,
+  wrench: Wrench,
+  maintenance: Wrench,
+  manutencao: Wrench,
+  zap: Zap,
+  electricity: Zap,
+  energia: Zap,
+  luz: Zap,
+  droplets: Droplets,
+  water: Droplets,
+  agua: Droplets,
+  wifi: Wifi,
+  internet: Wifi,
+  "credit-card": CreditCard,
+  creditcard: CreditCard,
+  cartao: CreditCard,
+  "piggy-bank": PiggyBank,
+  piggybank: PiggyBank,
+  savings: PiggyBank,
+  economia: PiggyBank,
+  "trending-up": TrendingUp,
+  trendingup: TrendingUp,
+  income: TrendingUp,
+  receita: TrendingUp,
+  "trending-down": TrendingDown,
+  trendingdown: TrendingDown,
+  expense: TrendingDown,
+  despesa: TrendingDown,
+  "dollar-sign": DollarSign,
+  dollarsign: DollarSign,
+  money: DollarSign,
+  dinheiro: DollarSign,
+  receipt: Receipt,
+  conta: Receipt,
+  tag: Tag,
+  folder: Folder,
+  category: Folder,
+  categoria: Folder,
+  trabalho: Briefcase,
+  work: Briefcase,
+  meta: Briefcase,
+  ads: Briefcase,
+};
+
+// Função para obter o componente do ícone
+function getIconComponent(iconName: string | null | undefined): LucideIcon {
+  if (!iconName) return Tag;
+  const normalizedName = iconName.toLowerCase().trim().replace(/\s+/g, "");
+  return iconMap[normalizedName] || Tag;
+}
 
 interface Props {
   orcamentos: Orcamento[];
@@ -39,11 +202,14 @@ interface Props {
 
 export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editando, setEditando] = useState<Orcamento | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   const [categoriaId, setCategoriaId] = useState("");
   const [valorLimite, setValorLimite] = useState("");
 
   const { data: categories } = useCategories();
   const salvarOrcamento = useSalvarOrcamento();
+  const excluirOrcamento = useExcluirOrcamento();
 
   // Filtrar categorias de despesa que ainda não têm orçamento
   const categoriasDisponiveis = categories?.filter(
@@ -52,11 +218,26 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
       !orcamentos.some((o) => o.categoryId === c.id)
   );
 
+  function abrirDialogNovo() {
+    setEditando(null);
+    setCategoriaId("");
+    setValorLimite("");
+    setDialogOpen(true);
+  }
+
+  function abrirDialogEditar(orcamento: Orcamento) {
+    setEditando(orcamento);
+    setCategoriaId(orcamento.categoryId);
+    setValorLimite(orcamento.valorLimite.toString());
+    setDialogOpen(true);
+  }
+
   function handleSalvar() {
     if (!categoriaId || !valorLimite) return;
 
     salvarOrcamento.mutate(
       {
+        id: editando?.id,
         categoryId: categoriaId,
         valorLimite: parseFloat(valorLimite),
         mesReferencia,
@@ -64,12 +245,24 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
       {
         onSuccess: () => {
           setDialogOpen(false);
+          setEditando(null);
           setCategoriaId("");
           setValorLimite("");
           onUpdate?.();
         },
       }
     );
+  }
+
+  function handleExcluir() {
+    if (!excluindoId) return;
+
+    excluirOrcamento.mutate(excluindoId, {
+      onSuccess: () => {
+        setExcluindoId(null);
+        onUpdate?.();
+      },
+    });
   }
 
   // Calcular totais
@@ -89,7 +282,7 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
             variant="outline"
             size="sm"
             className="gap-1"
-            onClick={() => setDialogOpen(true)}
+            onClick={abrirDialogNovo}
           >
             <Plus className="h-4 w-4" />
             Definir Limite
@@ -103,12 +296,12 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
                 Nenhum orçamento definido
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Defina limites por categoria para controlar seus gastos!
+                Defina limites por categoria para controlar seus gastos
               </p>
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => setDialogOpen(true)}
+                onClick={abrirDialogNovo}
               >
                 <Plus className="h-4 w-4" />
                 Definir primeiro limite
@@ -124,13 +317,13 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">Total Gasto</p>
-                  <p className="font-semibold text-expense">
+                  <p className="font-semibold text-red-500">
                     {formatCurrency(totalGasto)}
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">Disponível</p>
-                  <p className="font-semibold text-income">
+                  <p className="font-semibold text-emerald-500">
                     {formatCurrency(totalDisponivel)}
                   </p>
                 </div>
@@ -138,97 +331,148 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
 
               {/* Lista de orçamentos */}
               <div className="space-y-4">
-                {orcamentos.map((orcamento) => (
-                  <div key={orcamento.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                          style={{
-                            backgroundColor: `${orcamento.categoriaCor}20`,
-                          }}
-                        >
-                          {orcamento.categoriaIcone}
+                {orcamentos.map((orcamento) => {
+                  const IconComponent = getIconComponent(orcamento.categoriaIcone);
+                  
+                  return (
+                    <div key={orcamento.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                              backgroundColor: `${orcamento.categoriaCor}20`,
+                              color: orcamento.categoriaCor,
+                            }}
+                          >
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+                          <span className="font-medium">
+                            {orcamento.categoriaNome}
+                          </span>
+                          <StatusBadge status={orcamento.status} />
                         </div>
-                        <span className="font-medium">
-                          {orcamento.categoriaNome}
-                        </span>
-                        <StatusBadge status={orcamento.status} />
+                        <div className="flex items-center gap-2">
+                          <div className="text-right text-sm">
+                            <span className="font-semibold">
+                              {formatCurrency(orcamento.gastoAtual)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" "}/ {formatCurrency(orcamento.valorLimite)}
+                            </span>
+                          </div>
+                          
+                          {/* Menu de ações */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => abrirDialogEditar(orcamento)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar limite
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setExcluindoId(orcamento.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                      <div className="text-right text-sm">
-                        <span className="font-semibold">
-                          {formatCurrency(orcamento.gastoAtual)}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {" "}
-                          / {formatCurrency(orcamento.valorLimite)}
+
+                      <Progress
+                        value={Math.min(orcamento.percentualUsado, 100)}
+                        className={cn(
+                          "h-2",
+                          orcamento.status === "excedido" && "[&>div]:bg-red-500",
+                          orcamento.status === "atencao" && "[&>div]:bg-amber-500",
+                          orcamento.status === "ok" && "[&>div]:bg-emerald-500"
+                        )}
+                      />
+
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{orcamento.percentualUsado.toFixed(0)}% usado</span>
+                        <span
+                          className={
+                            orcamento.disponivel > 0
+                              ? "text-emerald-600"
+                              : "text-red-500"
+                          }
+                        >
+                          {orcamento.disponivel > 0
+                            ? `Disponível: ${formatCurrency(orcamento.disponivel)}`
+                            : `Excedido: ${formatCurrency(Math.abs(orcamento.disponivel))}`}
                         </span>
                       </div>
                     </div>
-
-                    <Progress
-                      value={Math.min(orcamento.percentualUsado, 100)}
-                      className={cn(
-                        "h-2",
-                        orcamento.status === "excedido" && "[&>div]:bg-red-500",
-                        orcamento.status === "atencao" && "[&>div]:bg-amber-500",
-                        orcamento.status === "ok" && "[&>div]:bg-emerald-500"
-                      )}
-                    />
-
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{orcamento.percentualUsado.toFixed(0)}% usado</span>
-                      <span
-                        className={
-                          orcamento.disponivel > 0
-                            ? "text-emerald-600"
-                            : "text-red-500"
-                        }
-                      >
-                        {orcamento.disponivel > 0
-                          ? `Disponível: ${formatCurrency(orcamento.disponivel)}`
-                          : `Excedido: ${formatCurrency(
-                              Math.abs(orcamento.disponivel)
-                            )}`}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog para novo orçamento */}
+      {/* Dialog para novo/editar orçamento */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Definir Limite de Orçamento</DialogTitle>
+            <DialogTitle>
+              {editando ? "Editar Limite de Orçamento" : "Definir Limite de Orçamento"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={categoriaId} onValueChange={setCategoriaId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoriasDisponiveis?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <span className="flex items-center gap-2">
-                        <span>{cat.icon}</span>
-                        <span>{cat.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                  {categoriasDisponiveis?.length === 0 && (
-                    <SelectItem value="" disabled>
-                      Todas as categorias já têm limite
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              {editando ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
+                  {(() => {
+                    const IconComp = getIconComponent(editando.categoriaIcone);
+                    return (
+                      <div
+                        className="w-6 h-6 rounded flex items-center justify-center"
+                        style={{
+                          backgroundColor: `${editando.categoriaCor}20`,
+                          color: editando.categoriaCor,
+                        }}
+                      >
+                        <IconComp className="h-3.5 w-3.5" />
+                      </div>
+                    );
+                  })()}
+                  <span className="font-medium">{editando.categoriaNome}</span>
+                </div>
+              ) : (
+                <Select value={categoriaId} onValueChange={setCategoriaId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoriasDisponiveis?.map((cat) => {
+                      const CatIcon = getIconComponent(cat.icon);
+                      return (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <CatIcon className="h-4 w-4" style={{ color: cat.color }} />
+                            <span>{cat.name}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                    {categoriasDisponiveis?.length === 0 && (
+                      <SelectItem value="" disabled>
+                        Todas as categorias já têm limite
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -251,14 +495,35 @@ export function OrcamentosCategoria({ orcamentos, mesReferencia, onUpdate }: Pro
             </Button>
             <Button
               onClick={handleSalvar}
-              disabled={!categoriaId || !valorLimite || salvarOrcamento.isPending}
-              className="gradient-primary"
+              disabled={(!editando && !categoriaId) || !valorLimite || salvarOrcamento.isPending}
             >
-              Salvar Limite
+              {salvarOrcamento.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!excluindoId} onOpenChange={() => setExcluindoId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O limite de orçamento será removido
+              e você não receberá mais alertas para esta categoria.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleExcluir}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {excluirOrcamento.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
