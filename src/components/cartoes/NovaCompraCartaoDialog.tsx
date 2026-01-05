@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Calendar, Tag } from "lucide-react";
+import { CreditCard, Calendar, Tag, Repeat, Hash } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { format, addMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Categoria = {
   id: string;
@@ -30,6 +33,8 @@ type Categoria = {
   color: string;
   icon?: string;
 };
+
+type TipoLancamento = "unica" | "parcelada" | "fixa";
 
 interface Props {
   cartao: Cartao;
@@ -49,10 +54,27 @@ export function NovaCompraCartaoDialog({
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
+  // Gerar opções de mês da fatura (próximos 12 meses)
+  const opcoesMesFatura = useMemo(() => {
+    const hoje = new Date();
+    const meses = [];
+    for (let i = 0; i < 12; i++) {
+      const mes = addMonths(hoje, i);
+      meses.push({
+        value: format(mes, "yyyy-MM"),
+        label: format(mes, "MMMM/yyyy", { locale: ptBR }),
+      });
+    }
+    return meses;
+  }, []);
+
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
-    parcelas: "1",
+    tipoLancamento: "unica" as TipoLancamento,
+    parcelas: "2",
+    parcelaInicial: "1",
+    mesFatura: opcoesMesFatura[0]?.value || "",
     dataCompra: new Date().toISOString().split("T")[0],
     categoriaId: "",
     responsavelId: "",
@@ -86,13 +108,34 @@ export function NovaCompraCartaoDialog({
       setForm({
         descricao: "",
         valor: "",
-        parcelas: "1",
+        tipoLancamento: "unica",
+        parcelas: "2",
+        parcelaInicial: "1",
+        mesFatura: opcoesMesFatura[0]?.value || "",
         dataCompra: new Date().toISOString().split("T")[0],
         categoriaId: "",
         responsavelId: titularData?.id || "",
       });
     }
-  }, [open, titularData]);
+  }, [open, titularData, opcoesMesFatura]);
+
+  // Gerar opções de parcela inicial baseado no número de parcelas
+  const opcoesParcelaInicial = useMemo(() => {
+    const numParcelas = parseInt(form.parcelas) || 2;
+    return Array.from({ length: numParcelas }, (_, i) => ({
+      value: String(i + 1),
+      label: `${i + 1}ª parcela`,
+    }));
+  }, [form.parcelas]);
+
+  // Ajustar parcela inicial se ficar maior que o total
+  useEffect(() => {
+    const numParcelas = parseInt(form.parcelas) || 2;
+    const parcelaInicial = parseInt(form.parcelaInicial) || 1;
+    if (parcelaInicial > numParcelas) {
+      setForm(f => ({ ...f, parcelaInicial: "1" }));
+    }
+  }, [form.parcelas]);
 
   async function handleSalvar() {
     if (!form.descricao.trim()) {
@@ -111,13 +154,37 @@ export function NovaCompraCartaoDialog({
       return;
     }
 
+    if (!form.mesFatura) {
+      toast({ title: "Selecione o mês da fatura", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Montar mês da fatura como Date
+      const [ano, mes] = form.mesFatura.split("-").map(Number);
+      const mesFaturaDate = new Date(ano, mes - 1, 1);
+
+      // Calcular número de parcelas baseado no tipo
+      let numParcelas = 1;
+      let parcelaInicial = 1;
+      
+      if (form.tipoLancamento === "parcelada") {
+        numParcelas = parseInt(form.parcelas);
+        parcelaInicial = parseInt(form.parcelaInicial);
+      } else if (form.tipoLancamento === "fixa") {
+        numParcelas = 12; // Fixa por 12 meses
+        parcelaInicial = 1;
+      }
+
       await criarCompraCartao({
         cartaoId: cartao.id,
         descricao: form.descricao,
         valorTotal: valor,
-        parcelas: parseInt(form.parcelas),
+        parcelas: numParcelas,
+        parcelaInicial,
+        mesFatura: mesFaturaDate,
+        tipoLancamento: form.tipoLancamento,
         dataCompra: new Date(form.dataCompra),
         categoriaId: form.categoriaId && form.categoriaId !== "none" ? form.categoriaId : undefined,
         responsavelId: form.responsavelId,
@@ -137,9 +204,40 @@ export function NovaCompraCartaoDialog({
     }
   }
 
+  // Calcular resumo das parcelas
+  const resumoParcelas = useMemo(() => {
+    const valor = parseFloat(form.valor.replace(",", ".")) || 0;
+    if (valor <= 0) return null;
+
+    if (form.tipoLancamento === "unica") {
+      return { tipo: "unica", valor };
+    }
+
+    if (form.tipoLancamento === "parcelada") {
+      const numParcelas = parseInt(form.parcelas) || 2;
+      const parcelaInicial = parseInt(form.parcelaInicial) || 1;
+      const numParcelasACriar = numParcelas - parcelaInicial + 1;
+      const valorParcela = valor / numParcelas;
+      
+      return {
+        tipo: "parcelada",
+        valorParcela,
+        numParcelas,
+        parcelaInicial,
+        numParcelasACriar,
+      };
+    }
+
+    if (form.tipoLancamento === "fixa") {
+      return { tipo: "fixa", valorMensal: valor };
+    }
+
+    return null;
+  }, [form.valor, form.tipoLancamento, form.parcelas, form.parcelaInicial]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
@@ -162,53 +260,114 @@ export function NovaCompraCartaoDialog({
             />
           </div>
 
-          {/* Valor e Parcelas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor">Valor total (R$)</Label>
-              <Input
-                id="valor"
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={form.valor}
-                onChange={(e) => setForm({ ...form, valor: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="parcelas">Parcelas</Label>
-              <Select
-                value={form.parcelas}
-                onValueChange={(v) => setForm({ ...form, parcelas: v })}
-              >
-                <SelectTrigger id="parcelas">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n}x {n === 1 ? "(à vista)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Valor */}
+          <div className="space-y-2">
+            <Label htmlFor="valor">Valor total (R$)</Label>
+            <Input
+              id="valor"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={form.valor}
+              onChange={(e) => setForm({ ...form, valor: e.target.value })}
+            />
           </div>
 
-          {/* Responsável - NOVO CAMPO */}
-          <ResponsavelSelector
-            label="Quem fez a compra?"
-            value={form.responsavelId}
-            onChange={(id) => setForm({ ...form, responsavelId: id || "" })}
-            required
-          />
+          {/* Tipo de Lançamento */}
+          <div className="space-y-2">
+            <Label>Tipo de lançamento</Label>
+            <ToggleGroup
+              type="single"
+              value={form.tipoLancamento}
+              onValueChange={(v) => {
+                if (v) setForm({ ...form, tipoLancamento: v as TipoLancamento });
+              }}
+              className="justify-start"
+            >
+              <ToggleGroupItem value="unica" className="flex-1">
+                Avulsa
+              </ToggleGroupItem>
+              <ToggleGroupItem value="parcelada" className="flex-1">
+                Parcelada
+              </ToggleGroupItem>
+              <ToggleGroupItem value="fixa" className="flex-1">
+                <Repeat className="h-4 w-4 mr-1" />
+                Fixa
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Opções de Parcelamento (só aparece quando parcelada) */}
+          {form.tipoLancamento === "parcelada" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="parcelas">Nº de parcelas</Label>
+                <Select
+                  value={form.parcelas}
+                  onValueChange={(v) => setForm({ ...form, parcelas: v })}
+                >
+                  <SelectTrigger id="parcelas">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 23 }, (_, i) => i + 2).map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}x
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="parcelaInicial" className="flex items-center gap-1">
+                  <Hash className="h-3 w-3" />
+                  Começar na
+                </Label>
+                <Select
+                  value={form.parcelaInicial}
+                  onValueChange={(v) => setForm({ ...form, parcelaInicial: v })}
+                >
+                  <SelectTrigger id="parcelaInicial">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {opcoesParcelaInicial.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {/* Mês da Fatura */}
+          <div className="space-y-2">
+            <Label htmlFor="mesFatura" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Mês da fatura
+            </Label>
+            <Select
+              value={form.mesFatura}
+              onValueChange={(v) => setForm({ ...form, mesFatura: v })}
+            >
+              <SelectTrigger id="mesFatura">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {opcoesMesFatura.map((mes) => (
+                  <SelectItem key={mes.value} value={mes.value}>
+                    {mes.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Data da compra */}
           <div className="space-y-2">
-            <Label htmlFor="dataCompra" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Data da compra
-            </Label>
+            <Label htmlFor="dataCompra">Data da compra</Label>
             <Input
               id="dataCompra"
               type="date"
@@ -216,6 +375,14 @@ export function NovaCompraCartaoDialog({
               onChange={(e) => setForm({ ...form, dataCompra: e.target.value })}
             />
           </div>
+
+          {/* Responsável */}
+          <ResponsavelSelector
+            label="Quem fez a compra?"
+            value={form.responsavelId}
+            onChange={(id) => setForm({ ...form, responsavelId: id || "" })}
+            required
+          />
 
           {/* Categoria */}
           <div className="space-y-2">
@@ -248,18 +415,39 @@ export function NovaCompraCartaoDialog({
           </div>
 
           {/* Resumo */}
-          {form.valor && parseInt(form.parcelas) > 1 && (
-            <div className="p-3 rounded-lg bg-muted/50 text-sm">
-              <p className="text-muted-foreground">
-                {parseInt(form.parcelas)}x de{" "}
-                <strong className="text-foreground">
-                  R${" "}
-                  {(
-                    parseFloat(form.valor.replace(",", ".")) /
-                    parseInt(form.parcelas)
-                  ).toFixed(2)}
-                </strong>
-              </p>
+          {resumoParcelas && (
+            <div className="p-3 rounded-lg bg-muted/50 text-sm space-y-1">
+              {resumoParcelas.tipo === "unica" && (
+                <p className="text-muted-foreground">
+                  Compra à vista:{" "}
+                  <strong className="text-foreground">
+                    R$ {resumoParcelas.valor.toFixed(2).replace(".", ",")}
+                  </strong>
+                </p>
+              )}
+              {resumoParcelas.tipo === "parcelada" && (
+                <>
+                  <p className="text-muted-foreground">
+                    {resumoParcelas.numParcelas}x de{" "}
+                    <strong className="text-foreground">
+                      R$ {resumoParcelas.valorParcela.toFixed(2).replace(".", ",")}
+                    </strong>
+                  </p>
+                  {resumoParcelas.parcelaInicial > 1 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Começando na {resumoParcelas.parcelaInicial}ª parcela ({resumoParcelas.numParcelasACriar} parcelas serão criadas)
+                    </p>
+                  )}
+                </>
+              )}
+              {resumoParcelas.tipo === "fixa" && (
+                <p className="text-muted-foreground">
+                  Despesa fixa mensal:{" "}
+                  <strong className="text-foreground">
+                    R$ {resumoParcelas.valorMensal.toFixed(2).replace(".", ",")}
+                  </strong>
+                </p>
+              )}
             </div>
           )}
 
