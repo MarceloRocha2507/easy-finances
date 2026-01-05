@@ -4,8 +4,9 @@ import {
   ParcelaFatura,
   marcarParcelaComoPaga,
   pagarFaturaDoMes,
-} from "@/services/transactions";
-import { supabase } from "@/integrations/supabase/client";
+} from "@/services/compras-cartao";
+import { useAcertosMes } from "@/services/acertos";
+import { useResponsaveis } from "@/services/responsaveis";
 
 import {
   Dialog,
@@ -40,7 +41,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,12 +50,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Cartao } from "@/services/cartoes";
-
 import { NovaCompraCartaoDialog } from "./NovaCompraCartaoDialog";
 import { EditarCartaoDialog } from "./EditarCartaoDialog";
 import { ExcluirCartaoDialog } from "./ExcluirCartaoDialog";
-import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
-import { EditarCompraDialog } from "./EditarCompraDialog";
+import { GerarMensagemDialog } from "./GerarMensagemDialog";
+import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
+import { ResumoPorResponsavel } from "./ResumoPorResponsavel";
 
 import {
   MoreVertical,
@@ -66,85 +66,20 @@ import {
   ChevronRight,
   CreditCard,
   Check,
-  Utensils,
-  Car,
-  Gamepad2,
-  HeartPulse,
-  GraduationCap,
-  ShoppingBag,
-  Home,
-  MoreHorizontal,
   Tag,
-  Filter,
-  X,
   Search,
   ChevronDown,
   SlidersHorizontal,
+  X,
+  Filter,
+  FileText,
+  Wallet,
+  User,
+  Crown,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
-
-/* ======================================================
-   Tipo Categoria local
-====================================================== */
-type Categoria = {
-  id: string;
-  nome: string;
-  cor: string;
-  icone?: string;
-};
-
-/* ======================================================
-   Função para listar categorias (com fallback)
-====================================================== */
-async function listarCategoriasSafe(): Promise<Categoria[]> {
-  try {
-    // Tenta tabela 'categories' primeiro
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name, color, icon")
-      .order("name");
-
-    if (!error && data) {
-      return data.map((c: any) => ({
-        id: c.id,
-        nome: c.name,
-        cor: c.color || "#6366f1",
-        icone: c.icon,
-      }));
-    }
-
-    // Fallback: tenta tabela 'categorias'
-    const { data: data2, error: error2 } = await (supabase as any)
-      .from("categorias")
-      .select("id, nome, cor, icone")
-      .order("nome");
-
-    if (!error2 && data2) {
-      return data2;
-    }
-
-    return [];
-  } catch (e) {
-    console.log("Erro ao carregar categorias:", e);
-    return [];
-  }
-}
-
-/* ======================================================
-   Mapa de ícones para categorias
-====================================================== */
-const ICONE_MAP: Record<string, React.ReactNode> = {
-  utensils: <Utensils className="h-3 w-3" />,
-  car: <Car className="h-3 w-3" />,
-  "gamepad-2": <Gamepad2 className="h-3 w-3" />,
-  "heart-pulse": <HeartPulse className="h-3 w-3" />,
-  "graduation-cap": <GraduationCap className="h-3 w-3" />,
-  "shopping-bag": <ShoppingBag className="h-3 w-3" />,
-  home: <Home className="h-3 w-3" />,
-  "more-horizontal": <MoreHorizontal className="h-3 w-3" />,
-  tag: <Tag className="h-3 w-3" />,
-};
+import { cn } from "@/lib/utils";
 
 /* ======================================================
    Utils
@@ -161,36 +96,20 @@ function addMonths(base: Date, delta: number) {
   return new Date(base.getFullYear(), base.getMonth() + delta, 1);
 }
 
-function mesDaFaturaAtual(diaFechamento: number, hoje = new Date()) {
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
-  const dia = hoje.getDate();
-
-  return dia <= diaFechamento
-    ? new Date(ano, mes, 1)
-    : new Date(ano, mes + 1, 1);
-}
-
 /* ======================================================
    Tipos de Filtro
 ====================================================== */
 
-type FiltroStatus = "todos" | "pendente" | "pago";
-
 interface Filtros {
   busca: string;
-  status: FiltroStatus;
-  categoriaId: string | null;
-  valorMin: number | null;
-  valorMax: number | null;
+  status: "todos" | "pendente" | "pago";
+  responsavelId: string | null;
 }
 
 const filtrosIniciais: Filtros = {
   busca: "",
   status: "todos",
-  categoriaId: null,
-  valorMin: null,
-  valorMax: null,
+  responsavelId: null,
 };
 
 /* ======================================================
@@ -215,29 +134,31 @@ export function DetalhesCartaoDialog({
   );
 
   const [parcelas, setParcelas] = useState<ParcelaFatura[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  // Dialogs
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCartaoOpen, setEditarCartaoOpen] = useState(false);
   const [excluirCartaoOpen, setExcluirCartaoOpen] = useState(false);
-  const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
-  const [editarCompraOpen, setEditarCompraOpen] = useState(false);
-
-  const [parcelaSelecionada, setParcelaSelecionada] =
-    useState<ParcelaFatura | null>(null);
+  const [gerarMensagemOpen, setGerarMensagemOpen] = useState(false);
+  const [registrarAcertoOpen, setRegistrarAcertoOpen] = useState(false);
 
   // Filtros
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciais);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
+  // Hooks
+  const { data: responsaveis = [] } = useResponsaveis();
+  const { data: acertos = [], refetch: refetchAcertos } = useAcertosMes(
+    open && cartao ? cartao.id : null,
+    mesRef
+  );
+
   const temFiltrosAtivos =
     filtros.busca !== "" ||
     filtros.status !== "todos" ||
-    filtros.categoriaId !== null ||
-    filtros.valorMin !== null ||
-    filtros.valorMax !== null;
+    filtros.responsavelId !== null;
 
   /* ======================================================
      Carregar dados
@@ -249,12 +170,8 @@ export function DetalhesCartaoDialog({
     setErro(null);
 
     try {
-      const [parcelasData, categoriasData] = await Promise.all([
-        listarParcelasDaFatura(cartao.id, mesRef),
-        listarCategoriasSafe(),
-      ]);
+      const parcelasData = await listarParcelasDaFatura(cartao.id, mesRef);
       setParcelas(parcelasData ?? []);
-      setCategorias(categoriasData ?? []);
     } catch (e) {
       console.error(e);
       setParcelas([]);
@@ -276,6 +193,7 @@ export function DetalhesCartaoDialog({
 
   const parcelasFiltradas = useMemo(() => {
     return parcelas.filter((p) => {
+      // Busca
       if (
         filtros.busca &&
         !p.descricao.toLowerCase().includes(filtros.busca.toLowerCase())
@@ -283,24 +201,13 @@ export function DetalhesCartaoDialog({
         return false;
       }
 
+      // Status
       if (filtros.status === "pendente" && p.paga) return false;
       if (filtros.status === "pago" && !p.paga) return false;
 
-      if (filtros.categoriaId) {
-        const catId = (p as any).categoria_id;
-        if (filtros.categoriaId === "sem-categoria") {
-          if (catId) return false;
-        } else {
-          if (catId !== filtros.categoriaId) return false;
-        }
-      }
-
-      if (filtros.valorMin !== null && Math.abs(p.valor) < filtros.valorMin) {
-        return false;
-      }
-
-      if (filtros.valorMax !== null && Math.abs(p.valor) > filtros.valorMax) {
-        return false;
+      // Responsável
+      if (filtros.responsavelId) {
+        if (p.responsavel_id !== filtros.responsavelId) return false;
       }
 
       return true;
@@ -336,10 +243,7 @@ export function DetalhesCartaoDialog({
   const disponivel = Math.max(limite - totalMes, 0);
   const usoPct = limite > 0 ? Math.min((totalMes / limite) * 100, 100) : 0;
 
-  const isFaturaFutura =
-    mesRef.getTime() > mesDaFaturaAtual(cartao.dia_fechamento).getTime();
-
-  const podePagarFatura = !isFaturaFutura && parcelas.some((p) => !p.paga);
+  const podePagarFatura = parcelas.some((p) => !p.paga);
 
   function limparFiltros() {
     setFiltros(filtrosIniciais);
@@ -350,11 +254,16 @@ export function DetalhesCartaoDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[90vh]">
           {/* Header */}
-          <div className="p-6 bg-gradient-to-br from-slate-950 to-slate-900 text-white">
+          <div
+            className="p-6 text-white"
+            style={{
+              background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${cartao.cor || "#6366f1"}50 100%)`,
+            }}
+          >
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <DialogTitle className="flex items-center gap-2">
+                  <DialogTitle className="flex items-center gap-2 text-white">
                     <CreditCard className="h-5 w-5" />
                     {cartao.nome}
                   </DialogTitle>
@@ -398,7 +307,7 @@ export function DetalhesCartaoDialog({
 
           {/* Conteúdo */}
           <div className="p-6 overflow-y-auto">
-            {/* Navegação + Nova compra */}
+            {/* Navegação + Ações */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div className="flex items-center gap-2">
                 <Button
@@ -422,17 +331,46 @@ export function DetalhesCartaoDialog({
                 </Button>
               </div>
 
-              <Button
-                size="sm"
-                className="gap-2"
-                onClick={() => setNovaCompraOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Nova compra
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setGerarMensagemOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Mensagem
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setRegistrarAcertoOpen(true)}
+                >
+                  <Wallet className="h-4 w-4" />
+                  Acerto
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setNovaCompraOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Nova compra
+                </Button>
+              </div>
             </div>
 
-            {/* SEÇÃO DE FILTROS */}
+            {/* Resumo por responsável */}
+            {parcelas.length > 0 && (
+              <ResumoPorResponsavel
+                parcelas={parcelas}
+                acertos={acertos}
+                className="mb-4"
+              />
+            )}
+
+            {/* FILTROS */}
             <Collapsible open={filtrosAbertos} onOpenChange={setFiltrosAbertos}>
               <div className="flex items-center gap-2 mb-4">
                 {/* Busca rápida */}
@@ -473,9 +411,10 @@ export function DetalhesCartaoDialog({
                       </Badge>
                     )}
                     <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        filtrosAbertos ? "rotate-180" : ""
-                      }`}
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        filtrosAbertos && "rotate-180"
+                      )}
                     />
                   </Button>
                 </CollapsibleTrigger>
@@ -492,7 +431,7 @@ export function DetalhesCartaoDialog({
                         onValueChange={(v) =>
                           setFiltros((f) => ({
                             ...f,
-                            status: v as FiltroStatus,
+                            status: v as "todos" | "pendente" | "pago",
                           }))
                         }
                       >
@@ -517,15 +456,15 @@ export function DetalhesCartaoDialog({
                       </Select>
                     </div>
 
-                    {/* Categoria */}
+                    {/* Responsável */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Categoria</label>
+                      <label className="text-sm font-medium">Responsável</label>
                       <Select
-                        value={filtros.categoriaId || "todas"}
+                        value={filtros.responsavelId || "todos"}
                         onValueChange={(v) =>
                           setFiltros((f) => ({
                             ...f,
-                            categoriaId: v === "todas" ? null : v,
+                            responsavelId: v === "todos" ? null : v,
                           }))
                         }
                       >
@@ -533,65 +472,24 @@ export function DetalhesCartaoDialog({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="todas">Todas as categorias</SelectItem>
-                          <SelectItem value="sem-categoria">
-                            <span className="text-muted-foreground">
-                              Sem categoria
-                            </span>
-                          </SelectItem>
-                          {categorias.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          {responsaveis.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
                               <div className="flex items-center gap-2">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: cat.cor }}
-                                />
-                                {cat.nome}
+                                {r.is_titular ? (
+                                  <Crown className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <User className="h-4 w-4" />
+                                )}
+                                {r.apelido || r.nome}
                               </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-
-                    {/* Valor mínimo */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Valor mínimo</label>
-                      <Input
-                        type="number"
-                        placeholder="R$ 0,00"
-                        value={filtros.valorMin ?? ""}
-                        onChange={(e) =>
-                          setFiltros((f) => ({
-                            ...f,
-                            valorMin: e.target.value
-                              ? Number(e.target.value)
-                              : null,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {/* Valor máximo */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Valor máximo</label>
-                      <Input
-                        type="number"
-                        placeholder="R$ 9.999,99"
-                        value={filtros.valorMax ?? ""}
-                        onChange={(e) =>
-                          setFiltros((f) => ({
-                            ...f,
-                            valorMax: e.target.value
-                              ? Number(e.target.value)
-                              : null,
-                          }))
-                        }
-                      />
-                    </div>
                   </div>
 
-                  {/* Botão limpar filtros */}
                   {temFiltrosAtivos && (
                     <Button
                       variant="ghost"
@@ -613,21 +511,13 @@ export function DetalhesCartaoDialog({
                 <div className="flex items-center gap-2 text-sm">
                   <Filter className="h-4 w-4 text-blue-500" />
                   <span>
-                    Mostrando{" "}
-                    <strong>{parcelasFiltradas.length}</strong> de{" "}
+                    Mostrando <strong>{parcelasFiltradas.length}</strong> de{" "}
                     <strong>{parcelas.length}</strong> parcelas
                   </span>
                 </div>
                 <span className="text-sm font-medium">
                   Total: {formatCurrency(totalFiltrado)}
                 </span>
-              </div>
-            )}
-
-            {isFaturaFutura && (
-              <div className="mb-4 p-3 rounded-xl bg-blue-500/10 text-blue-400 text-sm border border-blue-500/20">
-                Esta é uma <strong>fatura futura</strong>. Valores ainda não
-                impactam o limite.
               </div>
             )}
 
@@ -646,7 +536,7 @@ export function DetalhesCartaoDialog({
               </Button>
             )}
 
-            {/* Resumo */}
+            {/* Resumo pendente/pago */}
             {parcelas.length > 0 && !temFiltrosAtivos && (
               <div className="flex gap-4 mb-4 text-sm">
                 <div className="flex items-center gap-2">
@@ -660,7 +550,7 @@ export function DetalhesCartaoDialog({
               </div>
             )}
 
-            <ScrollArea className="h-[260px]">
+            <ScrollArea className="h-[240px]">
               {loading && (
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   Carregando fatura...
@@ -677,8 +567,8 @@ export function DetalhesCartaoDialog({
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-20" />
                   {temFiltrosAtivos
-                    ? "Nenhuma parcela encontrada com os filtros aplicados."
-                    : "Nenhuma parcela encontrada para este mês."}
+                    ? "Nenhuma parcela encontrada com os filtros."
+                    : "Nenhuma parcela neste mês."}
                 </div>
               )}
 
@@ -687,11 +577,12 @@ export function DetalhesCartaoDialog({
                 parcelasFiltradas.map((p) => (
                   <div
                     key={p.id}
-                    className={`flex justify-between items-center p-3 rounded-xl mb-2 transition-all ${
+                    className={cn(
+                      "flex justify-between items-center p-3 rounded-xl mb-2 transition-all",
                       p.paga
                         ? "opacity-60 bg-emerald-500/5 border border-emerald-500/20"
                         : "hover:bg-muted/50 border border-transparent"
-                    }`}
+                    )}
                   >
                     <div className="flex items-center gap-3">
                       {/* Checkbox */}
@@ -715,88 +606,66 @@ export function DetalhesCartaoDialog({
                         </Tooltip>
                       </TooltipProvider>
 
-                      {/* Categoria badge */}
-                      {(p as any).categoria_nome && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                style={{
-                                  backgroundColor: `${(p as any).categoria_cor}20`,
-                                  color: (p as any).categoria_cor,
-                                }}
-                              >
-                                {ICONE_MAP[(p as any).categoria_icone] || (
+                      {/* Categoria/Responsável badge */}
+                      <div className="flex items-center gap-2">
+                        {p.categoria_nome && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="w-6 h-6 rounded-md flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: `${p.categoria_cor}20`,
+                                    color: p.categoria_cor,
+                                  }}
+                                >
                                   <Tag className="h-3 w-3" />
-                                )}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {(p as any).categoria_nome}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>{p.categoria_nome}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
 
                       {/* Info */}
                       <div>
                         <p
-                          className={`font-medium ${
-                            p.paga ? "line-through text-muted-foreground" : ""
-                          }`}
+                          className={cn(
+                            "font-medium",
+                            p.paga && "line-through text-muted-foreground"
+                          )}
                         >
                           {p.descricao}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Parcela {p.numero_parcela}/{p.total_parcelas}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {p.numero_parcela}/{p.total_parcelas}
+                          </span>
+                          {p.responsavel_apelido || p.responsavel_nome ? (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {p.responsavel_apelido || p.responsavel_nome}
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <p
-                        className={`font-semibold ${
+                        className={cn(
+                          "font-semibold value-display",
                           p.paga
                             ? "line-through text-muted-foreground"
-                            : "text-expense"
-                        }`}
+                            : "text-red-500"
+                        )}
                       >
                         {formatCurrency(Math.abs(p.valor))}
                       </p>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setParcelaSelecionada(p);
-                              setEditarCompraOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Editar compra
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="text-red-500 focus:text-red-500"
-                            onClick={() => {
-                              setParcelaSelecionada(p);
-                              setExcluirCompraOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir compra
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -835,6 +704,7 @@ export function DetalhesCartaoDialog({
         onSaved={() => {
           setNovaCompraOpen(false);
           carregarFatura();
+          refetchAcertos();
           onUpdated();
         }}
       />
@@ -853,36 +723,22 @@ export function DetalhesCartaoDialog({
         onDeleted={onUpdated}
       />
 
-      {parcelaSelecionada && (
-        <>
-          <ExcluirCompraDialog
-            compra={{
-              compra_id: parcelaSelecionada.compra_id,
-              descricao: parcelaSelecionada.descricao,
-            }}
-            open={excluirCompraOpen}
-            onOpenChange={setExcluirCompraOpen}
-            onDeleted={() => {
-              setExcluirCompraOpen(false);
-              setParcelaSelecionada(null);
-              carregarFatura();
-              onUpdated();
-            }}
-          />
+      <GerarMensagemDialog
+        cartao={cartao}
+        mesReferencia={mesRef}
+        open={gerarMensagemOpen}
+        onOpenChange={setGerarMensagemOpen}
+      />
 
-          <EditarCompraDialog
-            parcela={parcelaSelecionada}
-            open={editarCompraOpen}
-            onOpenChange={setEditarCompraOpen}
-            onSaved={() => {
-              setEditarCompraOpen(false);
-              setParcelaSelecionada(null);
-              carregarFatura();
-              onUpdated();
-            }}
-          />
-        </>
-      )}
+      <RegistrarAcertoDialog
+        cartao={cartao}
+        mesReferencia={mesRef}
+        open={registrarAcertoOpen}
+        onOpenChange={setRegistrarAcertoOpen}
+        onSaved={() => {
+          refetchAcertos();
+        }}
+      />
     </>
   );
 }
