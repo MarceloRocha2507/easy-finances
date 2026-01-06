@@ -1,26 +1,26 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
-import { excluirCompraCartao } from "@/services/transactions";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { ParcelaFatura, excluirCompra } from "@/services/compras-cartao";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2, AlertTriangle } from "lucide-react";
 
 interface Props {
-  compra: {
-    compra_id: string;      // ✅ ID DA COMPRA (OBRIGATÓRIO)
-    descricao?: string;
-  };
+  parcela: ParcelaFatura | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void;
 }
 
 export function ExcluirCompraDialog({
-  compra,
+  parcela,
   open,
   onOpenChange,
   onDeleted,
@@ -28,27 +28,19 @@ export function ExcluirCompraDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  async function handleDelete() {
-    if (loading) return;
+  async function handleExcluir() {
+    if (!parcela) return;
 
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // 🔑 EXCLUI A COMPRA (PAI)
-      await excluirCompraCartao(compra.compra_id);
-
-      toast({
-        title: "Compra excluída",
-        description: "A compra e todas as parcelas foram removidas.",
-      });
-
+      await excluirCompra(parcela.compra_id);
+      toast({ title: "Compra excluída!" });
       onDeleted();
     } catch (error) {
-      console.error("Erro ao excluir compra:", error);
-
+      console.error(error);
       toast({
         title: "Erro ao excluir",
-        description: "Não foi possível excluir a compra.",
+        description: "Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -56,20 +48,42 @@ export function ExcluirCompraDialog({
     }
   }
 
+  if (!parcela) return null;
+
+  const temParcelas = parcela.total_parcelas > 1;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Excluir compra</DialogTitle>
-        </DialogHeader>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5 text-red-500" />
+            Excluir compra?
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3">
+              <p>
+                Você está prestes a excluir a compra{" "}
+                <strong>"{parcela.descricao}"</strong>.
+              </p>
 
-        <p className="text-sm text-muted-foreground">
-          Tem certeza que deseja excluir esta compra?
-          <br />
-          <strong>Todas as parcelas serão removidas.</strong>
-        </p>
+              {temParcelas && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Esta compra possui <strong>{parcela.total_parcelas} parcelas</strong>.
+                    Todas as parcelas serão excluídas.
+                  </p>
+                </div>
+              )}
 
-        <div className="mt-6 flex justify-end gap-2">
+              <p className="text-sm text-muted-foreground">
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -77,16 +91,15 @@ export function ExcluirCompraDialog({
           >
             Cancelar
           </Button>
-
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={handleExcluir}
             disabled={loading}
           >
-            {loading ? "Excluindo..." : "Excluir"}
+            {loading ? "Excluindo..." : "Excluir compra"}
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

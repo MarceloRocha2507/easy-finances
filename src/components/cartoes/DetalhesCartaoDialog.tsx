@@ -56,6 +56,8 @@ import { ExcluirCartaoDialog } from "./ExcluirCartaoDialog";
 import { GerarMensagemDialog } from "./GerarMensagemDialog";
 import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
 import { ResumoPorResponsavel } from "./ResumoPorResponsavel";
+import { EditarCompraDialog } from "./EditarCompraDialog";
+import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
 
 import {
   MoreVertical,
@@ -137,12 +139,17 @@ export function DetalhesCartaoDialog({
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Dialogs
+  // Dialogs do cartão
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCartaoOpen, setEditarCartaoOpen] = useState(false);
   const [excluirCartaoOpen, setExcluirCartaoOpen] = useState(false);
   const [gerarMensagemOpen, setGerarMensagemOpen] = useState(false);
   const [registrarAcertoOpen, setRegistrarAcertoOpen] = useState(false);
+
+  // Dialogs da compra
+  const [editarCompraOpen, setEditarCompraOpen] = useState(false);
+  const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
+  const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Filtros
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciais);
@@ -606,7 +613,7 @@ export function DetalhesCartaoDialog({
                         </Tooltip>
                       </TooltipProvider>
 
-                      {/* Categoria/Responsável badge */}
+                      {/* Categoria badge */}
                       <div className="flex items-center gap-2">
                         {p.categoria_nome && (
                           <TooltipProvider>
@@ -655,6 +662,7 @@ export function DetalhesCartaoDialog({
                       </div>
                     </div>
 
+                    {/* Valor + Menu de ações */}
                     <div className="flex items-center gap-2">
                       <p
                         className={cn(
@@ -666,6 +674,37 @@ export function DetalhesCartaoDialog({
                       >
                         {formatCurrency(Math.abs(p.valor))}
                       </p>
+
+                      {/* MENU DE AÇÕES */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setParcelaSelecionada(p);
+                              setEditarCompraOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar compra
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-500 focus:text-red-500"
+                            onClick={() => {
+                              setParcelaSelecionada(p);
+                              setExcluirCompraOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir compra
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -696,7 +735,7 @@ export function DetalhesCartaoDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Dialogs */}
+      {/* Dialogs do cartão */}
       <NovaCompraCartaoDialog
         cartao={cartao}
         open={novaCompraOpen}
@@ -737,6 +776,39 @@ export function DetalhesCartaoDialog({
         onOpenChange={setRegistrarAcertoOpen}
         onSaved={() => {
           refetchAcertos();
+        }}
+      />
+
+      {/* Dialogs da compra */}
+      <EditarCompraDialog
+        parcela={parcelaSelecionada}
+        open={editarCompraOpen}
+        onOpenChange={(open) => {
+          setEditarCompraOpen(open);
+          if (!open) setParcelaSelecionada(null);
+        }}
+        onSaved={() => {
+          setEditarCompraOpen(false);
+          setParcelaSelecionada(null);
+          carregarFatura();
+          refetchAcertos();
+          onUpdated();
+        }}
+      />
+
+      <ExcluirCompraDialog
+        parcela={parcelaSelecionada}
+        open={excluirCompraOpen}
+        onOpenChange={(open) => {
+          setExcluirCompraOpen(open);
+          if (!open) setParcelaSelecionada(null);
+        }}
+        onDeleted={() => {
+          setExcluirCompraOpen(false);
+          setParcelaSelecionada(null);
+          carregarFatura();
+          refetchAcertos();
+          onUpdated();
         }}
       />
     </>

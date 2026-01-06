@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,27 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { NovoResponsavelDialog } from "./NovoResponsavelDialog";
 
 import { ParcelaFatura, editarCompra } from "@/services/compras-cartao";
-import { Categoria, listarCategorias } from "@/services/categorias";
-import {
-  Tag,
-  listarTags,
-  listarTagsDaCompra,
-  sincronizarTagsDaCompra,
-  criarTag,
-} from "@/services/tags";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
   Loader2,
-  Plus,
-  X,
   Tag as TagIcon,
   Utensils,
   Car,
@@ -50,9 +38,19 @@ import {
   Calendar,
   Hash,
 } from "lucide-react";
-import { format, addMonths, parse } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+
+/* ======================================================
+   Tipo Categoria (local)
+====================================================== */
+type Categoria = {
+  id: string;
+  nome: string;
+  cor: string;
+  icone?: string;
+};
 
 /* ======================================================
    Mapa de ícones
@@ -98,11 +96,8 @@ export function EditarCompraDialog({
   const [mesFatura, setMesFatura] = useState("");
   const [parcelaInicial, setParcelaInicial] = useState("1");
   const [totalParcelas, setTotalParcelas] = useState(1);
-  const [tagsSelecionadas, setTagsSelecionadas] = useState<string[]>([]);
-  const [novaTagNome, setNovaTagNome] = useState("");
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -161,17 +156,27 @@ export function EditarCompraDialog({
           }
         }
 
-        // Carregar categorias
-        const cats = await listarCategorias();
-        setCategorias(cats);
+        // Carregar categorias direto da tabela 'categories'
+        try {
+          const { data: cats } = await supabase
+            .from("categories")
+            .select("id, name, color, icon")
+            .order("name");
 
-        // Carregar todas as tags
-        const allTags = await listarTags();
-        setTags(allTags);
-
-        // Carregar tags da compra
-        const compraTags = await listarTagsDaCompra(parcela.compra_id);
-        setTagsSelecionadas(compraTags.map((t) => t.id));
+          if (cats) {
+            setCategorias(
+              cats.map((c: any) => ({
+                id: c.id,
+                nome: c.name,
+                cor: c.color || "#6366f1",
+                icone: c.icon,
+              }))
+            );
+          }
+        } catch (e) {
+          console.log("Categorias não disponíveis:", e);
+          setCategorias([]);
+        }
       } catch (e) {
         console.error("Erro ao carregar dados:", e);
       } finally {
@@ -203,9 +208,6 @@ export function EditarCompraDialog({
         parcelaInicial: parseInt(parcelaInicial),
       });
 
-      // Sincronizar tags
-      await sincronizarTagsDaCompra(parcela.compra_id, tagsSelecionadas);
-
       toast({ title: "Compra atualizada!" });
       onSaved();
       onOpenChange(false);
@@ -215,37 +217,6 @@ export function EditarCompraDialog({
     } finally {
       setSalvando(false);
     }
-  }
-
-  /* ======================================================
-     Criar nova tag
-  ====================================================== */
-  async function handleCriarTag() {
-    if (!novaTagNome.trim()) return;
-
-    try {
-      const novaTag = await criarTag({
-        nome: novaTagNome.trim(),
-        cor: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")}`,
-      });
-
-      setTags((prev) => [...prev, novaTag]);
-      setTagsSelecionadas((prev) => [...prev, novaTag.id]);
-      setNovaTagNome("");
-    } catch (e) {
-      console.error("Erro ao criar tag:", e);
-    }
-  }
-
-  /* ======================================================
-     Toggle tag
-  ====================================================== */
-  function toggleTag(tagId: string) {
-    setTagsSelecionadas((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId]
-    );
   }
 
   /* ======================================================
@@ -356,121 +327,38 @@ export function EditarCompraDialog({
               )}
 
               {/* Categoria */}
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select
-                  value={categoriaId || "sem-categoria"}
-                  onValueChange={(v) =>
-                    setCategoriaId(v === "sem-categoria" ? null : v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sem-categoria">
-                      <span className="text-muted-foreground">Sem categoria</span>
-                    </SelectItem>
-                    {categorias.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: cat.cor }}
-                          />
-                          {ICONE_MAP[cat.icone] || <TagIcon className="h-4 w-4" />}
-                          <span>{cat.nome}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
-              {/* Tags */}
-              <div className="space-y-2">
-                <Label>Tags</Label>
-
-                {/* Tags selecionadas */}
-                <div className="flex flex-wrap gap-2 min-h-[32px]">
-                  {tagsSelecionadas.length === 0 ? (
-                    <span className="text-sm text-muted-foreground">
-                      Nenhuma tag selecionada
-                    </span>
-                  ) : (
-                    tagsSelecionadas.map((tagId) => {
-                      const tag = tags.find((t) => t.id === tagId);
-                      if (!tag) return null;
-                      return (
-                        <Badge
-                          key={tag.id}
-                          variant="secondary"
-                          className="gap-1 cursor-pointer"
-                          style={{
-                            backgroundColor: `${tag.cor}20`,
-                            borderColor: tag.cor,
-                            color: tag.cor,
-                          }}
-                          onClick={() => toggleTag(tag.id)}
-                        >
-                          {tag.nome}
-                          <X className="h-3 w-3" />
-                        </Badge>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* Lista de tags disponíveis */}
-                <ScrollArea className="h-[120px] border rounded-md p-2">
-                  <div className="flex flex-wrap gap-2">
-                    {tags
-                      .filter((t) => !tagsSelecionadas.includes(t.id))
-                      .map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          variant="outline"
-                          className="cursor-pointer hover:bg-muted"
-                          onClick={() => toggleTag(tag.id)}
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full mr-1"
-                            style={{ backgroundColor: tag.cor }}
-                          />
-                          {tag.nome}
-                        </Badge>
-                      ))}
-
-                    {tags.filter((t) => !tagsSelecionadas.includes(t.id))
-                      .length === 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        Todas as tags estão selecionadas
-                      </span>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Criar nova tag */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nova tag..."
-                    value={novaTagNome}
-                    onChange={(e) => setNovaTagNome(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleCriarTag()}
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    onClick={handleCriarTag}
-                    disabled={!novaTagNome.trim()}
+              {categorias.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Categoria</Label>
+                  <Select
+                    value={categoriaId || "sem-categoria"}
+                    onValueChange={(v) =>
+                      setCategoriaId(v === "sem-categoria" ? null : v)
+                    }
                   >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sem-categoria">
+                        <span className="text-muted-foreground">Sem categoria</span>
+                      </SelectItem>
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: cat.cor }}
+                            />
+                            {ICONE_MAP[cat.icone || ""] || <TagIcon className="h-4 w-4" />}
+                            <span>{cat.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
+              )}
 
               <Separator />
 
