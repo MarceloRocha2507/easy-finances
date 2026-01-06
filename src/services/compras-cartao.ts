@@ -118,10 +118,12 @@ export async function listarParcelasDaFatura(
   cartaoId: string,
   mesReferencia: Date
 ): Promise<ParcelaFatura[]> {
-  // Buscar pelo range do mês inteiro (primeiro ao último dia)
-  const anoMes = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
-  const primeiroDia = `${anoMes}-01`;
-  const ultimoDia = `${anoMes}-31`;
+  // Buscar pelo range do mês inteiro (primeiro ao último dia real do mês)
+  const ano = mesReferencia.getFullYear();
+  const mes = mesReferencia.getMonth();
+  const primeiroDia = new Date(ano, mes, 1).toISOString().split("T")[0];
+  // Último dia do mês: dia 0 do próximo mês = último dia do mês atual
+  const ultimoDia = new Date(ano, mes + 1, 0).toISOString().split("T")[0];
 
   // Buscar parcelas do mês
   const { data: parcelas, error: parcelasError } = await (supabase as any)

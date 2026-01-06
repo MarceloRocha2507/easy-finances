@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -40,6 +40,7 @@ import {
   Tag,
   X,
   Crown,
+  Plus,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +48,8 @@ import {
   listarParcelasDaFatura,
   ParcelaFatura,
   marcarParcelaComoPaga,
+  calcularResumoPorResponsavel,
+  ResumoResponsavel,
 } from "@/services/compras-cartao";
 import { useResponsaveis } from "@/services/responsaveis";
 import { Cartao } from "@/services/cartoes";
@@ -102,6 +105,7 @@ export default function DespesasCartao() {
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const [parcelas, setParcelas] = useState<ParcelaFatura[]>([]);
+  const [resumoResponsaveis, setResumoResponsaveis] = useState<ResumoResponsavel[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filtros
@@ -140,7 +144,7 @@ export default function DespesasCartao() {
   }, [id, user]);
 
   /* ======================================================
-     Carregar parcelas
+     Carregar parcelas e resumo
   ====================================================== */
 
   async function carregarFatura() {
@@ -148,11 +152,16 @@ export default function DespesasCartao() {
     setLoading(true);
 
     try {
-      const parcelasData = await listarParcelasDaFatura(id, mesRef);
+      const [parcelasData, resumoData] = await Promise.all([
+        listarParcelasDaFatura(id, mesRef),
+        calcularResumoPorResponsavel(id, mesRef),
+      ]);
       setParcelas(parcelasData ?? []);
+      setResumoResponsaveis(resumoData ?? []);
     } catch (e) {
       console.error(e);
       setParcelas([]);
+      setResumoResponsaveis([]);
     } finally {
       setLoading(false);
     }
@@ -220,364 +229,321 @@ export default function DespesasCartao() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/cartoes")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <CreditCard
-                className="h-6 w-6"
-                style={{ color: cartao?.cor || "#6366f1" }}
-              />
-              <div>
-                <h1 className="text-2xl font-bold">{cartao?.nome || "Cartão"}</h1>
-                <p className="text-sm text-muted-foreground">Despesas do cartão</p>
-              </div>
+      <div className="space-y-4">
+        {/* Header compacto */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/cartoes")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <CreditCard
+              className="h-5 w-5"
+              style={{ color: cartao?.cor || "#6366f1" }}
+            />
+            <div>
+              <h1 className="text-xl font-bold">{cartao?.nome || "Cartão"}</h1>
+              <p className="text-xs text-muted-foreground">Despesas do mês</p>
             </div>
           </div>
-          <Button onClick={() => setNovaCompraOpen(true)}>
-            + Nova compra
+          <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Nova compra
           </Button>
         </div>
 
-        {/* Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Total Pendente</p>
-              <p className="text-2xl font-bold text-red-500">
-                {formatCurrency(totalMes)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Total Pago</p>
-              <p className="text-2xl font-bold text-emerald-500">
-                {formatCurrency(totalPago)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">
-                {temFiltrosAtivos ? "Total Filtrado" : "Total Geral"}
-              </p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(temFiltrosAtivos ? totalFiltrado : totalMes + totalPago)}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Resumo inline */}
+        <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/50 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-destructive" />
+            <span>Pendente:</span>
+            <span className="font-semibold text-destructive">{formatCurrency(totalMes)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Pago:</span>
+            <span className="font-semibold text-emerald-500">{formatCurrency(totalPago)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>Total:</span>
+            <span className="font-semibold">{formatCurrency(totalMes + totalPago)}</span>
+          </div>
         </div>
 
-        {/* Navegação de mês */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        {/* Resumo por responsável */}
+        {resumoResponsaveis.length > 0 && (
+          <div className="p-3 rounded-lg border bg-card space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Por responsável</p>
+            <div className="flex flex-wrap gap-3">
+              {resumoResponsaveis.map((r) => (
+                <div
+                  key={r.responsavel_id}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors",
+                    filtros.responsavelId === r.responsavel_id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-muted/80"
+                  )}
+                  onClick={() => setFiltros((f) => ({
+                    ...f,
+                    responsavelId: f.responsavelId === r.responsavel_id ? null : r.responsavel_id,
+                  }))}
+                >
+                  {r.is_titular ? (
+                    <Crown className="h-3.5 w-3.5" />
+                  ) : (
+                    <User className="h-3.5 w-3.5" />
+                  )}
+                  <span className="font-medium">{r.responsavel_apelido || r.responsavel_nome}</span>
+                  <span className="text-xs opacity-75">{formatCurrency(r.total)}</span>
+                  <span className="text-xs opacity-50">({r.percentual.toFixed(0)}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Navegação de mês + Filtros */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Mês */}
+          <div className="flex items-center gap-1">
             <Button
               size="icon"
               variant="outline"
+              className="h-8 w-8"
               onClick={() => setMesRef((m) => addMonths(m, -1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[180px] text-center font-semibold capitalize text-lg">
+            <span className="min-w-[140px] text-center font-medium capitalize">
               {monthLabel(mesRef)}
             </span>
             <Button
               size="icon"
               variant="outline"
+              className="h-8 w-8"
               onClick={() => setMesRef((m) => addMonths(m, 1))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
 
-        {/* Filtros */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base">Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="relative sm:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por descrição..."
-                  className="pl-9"
-                  value={filtros.busca}
-                  onChange={(e) =>
-                    setFiltros((f) => ({ ...f, busca: e.target.value }))
-                  }
-                />
-                {filtros.busca && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setFiltros((f) => ({ ...f, busca: "" }))}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-
-              <Select
-                value={filtros.status}
-                onValueChange={(v) =>
-                  setFiltros((f) => ({
-                    ...f,
-                    status: v as "todos" | "pendente" | "pago",
-                  }))
+          {/* Filtros inline */}
+          <div className="flex flex-1 items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                className="pl-8 h-8"
+                value={filtros.busca}
+                onChange={(e) =>
+                  setFiltros((f) => ({ ...f, busca: e.target.value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="pendente">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                      Pendentes
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="pago">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      Pagos
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filtros.responsavelId || "todos"}
-                onValueChange={(v) =>
-                  setFiltros((f) => ({
-                    ...f,
-                    responsavelId: v === "todos" ? null : v,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {responsaveis.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      <div className="flex items-center gap-2">
-                        {r.is_titular ? (
-                          <Crown className="h-4 w-4 text-primary" />
-                        ) : (
-                          <User className="h-4 w-4" />
-                        )}
-                        {r.apelido || r.nome}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {temFiltrosAtivos && (
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Mostrando <strong>{parcelasFiltradas.length}</strong> de{" "}
-                  <strong>{parcelas.length}</strong> despesas
-                </p>
+              />
+              {filtros.busca && (
                 <Button
                   variant="ghost"
-                  size="sm"
-                  onClick={() => setFiltros(filtrosIniciais)}
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setFiltros((f) => ({ ...f, busca: "" }))}
                 >
-                  <X className="h-4 w-4 mr-2" />
-                  Limpar filtros
+                  <X className="h-3 w-3" />
                 </Button>
-              </div>
+              )}
+            </div>
+
+            <Select
+              value={filtros.status}
+              onValueChange={(v) =>
+                setFiltros((f) => ({
+                  ...f,
+                  status: v as "todos" | "pendente" | "pago",
+                }))
+              }
+            >
+              <SelectTrigger className="w-[120px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="pendente">Pendentes</SelectItem>
+                <SelectItem value="pago">Pagos</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {temFiltrosAtivos && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1"
+                onClick={() => setFiltros(filtrosIniciais)}
+              >
+                <X className="h-3 w-3" />
+                Limpar
+              </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Resultado dos filtros */}
+        {temFiltrosAtivos && (
+          <div className="text-sm text-muted-foreground">
+            Mostrando <strong>{parcelasFiltradas.length}</strong> de{" "}
+            <strong>{parcelas.length}</strong> · Total: <strong>{formatCurrency(totalFiltrado)}</strong>
+          </div>
+        )}
 
         {/* Tabela de despesas */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"></TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+                  <TableHead className="hidden md:table-cell">Responsável</TableHead>
+                  <TableHead className="text-center w-20">Parcela</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-20"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && (
                   <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead className="text-center">Parcela</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-center w-[100px]">Ações</TableHead>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Carregando...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Carregando despesas...
-                      </TableCell>
-                    </TableRow>
-                  )}
+                )}
 
-                  {!loading && parcelasFiltradas.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12">
-                        <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p className="text-muted-foreground">
-                          {temFiltrosAtivos
-                            ? "Nenhuma despesa encontrada com os filtros."
-                            : "Nenhuma despesa neste mês."}
+                {!loading && parcelasFiltradas.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                      <p className="text-muted-foreground text-sm">
+                        {temFiltrosAtivos
+                          ? "Nenhum resultado encontrado."
+                          : "Nenhuma despesa neste mês."}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                )}
+
+                {!loading &&
+                  parcelasFiltradas.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      className={cn(p.paga && "opacity-50 bg-emerald-500/5")}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={!!p.paga}
+                          onCheckedChange={async () => {
+                            await marcarParcelaComoPaga(p.id, !p.paga);
+                            carregarFatura();
+                          }}
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        <p className={cn(
+                          "font-medium",
+                          p.paga && "line-through text-muted-foreground"
+                        )}>
+                          {p.descricao}
                         </p>
                       </TableCell>
-                    </TableRow>
-                  )}
 
-                  {!loading &&
-                    parcelasFiltradas.map((p) => (
-                      <TableRow
-                        key={p.id}
-                        className={cn(
-                          p.paga && "opacity-60 bg-emerald-500/5"
+                      <TableCell className="hidden sm:table-cell">
+                        {p.categoria_nome ? (
+                          <Badge
+                            variant="secondary"
+                            className="gap-1 text-xs"
+                            style={{
+                              backgroundColor: `${p.categoria_cor}15`,
+                              color: p.categoria_cor,
+                            }}
+                          >
+                            <Tag className="h-3 w-3" />
+                            {p.categoria_nome}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
-                      >
-                        <TableCell>
+                      </TableCell>
+
+                      <TableCell className="hidden md:table-cell">
+                        {p.responsavel_apelido || p.responsavel_nome ? (
+                          <span className="text-sm">
+                            {p.responsavel_apelido || p.responsavel_nome}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="text-xs">
+                          {p.numero_parcela}/{p.total_parcelas}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <span className={cn(
+                          "font-semibold",
+                          p.paga ? "line-through text-muted-foreground" : "text-destructive"
+                        )}>
+                          {formatCurrency(Math.abs(p.valor))}
+                        </span>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-0.5">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div>
-                                  <Checkbox
-                                    checked={!!p.paga}
-                                    onCheckedChange={async () => {
-                                      await marcarParcelaComoPaga(p.id, !p.paga);
-                                      carregarFatura();
-                                    }}
-                                  />
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => {
+                                    setParcelaSelecionada(p);
+                                    setEditarCompraOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                {p.paga ? "Marcar como pendente" : "Marcar como paga"}
-                              </TooltipContent>
+                              <TooltipContent>Editar</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        </TableCell>
 
-                        <TableCell>
-                          <p
-                            className={cn(
-                              "font-medium",
-                              p.paga && "line-through text-muted-foreground"
-                            )}
-                          >
-                            {p.descricao}
-                          </p>
-                        </TableCell>
-
-                        <TableCell>
-                          {p.categoria_nome ? (
-                            <Badge
-                              variant="secondary"
-                              className="gap-1"
-                              style={{
-                                backgroundColor: `${p.categoria_cor}20`,
-                                color: p.categoria_cor,
-                                borderColor: `${p.categoria_cor}40`,
-                              }}
-                            >
-                              <Tag className="h-3 w-3" />
-                              {p.categoria_nome}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {p.responsavel_apelido || p.responsavel_nome ? (
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              {p.responsavel_apelido || p.responsavel_nome}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="text-center">
-                          <Badge variant="outline">
-                            {p.numero_parcela}/{p.total_parcelas}
-                          </Badge>
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <span
-                            className={cn(
-                              "font-semibold",
-                              p.paga
-                                ? "line-through text-muted-foreground"
-                                : "text-red-500"
-                            )}
-                          >
-                            {formatCurrency(Math.abs(p.valor))}
-                          </span>
-                        </TableCell>
-
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      setParcelaSelecionada(p);
-                                      setEditarCompraOpen(true);
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                    onClick={() => {
-                                      setParcelaSelecionada(p);
-                                      setExcluirCompraOpen(true);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    setParcelaSelecionada(p);
+                                    setExcluirCompraOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
 
       {/* Dialogs */}
