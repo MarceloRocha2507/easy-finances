@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,25 +29,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import { Cartao } from "@/services/cartoes";
 import { NovaCompraCartaoDialog } from "./NovaCompraCartaoDialog";
@@ -56,7 +36,6 @@ import { EditarCartaoDialog } from "./EditarCartaoDialog";
 import { ExcluirCartaoDialog } from "./ExcluirCartaoDialog";
 import { GerarMensagemDialog } from "./GerarMensagemDialog";
 import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
-import { ResumoPorResponsavel } from "./ResumoPorResponsavel";
 import { EditarCompraDialog } from "./EditarCompraDialog";
 import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
 
@@ -69,21 +48,24 @@ import {
   ChevronRight,
   CreditCard,
   Check,
-  Tag,
   Search,
-  ChevronDown,
-  SlidersHorizontal,
   X,
-  Filter,
   FileText,
   Wallet,
   User,
-  Crown,
   ExternalLink,
+  Settings,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /* ======================================================
    Utils
@@ -91,7 +73,7 @@ import { cn } from "@/lib/utils";
 
 function monthLabel(d: Date) {
   return new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
+    month: "short",
     year: "numeric",
   }).format(d);
 }
@@ -99,22 +81,6 @@ function monthLabel(d: Date) {
 function addMonths(base: Date, delta: number) {
   return new Date(base.getFullYear(), base.getMonth() + delta, 1);
 }
-
-/* ======================================================
-   Tipos de Filtro
-====================================================== */
-
-interface Filtros {
-  busca: string;
-  status: "todos" | "pendente" | "pago";
-  responsavelId: string | null;
-}
-
-const filtrosIniciais: Filtros = {
-  busca: "",
-  status: "todos",
-  responsavelId: null,
-};
 
 /* ======================================================
    Component
@@ -154,21 +120,14 @@ export function DetalhesCartaoDialog({
   const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
-  // Filtros
-  const [filtros, setFiltros] = useState<Filtros>(filtrosIniciais);
-  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  // Filtro simples (apenas busca)
+  const [busca, setBusca] = useState("");
 
   // Hooks
-  const { data: responsaveis = [] } = useResponsaveis();
   const { data: acertos = [], refetch: refetchAcertos } = useAcertosMes(
     open && cartao ? cartao.id : null,
     mesRef
   );
-
-  const temFiltrosAtivos =
-    filtros.busca !== "" ||
-    filtros.status !== "todos" ||
-    filtros.responsavelId !== null;
 
   /* ======================================================
      Carregar dados
@@ -194,35 +153,23 @@ export function DetalhesCartaoDialog({
   useEffect(() => {
     if (!cartao || !open) return;
     carregarFatura();
-    setFiltros(filtrosIniciais);
+    setBusca("");
   }, [cartao?.id, open, mesRef]);
 
   /* ======================================================
-     Aplicar filtros
+     Aplicar filtros (apenas busca)
   ====================================================== */
 
   const parcelasFiltradas = useMemo(() => {
-    return parcelas.filter((p) => {
-      // Busca
-      if (
-        filtros.busca &&
-        !p.descricao.toLowerCase().includes(filtros.busca.toLowerCase())
-      ) {
-        return false;
-      }
+    if (!busca) return parcelas;
+    return parcelas.filter((p) =>
+      p.descricao.toLowerCase().includes(busca.toLowerCase())
+    );
+  }, [parcelas, busca]);
 
-      // Status
-      if (filtros.status === "pendente" && p.paga) return false;
-      if (filtros.status === "pago" && !p.paga) return false;
-
-      // Responsável
-      if (filtros.responsavelId) {
-        if (p.responsavel_id !== filtros.responsavelId) return false;
-      }
-
-      return true;
-    });
-  }, [parcelas, filtros]);
+  // Limitar exibição a 6 itens no dialog compacto
+  const parcelasExibidas = parcelasFiltradas.slice(0, 6);
+  const temMais = parcelasFiltradas.length > 6;
 
   /* ======================================================
      Totais
@@ -240,513 +187,296 @@ export function DetalhesCartaoDialog({
       .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
   }, [parcelas]);
 
-  const totalFiltrado = useMemo(() => {
-    return parcelasFiltradas.reduce(
-      (sum, p) => sum + Math.abs(Number(p.valor) || 0),
-      0
-    );
-  }, [parcelasFiltradas]);
-
   if (!cartao) return null;
 
   const limite = cartao.limite;
   const disponivel = Math.max(limite - totalMes, 0);
   const usoPct = limite > 0 ? Math.min((totalMes / limite) * 100, 100) : 0;
-
   const podePagarFatura = parcelas.some((p) => !p.paga);
-
-  function limparFiltros() {
-    setFiltros(filtrosIniciais);
-  }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[90vh]">
-          {/* Header */}
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          {/* Header compacto */}
           <div
-            className="p-6 text-white"
+            className="px-5 py-4 text-white"
             style={{
-              background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${cartao.cor || "#6366f1"}50 100%)`,
+              background: `linear-gradient(135deg, hsl(var(--background)) 0%, ${cartao.cor || "#6366f1"}40 100%)`,
             }}
           >
-            <DialogHeader>
+            <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
-                <div>
-                  <DialogTitle className="flex items-center gap-2 text-white">
-                    <CreditCard className="h-5 w-5" />
-                    {cartao.nome}
-                  </DialogTitle>
-                  <DialogDescription className="text-slate-400">
-                    Fatura mensal do cartão
-                  </DialogDescription>
-                </div>
-
-                <Badge variant="secondary" className="text-xs">
+                <DialogTitle className="flex items-center gap-2 text-foreground">
+                  <CreditCard className="h-4 w-4" style={{ color: cartao.cor }} />
+                  {cartao.nome}
+                </DialogTitle>
+                <Badge variant="outline" className="text-xs text-foreground border-border">
                   {cartao.bandeira || "Crédito"}
                 </Badge>
               </div>
+              <DialogDescription className="sr-only">
+                Detalhes da fatura do cartão
+              </DialogDescription>
             </DialogHeader>
 
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            {/* Métricas inline */}
+            <div className="flex items-center gap-4 mt-3 text-sm">
               <div>
-                <p className="text-xs text-slate-400">Limite</p>
-                <p className="font-semibold">{formatCurrency(limite)}</p>
+                <span className="text-muted-foreground">Limite:</span>{" "}
+                <span className="font-medium text-foreground">{formatCurrency(limite)}</span>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Total do mês</p>
-                <p className="font-semibold text-red-400">
-                  {formatCurrency(totalMes)}
-                </p>
+                <span className="text-muted-foreground">Fatura:</span>{" "}
+                <span className="font-medium text-destructive">{formatCurrency(totalMes)}</span>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Disponível</p>
-                <p className="font-semibold text-emerald-400">
-                  {formatCurrency(disponivel)}
-                </p>
+                <span className="text-muted-foreground">Disponível:</span>{" "}
+                <span className="font-medium text-emerald-500">{formatCurrency(disponivel)}</span>
               </div>
             </div>
 
-            <div className="mt-3">
-              <Progress value={usoPct} className="h-2" />
-              <p className="text-xs text-slate-400 mt-1">
-                {usoPct.toFixed(0)}% do limite utilizado
-              </p>
-            </div>
+            <Progress value={usoPct} className="h-1.5 mt-2" />
           </div>
 
           {/* Conteúdo */}
-          <div className="p-6 overflow-y-auto">
-            {/* Navegação + Ações */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2">
+          <div className="px-5 py-4 space-y-4">
+            {/* Navegação + Ações compactas */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
                 <Button
                   size="icon"
-                  variant="outline"
+                  variant="ghost"
+                  className="h-7 w-7"
                   onClick={() => setMesRef((m) => addMonths(m, -1))}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-
-                <span className="min-w-[160px] text-center font-semibold capitalize">
+                <span className="min-w-[100px] text-center text-sm font-medium capitalize">
                   {monthLabel(mesRef)}
                 </span>
-
                 <Button
                   size="icon"
-                  variant="outline"
+                  variant="ghost"
+                  className="h-7 w-7"
                   onClick={() => setMesRef((m) => addMonths(m, 1))}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => setGerarMensagemOpen(true)}
-                >
-                  <FileText className="h-4 w-4" />
-                  Mensagem
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => setRegistrarAcertoOpen(true)}
-                >
-                  <Wallet className="h-4 w-4" />
-                  Acerto
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setNovaCompraOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Nova compra
+              <div className="flex items-center gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setGerarMensagemOpen(true)}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Gerar mensagem</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRegistrarAcertoOpen(true)}>
+                        <Wallet className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Registrar acerto</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Button size="sm" className="h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Compra
                 </Button>
               </div>
             </div>
 
-            {/* Resumo por responsável */}
-            {parcelas.length > 0 && (
-              <ResumoPorResponsavel
-                parcelas={parcelas}
-                acertos={acertos}
-                className="mb-4"
+            {/* Busca rápida */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                className="pl-8 h-8 text-sm"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
               />
-            )}
+              {busca && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setBusca("")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
 
-            {/* FILTROS */}
-            <Collapsible open={filtrosAbertos} onOpenChange={setFiltrosAbertos}>
-              <div className="flex items-center gap-2 mb-4">
-                {/* Busca rápida */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar compra..."
-                    className="pl-9"
-                    value={filtros.busca}
-                    onChange={(e) =>
-                      setFiltros((f) => ({ ...f, busca: e.target.value }))
-                    }
-                  />
-                  {filtros.busca && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                      onClick={() => setFiltros((f) => ({ ...f, busca: "" }))}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Botão de filtros avançados */}
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant={temFiltrosAtivos ? "secondary" : "outline"}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filtros
-                    {temFiltrosAtivos && (
-                      <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 justify-center text-xs">
-                        !
-                      </Badge>
-                    )}
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform",
-                        filtrosAbertos && "rotate-180"
-                      )}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-              </div>
-
-              <CollapsibleContent>
-                <div className="p-4 mb-4 border rounded-xl bg-muted/30 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Status */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Status</label>
-                      <Select
-                        value={filtros.status}
-                        onValueChange={(v) =>
-                          setFiltros((f) => ({
-                            ...f,
-                            status: v as "todos" | "pendente" | "pago",
-                          }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          <SelectItem value="pendente">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500" />
-                              Pendentes
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="pago">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                              Pagos
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Responsável */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Responsável</label>
-                      <Select
-                        value={filtros.responsavelId || "todos"}
-                        onValueChange={(v) =>
-                          setFiltros((f) => ({
-                            ...f,
-                            responsavelId: v === "todos" ? null : v,
-                          }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          {responsaveis.map((r) => (
-                            <SelectItem key={r.id} value={r.id}>
-                              <div className="flex items-center gap-2">
-                                {r.is_titular ? (
-                                  <Crown className="h-4 w-4 text-primary" />
-                                ) : (
-                                  <User className="h-4 w-4" />
-                                )}
-                                {r.apelido || r.nome}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {temFiltrosAtivos && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={limparFiltros}
-                    >
-                      <X className="h-4 w-4" />
-                      Limpar filtros
-                    </Button>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Resultado dos filtros */}
-            {temFiltrosAtivos && (
-              <div className="mb-4 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                  <Filter className="h-4 w-4 text-blue-500" />
-                  <span>
-                    Mostrando <strong>{parcelasFiltradas.length}</strong> de{" "}
-                    <strong>{parcelas.length}</strong> parcelas
-                  </span>
-                </div>
-                <span className="text-sm font-medium">
-                  Total: {formatCurrency(totalFiltrado)}
-                </span>
-              </div>
-            )}
-
-            {podePagarFatura && !temFiltrosAtivos && (
-              <Button
-                variant="secondary"
-                className="w-full mb-4 gap-2"
-                onClick={async () => {
-                  await pagarFaturaDoMes(cartao.id, mesRef);
-                  carregarFatura();
-                  onUpdated();
-                }}
-              >
-                <Check className="h-4 w-4" />
-                Pagar fatura inteira ({formatCurrency(totalMes)})
-              </Button>
-            )}
-
-            {/* Resumo pendente/pago */}
-            {parcelas.length > 0 && !temFiltrosAtivos && (
-              <div className="flex gap-4 mb-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
+            {/* Resumo pendente/pago inline */}
+            {parcelas.length > 0 && (
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
                   <span>Pendente: {formatCurrency(totalMes)}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>Pago: {formatCurrency(totalPago)}</span>
                 </div>
+                {podePagarFatura && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-6 text-xs gap-1"
+                    onClick={async () => {
+                      await pagarFaturaDoMes(cartao.id, mesRef);
+                      carregarFatura();
+                      onUpdated();
+                    }}
+                  >
+                    <Check className="h-3 w-3" />
+                    Pagar tudo
+                  </Button>
+                )}
               </div>
             )}
 
-            {/* Botão para ver todas as despesas */}
-            <div className="mb-4">
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => {
-                  onOpenChange(false);
-                  navigate(`/cartoes/${cartao.id}/despesas`);
-                }}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Ver todas as despesas (tela ampla)
-              </Button>
-            </div>
-
-            <ScrollArea className="h-[240px]">
+            {/* Lista de parcelas */}
+            <ScrollArea className="h-[200px]">
               {loading && (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  Carregando fatura...
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  Carregando...
                 </div>
               )}
 
               {erro && (
-                <div className="p-4 text-sm text-red-500 bg-red-500/10 rounded-xl">
+                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                   {erro}
                 </div>
               )}
 
               {!loading && !erro && parcelasFiltradas.length === 0 && (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                  {temFiltrosAtivos
-                    ? "Nenhuma parcela encontrada com os filtros."
-                    : "Nenhuma parcela neste mês."}
+                <div className="py-8 text-center">
+                  <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm text-muted-foreground">
+                    {busca ? "Nenhum resultado." : "Nenhuma despesa neste mês."}
+                  </p>
                 </div>
               )}
 
-              {!loading &&
-                !erro &&
-                parcelasFiltradas.map((p) => (
+              <div className="space-y-1">
+                {!loading && !erro && parcelasExibidas.map((p) => (
                   <div
                     key={p.id}
                     className={cn(
-                      "flex justify-between items-center p-3 rounded-xl mb-2 transition-all",
+                      "flex items-center justify-between py-2 px-2 rounded-lg transition-colors",
                       p.paga
-                        ? "opacity-60 bg-emerald-500/5 border border-emerald-500/20"
-                        : "hover:bg-muted/50 border border-transparent"
+                        ? "opacity-50 bg-emerald-500/5"
+                        : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Checkbox */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <Checkbox
-                                checked={!!p.paga}
-                                onCheckedChange={async () => {
-                                  await marcarParcelaComoPaga(p.id, !p.paga);
-                                  carregarFatura();
-                                  onUpdated();
-                                }}
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {p.paga ? "Marcar como pendente" : "Marcar como paga"}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      {/* Categoria badge */}
-                      <div className="flex items-center gap-2">
-                        {p.categoria_nome && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className="w-6 h-6 rounded-md flex items-center justify-center"
-                                  style={{
-                                    backgroundColor: `${p.categoria_cor}20`,
-                                    color: p.categoria_cor,
-                                  }}
-                                >
-                                  <Tag className="h-3 w-3" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>{p.categoria_nome}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div>
-                        <p
-                          className={cn(
-                            "font-medium",
-                            p.paga && "line-through text-muted-foreground"
-                          )}
-                        >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Checkbox
+                        checked={!!p.paga}
+                        className="h-4 w-4"
+                        onCheckedChange={async () => {
+                          await marcarParcelaComoPaga(p.id, !p.paga);
+                          carregarFatura();
+                          onUpdated();
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className={cn(
+                          "text-sm font-medium truncate",
+                          p.paga && "line-through text-muted-foreground"
+                        )}>
                           {p.descricao}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>
-                            {p.numero_parcela}/{p.total_parcelas}
-                          </span>
-                          {p.responsavel_apelido || p.responsavel_nome ? (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {p.responsavel_apelido || p.responsavel_nome}
-                              </span>
-                            </>
-                          ) : null}
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {p.numero_parcela}/{p.total_parcelas}
+                          {(p.responsavel_apelido || p.responsavel_nome) && (
+                            <> · {p.responsavel_apelido || p.responsavel_nome}</>
+                          )}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Valor + Menu de ações */}
-                    <div className="flex items-center gap-2">
-                      <p
-                        className={cn(
-                          "font-semibold value-display",
-                          p.paga
-                            ? "line-through text-muted-foreground"
-                            : "text-red-500"
-                        )}
-                      >
+                    <div className="flex items-center gap-1">
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        p.paga ? "line-through text-muted-foreground" : "text-destructive"
+                      )}>
                         {formatCurrency(Math.abs(p.valor))}
-                      </p>
-
-                      {/* MENU DE AÇÕES */}
+                      </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setParcelaSelecionada(p);
-                              setEditarCompraOpen(true);
-                            }}
-                          >
+                          <DropdownMenuItem onClick={() => {
+                            setParcelaSelecionada(p);
+                            setEditarCompraOpen(true);
+                          }}>
                             <Pencil className="h-4 w-4 mr-2" />
-                            Editar compra
+                            Editar
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-red-500 focus:text-red-500"
+                            className="text-destructive focus:text-destructive"
                             onClick={() => {
                               setParcelaSelecionada(p);
                               setExcluirCompraOpen(true);
                             }}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir compra
+                            Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </div>
                 ))}
+              </div>
             </ScrollArea>
 
-            <Separator className="my-4" />
+            {/* Ver mais / tela ampla */}
+            <Button
+              variant="outline"
+              className="w-full h-9 text-sm gap-2"
+              onClick={() => {
+                onOpenChange(false);
+                navigate(`/cartoes/${cartao.id}/despesas`);
+              }}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {temMais
+                ? `Ver todas as ${parcelasFiltradas.length} despesas`
+                : "Ver tela ampla"}
+            </Button>
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            {/* Ações do cartão */}
+            <div className="flex gap-2 pt-2 border-t">
               <Button
-                variant="outline"
-                className="w-full gap-2"
+                variant="ghost"
+                size="sm"
+                className="flex-1 gap-1.5"
                 onClick={() => setEditarCartaoOpen(true)}
               >
-                <Pencil className="h-4 w-4" />
-                Editar cartão
+                <Settings className="h-3.5 w-3.5" />
+                Editar
               </Button>
-
               <Button
-                variant="destructive"
-                className="w-full gap-2"
+                variant="ghost"
+                size="sm"
+                className="flex-1 gap-1.5 text-destructive hover:text-destructive"
                 onClick={() => setExcluirCartaoOpen(true)}
               >
-                <Trash2 className="h-4 w-4" />
-                Excluir cartão
+                <Trash2 className="h-3.5 w-3.5" />
+                Excluir
               </Button>
             </div>
           </div>
