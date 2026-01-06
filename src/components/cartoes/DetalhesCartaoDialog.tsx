@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   listarParcelasDaFatura,
   ParcelaFatura,
@@ -78,6 +79,7 @@ import {
   Wallet,
   User,
   Crown,
+  ExternalLink,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
@@ -131,6 +133,7 @@ export function DetalhesCartaoDialog({
   onOpenChange,
   onUpdated,
 }: Props) {
+  const navigate = useNavigate();
   const [mesRef, setMesRef] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -556,6 +559,21 @@ export function DetalhesCartaoDialog({
                 </div>
               </div>
             )}
+
+            {/* Botão para ver todas as despesas */}
+            <div className="mb-4">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate(`/cartoes/${cartao.id}/despesas`);
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ver todas as despesas (tela ampla)
+              </Button>
+            </div>
 
             <ScrollArea className="h-[240px]">
               {loading && (
