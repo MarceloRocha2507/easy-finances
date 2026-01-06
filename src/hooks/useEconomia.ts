@@ -242,7 +242,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
         orcamentoMap[o.category_id] = Number(o.valor_limite);
       });
 
-      // 4. Calcular totais
+      // 4. Calcular totais (transações)
       let totalGasto = 0;
       let totalReceitas = 0;
       const gastosPorCategoria: Record<string, GastoCategoria> = {};
@@ -275,6 +275,43 @@ export function useAnaliseGastos(mesReferencia?: Date) {
         } else {
           totalReceitas += valor;
         }
+      });
+
+      // 5. Buscar parcelas do cartão e somar aos gastos por categoria
+      const { data: parcelasCartao } = await (supabase as any)
+        .from("parcelas_cartao")
+        .select(`
+          valor,
+          ativo,
+          compra:compras_cartao(categoria_id, categoria:categories(id, name, icon, color))
+        `)
+        .gte("mes_referencia", inicioMes)
+        .lte("mes_referencia", fimMes)
+        .eq("ativo", true);
+
+      (parcelasCartao || []).forEach((p: any) => {
+        const valor = Number(p.valor) || 0;
+        totalGasto += valor;
+
+        const catId = p.compra?.categoria_id || "sem-categoria";
+        const cat = p.compra?.categoria as any;
+
+        if (!gastosPorCategoria[catId]) {
+          gastosPorCategoria[catId] = {
+            categoriaId: catId,
+            categoriaNome: cat?.name || "Sem categoria",
+            categoriaIcone: cat?.icon || "tag",
+            categoriaCor: cat?.color || "#6366f1",
+            total: 0,
+            quantidade: 0,
+            percentual: 0,
+            orcamento: orcamentoMap[catId],
+            status: "ok",
+          };
+        }
+
+        gastosPorCategoria[catId].total += valor;
+        gastosPorCategoria[catId].quantidade += 1;
       });
 
       // 5. Calcular percentuais e status
@@ -383,7 +420,7 @@ export function useOrcamentos(mesReferencia?: Date) {
 
       if (error) throw error;
 
-      // 2. Buscar gastos por categoria
+      // 2. Buscar gastos por categoria (transações)
       const { data: transacoes } = await supabase
         .from("transactions")
         .select("amount, category_id")
@@ -397,7 +434,26 @@ export function useOrcamentos(mesReferencia?: Date) {
         gastosPorCategoria[catId] = (gastosPorCategoria[catId] || 0) + Number(t.amount);
       });
 
-      // 3. Formatar orçamentos
+      // 3. Buscar parcelas do cartão do mês e somar por categoria
+      const { data: parcelasCartao } = await (supabase as any)
+        .from("parcelas_cartao")
+        .select(`
+          valor,
+          ativo,
+          compra:compras_cartao(categoria_id)
+        `)
+        .gte("mes_referencia", inicioMes)
+        .lte("mes_referencia", fimMes)
+        .eq("ativo", true);
+
+      (parcelasCartao || []).forEach((p: any) => {
+        const catId = p.compra?.categoria_id || "";
+        if (catId) {
+          gastosPorCategoria[catId] = (gastosPorCategoria[catId] || 0) + Number(p.valor);
+        }
+      });
+
+      // 4. Formatar orçamentos
       return (orcamentos || []).map((o: any) => {
         const limite = Number(o.valor_limite) || 0;
         const gasto = gastosPorCategoria[o.category_id] || 0;

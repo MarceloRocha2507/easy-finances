@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Cartoes from "./pages/Cartoes";
 import Economia from "./pages/Economia";
+import DespesasCartao from "./pages/DespesasCartao";
 
 // Importar Metas como lazy para evitar conflito de case
 import { lazy, Suspense } from "react";
@@ -65,6 +66,15 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Cartoes />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cartoes/:id/despesas"
+              element={
+                <ProtectedRoute>
+                  <DespesasCartao />
                 </ProtectedRoute>
               }
             />
