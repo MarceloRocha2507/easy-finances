@@ -404,3 +404,51 @@ export function usePendingStats() {
     enabled: !!user,
   });
 }
+
+export function useCompleteStats() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['complete-stats', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('type, amount, status, due_date');
+
+      if (error) throw error;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const stats = {
+        completedIncome: 0,
+        completedExpense: 0,
+        pendingIncome: 0,
+        pendingExpense: 0,
+        overdueCount: 0,
+        pendingCount: 0,
+      };
+
+      data?.forEach((t) => {
+        const amount = Number(t.amount);
+        
+        if (t.status === 'completed') {
+          if (t.type === 'income') stats.completedIncome += amount;
+          else stats.completedExpense += amount;
+        } else if (t.status === 'pending') {
+          stats.pendingCount++;
+          if (t.type === 'income') stats.pendingIncome += amount;
+          else stats.pendingExpense += amount;
+          if (t.due_date && t.due_date < today) stats.overdueCount++;
+        }
+      });
+
+      return {
+        ...stats,
+        realBalance: stats.completedIncome - stats.completedExpense,
+        estimatedBalance: (stats.completedIncome + stats.pendingIncome) 
+                        - (stats.completedExpense + stats.pendingExpense),
+      };
+    },
+    enabled: !!user,
+  });
+}
