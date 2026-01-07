@@ -440,23 +440,38 @@ export function useOrcamentos(mesReferencia?: Date) {
         .select(`
           valor,
           ativo,
-          compra:compras_cartao(categoria_id)
+          compra:compras_cartao(categoria_id, responsavel:responsaveis(is_titular))
         `)
         .gte("mes_referencia", inicioMes)
         .lte("mes_referencia", fimMes)
         .eq("ativo", true);
 
+      // Calcular total de faturas do titular (para categoria "Cartões")
+      let totalFaturaTitular = 0;
       (parcelasCartao || []).forEach((p: any) => {
+        const valor = Number(p.valor) || 0;
+        const isTitular = p.compra?.responsavel?.is_titular === true;
+        
+        // Somar por categoria
         const catId = p.compra?.categoria_id || "";
         if (catId) {
-          gastosPorCategoria[catId] = (gastosPorCategoria[catId] || 0) + Number(p.valor);
+          gastosPorCategoria[catId] = (gastosPorCategoria[catId] || 0) + valor;
+        }
+        
+        // Somar faturas do titular
+        if (isTitular) {
+          totalFaturaTitular += valor;
         }
       });
 
       // 4. Formatar orçamentos
       return (orcamentos || []).map((o: any) => {
+        const categoriaNome = o.categories?.name || "Categoria";
+        const isCartoesCategory = categoriaNome.toLowerCase() === "cartões";
+        
         const limite = Number(o.valor_limite) || 0;
-        const gasto = gastosPorCategoria[o.category_id] || 0;
+        // Para categoria "Cartões", usar total de faturas do titular
+        const gasto = isCartoesCategory ? totalFaturaTitular : (gastosPorCategoria[o.category_id] || 0);
         const percentual = limite > 0 ? (gasto / limite) * 100 : 0;
 
         let status: "ok" | "atencao" | "excedido" = "ok";
