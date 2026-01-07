@@ -352,6 +352,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          saldo_inicial: number
           updated_at: string
           user_id: string
         }
@@ -360,6 +361,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          saldo_inicial?: number
           updated_at?: string
           user_id: string
         }
@@ -368,6 +370,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          saldo_inicial?: number
           updated_at?: string
           user_id?: string
         }
