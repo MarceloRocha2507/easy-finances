@@ -12,7 +12,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
-import { useCartoes, usePrevisaoFaturas, CartaoComResumo } from "@/services/cartoes";
+import { useCartoes, usePrevisaoPorResponsavel, CartaoComResumo } from "@/services/cartoes";
 import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,12 @@ import { cn } from "@/lib/utils";
 export default function Cartoes() {
   const [mesReferencia, setMesReferencia] = useState(new Date());
   const { data: cartoes = [], isLoading, refetch } = useCartoes(mesReferencia);
-  const { data: previsao = {} } = usePrevisaoFaturas(mesReferencia);
+  const { data: previsaoData } = usePrevisaoPorResponsavel(mesReferencia);
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoComResumo | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
+
+  const responsaveis = previsaoData?.responsaveis || [];
+  const previsao = previsaoData?.previsao || {};
 
   // Navegação de mês
   const irMesAnterior = () => {
@@ -49,15 +52,15 @@ export default function Cartoes() {
     return data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
   };
 
-  const getFaturaDoMes = (cartaoId: string, offset: number): number => {
+  const getFaturaDoMes = (responsavelId: string, offset: number): number => {
     const mesKey = getMesKey(offset);
-    return previsao[cartaoId]?.[mesKey] || 0;
+    return previsao[responsavelId]?.[mesKey] || 0;
   };
 
   const getTotalFatura = (offset: number): number => {
     const mesKey = getMesKey(offset);
-    return Object.values(previsao).reduce((sum, cartaoData) => {
-      return sum + ((cartaoData as Record<string, number>)[mesKey] || 0);
+    return Object.values(previsao).reduce((sum, respData) => {
+      return sum + ((respData as Record<string, number>)[mesKey] || 0);
     }, 0);
   };
 
@@ -116,42 +119,47 @@ export default function Cartoes() {
               </div>
             </div>
 
-            {cartoes.length === 0 ? (
+            {responsaveis.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum cartão cadastrado
+                Nenhum responsável cadastrado
               </p>
             ) : (
               <div className="space-y-3">
                 {/* Header */}
                 <div className="grid grid-cols-5 gap-2 text-xs text-muted-foreground font-medium pb-2 border-b">
-                  <div>Cartão</div>
+                  <div>Responsável</div>
                   <div className="text-right">{getMesLabel(0)}</div>
                   <div className="text-right">{getMesLabel(1)}</div>
                   <div className="text-right">{getMesLabel(2)}</div>
                   <div className="text-right">{getMesLabel(3)}</div>
                 </div>
 
-                {/* Linhas por cartão */}
-                {cartoes.map((cartao) => (
-                  <div key={cartao.id} className="grid grid-cols-5 gap-2 items-center py-2 hover:bg-muted/50 rounded-md transition-colors">
+                {/* Linhas por responsável */}
+                {responsaveis.map((resp) => (
+                  <div key={resp.id} className="grid grid-cols-5 gap-2 items-center py-2 hover:bg-muted/50 rounded-md transition-colors">
                     <div className="flex items-center gap-2">
                       <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: cartao.cor || "#6366f1" }}
+                        className={cn(
+                          "h-3 w-3 rounded-full",
+                          resp.is_titular ? "bg-primary" : "bg-muted-foreground/30"
+                        )}
                       />
-                      <span className="text-sm font-medium truncate">{cartao.nome}</span>
+                      <span className={cn("text-sm truncate", resp.is_titular && "font-medium")}>
+                        {resp.apelido || resp.nome}
+                        {resp.is_titular && <span className="text-xs text-muted-foreground ml-1">(você)</span>}
+                      </span>
                     </div>
-                    <div className="text-right text-sm font-semibold value-display">
-                      {formatCurrency(getFaturaDoMes(cartao.id, 0))}
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(cartao.id, 1))}
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(cartao.id, 2))}
+                    <div className={cn("text-right text-sm", resp.is_titular ? "font-semibold value-display" : "text-muted-foreground")}>
+                      {formatCurrency(getFaturaDoMes(resp.id, 0))}
                     </div>
                     <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(cartao.id, 3))}
+                      {formatCurrency(getFaturaDoMes(resp.id, 1))}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(getFaturaDoMes(resp.id, 2))}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(getFaturaDoMes(resp.id, 3))}
                     </div>
                   </div>
                 ))}

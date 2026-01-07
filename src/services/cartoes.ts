@@ -237,45 +237,60 @@ export async function excluirCartao(id: string) {
    HOOKS
 ====================================================== */
 
+export type ResponsavelPrevisao = {
+  id: string;
+  nome: string;
+  apelido: string | null;
+  is_titular: boolean;
+};
+
 /**
- * Buscar previsão de faturas para os próximos meses
+ * Buscar previsão de faturas por responsável
  */
-export async function buscarPrevisaoFaturas(
+export async function buscarPrevisaoPorResponsavel(
   mesBase: Date,
   mesesFuturos: number = 4
-): Promise<Record<string, Record<string, number>>> {
-  // Resultado: { cartaoId: { "2026-01": valor, "2026-02": valor, ... } }
-  
-  // 1. Buscar cartões
-  const { data: cartoes, error: cartoesError } = await (supabase as any)
-    .from("cartoes")
-    .select("id")
-    .order("created_at", { ascending: false });
+): Promise<{
+  responsaveis: ResponsavelPrevisao[];
+  previsao: Record<string, Record<string, number>>;
+}> {
+  // 1. Buscar responsáveis ativos
+  const { data: responsaveis, error: respError } = await (supabase as any)
+    .from("responsaveis")
+    .select("id, nome, apelido, is_titular")
+    .eq("ativo", true)
+    .order("is_titular", { ascending: false });
 
-  if (cartoesError) throw cartoesError;
-  if (!cartoes || cartoes.length === 0) return {};
+  if (respError) throw respError;
+  if (!responsaveis || responsaveis.length === 0) {
+    return { responsaveis: [], previsao: {} };
+  }
 
-  const cartaoIds = cartoes.map((c: any) => c.id);
-
-  // 2. Buscar compras dos cartões
+  // 2. Buscar todas as compras com responsável
   const { data: compras } = await (supabase as any)
     .from("compras_cartao")
-    .select("id, cartao_id")
-    .in("cartao_id", cartaoIds);
+    .select("id, responsavel_id");
 
-  if (!compras || compras.length === 0) return {};
+  if (!compras || compras.length === 0) {
+    return { responsaveis, previsao: {} };
+  }
 
   const compraIds = compras.map((c: any) => c.id);
-  const compraCartaoMap: Record<string, string> = {};
+  const compraResponsavelMap: Record<string, string> = {};
   compras.forEach((c: any) => {
-    compraCartaoMap[c.id] = c.cartao_id;
+    if (c.responsavel_id) {
+      compraResponsavelMap[c.id] = c.responsavel_id;
+    }
   });
 
-  // 3. Definir período de busca (mês atual + X meses futuros)
-  const inicioMes = new Date(mesBase.getFullYear(), mesBase.getMonth(), 1);
-  const fimMes = new Date(mesBase.getFullYear(), mesBase.getMonth() + mesesFuturos, 1);
-  const inicioStr = inicioMes.toISOString().slice(0, 10);
-  const fimStr = fimMes.toISOString().slice(0, 10);
+  // 3. Definir período (usar formato YYYY-MM-DD)
+  const ano = mesBase.getFullYear();
+  const mes = mesBase.getMonth();
+  const inicioStr = `${ano}-${String(mes + 1).padStart(2, "0")}-01`;
+  
+  const fimAno = mes + mesesFuturos > 12 ? ano + 1 : ano;
+  const fimMes = ((mes + mesesFuturos) % 12) || 12;
+  const fimStr = `${fimAno}-${String(fimMes + 1).padStart(2, "0")}-01`;
 
   // 4. Buscar parcelas no período
   const { data: parcelas } = await (supabase as any)
@@ -285,42 +300,44 @@ export async function buscarPrevisaoFaturas(
     .gte("mes_referencia", inicioStr)
     .lt("mes_referencia", fimStr);
 
-  // 5. Agrupar por cartão e mês
-  const resultado: Record<string, Record<string, number>> = {};
-
-  cartaoIds.forEach((id: string) => {
-    resultado[id] = {};
+  // 5. Inicializar resultado por responsável
+  const previsao: Record<string, Record<string, number>> = {};
+  
+  responsaveis.forEach((r: any) => {
+    previsao[r.id] = {};
     for (let i = 0; i < mesesFuturos; i++) {
-      const mes = new Date(mesBase.getFullYear(), mesBase.getMonth() + i, 1);
-      const mesKey = `${mes.getFullYear()}-${String(mes.getMonth() + 1).padStart(2, "0")}`;
-      resultado[id][mesKey] = 0;
+      const d = new Date(ano, mes + i, 1);
+      const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      previsao[r.id][mesKey] = 0;
     }
   });
 
+  // 6. Somar parcelas por responsável e mês (corrigindo timezone)
   (parcelas || []).forEach((p: any) => {
-    const cartaoId = compraCartaoMap[p.compra_id];
-    if (cartaoId) {
-      const dataParcela = new Date(p.mes_referencia);
-      const mesKey = `${dataParcela.getFullYear()}-${String(dataParcela.getMonth() + 1).padStart(2, "0")}`;
-      if (resultado[cartaoId] && resultado[cartaoId][mesKey] !== undefined) {
-        resultado[cartaoId][mesKey] += Number(p.valor) || 0;
+    const responsavelId = compraResponsavelMap[p.compra_id];
+    if (responsavelId && previsao[responsavelId]) {
+      // Usar UTC para evitar problemas de timezone
+      const [anoP, mesP] = p.mes_referencia.split("-").map(Number);
+      const mesKey = `${anoP}-${String(mesP).padStart(2, "0")}`;
+      if (previsao[responsavelId][mesKey] !== undefined) {
+        previsao[responsavelId][mesKey] += Number(p.valor) || 0;
       }
     }
   });
 
-  return resultado;
+  return { responsaveis, previsao };
 }
 
 /**
- * Hook para previsão de faturas
+ * Hook para previsão por responsável
  */
-export function usePrevisaoFaturas(mesBase?: Date) {
+export function usePrevisaoPorResponsavel(mesBase?: Date) {
   const mes = mesBase || new Date();
   const mesKey = `${mes.getFullYear()}-${mes.getMonth()}`;
 
   return useQuery({
-    queryKey: ["previsao-faturas", mesKey],
-    queryFn: () => buscarPrevisaoFaturas(mes, 4),
+    queryKey: ["previsao-responsavel", mesKey],
+    queryFn: () => buscarPrevisaoPorResponsavel(mes, 4),
     staleTime: 1000 * 60 * 2,
   });
 }
