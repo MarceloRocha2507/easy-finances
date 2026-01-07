@@ -17,15 +17,7 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
-import {
-  TrendingDown,
-  Target,
-  Lightbulb,
-  BarChart3,
-  PiggyBank,
-} from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 
 export default function Economia() {
@@ -59,12 +51,11 @@ export default function Economia() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <PiggyBank className="w-7 h-7" />
-              Economia & Relatórios
+            <h1 className="text-2xl font-semibold text-foreground">
+              Economia
             </h1>
-            <p className="text-muted-foreground">
-              Analise seus gastos e economize mais
+            <p className="text-sm text-muted-foreground">
+              Acompanhe seus gastos e orçamentos
             </p>
           </div>
 
@@ -81,9 +72,9 @@ export default function Economia() {
 
         {/* Resumo */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
+              <Skeleton key={i} className="h-24 rounded-lg" />
             ))}
           </div>
         ) : (
@@ -106,110 +97,133 @@ export default function Economia() {
 
         {/* Tabs */}
         <Tabs defaultValue="visao-geral">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="visao-geral" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
+          <TabsList className="w-full justify-start border-b bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="visao-geral"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5"
+            >
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="orcamentos" className="gap-2">
-              <Target className="w-4 h-4" />
+            <TabsTrigger
+              value="orcamentos"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5"
+            >
               Orçamentos
             </TabsTrigger>
-            <TabsTrigger value="insights" className="gap-2">
-              <Lightbulb className="w-4 h-4" />
+            <TabsTrigger
+              value="insights"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5"
+            >
               Insights
             </TabsTrigger>
           </TabsList>
 
           {/* Tab: Visão Geral */}
           <TabsContent value="visao-geral" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               {/* Gráfico de Pizza */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5" />
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">
                     Distribuição de Gastos
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <Skeleton className="h-[300px] rounded-xl" />
+                    <Skeleton className="h-[240px] rounded-lg" />
                   ) : pieData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={100}
-                          innerRadius={60}
-                          paddingAngle={2}
-                          label={({ percent }) =>
-                            `${(percent * 100).toFixed(0)}%`
-                          }
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
-                        />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <div className="text-center">
-                        <TrendingDown className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p>Nenhum gasto registrado</p>
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            innerRadius={50}
+                            paddingAngle={2}
+                            strokeWidth={0}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => formatCurrency(value)}
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              fontSize: "13px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      
+                      {/* Legenda customizada */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center">
+                        {pieData.slice(0, 4).map((item, index) => (
+                          <div key={index} className="flex items-center gap-1.5">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {item.name}
+                            </span>
+                          </div>
+                        ))}
                       </div>
+                    </div>
+                  ) : (
+                    <div className="h-[240px] flex items-center justify-center text-muted-foreground">
+                      <p className="text-sm">Nenhum gasto registrado</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Ranking de Gastos */}
-              {isLoading ? (
-                <Skeleton className="h-[400px] rounded-xl" />
-              ) : (
-                <RankingGastos
-                  gastos={analise?.gastosPorCategoria || []}
-                  totalGasto={analise?.totalGasto || 0}
-                />
-              )}
+              <div className="lg:col-span-3">
+                {isLoading ? (
+                  <Skeleton className="h-[350px] rounded-lg" />
+                ) : (
+                  <RankingGastos
+                    gastos={analise?.gastosPorCategoria || []}
+                    totalGasto={analise?.totalGasto || 0}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Previsão */}
             {!isLoading && analise && analise.previsaoMensal > 0 && (
-              <Card className="border-0 shadow-lg mt-6">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+              <Card className="mt-6">
+                <CardContent className="py-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        📊 Previsão de Gastos até o Fim do Mês
+                      <p className="text-sm text-muted-foreground">
+                        Previsão de gastos até o fim do mês
                       </p>
-                      <p className="text-2xl font-bold">
+                      <p className="text-xl font-semibold mt-0.5">
                         {formatCurrency(analise.previsaoMensal)}
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Baseado na sua média diária de{" "}
-                        {formatCurrency(analise.mediaDiaria)}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Média diária de {formatCurrency(analise.mediaDiaria)}
                       </p>
                     </div>
                     {analise.totalReceitas > 0 && (
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Você terá economizado
+                      <div className="sm:text-right">
+                        <p className="text-sm text-muted-foreground">
+                          Economia prevista
                         </p>
                         <p
-                          className={`text-2xl font-bold ${
+                          className={`text-xl font-semibold mt-0.5 ${
                             analise.totalReceitas - analise.previsaoMensal >= 0
-                              ? "text-emerald-500"
-                              : "text-red-500"
+                              ? "text-income"
+                              : "text-expense"
                           }`}
                         >
                           {formatCurrency(
@@ -230,7 +244,7 @@ export default function Economia() {
           {/* Tab: Orçamentos */}
           <TabsContent value="orcamentos" className="mt-6">
             {isLoading ? (
-              <Skeleton className="h-[400px] rounded-xl" />
+              <Skeleton className="h-[400px] rounded-lg" />
             ) : (
               <OrcamentosCategoria
                 orcamentos={orcamentos || []}
@@ -243,30 +257,29 @@ export default function Economia() {
             )}
 
             {/* Dicas sobre orçamento */}
-            <Card className="border-0 shadow-lg mt-6 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-amber-500" />
-                  Dicas para Definir Orçamentos
+            <Card className="mt-6 bg-muted/30">
+              <CardContent className="py-5">
+                <h3 className="font-medium mb-3">
+                  Dicas para definir orçamentos
                 </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>
-                    💡 <strong>50/30/20:</strong> Destine 50% para necessidades,
-                    30% para desejos e 20% para economias
-                  </li>
-                  <li>
-                    💡 <strong>Comece pequeno:</strong> Defina limites para suas
-                    3 maiores categorias de gasto primeiro
-                  </li>
-                  <li>
-                    💡 <strong>Seja realista:</strong> Baseie os limites nos
-                    seus gastos médios dos últimos meses
-                  </li>
-                  <li>
-                    💡 <strong>Revise mensalmente:</strong> Ajuste os limites
-                    conforme sua realidade financeira
-                  </li>
-                </ul>
+                <div className="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                  <p>
+                    <strong className="text-foreground">Regra 50/30/20:</strong>{" "}
+                    50% para necessidades, 30% para desejos, 20% para economias
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Comece pequeno:</strong>{" "}
+                    Defina limites para suas 3 maiores categorias primeiro
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Seja realista:</strong>{" "}
+                    Baseie os limites nos seus gastos médios
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Revise mensalmente:</strong>{" "}
+                    Ajuste conforme sua realidade financeira
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -274,24 +287,23 @@ export default function Economia() {
           {/* Tab: Insights */}
           <TabsContent value="insights" className="mt-6">
             {isLoading ? (
-              <Skeleton className="h-[400px] rounded-xl" />
+              <Skeleton className="h-[400px] rounded-lg" />
             ) : (
               <InsightsEconomia insights={analise?.insights || []} />
             )}
 
             {/* Regras de economia */}
-            <Card className="border-0 shadow-lg mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PiggyBank className="w-5 h-5" />
-                  Regras de Ouro para Economizar
+            <Card className="mt-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">
+                  Princípios para economizar
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <h4 className="font-semibold text-emerald-600 mb-2">
-                      ✅ Pague-se Primeiro
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg border bg-muted/20">
+                    <h4 className="font-medium text-sm mb-1.5">
+                      Pague-se primeiro
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       Separe pelo menos 10% do seu salário para economias antes
@@ -299,9 +311,9 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <h4 className="font-semibold text-blue-600 mb-2">
-                      ✅ Regra das 24 Horas
+                  <div className="p-4 rounded-lg border bg-muted/20">
+                    <h4 className="font-medium text-sm mb-1.5">
+                      Regra das 24 horas
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       Antes de compras não essenciais, espere 24 horas. Se ainda
@@ -309,9 +321,9 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                    <h4 className="font-semibold text-purple-600 mb-2">
-                      ✅ Fundo de Emergência
+                  <div className="p-4 rounded-lg border bg-muted/20">
+                    <h4 className="font-medium text-sm mb-1.5">
+                      Fundo de emergência
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       Tenha guardado o equivalente a 3-6 meses de despesas para
@@ -319,9 +331,9 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <h4 className="font-semibold text-amber-600 mb-2">
-                      ✅ Revise Assinaturas
+                  <div className="p-4 rounded-lg border bg-muted/20">
+                    <h4 className="font-medium text-sm mb-1.5">
+                      Revise assinaturas
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       Cancele serviços que você não usa. Pequenos valores somam
