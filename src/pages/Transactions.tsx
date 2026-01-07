@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -39,6 +39,36 @@ const initialFormData: TransactionFormData = {
   date: new Date(),
 };
 
+// Mapa de ícones para renderização
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+};
+
+function getIconComponent(iconValue: string): React.ComponentType<{ className?: string }> {
+  return ICON_MAP[iconValue] || Package;
+}
+
+// Categorias consideradas "despesas fixas"
+const FIXED_EXPENSE_CATEGORIES = ['Moradia', 'Contas'];
+
 export default function Transactions() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [filters, setFilters] = useState<{ type?: 'income' | 'expense'; search: string }>({ search: '' });
@@ -62,6 +92,9 @@ export default function Transactions() {
   // Separar por tipo
   const incomeTransactions = filteredTransactions?.filter(t => t.type === 'income') || [];
   const expenseTransactions = filteredTransactions?.filter(t => t.type === 'expense') || [];
+  const fixedExpenseTransactions = expenseTransactions.filter(t => 
+    FIXED_EXPENSE_CATEGORIES.includes(t.category?.name || '')
+  );
 
   // Filtrar categorias pelo tipo selecionado
   const filteredCategories = categories?.filter((c) => c.type === formData.type) || [];
@@ -140,14 +173,19 @@ export default function Transactions() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div 
-                    className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0",
-                      transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
-                    )}
-                  >
-                    {transaction.category?.icon || (transaction.type === 'income' ? '💰' : '📦')}
-                  </div>
+                  {(() => {
+                    const IconComponent = getIconComponent(transaction.category?.icon || 'package');
+                    return (
+                      <div 
+                        className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                          transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
+                        )}
+                      >
+                        <IconComponent className="w-5 h-5 text-white" />
+                      </div>
+                    );
+                  })()}
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">
                       {transaction.description || transaction.category?.name || 'Sem descrição'}
@@ -307,14 +345,17 @@ export default function Transactions() {
                             Nenhuma categoria de {formData.type === 'income' ? 'receita' : 'despesa'}
                           </SelectItem>
                         ) : (
-                          filteredCategories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              <span className="flex items-center gap-2">
-                                <span>{cat.icon}</span>
-                                <span>{cat.name}</span>
-                              </span>
-                            </SelectItem>
-                          ))
+                          filteredCategories.map((cat) => {
+                            const CategoryIcon = getIconComponent(cat.icon || 'package');
+                            return (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                <span className="flex items-center gap-2">
+                                  <CategoryIcon className="w-4 h-4" />
+                                  <span>{cat.name}</span>
+                                </span>
+                              </SelectItem>
+                            );
+                          })
                         )}
                       </SelectContent>
                     </Select>
@@ -443,7 +484,7 @@ export default function Transactions() {
 
         {/* Tabs para separar Receitas e Despesas */}
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all" className="gap-2">
               Todos
               <Badge variant="secondary" className="ml-1">
@@ -462,6 +503,13 @@ export default function Transactions() {
               Despesas
               <Badge variant="secondary" className="ml-1 bg-red-500/20 text-red-600">
                 {expenseTransactions.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="fixed" className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Fixas
+              <Badge variant="secondary" className="ml-1 bg-orange-500/20 text-orange-600">
+                {fixedExpenseTransactions.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
@@ -495,6 +543,17 @@ export default function Transactions() {
               <TransactionList 
                 items={expenseTransactions} 
                 emptyMessage="Nenhuma despesa registrada" 
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="fixed" className="mt-4">
+            {isLoading ? (
+              <LoadingList />
+            ) : (
+              <TransactionList 
+                items={fixedExpenseTransactions} 
+                emptyMessage="Nenhuma despesa fixa registrada" 
               />
             )}
           </TabsContent>

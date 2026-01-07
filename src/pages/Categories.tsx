@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ICON_OPTIONS = [
@@ -28,6 +28,8 @@ const ICON_OPTIONS = [
   { value: 'book', label: 'Livros', icon: Book },
   { value: 'package', label: 'Outros', icon: Package },
   { value: 'zap', label: 'Serviços', icon: Zap },
+  { value: 'trending-up', label: 'Crescimento', icon: TrendingUp },
+  { value: 'tag', label: 'Etiqueta', icon: Tag },
 ];
 
 const COLOR_OPTIONS = ['#64748b', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#ec4899', '#0ea5e9', '#f97316'];
