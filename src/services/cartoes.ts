@@ -238,6 +238,94 @@ export async function excluirCartao(id: string) {
 ====================================================== */
 
 /**
+ * Buscar previsão de faturas para os próximos meses
+ */
+export async function buscarPrevisaoFaturas(
+  mesBase: Date,
+  mesesFuturos: number = 4
+): Promise<Record<string, Record<string, number>>> {
+  // Resultado: { cartaoId: { "2026-01": valor, "2026-02": valor, ... } }
+  
+  // 1. Buscar cartões
+  const { data: cartoes, error: cartoesError } = await (supabase as any)
+    .from("cartoes")
+    .select("id")
+    .order("created_at", { ascending: false });
+
+  if (cartoesError) throw cartoesError;
+  if (!cartoes || cartoes.length === 0) return {};
+
+  const cartaoIds = cartoes.map((c: any) => c.id);
+
+  // 2. Buscar compras dos cartões
+  const { data: compras } = await (supabase as any)
+    .from("compras_cartao")
+    .select("id, cartao_id")
+    .in("cartao_id", cartaoIds);
+
+  if (!compras || compras.length === 0) return {};
+
+  const compraIds = compras.map((c: any) => c.id);
+  const compraCartaoMap: Record<string, string> = {};
+  compras.forEach((c: any) => {
+    compraCartaoMap[c.id] = c.cartao_id;
+  });
+
+  // 3. Definir período de busca (mês atual + X meses futuros)
+  const inicioMes = new Date(mesBase.getFullYear(), mesBase.getMonth(), 1);
+  const fimMes = new Date(mesBase.getFullYear(), mesBase.getMonth() + mesesFuturos, 1);
+  const inicioStr = inicioMes.toISOString().slice(0, 10);
+  const fimStr = fimMes.toISOString().slice(0, 10);
+
+  // 4. Buscar parcelas no período
+  const { data: parcelas } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select("compra_id, valor, mes_referencia")
+    .in("compra_id", compraIds)
+    .gte("mes_referencia", inicioStr)
+    .lt("mes_referencia", fimStr);
+
+  // 5. Agrupar por cartão e mês
+  const resultado: Record<string, Record<string, number>> = {};
+
+  cartaoIds.forEach((id: string) => {
+    resultado[id] = {};
+    for (let i = 0; i < mesesFuturos; i++) {
+      const mes = new Date(mesBase.getFullYear(), mesBase.getMonth() + i, 1);
+      const mesKey = `${mes.getFullYear()}-${String(mes.getMonth() + 1).padStart(2, "0")}`;
+      resultado[id][mesKey] = 0;
+    }
+  });
+
+  (parcelas || []).forEach((p: any) => {
+    const cartaoId = compraCartaoMap[p.compra_id];
+    if (cartaoId) {
+      const dataParcela = new Date(p.mes_referencia);
+      const mesKey = `${dataParcela.getFullYear()}-${String(dataParcela.getMonth() + 1).padStart(2, "0")}`;
+      if (resultado[cartaoId] && resultado[cartaoId][mesKey] !== undefined) {
+        resultado[cartaoId][mesKey] += Number(p.valor) || 0;
+      }
+    }
+  });
+
+  return resultado;
+}
+
+/**
+ * Hook para previsão de faturas
+ */
+export function usePrevisaoFaturas(mesBase?: Date) {
+  const mes = mesBase || new Date();
+  const mesKey = `${mes.getFullYear()}-${mes.getMonth()}`;
+
+  return useQuery({
+    queryKey: ["previsao-faturas", mesKey],
+    queryFn: () => buscarPrevisaoFaturas(mes, 4),
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
  * Hook para listar cartões com resumo
  */
 export function useCartoes(mesReferencia?: Date) {
