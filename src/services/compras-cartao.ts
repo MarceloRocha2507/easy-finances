@@ -321,25 +321,16 @@ export async function gerarMensagemFatura(
     const resumo = await calcularResumoPorResponsavel(cartaoId, mesReferencia);
     const totalGeral = resumo.reduce((sum, r) => sum + r.total, 0);
 
-    let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
-    msg += `📅 ${capitalizar(nomeMes)}\n\n`;
-
-    msg += `┌──────────────────────────────\n`;
-    msg += `│ 📊 RESUMO POR PESSOA\n`;
-    msg += `├──────────────────────────────\n`;
+    let msg = `*${nomeCartao} - ${capitalizar(nomeMes)}*\n\n`;
+    msg += `*Resumo por pessoa:*\n`;
 
     resumo.forEach((r) => {
-      const icone = r.is_titular ? "👤" : "👥";
       const nome = r.responsavel_apelido || r.responsavel_nome;
-      msg += `│ ${icone} ${nome} .......... ${formatarMoeda(r.total)}\n`;
+      msg += `• ${nome}: ${formatarMoeda(r.total)}\n`;
     });
 
-    msg += `└──────────────────────────────\n\n`;
-
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `💰 *TOTAL GERAL: ${formatarMoeda(totalGeral)}*\n`;
-    msg += `📆 Vencimento: ${vencimentoStr}\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━`;
+    msg += `\n*Total: ${formatarMoeda(totalGeral)}*\n`;
+    msg += `Vencimento: ${vencimentoStr}`;
 
     return msg;
   }
@@ -354,56 +345,37 @@ export async function gerarMensagemFatura(
 
   // Formato: RESUMIDO
   if (formato === "resumido") {
-    let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
-    msg += `📅 ${capitalizar(nomeMes)}\n\n`;
+    let msg = `*${nomeCartao} - ${capitalizar(nomeMes)}*\n\n`;
     
     if (nomeResponsavel) {
-      msg += `👤 Responsável: ${nomeResponsavel}\n`;
+      msg += `Responsável: ${nomeResponsavel}\n`;
     }
-    msg += `📊 Total de compras: ${parcelasFiltradas.length}\n\n`;
-
-    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `💰 *TOTAL: ${formatarMoeda(total)}*\n`;
-    msg += `📆 Vencimento: ${vencimentoStr}\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━`;
+    msg += `${parcelasFiltradas.length} compras\n\n`;
+    msg += `*Total: ${formatarMoeda(total)}*\n`;
+    msg += `Vencimento: ${vencimentoStr}`;
 
     return msg;
   }
 
   // Formato: DETALHADO (padrão)
-  let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
-  msg += `📅 ${capitalizar(nomeMes)}\n\n`;
+  let msg = `*${nomeCartao} - ${capitalizar(nomeMes)}*\n`;
   
   if (nomeResponsavel) {
-    msg += `👤 Responsável: ${nomeResponsavel}\n\n`;
+    msg += `Responsável: ${nomeResponsavel}\n`;
   }
-
-  msg += `┌──────────────────────────────\n`;
-  msg += `│ 📦 COMPRAS DO MÊS\n`;
-  msg += `├──────────────────────────────\n`;
+  msg += `\n`;
 
   // Listar compras ordenadas por data
   parcelasFiltradas
     .sort((a, b) => new Date(a.data_compra).getTime() - new Date(b.data_compra).getTime())
     .forEach((p) => {
-      const data = new Date(p.data_compra).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-      });
       const valor = formatarMoeda(p.valor);
       const parcela = p.total_parcelas > 1 ? ` (${p.numero_parcela}/${p.total_parcelas})` : "";
-      
-      msg += `│ ${data} • ${p.descricao}\n`;
-      msg += `│        ${valor}${parcela}\n`;
-      msg += `│\n`;
+      msg += `• ${p.descricao}: ${valor}${parcela}\n`;
     });
 
-  msg += `└──────────────────────────────\n\n`;
-
-  msg += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-  msg += `💰 *TOTAL: ${formatarMoeda(total)}*\n`;
-  msg += `📆 Vencimento: ${vencimentoStr}\n`;
-  msg += `━━━━━━━━━━━━━━━━━━━━━━━━`;
+  msg += `\n*Total: ${formatarMoeda(total)}*\n`;
+  msg += `Vencimento: ${vencimentoStr}`;
 
   return msg;
 }
