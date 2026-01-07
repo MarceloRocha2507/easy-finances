@@ -411,6 +411,16 @@ export function useCompleteStats() {
   return useQuery({
     queryKey: ['complete-stats', user?.id],
     queryFn: async () => {
+      // Buscar saldo inicial do profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('saldo_inicial')
+        .eq('user_id', user!.id)
+        .single();
+
+      const saldoInicial = Number(profile?.saldo_inicial) || 0;
+
+      // Buscar transações
       const { data, error } = await supabase
         .from('transactions')
         .select('type, amount, status, due_date');
@@ -420,6 +430,7 @@ export function useCompleteStats() {
       const today = new Date().toISOString().split('T')[0];
       
       const stats = {
+        saldoInicial,
         completedIncome: 0,
         completedExpense: 0,
         pendingIncome: 0,
@@ -442,11 +453,15 @@ export function useCompleteStats() {
         }
       });
 
+      // Saldo Real = Saldo Inicial + Receitas Recebidas - Despesas Pagas
+      const realBalance = saldoInicial + stats.completedIncome - stats.completedExpense;
+      // Saldo Estimado = Saldo Real + A Receber - A Pagar
+      const estimatedBalance = realBalance + stats.pendingIncome - stats.pendingExpense;
+
       return {
         ...stats,
-        realBalance: stats.completedIncome - stats.completedExpense,
-        estimatedBalance: (stats.completedIncome + stats.pendingIncome) 
-                        - (stats.completedExpense + stats.pendingExpense),
+        realBalance,
+        estimatedBalance,
       };
     },
     enabled: !!user,

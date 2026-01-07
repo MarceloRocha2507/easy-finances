@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay } from 'date-fns';
@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
 
 
 interface TransactionFormData {
@@ -92,6 +93,7 @@ export default function Transactions() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
+  const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
 
   const { data: transactions, isLoading } = useTransactions();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -512,60 +514,94 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Resumo Completo - 6 Indicadores */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Receitas Realizadas */}
-          <div className="flex flex-col p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
-            <span className="text-xs text-muted-foreground">Receitas</span>
-            <span className="font-semibold text-emerald-600">
-              +{formatCurrency(stats?.completedIncome || 0)}
-            </span>
+        {/* Saldo Inicial + Resumo Completo */}
+        <div className="space-y-3">
+          {/* Card de Saldo Inicial */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Wallet className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground">Saldo Inicial da Conta</span>
+                <p className="font-semibold">{formatCurrency(stats?.saldoInicial || 0)}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setEditarSaldoOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Configurar
+            </Button>
           </div>
-          
-          {/* Despesas Realizadas */}
-          <div className="flex flex-col p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
-            <span className="text-xs text-muted-foreground">Despesas</span>
-            <span className="font-semibold text-red-600">
-              -{formatCurrency(stats?.completedExpense || 0)}
-            </span>
-          </div>
-          
-          {/* A Receber */}
-          <div className="flex flex-col p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-            <span className="text-xs text-muted-foreground">A Receber</span>
-            <span className="font-semibold text-blue-600">
-              +{formatCurrency(stats?.pendingIncome || 0)}
-            </span>
-          </div>
-          
-          {/* A Pagar */}
-          <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-            <span className="text-xs text-muted-foreground">A Pagar</span>
-            <span className="font-semibold text-amber-600">
-              -{formatCurrency(stats?.pendingExpense || 0)}
-            </span>
-          </div>
-          
-          {/* Saldo Real */}
-          <div className="flex flex-col p-3 bg-muted/50 rounded-lg">
-            <span className="text-xs text-muted-foreground">Saldo Real</span>
-            <span className={cn("font-semibold", 
-              (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
-            )}>
-              {formatCurrency(stats?.realBalance || 0)}
-            </span>
-          </div>
-          
-          {/* Saldo Estimado */}
-          <div className="flex flex-col p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <span className="text-xs text-muted-foreground">Saldo Estimado</span>
-            <span className={cn("font-semibold", 
-              (stats?.estimatedBalance || 0) >= 0 ? 'text-primary' : 'text-red-600'
-            )}>
-              {formatCurrency(stats?.estimatedBalance || 0)}
-            </span>
+
+          {/* Resumo - 6 Indicadores */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* Receitas Realizadas */}
+            <div className="flex flex-col p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+              <span className="text-xs text-muted-foreground">Receitas</span>
+              <span className="font-semibold text-emerald-600">
+                +{formatCurrency(stats?.completedIncome || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">recebidas</span>
+            </div>
+            
+            {/* Despesas Realizadas */}
+            <div className="flex flex-col p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+              <span className="text-xs text-muted-foreground">Despesas</span>
+              <span className="font-semibold text-red-600">
+                -{formatCurrency(stats?.completedExpense || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">pagas</span>
+            </div>
+            
+            {/* A Receber */}
+            <div className="flex flex-col p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+              <span className="text-xs text-muted-foreground">A Receber</span>
+              <span className="font-semibold text-blue-600">
+                +{formatCurrency(stats?.pendingIncome || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">pendentes</span>
+            </div>
+            
+            {/* A Pagar */}
+            <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+              <span className="text-xs text-muted-foreground">A Pagar</span>
+              <span className="font-semibold text-amber-600">
+                -{formatCurrency(stats?.pendingExpense || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">pendentes</span>
+            </div>
+            
+            {/* Saldo Real */}
+            <div className="flex flex-col p-3 bg-muted/50 rounded-lg">
+              <span className="text-xs text-muted-foreground">Saldo Real</span>
+              <span className={cn("font-semibold", 
+                (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
+              )}>
+                {formatCurrency(stats?.realBalance || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">base + receitas - despesas</span>
+            </div>
+            
+            {/* Saldo Estimado */}
+            <div className="flex flex-col p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <span className="text-xs text-muted-foreground">Saldo Estimado</span>
+              <span className={cn("font-semibold", 
+                (stats?.estimatedBalance || 0) >= 0 ? 'text-primary' : 'text-red-600'
+              )}>
+                {formatCurrency(stats?.estimatedBalance || 0)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">real + a receber - a pagar</span>
+            </div>
           </div>
         </div>
+
+        {/* Dialog Editar Saldo */}
+        <EditarSaldoDialog open={editarSaldoOpen} onOpenChange={setEditarSaldoOpen} />
 
         {/* Tabs + Busca Integrados */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-0">
