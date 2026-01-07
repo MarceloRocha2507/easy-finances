@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, Transaction, TransactionInsert } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { formatCurrency, formatDate } from '@/lib/formatters';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/formatters';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,17 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
-// Dialog para nova compra no cartão (importar se existir)
-// import { NovaCompraCartaoDialog } from '@/components/cartoes/NovaCompraCartaoDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
@@ -69,32 +65,81 @@ function getIconComponent(iconValue: string): React.ComponentType<{ className?: 
 // Categorias consideradas "despesas fixas"
 const FIXED_EXPENSE_CATEGORIES = ['Moradia', 'Contas'];
 
+type TabType = 'all' | 'income' | 'expense' | 'fixed';
+
+// Formatar label de data
+function formatDateLabel(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return 'Hoje';
+  if (isYesterday(date)) return 'Ontem';
+  return format(date, "dd 'de' MMMM", { locale: ptBR });
+}
+
 export default function Transactions() {
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [filters, setFilters] = useState<{ type?: 'income' | 'expense'; search: string }>({ search: '' });
+  const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
 
-  const { data: transactions, isLoading } = useTransactions({ type: filters.type });
+  const { data: transactions, isLoading } = useTransactions();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
 
-  // Filtrar transações
-  const filteredTransactions = transactions?.filter((t) =>
-    t.description?.toLowerCase().includes(filters.search.toLowerCase()) ||
-    t.category?.name?.toLowerCase().includes(filters.search.toLowerCase())
-  );
+  // Filtrar transações por busca
+  const searchedTransactions = useMemo(() => {
+    if (!transactions) return [];
+    if (!searchQuery.trim()) return transactions;
+    const query = searchQuery.toLowerCase();
+    return transactions.filter((t) =>
+      t.description?.toLowerCase().includes(query) ||
+      t.category?.name?.toLowerCase().includes(query)
+    );
+  }, [transactions, searchQuery]);
 
   // Separar por tipo
-  const incomeTransactions = filteredTransactions?.filter(t => t.type === 'income') || [];
-  const expenseTransactions = filteredTransactions?.filter(t => t.type === 'expense') || [];
-  const fixedExpenseTransactions = expenseTransactions.filter(t => 
-    FIXED_EXPENSE_CATEGORIES.includes(t.category?.name || '')
+  const incomeTransactions = useMemo(() => 
+    searchedTransactions.filter(t => t.type === 'income'), 
+    [searchedTransactions]
   );
+  
+  const expenseTransactions = useMemo(() => 
+    searchedTransactions.filter(t => t.type === 'expense'), 
+    [searchedTransactions]
+  );
+  
+  const fixedExpenseTransactions = useMemo(() => 
+    expenseTransactions.filter(t => 
+      FIXED_EXPENSE_CATEGORIES.includes(t.category?.name || '')
+    ), 
+    [expenseTransactions]
+  );
+
+  // Transações ativas baseado na tab
+  const activeTransactions = useMemo(() => {
+    switch (activeTab) {
+      case 'income': return incomeTransactions;
+      case 'expense': return expenseTransactions;
+      case 'fixed': return fixedExpenseTransactions;
+      default: return searchedTransactions;
+    }
+  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, fixedExpenseTransactions]);
+
+  // Agrupar transações por data
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    activeTransactions.forEach(t => {
+      const dateKey = t.date;
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(t);
+    });
+    return Object.entries(groups).sort(([a], [b]) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [activeTransactions]);
 
   // Filtrar categorias pelo tipo selecionado
   const filteredCategories = categories?.filter((c) => c.type === formData.type) || [];
@@ -102,6 +147,7 @@ export default function Transactions() {
   // Totais
   const totalIncome = incomeTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
   const totalExpense = expenseTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+  const balance = totalIncome - totalExpense;
 
   const handleSubmit = () => {
     const data: TransactionInsert = {
@@ -150,120 +196,58 @@ export default function Transactions() {
     deleteMutation.mutate(id);
   };
 
-  // Componente de lista de transações
-  const TransactionList = ({ items, emptyMessage }: { items: Transaction[], emptyMessage: string }) => {
-    if (items.length === 0) {
-      return (
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">{emptyMessage}</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        {items.map((transaction, index) => (
-          <Card 
-            key={transaction.id} 
-            className="border-0 shadow-lg animate-slide-up hover:shadow-xl transition-shadow"
-            style={{ animationDelay: `${index * 0.05}s` }}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  {(() => {
-                    const IconComponent = getIconComponent(transaction.category?.icon || 'package');
-                    return (
-                      <div 
-                        className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                          transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
-                        )}
-                      >
-                        <IconComponent className="w-5 h-5 text-white" />
-                      </div>
-                    );
-                  })()}
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {transaction.description || transaction.category?.name || 'Sem descrição'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {transaction.category?.name || 'Sem categoria'} • {formatDate(transaction.date)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={cn(
-                    "font-bold text-lg",
-                    transaction.type === 'income' ? 'text-income' : 'text-expense'
-                  )}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(transaction)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(transaction.id)} className="bg-destructive text-destructive-foreground">
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  };
+  const tabs: { value: TabType; label: string; icon: React.ReactNode; count: number; activeClass: string }[] = [
+    { 
+      value: 'all', 
+      label: 'Todos', 
+      icon: <LayoutList className="w-4 h-4" />, 
+      count: searchedTransactions.length,
+      activeClass: 'border-primary text-foreground'
+    },
+    { 
+      value: 'income', 
+      label: 'Receitas', 
+      icon: <TrendingUp className="w-4 h-4" />, 
+      count: incomeTransactions.length,
+      activeClass: 'border-emerald-500 text-emerald-600'
+    },
+    { 
+      value: 'expense', 
+      label: 'Despesas', 
+      icon: <TrendingDown className="w-4 h-4" />, 
+      count: expenseTransactions.length,
+      activeClass: 'border-red-500 text-red-600'
+    },
+    { 
+      value: 'fixed', 
+      label: 'Fixas', 
+      icon: <RefreshCw className="w-4 h-4" />, 
+      count: fixedExpenseTransactions.length,
+      activeClass: 'border-orange-500 text-orange-600'
+    },
+  ];
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Registros Financeiros</h1>
-            <p className="text-muted-foreground">Gerencie suas receitas e despesas</p>
-          </div>
-
+        {/* Header Compacto */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-foreground">Transações</h1>
           <div className="flex gap-2">
-            {/* Botão Despesa no Cartão */}
             <Button 
               variant="outline" 
-              className="gap-2"
+              size="sm"
               onClick={() => setCartaoDialogOpen(true)}
             >
-              <CreditCard className="w-4 h-4" />
-              Despesa no Cartão
+              <CreditCard className="w-4 h-4 mr-2" />
+              Cartão
             </Button>
 
-            {/* Dialog de Nova Transação */}
             <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button className="gradient-primary">
+                <Button size="sm" className="gradient-primary">
                   <Plus className="w-4 h-4 mr-2" />
-                  Novo Registro
+                  Nova
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
@@ -415,150 +399,106 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500/10 to-emerald-500/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Receitas</p>
-                  <p className="text-2xl font-bold text-income">{formatCurrency(totalIncome)}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl gradient-income flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500/10 to-red-500/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Despesas</p>
-                  <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpense)}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl gradient-expense flex items-center justify-center">
-                  <TrendingDown className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Saldo</p>
-                  <p className={cn(
-                    "text-2xl font-bold",
-                    totalIncome - totalExpense >= 0 ? "text-income" : "text-expense"
-                  )}>
-                    {formatCurrency(totalIncome - totalExpense)}
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Resumo Compacto */}
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-4 px-5 bg-muted/30 rounded-xl">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <span className="text-sm text-muted-foreground">Receitas</span>
+            <span className="font-semibold text-emerald-600">+{formatCurrency(totalIncome)}</span>
+          </div>
+          <div className="hidden sm:block w-px h-6 bg-border" />
+          <div className="flex items-center gap-2">
+            <TrendingDown className="w-4 h-4 text-red-500" />
+            <span className="text-sm text-muted-foreground">Despesas</span>
+            <span className="font-semibold text-red-600">-{formatCurrency(totalExpense)}</span>
+          </div>
+          <div className="hidden sm:block w-px h-6 bg-border" />
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Saldo</span>
+            <span className={cn(
+              "font-semibold",
+              balance >= 0 ? "text-emerald-600" : "text-red-600"
+            )}>
+              {formatCurrency(balance)}
+            </span>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por descrição ou categoria..."
-                  className="pl-10"
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                />
+        {/* Tabs + Busca Integrados */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-0">
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+                  activeTab === tab.value 
+                    ? tab.activeClass
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.icon}
+                {tab.label}
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-full",
+                  activeTab === tab.value 
+                    ? "bg-foreground/10" 
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+          
+          <div className="relative w-full sm:w-64 pb-3 sm:pb-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar..." 
+              className="pl-9 h-9" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Lista de Transações Agrupadas por Data */}
+        <div className="space-y-6">
+          {isLoading ? (
+            <LoadingList />
+          ) : groupedTransactions.length === 0 ? (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  {activeTab === 'all' && 'Nenhuma transação encontrada'}
+                  {activeTab === 'income' && 'Nenhuma receita registrada'}
+                  {activeTab === 'expense' && 'Nenhuma despesa registrada'}
+                  {activeTab === 'fixed' && 'Nenhuma despesa fixa registrada'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            groupedTransactions.map(([date, transactions]) => (
+              <div key={date}>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background py-2 z-10">
+                  {formatDateLabel(date)}
+                </h3>
+                <div className="space-y-1">
+                  {transactions.map((transaction) => (
+                    <TransactionRow 
+                      key={transaction.id} 
+                      transaction={transaction}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs para separar Receitas e Despesas */}
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all" className="gap-2">
-              <LayoutList className="w-4 h-4" />
-              Todos
-              <Badge variant="secondary" className="ml-1">
-                {filteredTransactions?.length || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="income" className="gap-2 data-[state=active]:text-emerald-600 data-[state=active]:border-emerald-500">
-              <TrendingUp className="w-4 h-4" />
-              Receitas
-              <Badge variant="secondary" className="ml-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                {incomeTransactions.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="expense" className="gap-2 data-[state=active]:text-red-600 data-[state=active]:border-red-500">
-              <TrendingDown className="w-4 h-4" />
-              Despesas
-              <Badge variant="secondary" className="ml-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                {expenseTransactions.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="fixed" className="gap-2 data-[state=active]:text-orange-600 data-[state=active]:border-orange-500">
-              <RefreshCw className="w-4 h-4" />
-              Fixas
-              <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                {fixedExpenseTransactions.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-4">
-            {isLoading ? (
-              <LoadingList />
-            ) : (
-              <TransactionList 
-                items={filteredTransactions || []} 
-                emptyMessage="Nenhum registro encontrado" 
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="income" className="mt-4">
-            {isLoading ? (
-              <LoadingList />
-            ) : (
-              <TransactionList 
-                items={incomeTransactions} 
-                emptyMessage="Nenhuma receita registrada" 
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="expense" className="mt-4">
-            {isLoading ? (
-              <LoadingList />
-            ) : (
-              <TransactionList 
-                items={expenseTransactions} 
-                emptyMessage="Nenhuma despesa registrada" 
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="fixed" className="mt-4">
-            {isLoading ? (
-              <LoadingList />
-            ) : (
-              <TransactionList 
-                items={fixedExpenseTransactions} 
-                emptyMessage="Nenhuma despesa fixa registrada" 
-              />
-            )}
-          </TabsContent>
-        </Tabs>
+            ))
+          )}
+        </div>
 
         {/* Dialog para Despesa no Cartão */}
         <Dialog open={cartaoDialogOpen} onOpenChange={setCartaoDialogOpen}>
@@ -592,16 +532,98 @@ export default function Transactions() {
   );
 }
 
+// Componente de linha de transação
+interface TransactionRowProps {
+  transaction: Transaction;
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (id: string) => void;
+}
+
+function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
+  const IconComponent = getIconComponent(transaction.category?.icon || 'package');
+  
+  return (
+    <div className="group flex items-center py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors">
+      {/* Ícone da categoria */}
+      <div className={cn(
+        "w-9 h-9 rounded-lg flex items-center justify-center mr-3 shrink-0",
+        transaction.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'
+      )}>
+        <IconComponent className={cn(
+          "w-4 h-4",
+          transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'
+        )} />
+      </div>
+      
+      {/* Descrição + Categoria */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-foreground truncate">
+          {transaction.description || transaction.category?.name || 'Sem descrição'}
+        </p>
+        <p className="text-sm text-muted-foreground truncate">
+          {transaction.category?.name || 'Sem categoria'}
+        </p>
+      </div>
+      
+      {/* Valor */}
+      <span className={cn(
+        "font-semibold tabular-nums ml-4",
+        transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'
+      )}>
+        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+      </span>
+      
+      {/* Ações */}
+      <div className="ml-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(transaction.id)} className="bg-destructive text-destructive-foreground">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+}
+
 // Componente de loading
 function LoadingList() {
   return (
-    <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <Card key={i} className="border-0 shadow-lg animate-pulse">
-          <CardContent className="p-4">
-            <div className="h-16 bg-muted rounded" />
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      {[...Array(3)].map((_, groupIdx) => (
+        <div key={groupIdx}>
+          <Skeleton className="h-4 w-24 mb-3" />
+          <div className="space-y-1">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center py-3 px-4">
+                <Skeleton className="w-9 h-9 rounded-lg mr-3" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-5 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
