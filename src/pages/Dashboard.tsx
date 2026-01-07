@@ -258,7 +258,11 @@ export default function Dashboard() {
                 }`}>
                   {formatCurrency(completeStats?.estimatedBalance || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">incluindo pendentes</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(completeStats?.faturaCartao || 0) > 0 
+                    ? `incluindo fatura de ${formatCurrency(completeStats?.faturaCartao || 0)}`
+                    : "incluindo pendentes"}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-primary" />

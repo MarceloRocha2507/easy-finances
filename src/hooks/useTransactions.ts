@@ -427,6 +427,33 @@ export function useCompleteStats() {
 
       if (error) throw error;
 
+      // Buscar fatura do cartão do mês atual (apenas titular)
+      const hoje = new Date();
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      const { data: parcelasCartao } = await supabase
+        .from('parcelas_cartao')
+        .select(`
+          valor,
+          ativo,
+          paga,
+          compra:compras_cartao(responsavel:responsaveis(is_titular))
+        `)
+        .gte('mes_referencia', inicioMes)
+        .lte('mes_referencia', fimMes)
+        .eq('ativo', true);
+
+      // Calcular total da fatura do titular (apenas parcelas não pagas)
+      let faturaCartaoTitular = 0;
+      (parcelasCartao || []).forEach((p: any) => {
+        const isTitular = p.compra?.responsavel?.is_titular === true;
+        const isPaga = p.paga === true;
+        if (isTitular && !isPaga) {
+          faturaCartaoTitular += Number(p.valor) || 0;
+        }
+      });
+
       const today = new Date().toISOString().split('T')[0];
       
       const stats = {
@@ -437,6 +464,7 @@ export function useCompleteStats() {
         pendingExpense: 0,
         overdueCount: 0,
         pendingCount: 0,
+        faturaCartao: faturaCartaoTitular,
       };
 
       data?.forEach((t) => {
@@ -455,8 +483,8 @@ export function useCompleteStats() {
 
       // Saldo Real = Saldo Inicial + Receitas Recebidas - Despesas Pagas
       const realBalance = saldoInicial + stats.completedIncome - stats.completedExpense;
-      // Saldo Estimado = Saldo Real + A Receber - A Pagar
-      const estimatedBalance = realBalance + stats.pendingIncome - stats.pendingExpense;
+      // Saldo Estimado = Saldo Real + A Receber - A Pagar - Fatura do Cartão
+      const estimatedBalance = realBalance + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
         ...stats,
