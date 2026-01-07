@@ -6,6 +6,7 @@ import {
   useTransactionStats,
   useExpensesByCategory,
   useMonthlyData,
+  useCompleteStats,
 } from "@/hooks/useTransactions";
 import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompleto";
 import { formatCurrency, getMonthRange } from "@/lib/formatters";
@@ -24,7 +25,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle } from "lucide-react";
 
 import {
   AlertasInteligentes,
@@ -41,6 +42,7 @@ import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
+import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
 
 function formatYAxis(value: number): string {
   if (value === 0) return "R$0";
@@ -76,6 +78,7 @@ export default function Dashboard() {
   const [novaMetaOpen, setNovaMetaOpen] = useState(false);
   const [metaSelecionada, setMetaSelecionada] = useState<Meta | null>(null);
   const [gerenciarMetaOpen, setGerenciarMetaOpen] = useState(false);
+  const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
 
   const { data: stats } = useTransactionStats({
     startDate: monthRange.start,
@@ -86,6 +89,7 @@ export default function Dashboard() {
     endDate: monthRange.end,
   });
   const { data: monthlyData } = useMonthlyData(year);
+  const { data: completeStats } = useCompleteStats();
 
   const {
     data: dashboardData,
@@ -134,23 +138,36 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Stats Cards - Primeira Linha */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <Card className="border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Atual</p>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Real</p>
                 <p
                   className={`text-xl font-semibold ${
-                    (stats?.balance || 0) >= 0 ? "text-income" : "text-expense"
+                    (completeStats?.realBalance || 0) >= 0 ? "text-income" : "text-expense"
                   }`}
                 >
-                  {formatCurrency(stats?.balance || 0)}
+                  {formatCurrency(completeStats?.realBalance || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Base: {formatCurrency(completeStats?.saldoInicial || 0)}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-md bg-secondary flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => setEditarSaldoOpen(true)}
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <div className="w-10 h-10 rounded-md bg-secondary flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-muted-foreground" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -162,8 +179,9 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Receitas</p>
                 <p className="text-xl font-semibold text-income">
-                  {formatCurrency(stats?.totalIncome || 0)}
+                  {formatCurrency(completeStats?.completedIncome || 0)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">recebidas</p>
               </div>
               <div className="w-10 h-10 rounded-md bg-income/10 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-income" />
@@ -178,11 +196,72 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Despesas</p>
                 <p className="text-xl font-semibold text-expense">
-                  {formatCurrency(stats?.totalExpense || 0)}
+                  {formatCurrency(completeStats?.completedExpense || 0)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">pagas</p>
               </div>
               <div className="w-10 h-10 rounded-md bg-expense/10 flex items-center justify-center">
                 <TrendingDown className="w-5 h-5 text-expense" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stats Cards - Segunda Linha (Pendentes) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="border border-blue-200 dark:border-blue-900">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">A Receber</p>
+                <p className="text-xl font-semibold text-blue-600">
+                  +{formatCurrency(completeStats?.pendingIncome || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">pendentes</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-amber-200 dark:border-amber-900">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">A Pagar</p>
+                <p className="text-xl font-semibold text-amber-600">
+                  -{formatCurrency(completeStats?.pendingExpense || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(completeStats?.overdueCount || 0) > 0 
+                    ? `${completeStats?.overdueCount} vencida(s)` 
+                    : "pendentes"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-primary/30">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Estimado</p>
+                <p className={`text-xl font-semibold ${
+                  (completeStats?.estimatedBalance || 0) >= 0 ? "text-primary" : "text-expense"
+                }`}>
+                  {formatCurrency(completeStats?.estimatedBalance || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">incluindo pendentes</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -359,6 +438,11 @@ export default function Dashboard() {
         open={gerenciarMetaOpen}
         onOpenChange={setGerenciarMetaOpen}
         onSuccess={() => refetch()}
+      />
+
+      <EditarSaldoDialog
+        open={editarSaldoOpen}
+        onOpenChange={setEditarSaldoOpen}
       />
     </Layout>
   );
