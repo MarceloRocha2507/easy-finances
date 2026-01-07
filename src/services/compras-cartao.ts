@@ -272,6 +272,16 @@ export async function pagarFaturaDoMes(
 
 export type FormatoMensagem = "detalhado" | "resumido" | "todos";
 
+// Helper para formatar moeda
+function formatarMoeda(valor: number): string {
+  return `R$ ${Math.abs(valor).toFixed(2).replace(".", ",")}`;
+}
+
+// Helper para capitalizar primeira letra
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 export async function gerarMensagemFatura(
   cartaoId: string,
   mesReferencia: Date,
@@ -311,16 +321,25 @@ export async function gerarMensagemFatura(
     const resumo = await calcularResumoPorResponsavel(cartaoId, mesReferencia);
     const totalGeral = resumo.reduce((sum, r) => sum + r.total, 0);
 
-    let msg = `📋 Fatura ${nomeMes} - ${nomeCartao}\n\n`;
+    let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
+    msg += `📅 ${capitalizar(nomeMes)}\n\n`;
+
+    msg += `┌──────────────────────────────\n`;
+    msg += `│ 📊 RESUMO POR PESSOA\n`;
+    msg += `├──────────────────────────────\n`;
 
     resumo.forEach((r) => {
       const icone = r.is_titular ? "👤" : "👥";
-      msg += `${icone} ${r.responsavel_apelido || r.responsavel_nome}: R$ ${r.total.toFixed(2).replace(".", ",")}\n`;
+      const nome = r.responsavel_apelido || r.responsavel_nome;
+      msg += `│ ${icone} ${nome} .......... ${formatarMoeda(r.total)}\n`;
     });
 
-    msg += `\n────────────────────────────\n`;
-    msg += `Total geral: R$ ${totalGeral.toFixed(2).replace(".", ",")}\n`;
-    msg += `Vencimento: ${vencimentoStr}`;
+    msg += `└──────────────────────────────\n\n`;
+
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `💰 *TOTAL GERAL: ${formatarMoeda(totalGeral)}*\n`;
+    msg += `📆 Vencimento: ${vencimentoStr}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━`;
 
     return msg;
   }
@@ -335,22 +354,35 @@ export async function gerarMensagemFatura(
 
   // Formato: RESUMIDO
   if (formato === "resumido") {
-    let msg = `📋 Fatura ${nomeMes}`;
-    if (nomeResponsavel) msg += ` - ${nomeResponsavel}`;
-    msg += `\n\n`;
-    msg += `Cartão: ${nomeCartao}\n`;
-    msg += `Total: R$ ${total.toFixed(2).replace(".", ",")}\n`;
-    msg += `Vencimento: ${vencimentoStr}`;
+    let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
+    msg += `📅 ${capitalizar(nomeMes)}\n\n`;
+    
+    if (nomeResponsavel) {
+      msg += `👤 Responsável: ${nomeResponsavel}\n`;
+    }
+    msg += `📊 Total de compras: ${parcelasFiltradas.length}\n\n`;
+
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `💰 *TOTAL: ${formatarMoeda(total)}*\n`;
+    msg += `📆 Vencimento: ${vencimentoStr}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━`;
+
     return msg;
   }
 
   // Formato: DETALHADO (padrão)
-  let msg = `📋 Compras do mês ${nomeMes}`;
-  if (nomeResponsavel) msg += ` - ${nomeResponsavel}`;
-  msg += `\n\n`;
-  msg += `Cartão: ${nomeCartao}\n\n`;
+  let msg = `💳 *FATURA ${nomeCartao.toUpperCase()}*\n`;
+  msg += `📅 ${capitalizar(nomeMes)}\n\n`;
+  
+  if (nomeResponsavel) {
+    msg += `👤 Responsável: ${nomeResponsavel}\n\n`;
+  }
 
-  // Listar compras
+  msg += `┌──────────────────────────────\n`;
+  msg += `│ 📦 COMPRAS DO MÊS\n`;
+  msg += `├──────────────────────────────\n`;
+
+  // Listar compras ordenadas por data
   parcelasFiltradas
     .sort((a, b) => new Date(a.data_compra).getTime() - new Date(b.data_compra).getTime())
     .forEach((p) => {
@@ -358,15 +390,20 @@ export async function gerarMensagemFatura(
         day: "2-digit",
         month: "2-digit",
       });
-      const valor = `R$ ${Math.abs(p.valor).toFixed(2).replace(".", ",")}`;
+      const valor = formatarMoeda(p.valor);
       const parcela = p.total_parcelas > 1 ? ` (${p.numero_parcela}/${p.total_parcelas})` : "";
       
-      msg += `• ${data} ${p.descricao} — ${valor}${parcela}\n`;
+      msg += `│ ${data} • ${p.descricao}\n`;
+      msg += `│        ${valor}${parcela}\n`;
+      msg += `│\n`;
     });
 
-  msg += `\n────────────────────────────\n`;
-  msg += `Total: R$ ${total.toFixed(2).replace(".", ",")}\n`;
-  msg += `Vencimento da fatura: ${vencimentoStr}`;
+  msg += `└──────────────────────────────\n\n`;
+
+  msg += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `💰 *TOTAL: ${formatarMoeda(total)}*\n`;
+  msg += `📆 Vencimento: ${vencimentoStr}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━━━━`;
 
   return msg;
 }
