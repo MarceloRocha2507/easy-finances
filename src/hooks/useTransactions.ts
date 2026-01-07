@@ -4,6 +4,8 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { Category } from './useCategories';
 
+export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
+
 export interface Transaction {
   id: string;
   user_id: string;
@@ -12,6 +14,11 @@ export interface Transaction {
   amount: number;
   description: string | null;
   date: string;
+  status: TransactionStatus;
+  due_date: string | null;
+  paid_date: string | null;
+  is_recurring: boolean;
+  recurrence_day: number | null;
   created_at: string;
   updated_at: string;
   category?: Category;
@@ -23,6 +30,11 @@ export interface TransactionInsert {
   category_id?: string;
   description?: string;
   date?: string;
+  status?: TransactionStatus;
+  due_date?: string;
+  paid_date?: string;
+  is_recurring?: boolean;
+  recurrence_day?: number;
 }
 
 export interface TransactionFilters {
@@ -30,6 +42,7 @@ export interface TransactionFilters {
   endDate?: string;
   type?: 'income' | 'expense';
   categoryId?: string;
+  status?: TransactionStatus;
 }
 
 export function useTransactions(filters?: TransactionFilters) {
@@ -57,6 +70,9 @@ export function useTransactions(filters?: TransactionFilters) {
       }
       if (filters?.categoryId) {
         query = query.eq('category_id', filters.categoryId);
+      }
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
       }
 
       const { data, error } = await query;
@@ -309,5 +325,82 @@ export function useDeleteTransaction() {
         variant: 'destructive',
       });
     },
+  });
+}
+
+export function useMarkAsPaid() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'completed',
+          paid_date: today
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+      toast({
+        title: 'Marcado como pago',
+        description: 'A transação foi marcada como realizada.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a transação.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function usePendingStats() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['pending-stats', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('type, amount, due_date')
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const stats = {
+        totalPendingIncome: 0,
+        totalPendingExpense: 0,
+        overdueCount: 0,
+        pendingCount: data?.length || 0,
+      };
+
+      data?.forEach((t) => {
+        if (t.type === 'income') {
+          stats.totalPendingIncome += Number(t.amount);
+        } else {
+          stats.totalPendingExpense += Number(t.amount);
+        }
+        if (t.due_date && t.due_date < today) {
+          stats.overdueCount++;
+        }
+      });
+
+      return stats;
+    },
+    enabled: !!user,
   });
 }
