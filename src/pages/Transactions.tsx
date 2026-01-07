@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -486,29 +486,30 @@ export default function Transactions() {
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all" className="gap-2">
+              <LayoutList className="w-4 h-4" />
               Todos
               <Badge variant="secondary" className="ml-1">
                 {filteredTransactions?.length || 0}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="income" className="gap-2">
+            <TabsTrigger value="income" className="gap-2 data-[state=active]:text-emerald-600 data-[state=active]:border-emerald-500">
               <TrendingUp className="w-4 h-4" />
               Receitas
-              <Badge variant="secondary" className="ml-1 bg-emerald-500/20 text-emerald-600">
+              <Badge variant="secondary" className="ml-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                 {incomeTransactions.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="expense" className="gap-2">
+            <TabsTrigger value="expense" className="gap-2 data-[state=active]:text-red-600 data-[state=active]:border-red-500">
               <TrendingDown className="w-4 h-4" />
               Despesas
-              <Badge variant="secondary" className="ml-1 bg-red-500/20 text-red-600">
+              <Badge variant="secondary" className="ml-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                 {expenseTransactions.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="fixed" className="gap-2">
+            <TabsTrigger value="fixed" className="gap-2 data-[state=active]:text-orange-600 data-[state=active]:border-orange-500">
               <RefreshCw className="w-4 h-4" />
               Fixas
-              <Badge variant="secondary" className="ml-1 bg-orange-500/20 text-orange-600">
+              <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 {fixedExpenseTransactions.length}
               </Badge>
             </TabsTrigger>
