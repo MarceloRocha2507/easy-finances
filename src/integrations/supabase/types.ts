@@ -416,7 +416,12 @@ export type Database = {
           created_at: string
           date: string
           description: string | null
+          due_date: string | null
           id: string
+          is_recurring: boolean | null
+          paid_date: string | null
+          recurrence_day: number | null
+          status: string
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
           user_id: string
@@ -427,7 +432,12 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string | null
+          due_date?: string | null
           id?: string
+          is_recurring?: boolean | null
+          paid_date?: string | null
+          recurrence_day?: number | null
+          status?: string
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id: string
@@ -438,7 +448,12 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string | null
+          due_date?: string | null
           id?: string
+          is_recurring?: boolean | null
+          paid_date?: string | null
+          recurrence_day?: number | null
+          status?: string
           type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id?: string

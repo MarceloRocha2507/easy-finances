@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, Transaction, TransactionInsert } from '@/hooks/useTransactions';
+import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, usePendingStats, Transaction, TransactionInsert, TransactionStatus } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,13 +11,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, isBefore, isEqual } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+
 
 interface TransactionFormData {
   type: 'income' | 'expense';
@@ -25,6 +27,10 @@ interface TransactionFormData {
   category_id: string;
   description: string;
   date: Date;
+  status: TransactionStatus;
+  due_date: Date | undefined;
+  is_recurring: boolean;
+  recurrence_day: number;
 }
 
 const initialFormData: TransactionFormData = {
@@ -33,6 +39,10 @@ const initialFormData: TransactionFormData = {
   category_id: '',
   description: '',
   date: new Date(),
+  status: 'completed',
+  due_date: undefined,
+  is_recurring: false,
+  recurrence_day: 1,
 };
 
 // Mapa de ícones para renderização
@@ -65,7 +75,7 @@ function getIconComponent(iconValue: string): React.ComponentType<{ className?: 
 // Categorias consideradas "despesas fixas"
 const FIXED_EXPENSE_CATEGORIES = ['Moradia', 'Contas'];
 
-type TabType = 'all' | 'income' | 'expense' | 'fixed';
+type TabType = 'all' | 'income' | 'expense' | 'pending' | 'fixed';
 
 // Formatar label de data
 function formatDateLabel(dateStr: string): string {
@@ -85,9 +95,11 @@ export default function Transactions() {
 
   const { data: transactions, isLoading } = useTransactions();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: pendingStats } = usePendingStats();
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
+  const markAsPaidMutation = useMarkAsPaid();
 
   // Filtrar transações por busca
   const searchedTransactions = useMemo(() => {
@@ -118,15 +130,21 @@ export default function Transactions() {
     [expenseTransactions]
   );
 
+  const pendingTransactions = useMemo(() => 
+    searchedTransactions.filter(t => t.status === 'pending'), 
+    [searchedTransactions]
+  );
+
   // Transações ativas baseado na tab
   const activeTransactions = useMemo(() => {
     switch (activeTab) {
       case 'income': return incomeTransactions;
       case 'expense': return expenseTransactions;
+      case 'pending': return pendingTransactions;
       case 'fixed': return fixedExpenseTransactions;
       default: return searchedTransactions;
     }
-  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, fixedExpenseTransactions]);
+  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions]);
 
   // Agrupar transações por data
   const groupedTransactions = useMemo(() => {
@@ -156,6 +174,15 @@ export default function Transactions() {
       category_id: formData.category_id || undefined,
       description: formData.description || undefined,
       date: format(formData.date, 'yyyy-MM-dd'),
+      status: formData.status,
+      due_date: formData.status === 'pending' && formData.due_date 
+        ? format(formData.due_date, 'yyyy-MM-dd') 
+        : undefined,
+      paid_date: formData.status === 'completed' 
+        ? format(formData.date, 'yyyy-MM-dd') 
+        : undefined,
+      is_recurring: formData.is_recurring,
+      recurrence_day: formData.is_recurring ? formData.recurrence_day : undefined,
     };
 
     if (editingId) {
@@ -187,9 +214,17 @@ export default function Transactions() {
       category_id: transaction.category_id || '',
       description: transaction.description || '',
       date: new Date(transaction.date),
+      status: transaction.status || 'completed',
+      due_date: transaction.due_date ? new Date(transaction.due_date) : undefined,
+      is_recurring: transaction.is_recurring || false,
+      recurrence_day: transaction.recurrence_day || 1,
     });
     setEditingId(transaction.id);
     setDialogOpen(true);
+  };
+
+  const handleMarkAsPaid = (id: string) => {
+    markAsPaidMutation.mutate(id);
   };
 
   const handleDelete = (id: string) => {
@@ -217,6 +252,13 @@ export default function Transactions() {
       icon: <TrendingDown className="w-4 h-4" />, 
       count: expenseTransactions.length,
       activeClass: 'border-red-500 text-red-600'
+    },
+    { 
+      value: 'pending', 
+      label: 'Pendentes', 
+      icon: <Clock className="w-4 h-4" />, 
+      count: pendingTransactions.length,
+      activeClass: 'border-amber-500 text-amber-600'
     },
     { 
       value: 'fixed', 
@@ -381,6 +423,91 @@ export default function Transactions() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
+
+                  {/* Status Toggle */}
+                  <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="status-toggle" className="font-normal cursor-pointer">
+                        É uma transação pendente?
+                      </Label>
+                    </div>
+                    <Switch
+                      id="status-toggle"
+                      checked={formData.status === 'pending'}
+                      onCheckedChange={(checked) => setFormData({ 
+                        ...formData, 
+                        status: checked ? 'pending' : 'completed',
+                        due_date: checked ? new Date() : undefined
+                      })}
+                    />
+                  </div>
+
+                  {/* Due Date (only if pending) */}
+                  {formData.status === 'pending' && (
+                    <div className="space-y-2">
+                      <Label>Data de Vencimento</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {formData.due_date 
+                              ? format(formData.due_date, 'PPP', { locale: ptBR })
+                              : 'Selecione uma data'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={formData.due_date}
+                            onSelect={(date) => date && setFormData({ ...formData, due_date: date })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
+                  {/* Recurring Toggle */}
+                  <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="recurring-toggle" className="font-normal cursor-pointer">
+                        É uma transação recorrente?
+                      </Label>
+                    </div>
+                    <Switch
+                      id="recurring-toggle"
+                      checked={formData.is_recurring}
+                      onCheckedChange={(checked) => setFormData({ 
+                        ...formData, 
+                        is_recurring: checked
+                      })}
+                    />
+                  </div>
+
+                  {/* Recurrence Day (only if recurring) */}
+                  {formData.is_recurring && (
+                    <div className="space-y-2">
+                      <Label>Dia do mês</Label>
+                      <Select 
+                        value={formData.recurrence_day.toString()} 
+                        onValueChange={(v) => setFormData({ ...formData, recurrence_day: parseInt(v) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o dia" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={day.toString()}>
+                              Dia {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
@@ -423,6 +550,22 @@ export default function Transactions() {
               {formatCurrency(balance)}
             </span>
           </div>
+          {pendingStats && pendingStats.pendingCount > 0 && (
+            <>
+              <div className="hidden sm:block w-px h-6 bg-border" />
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" />
+                <span className="text-sm text-muted-foreground">A Receber</span>
+                <span className="font-semibold text-amber-600">+{formatCurrency(pendingStats.totalPendingIncome)}</span>
+              </div>
+              <div className="hidden sm:block w-px h-6 bg-border" />
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" />
+                <span className="text-sm text-muted-foreground">A Pagar</span>
+                <span className="font-semibold text-amber-600">-{formatCurrency(pendingStats.totalPendingExpense)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Tabs + Busca Integrados */}
@@ -475,6 +618,7 @@ export default function Transactions() {
                   {activeTab === 'all' && 'Nenhuma transação encontrada'}
                   {activeTab === 'income' && 'Nenhuma receita registrada'}
                   {activeTab === 'expense' && 'Nenhuma despesa registrada'}
+                  {activeTab === 'pending' && 'Nenhuma transação pendente'}
                   {activeTab === 'fixed' && 'Nenhuma despesa fixa registrada'}
                 </p>
               </CardContent>
@@ -492,6 +636,7 @@ export default function Transactions() {
                       transaction={transaction}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
+                      onMarkAsPaid={handleMarkAsPaid}
                     />
                   ))}
                 </div>
@@ -537,44 +682,94 @@ interface TransactionRowProps {
   transaction: Transaction;
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
+  onMarkAsPaid: (id: string) => void;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid }: TransactionRowProps) {
   const IconComponent = getIconComponent(transaction.category?.icon || 'package');
+  const isPending = transaction.status === 'pending';
+  const today = new Date().toISOString().split('T')[0];
+  const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
     <div className="group flex items-center py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors">
       {/* Ícone da categoria */}
       <div className={cn(
         "w-9 h-9 rounded-lg flex items-center justify-center mr-3 shrink-0",
-        transaction.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'
+        isPending 
+          ? isOverdue 
+            ? 'bg-red-100 dark:bg-red-900/30'
+            : 'bg-amber-100 dark:bg-amber-900/30'
+          : transaction.type === 'income' 
+            ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+            : 'bg-red-100 dark:bg-red-900/30'
       )}>
         <IconComponent className={cn(
           "w-4 h-4",
-          transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'
+          isPending 
+            ? isOverdue 
+              ? 'text-red-600'
+              : 'text-amber-600'
+            : transaction.type === 'income' 
+              ? 'text-emerald-600' 
+              : 'text-red-600'
         )} />
       </div>
       
-      {/* Descrição + Categoria */}
+      {/* Descrição + Categoria + Status */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-foreground truncate">
-          {transaction.description || transaction.category?.name || 'Sem descrição'}
-        </p>
-        <p className="text-sm text-muted-foreground truncate">
-          {transaction.category?.name || 'Sem categoria'}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-foreground truncate">
+            {transaction.description || transaction.category?.name || 'Sem descrição'}
+          </p>
+          {isPending && (
+            <span className={cn(
+              "text-xs px-1.5 py-0.5 rounded-full shrink-0",
+              isOverdue 
+                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
+                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+            )}>
+              {isOverdue ? 'Vencido' : 'Pendente'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground truncate">
+            {transaction.category?.name || 'Sem categoria'}
+          </p>
+          {transaction.due_date && isPending && (
+            <span className="text-xs text-muted-foreground">
+              • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
+            </span>
+          )}
+        </div>
       </div>
       
       {/* Valor */}
       <span className={cn(
         "font-semibold tabular-nums ml-4",
-        transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'
+        isPending 
+          ? 'text-amber-600'
+          : transaction.type === 'income' 
+            ? 'text-emerald-600' 
+            : 'text-red-600'
       )}>
         {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
       </span>
       
       {/* Ações */}
       <div className="ml-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {isPending && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+            onClick={() => onMarkAsPaid(transaction.id)}
+            title="Marcar como pago"
+          >
+            <Check className="w-3.5 h-3.5" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
           <Pencil className="w-3.5 h-3.5" />
         </Button>
