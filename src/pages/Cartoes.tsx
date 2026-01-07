@@ -119,69 +119,31 @@ export default function Cartoes() {
               </div>
             </div>
 
-            {responsaveis.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum responsável cadastrado
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {/* Header */}
-                <div className="grid grid-cols-5 gap-2 text-xs text-muted-foreground font-medium pb-2 border-b">
-                  <div>Responsável</div>
-                  <div className="text-right">{getMesLabel(0)}</div>
-                  <div className="text-right">{getMesLabel(1)}</div>
-                  <div className="text-right">{getMesLabel(2)}</div>
-                  <div className="text-right">{getMesLabel(3)}</div>
+            {(() => {
+              const titular = responsaveis.find(r => r.is_titular);
+              if (!titular) {
+                return (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum responsável titular cadastrado
+                  </p>
+                );
+              }
+              return (
+                <div className="grid grid-cols-4 gap-4 text-center">
+                  {[0, 1, 2, 3].map((offset) => (
+                    <div key={offset} className={cn("p-3 rounded-lg", offset === 0 ? "bg-primary/10" : "bg-muted/50")}>
+                      <p className="text-xs text-muted-foreground capitalize">{getMesLabel(offset)}</p>
+                      <p className={cn(
+                        "text-lg font-bold value-display mt-1",
+                        offset === 0 ? "text-primary" : "text-foreground"
+                      )}>
+                        {formatCurrency(getFaturaDoMes(titular.id, offset))}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-
-                {/* Linhas por responsável */}
-                {responsaveis.map((resp) => (
-                  <div key={resp.id} className="grid grid-cols-5 gap-2 items-center py-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={cn(
-                          "h-3 w-3 rounded-full",
-                          resp.is_titular ? "bg-primary" : "bg-muted-foreground/30"
-                        )}
-                      />
-                      <span className={cn("text-sm truncate", resp.is_titular && "font-medium")}>
-                        {resp.apelido || resp.nome}
-                        {resp.is_titular && <span className="text-xs text-muted-foreground ml-1">(você)</span>}
-                      </span>
-                    </div>
-                    <div className={cn("text-right text-sm", resp.is_titular ? "font-semibold value-display" : "text-muted-foreground")}>
-                      {formatCurrency(getFaturaDoMes(resp.id, 0))}
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(resp.id, 1))}
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(resp.id, 2))}
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {formatCurrency(getFaturaDoMes(resp.id, 3))}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Totais */}
-                <div className="grid grid-cols-5 gap-2 pt-3 border-t font-semibold">
-                  <div className="text-sm">Total</div>
-                  <div className="text-right text-sm value-display text-primary">
-                    {formatCurrency(getTotalFatura(0))}
-                  </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    {formatCurrency(getTotalFatura(1))}
-                  </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    {formatCurrency(getTotalFatura(2))}
-                  </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    {formatCurrency(getTotalFatura(3))}
-                  </div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </CardContent>
         </Card>
 
