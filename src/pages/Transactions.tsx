@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, usePendingStats, Transaction, TransactionInsert, TransactionStatus } from '@/hooks/useTransactions';
+import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, isToday, isYesterday, parseISO, isBefore, isEqual } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -95,7 +95,7 @@ export default function Transactions() {
 
   const { data: transactions, isLoading } = useTransactions();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const { data: pendingStats } = usePendingStats();
+  const { data: stats } = useCompleteStats();
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
@@ -162,23 +162,27 @@ export default function Transactions() {
   // Filtrar categorias pelo tipo selecionado
   const filteredCategories = categories?.filter((c) => c.type === formData.type) || [];
 
-  // Totais
-  const totalIncome = incomeTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-  const totalExpense = expenseTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-  const balance = totalIncome - totalExpense;
-
   const handleSubmit = () => {
+    const today = startOfDay(new Date());
+    const transactionDate = startOfDay(formData.date);
+    
+    // Lógica automática: data futura OU recorrente = pendente
+    const isFutureDate = transactionDate > today;
+    const autoStatus: TransactionStatus = (formData.is_recurring || isFutureDate) 
+      ? 'pending' 
+      : 'completed';
+    
     const data: TransactionInsert = {
       type: formData.type,
       amount: parseFloat(formData.amount),
       category_id: formData.category_id || undefined,
       description: formData.description || undefined,
       date: format(formData.date, 'yyyy-MM-dd'),
-      status: formData.status,
-      due_date: formData.status === 'pending' && formData.due_date 
-        ? format(formData.due_date, 'yyyy-MM-dd') 
+      status: autoStatus,
+      due_date: autoStatus === 'pending' 
+        ? format(formData.date, 'yyyy-MM-dd') 
         : undefined,
-      paid_date: formData.status === 'completed' 
+      paid_date: autoStatus === 'completed' 
         ? format(formData.date, 'yyyy-MM-dd') 
         : undefined,
       is_recurring: formData.is_recurring,
@@ -424,50 +428,32 @@ export default function Transactions() {
                     />
                   </div>
 
-                  {/* Status Toggle */}
-                  <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <Label htmlFor="status-toggle" className="font-normal cursor-pointer">
-                        É uma transação pendente?
-                      </Label>
-                    </div>
-                    <Switch
-                      id="status-toggle"
-                      checked={formData.status === 'pending'}
-                      onCheckedChange={(checked) => setFormData({ 
-                        ...formData, 
-                        status: checked ? 'pending' : 'completed',
-                        due_date: checked ? new Date() : undefined
-                      })}
-                    />
-                  </div>
-
-                  {/* Due Date (only if pending) */}
-                  {formData.status === 'pending' && (
-                    <div className="space-y-2">
-                      <Label>Data de Vencimento</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {formData.due_date 
-                              ? format(formData.due_date, 'PPP', { locale: ptBR })
-                              : 'Selecione uma data'}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={formData.due_date}
-                            onSelect={(date) => date && setFormData({ ...formData, due_date: date })}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
+                  {/* Feedback Visual de Status Automático */}
+                  {(() => {
+                    const today = startOfDay(new Date());
+                    const transactionDate = startOfDay(formData.date);
+                    const isFutureDate = transactionDate > today;
+                    
+                    if (isFutureDate) {
+                      return (
+                        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg">
+                          <Clock className="w-4 h-4" />
+                          <span>Será registrada como <strong>pendente</strong> (data futura)</span>
+                        </div>
+                      );
+                    }
+                    
+                    if (formData.is_recurring) {
+                      return (
+                        <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
+                          <RefreshCw className="w-4 h-4" />
+                          <span>Transação recorrente - sempre inicia como <strong>pendente</strong></span>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
 
                   {/* Recurring Toggle */}
                   <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
@@ -526,46 +512,59 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Resumo Compacto */}
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-4 px-5 bg-muted/30 rounded-xl">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm text-muted-foreground">Receitas</span>
-            <span className="font-semibold text-emerald-600">+{formatCurrency(totalIncome)}</span>
-          </div>
-          <div className="hidden sm:block w-px h-6 bg-border" />
-          <div className="flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-red-500" />
-            <span className="text-sm text-muted-foreground">Despesas</span>
-            <span className="font-semibold text-red-600">-{formatCurrency(totalExpense)}</span>
-          </div>
-          <div className="hidden sm:block w-px h-6 bg-border" />
-          <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Saldo</span>
-            <span className={cn(
-              "font-semibold",
-              balance >= 0 ? "text-emerald-600" : "text-red-600"
-            )}>
-              {formatCurrency(balance)}
+        {/* Resumo Completo - 6 Indicadores */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Receitas Realizadas */}
+          <div className="flex flex-col p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+            <span className="text-xs text-muted-foreground">Receitas</span>
+            <span className="font-semibold text-emerald-600">
+              +{formatCurrency(stats?.completedIncome || 0)}
             </span>
           </div>
-          {pendingStats && pendingStats.pendingCount > 0 && (
-            <>
-              <div className="hidden sm:block w-px h-6 bg-border" />
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span className="text-sm text-muted-foreground">A Receber</span>
-                <span className="font-semibold text-amber-600">+{formatCurrency(pendingStats.totalPendingIncome)}</span>
-              </div>
-              <div className="hidden sm:block w-px h-6 bg-border" />
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span className="text-sm text-muted-foreground">A Pagar</span>
-                <span className="font-semibold text-amber-600">-{formatCurrency(pendingStats.totalPendingExpense)}</span>
-              </div>
-            </>
-          )}
+          
+          {/* Despesas Realizadas */}
+          <div className="flex flex-col p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+            <span className="text-xs text-muted-foreground">Despesas</span>
+            <span className="font-semibold text-red-600">
+              -{formatCurrency(stats?.completedExpense || 0)}
+            </span>
+          </div>
+          
+          {/* A Receber */}
+          <div className="flex flex-col p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+            <span className="text-xs text-muted-foreground">A Receber</span>
+            <span className="font-semibold text-blue-600">
+              +{formatCurrency(stats?.pendingIncome || 0)}
+            </span>
+          </div>
+          
+          {/* A Pagar */}
+          <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+            <span className="text-xs text-muted-foreground">A Pagar</span>
+            <span className="font-semibold text-amber-600">
+              -{formatCurrency(stats?.pendingExpense || 0)}
+            </span>
+          </div>
+          
+          {/* Saldo Real */}
+          <div className="flex flex-col p-3 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground">Saldo Real</span>
+            <span className={cn("font-semibold", 
+              (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
+            )}>
+              {formatCurrency(stats?.realBalance || 0)}
+            </span>
+          </div>
+          
+          {/* Saldo Estimado */}
+          <div className="flex flex-col p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <span className="text-xs text-muted-foreground">Saldo Estimado</span>
+            <span className={cn("font-semibold", 
+              (stats?.estimatedBalance || 0) >= 0 ? 'text-primary' : 'text-red-600'
+            )}>
+              {formatCurrency(stats?.estimatedBalance || 0)}
+            </span>
+          </div>
         </div>
 
         {/* Tabs + Busca Integrados */}
