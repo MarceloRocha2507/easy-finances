@@ -9,11 +9,10 @@ import {
   CreditCard,
   ChevronRight,
   ChevronLeft,
-  Wallet,
   Receipt,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
-import { useCartoes, CartaoComResumo } from "@/services/cartoes";
+import { useCartoes, usePrevisaoFaturas, CartaoComResumo } from "@/services/cartoes";
 import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { cn } from "@/lib/utils";
@@ -21,6 +20,7 @@ import { cn } from "@/lib/utils";
 export default function Cartoes() {
   const [mesReferencia, setMesReferencia] = useState(new Date());
   const { data: cartoes = [], isLoading, refetch } = useCartoes(mesReferencia);
+  const { data: previsao = {} } = usePrevisaoFaturas(mesReferencia);
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoComResumo | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
 
@@ -38,11 +38,28 @@ export default function Cartoes() {
     year: "numeric",
   });
 
-  // Calcular totais
-  const totalLimite = cartoes.reduce((sum, c) => sum + c.limite, 0);
-  const totalUsado = cartoes.reduce((sum, c) => sum + c.limiteUsado, 0);
-  const totalDisponivel = cartoes.reduce((sum, c) => sum + c.limiteDisponivel, 0);
-  const totalFaturaMes = cartoes.reduce((sum, c) => sum + c.faturaAtual, 0);
+  // Funções auxiliares para previsão de faturas
+  const getMesKey = (offset: number) => {
+    const data = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + offset, 1);
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+  };
+
+  const getMesLabel = (offset: number) => {
+    const data = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + offset, 1);
+    return data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+  };
+
+  const getFaturaDoMes = (cartaoId: string, offset: number): number => {
+    const mesKey = getMesKey(offset);
+    return previsao[cartaoId]?.[mesKey] || 0;
+  };
+
+  const getTotalFatura = (offset: number): number => {
+    const mesKey = getMesKey(offset);
+    return Object.values(previsao).reduce((sum, cartaoData) => {
+      return sum + ((cartaoData as Record<string, number>)[mesKey] || 0);
+    }, 0);
+  };
 
   const handleCartaoClick = (cartao: CartaoComResumo) => {
     setCartaoSelecionado(cartao);
@@ -86,78 +103,79 @@ export default function Cartoes() {
           <NovoCartaoDialog onSaved={() => refetch()} />
         </div>
 
-        {/* Resumo Geral */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="card-hover">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Limite total
-                </span>
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Wallet className="h-4 w-4 text-primary" strokeWidth={1.75} />
-                </div>
+        {/* Previsão de Faturas */}
+        <Card className="card-hover">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Receipt className="h-4 w-4 text-primary" strokeWidth={1.75} />
               </div>
-              <p className="text-2xl font-semibold mt-3 value-display">
-                {formatCurrency(totalLimite)}
-              </p>
-            </CardContent>
-          </Card>
+              <div>
+                <h2 className="font-semibold">Previsão de Faturas</h2>
+                <p className="text-xs text-muted-foreground">Gastos comprometidos nos próximos meses</p>
+              </div>
+            </div>
 
-          <Card className="card-hover">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Limite usado
-                </span>
-                <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <CreditCard className="h-4 w-4 text-amber-500" strokeWidth={1.75} />
+            {cartoes.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum cartão cadastrado
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {/* Header */}
+                <div className="grid grid-cols-5 gap-2 text-xs text-muted-foreground font-medium pb-2 border-b">
+                  <div>Cartão</div>
+                  <div className="text-right">{getMesLabel(0)}</div>
+                  <div className="text-right">{getMesLabel(1)}</div>
+                  <div className="text-right">{getMesLabel(2)}</div>
+                  <div className="text-right">{getMesLabel(3)}</div>
                 </div>
-              </div>
-              <p className="text-2xl font-semibold mt-3 value-display text-amber-600">
-                {formatCurrency(totalUsado)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Todas as parcelas pendentes
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="card-hover">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Disponível
-                </span>
-                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <Wallet className="h-4 w-4 text-emerald-500" strokeWidth={1.75} />
-                </div>
-              </div>
-              <p className="text-2xl font-semibold mt-3 value-display text-emerald-600">
-                {formatCurrency(totalDisponivel)}
-              </p>
-            </CardContent>
-          </Card>
+                {/* Linhas por cartão */}
+                {cartoes.map((cartao) => (
+                  <div key={cartao.id} className="grid grid-cols-5 gap-2 items-center py-2 hover:bg-muted/50 rounded-md transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: cartao.cor || "#6366f1" }}
+                      />
+                      <span className="text-sm font-medium truncate">{cartao.nome}</span>
+                    </div>
+                    <div className="text-right text-sm font-semibold value-display">
+                      {formatCurrency(getFaturaDoMes(cartao.id, 0))}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(getFaturaDoMes(cartao.id, 1))}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(getFaturaDoMes(cartao.id, 2))}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(getFaturaDoMes(cartao.id, 3))}
+                    </div>
+                  </div>
+                ))}
 
-          <Card className="card-hover">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Fatura do mês
-                </span>
-                <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <Receipt className="h-4 w-4 text-red-500" strokeWidth={1.75} />
+                {/* Totais */}
+                <div className="grid grid-cols-5 gap-2 pt-3 border-t font-semibold">
+                  <div className="text-sm">Total</div>
+                  <div className="text-right text-sm value-display text-primary">
+                    {formatCurrency(getTotalFatura(0))}
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    {formatCurrency(getTotalFatura(1))}
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    {formatCurrency(getTotalFatura(2))}
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    {formatCurrency(getTotalFatura(3))}
+                  </div>
                 </div>
               </div>
-              <p className="text-2xl font-semibold mt-3 value-display text-red-600">
-                {formatCurrency(totalFaturaMes)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 capitalize">
-                {nomeMes}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Navegação de Mês */}
         <div className="flex items-center justify-center gap-4">
