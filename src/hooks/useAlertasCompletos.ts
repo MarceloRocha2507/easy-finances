@@ -3,7 +3,6 @@ import { useAlertasTransacoes } from "./useAlertasTransacoes";
 import { useAlertasOrcamento } from "./useAlertasOrcamento";
 import { useAlertasAcertos } from "./useAlertasAcertos";
 import { useAuth } from "./useAuth";
-import { usePreferenciasLeitura } from "./usePreferenciasNotificacao";
 
 export type CategoriaAlerta = "cartao" | "transacao" | "meta" | "orcamento" | "acerto" | "economia";
 
@@ -30,9 +29,8 @@ export function useAlertasCompletos() {
   const { data: alertasTransacoes, isLoading: loadingTransacoes } = useAlertasTransacoes();
   const { data: alertasOrcamento, isLoading: loadingOrcamento } = useAlertasOrcamento();
   const { data: alertasAcertos, isLoading: loadingAcertos } = useAlertasAcertos();
-  const { isAlertaAtivo, isLoading: loadingPreferencias } = usePreferenciasLeitura();
 
-  const isLoading = loadingDashboard || loadingTransacoes || loadingOrcamento || loadingAcertos || loadingPreferencias;
+  const isLoading = loadingDashboard || loadingTransacoes || loadingOrcamento || loadingAcertos;
 
   // Combinar todos os alertas
   const alertasCartoes: AlertaCompleto[] = (dashboard?.alertas || []).map((a) => ({
@@ -105,7 +103,7 @@ export function useAlertasCompletos() {
   const alertasEconomia: AlertaCompleto[] = [];
   
   if (dashboard?.comparativo) {
-    const { variacao, variacaoPct, tipo } = dashboard.comparativo;
+    const { variacaoPct, tipo } = dashboard.comparativo;
     
     // Aumento significativo nos gastos (>20%)
     if (tipo === "aumento" && variacaoPct > 20) {
@@ -141,22 +139,19 @@ export function useAlertasCompletos() {
     ...alertasEconomia,
   ];
 
-  // Filtrar por preferências do usuário
-  const alertasFiltrados = todosAlertas.filter((alerta) => isAlertaAtivo(alerta.id));
-
   // Ordenar por prioridade
-  const alertasOrdenados = alertasFiltrados.sort((a, b) => {
+  const alertasOrdenados = todosAlertas.sort((a, b) => {
     return (prioridadeTipo[a.tipo] || 5) - (prioridadeTipo[b.tipo] || 5);
   });
 
-  // Contar categorias após filtro
+  // Contar categorias
   const categoriasContagem = {
-    cartao: alertasFiltrados.filter(a => a.categoria === "cartao").length,
-    transacao: alertasFiltrados.filter(a => a.categoria === "transacao").length,
-    meta: alertasFiltrados.filter(a => a.categoria === "meta").length,
-    orcamento: alertasFiltrados.filter(a => a.categoria === "orcamento").length,
-    acerto: alertasFiltrados.filter(a => a.categoria === "acerto").length,
-    economia: alertasFiltrados.filter(a => a.categoria === "economia").length,
+    cartao: alertasCartoes.length,
+    transacao: (alertasTransacoes || []).length,
+    meta: alertasMetas.length,
+    orcamento: (alertasOrcamento || []).length,
+    acerto: (alertasAcertos || []).length,
+    economia: alertasEconomia.length,
   };
 
   return {
