@@ -6,6 +6,8 @@ import { Category } from './useCategories';
 
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 
+export type TipoLancamento = 'unica' | 'parcelada' | 'fixa';
+
 export interface Transaction {
   id: string;
   user_id: string;
@@ -19,6 +21,10 @@ export interface Transaction {
   paid_date: string | null;
   is_recurring: boolean;
   recurrence_day: number | null;
+  tipo_lancamento: TipoLancamento | null;
+  total_parcelas: number | null;
+  numero_parcela: number | null;
+  parent_id: string | null;
   created_at: string;
   updated_at: string;
   category?: Category;
@@ -35,6 +41,10 @@ export interface TransactionInsert {
   paid_date?: string;
   is_recurring?: boolean;
   recurrence_day?: number;
+  tipo_lancamento?: TipoLancamento;
+  total_parcelas?: number;
+  numero_parcela?: number;
+  parent_id?: string;
 }
 
 export interface TransactionFilters {
@@ -247,6 +257,126 @@ export function useCreateTransaction() {
       toast({
         title: 'Registro criado',
         description: 'O registro financeiro foi criado com sucesso.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar o registro.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Hook para criar transações parceladas
+export function useCreateInstallmentTransaction() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (params: {
+      baseTransaction: TransactionInsert;
+      totalParcelas: number;
+      tipoLancamento: TipoLancamento;
+    }) => {
+      const { baseTransaction, totalParcelas, tipoLancamento } = params;
+      const userId = user!.id;
+
+      if (tipoLancamento === 'unica') {
+        // Transação única - comportamento padrão
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert({
+            ...baseTransaction,
+            user_id: userId,
+            tipo_lancamento: 'unica',
+            total_parcelas: 1,
+            numero_parcela: 1,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return [data];
+      }
+
+      // Parcelada ou Fixa - criar múltiplas transações
+      const parcelas = tipoLancamento === 'fixa' ? 12 : totalParcelas;
+      const valorParcela = baseTransaction.amount! / (tipoLancamento === 'parcelada' ? parcelas : 1);
+      const baseDate = baseTransaction.date ? new Date(baseTransaction.date) : new Date();
+
+      // Criar transação pai primeiro
+      const { data: parentTransaction, error: parentError } = await supabase
+        .from('transactions')
+        .insert({
+          ...baseTransaction,
+          user_id: userId,
+          tipo_lancamento: tipoLancamento,
+          total_parcelas: parcelas,
+          numero_parcela: 1,
+          amount: valorParcela,
+          description: tipoLancamento === 'parcelada' 
+            ? `${baseTransaction.description || 'Parcela'} (1/${parcelas})`
+            : baseTransaction.description,
+          is_recurring: tipoLancamento === 'fixa',
+        })
+        .select()
+        .single();
+
+      if (parentError) throw parentError;
+
+      // Criar parcelas restantes
+      const parcelasToInsert = [];
+      for (let i = 2; i <= parcelas; i++) {
+        const parcelaDate = new Date(baseDate);
+        parcelaDate.setMonth(parcelaDate.getMonth() + (i - 1));
+        
+        parcelasToInsert.push({
+          ...baseTransaction,
+          user_id: userId,
+          tipo_lancamento: tipoLancamento,
+          total_parcelas: parcelas,
+          numero_parcela: i,
+          parent_id: parentTransaction.id,
+          amount: valorParcela,
+          date: parcelaDate.toISOString().split('T')[0],
+          due_date: parcelaDate.toISOString().split('T')[0],
+          status: 'pending' as TransactionStatus,
+          paid_date: null,
+          description: tipoLancamento === 'parcelada'
+            ? `${baseTransaction.description || 'Parcela'} (${i}/${parcelas})`
+            : baseTransaction.description,
+          is_recurring: tipoLancamento === 'fixa',
+        });
+      }
+
+      if (parcelasToInsert.length > 0) {
+        const { error: parcelasError } = await supabase
+          .from('transactions')
+          .insert(parcelasToInsert);
+
+        if (parcelasError) throw parcelasError;
+      }
+
+      return [parentTransaction];
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      
+      const msg = variables.tipoLancamento === 'parcelada'
+        ? `${variables.totalParcelas} parcelas foram criadas.`
+        : variables.tipoLancamento === 'fixa'
+        ? '12 lançamentos futuros foram criados.'
+        : 'O registro financeiro foi criado com sucesso.';
+        
+      toast({
+        title: 'Registro criado',
+        description: msg,
       });
     },
     onError: () => {
