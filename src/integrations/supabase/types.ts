@@ -348,28 +348,37 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ativo: boolean | null
           avatar_url: string | null
           created_at: string
+          data_expiracao: string | null
           full_name: string | null
           id: string
+          motivo_desativacao: string | null
           saldo_inicial: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
+          data_expiracao?: string | null
           full_name?: string | null
           id?: string
+          motivo_desativacao?: string | null
           saldo_inicial?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
+          data_expiracao?: string | null
           full_name?: string | null
           id?: string
+          motivo_desativacao?: string | null
           saldo_inicial?: number
           updated_at?: string
           user_id?: string

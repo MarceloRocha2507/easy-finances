@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdmin, AdminUser } from "@/hooks/useAdmin";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Users, Shield } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key, UserCheck, UserX, Clock } from "lucide-react";
+import { format, parseISO, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EditarUsuarioDialog } from "@/components/admin/EditarUsuarioDialog";
+import { AlterarStatusDialog } from "@/components/admin/AlterarStatusDialog";
+import { ResetarSenhaDialog } from "@/components/admin/ResetarSenhaDialog";
 
 export default function Admin() {
-  const { users, isLoadingUsers, fetchUsers, createUser } = useAdmin();
+  const { users, isLoadingUsers, fetchUsers, createUser, updateUser, toggleUserStatus, resetPassword } = useAdmin();
   const { toast } = useToast();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,6 +46,11 @@ export default function Admin() {
     password: "",
     full_name: ""
   });
+
+  // Estados dos dialogs
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [statusUser, setStatusUser] = useState<AdminUser | null>(null);
+  const [resetUser, setResetUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -56,15 +70,105 @@ export default function Admin() {
       
       setFormData({ email: "", password: "", full_name: "" });
       setIsDialogOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao criar usuário",
-        description: error.message,
+        description: message,
         variant: "destructive"
       });
     } finally {
       setIsCreating(false);
     }
+  }
+
+  async function handleUpdateUser(user_id: string, data: { email?: string; full_name?: string; data_expiracao?: string | null }) {
+    try {
+      await updateUser(user_id, data);
+      toast({
+        title: "Usuário atualizado",
+        description: "As informações foram salvas com sucesso."
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({
+        title: "Erro ao atualizar",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }
+
+  async function handleToggleStatus(user_id: string, ativo: boolean, motivo?: string) {
+    try {
+      await toggleUserStatus(user_id, ativo, motivo);
+      toast({
+        title: ativo ? "Usuário reativado" : "Usuário desativado",
+        description: ativo ? "O acesso foi restaurado." : "O acesso foi bloqueado."
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({
+        title: "Erro ao alterar status",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }
+
+  async function handleResetPassword(user_id: string): Promise<string> {
+    try {
+      const newPassword = await resetPassword(user_id);
+      toast({
+        title: "Senha resetada",
+        description: "Uma nova senha foi gerada."
+      });
+      return newPassword;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({
+        title: "Erro ao resetar senha",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }
+
+  // Estatísticas
+  const usuariosAtivos = users.filter(u => u.ativo).length;
+  const usuariosInativos = users.filter(u => !u.ativo).length;
+  const expirandoEmBreve = users.filter(u => {
+    if (!u.data_expiracao) return false;
+    const expDate = parseISO(u.data_expiracao);
+    return isBefore(expDate, addDays(new Date(), 7)) && !isBefore(expDate, new Date());
+  }).length;
+
+  function getStatusBadge(user: AdminUser) {
+    if (!user.ativo) {
+      return <Badge variant="destructive">Inativo</Badge>;
+    }
+    if (user.data_expiracao && isBefore(parseISO(user.data_expiracao), new Date())) {
+      return <Badge variant="destructive">Expirado</Badge>;
+    }
+    return <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>;
+  }
+
+  function getValidadeBadge(user: AdminUser) {
+    if (!user.data_expiracao) {
+      return <span className="text-muted-foreground">Ilimitado</span>;
+    }
+    const expDate = parseISO(user.data_expiracao);
+    const isExpired = isBefore(expDate, new Date());
+    const isExpiringSoon = isBefore(expDate, addDays(new Date(), 7)) && !isExpired;
+    
+    return (
+      <span className={isExpired ? "text-destructive" : isExpiringSoon ? "text-amber-600" : ""}>
+        {format(expDate, "dd/MM/yyyy", { locale: ptBR })}
+      </span>
+    );
   }
 
   return (
@@ -149,12 +253,12 @@ export default function Admin() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total de Usuários</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total</p>
                   <p className="text-2xl font-semibold">{users.length}</p>
                 </div>
                 <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
@@ -168,7 +272,7 @@ export default function Admin() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Administradores</p>
+                  <p className="text-sm text-muted-foreground mb-1">Admins</p>
                   <p className="text-2xl font-semibold">
                     {users.filter(u => u.role === 'admin').length}
                   </p>
@@ -179,18 +283,44 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Usuários Comuns</p>
-                  <p className="text-2xl font-semibold">
-                    {users.filter(u => u.role === 'user').length}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-1">Ativos</p>
+                  <p className="text-2xl font-semibold">{usuariosAtivos}</p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-md bg-green-100 dark:bg-green-950 flex items-center justify-center">
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Inativos</p>
+                  <p className="text-2xl font-semibold">{usuariosInativos}</p>
+                </div>
+                <div className="w-10 h-10 rounded-md bg-red-100 dark:bg-red-950 flex items-center justify-center">
+                  <UserX className="h-5 w-5 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Expirando</p>
+                  <p className="text-2xl font-semibold">{expirandoEmBreve}</p>
+                </div>
+                <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -221,7 +351,10 @@ export default function Admin() {
                     <TableHead>Nome</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Validade</TableHead>
                     <TableHead>Criado em</TableHead>
+                    <TableHead className="w-[70px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -236,8 +369,33 @@ export default function Admin() {
                           {user.role === 'admin' ? 'Admin' : 'Usuário'}
                         </Badge>
                       </TableCell>
+                      <TableCell>{getStatusBadge(user)}</TableCell>
+                      <TableCell>{getValidadeBadge(user)}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditUser(user)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setStatusUser(user)}>
+                              <Power className="h-4 w-4 mr-2" />
+                              {user.ativo ? "Desativar" : "Reativar"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setResetUser(user)}>
+                              <Key className="h-4 w-4 mr-2" />
+                              Resetar Senha
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -247,6 +405,28 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      <EditarUsuarioDialog
+        user={editUser}
+        open={!!editUser}
+        onOpenChange={(open) => !open && setEditUser(null)}
+        onSave={handleUpdateUser}
+      />
+
+      <AlterarStatusDialog
+        user={statusUser}
+        open={!!statusUser}
+        onOpenChange={(open) => !open && setStatusUser(null)}
+        onConfirm={handleToggleStatus}
+      />
+
+      <ResetarSenhaDialog
+        user={resetUser}
+        open={!!resetUser}
+        onOpenChange={(open) => !open && setResetUser(null)}
+        onReset={handleResetPassword}
+      />
     </Layout>
   );
 }
