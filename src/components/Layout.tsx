@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import {
@@ -12,7 +13,6 @@ import {
   CreditCard,
   PiggyBank,
   Target,
-  User,
   LogOut,
   Menu,
   X,
@@ -53,12 +53,27 @@ const bottomMenuItems = [
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
   );
+
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    const fullName = user?.user_metadata?.full_name || user?.email || "";
+    if (fullName.includes("@")) {
+      return fullName.substring(0, 2).toUpperCase();
+    }
+    const names = fullName.split(" ");
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return fullName.substring(0, 2).toUpperCase();
+  };
+
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário";
 
   const isActive = (href: string) => {
     if (href === "/economia") {
@@ -198,24 +213,32 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* User section - Perfil + Logout */}
-          <div className="p-3 border-t space-y-1">
+          {/* User section - Avatar + Perfil + Logout */}
+          <div className="p-3 border-t">
             <Link
               to="/profile"
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
+                "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 hover:translate-x-0.5",
                 isActive("/profile")
-                  ? "bg-secondary text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  ? "bg-secondary"
+                  : "hover:bg-secondary/50"
               )}
             >
-              <User className="h-4 w-4" />
-              Perfil
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-foreground truncate">{userName}</span>
+                <span className="text-xs text-muted-foreground">Ver perfil</span>
+              </div>
             </Link>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground"
+              className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground mt-1"
               onClick={() => signOut()}
             >
               <LogOut className="h-4 w-4" />
