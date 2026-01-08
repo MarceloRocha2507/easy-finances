@@ -131,6 +131,54 @@ export function getValorPadrao(tipoAlerta: string): boolean {
 
 export type PreferenciasMap = Record<string, boolean>;
 
+// Hook simplificado apenas para verificar preferências (sem mutations)
+export function usePreferenciasLeitura() {
+  const { user } = useAuth();
+
+  const { data: preferencias = {}, isLoading } = useQuery({
+    queryKey: ["preferencias-notificacao", user?.id],
+    queryFn: async (): Promise<PreferenciasMap> => {
+      if (!user) return {};
+
+      const { data, error } = await supabase
+        .from("preferencias_notificacao")
+        .select("tipo_alerta, ativo");
+
+      if (error) {
+        console.error("Erro ao buscar preferências:", error);
+        return {};
+      }
+
+      const map: PreferenciasMap = {};
+      (data || []).forEach((p: any) => {
+        map[p.tipo_alerta] = p.ativo;
+      });
+
+      return map;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Verificar se um alerta está ativo
+  const isAlertaAtivo = (alertaId: string): boolean => {
+    const tipoAlerta = mapearAlertaParaTipo(alertaId);
+    if (!tipoAlerta) return true;
+
+    if (tipoAlerta in preferencias) {
+      return preferencias[tipoAlerta];
+    }
+    return getValorPadrao(tipoAlerta);
+  };
+
+  return {
+    preferencias,
+    isLoading,
+    isAlertaAtivo,
+  };
+}
+
+// Hook completo para página de configurações (com mutations)
 export function usePreferenciasNotificacao() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -164,9 +212,8 @@ export function usePreferenciasNotificacao() {
   // Verificar se um alerta está ativo
   const isAlertaAtivo = (alertaId: string): boolean => {
     const tipoAlerta = mapearAlertaParaTipo(alertaId);
-    if (!tipoAlerta) return true; // Se não encontrar mapeamento, exibe por padrão
+    if (!tipoAlerta) return true;
 
-    // Se existe preferência salva, usa ela; senão usa o padrão
     if (tipoAlerta in preferencias) {
       return preferencias[tipoAlerta];
     }
@@ -193,28 +240,6 @@ export function usePreferenciasNotificacao() {
           tipo_alerta: tipoAlerta,
           ativo,
         }, { onConflict: "user_id,tipo_alerta" });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["preferencias-notificacao"] });
-    },
-  });
-
-  // Salvar múltiplas preferências de uma vez
-  const salvarMultiplasPreferencias = useMutation({
-    mutationFn: async (prefs: { tipoAlerta: string; ativo: boolean }[]) => {
-      if (!user) throw new Error("Usuário não autenticado");
-
-      const registros = prefs.map((p) => ({
-        user_id: user.id,
-        tipo_alerta: p.tipoAlerta,
-        ativo: p.ativo,
-      }));
-
-      const { error } = await supabase
-        .from("preferencias_notificacao")
-        .upsert(registros, { onConflict: "user_id,tipo_alerta" });
 
       if (error) throw error;
     },
@@ -271,7 +296,6 @@ export function usePreferenciasNotificacao() {
     isAlertaAtivo,
     getPreferencia,
     salvarPreferencia,
-    salvarMultiplasPreferencias,
     ativarCategoria,
     restaurarPadroes,
   };
