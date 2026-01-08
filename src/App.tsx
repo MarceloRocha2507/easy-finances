@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -16,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import Cartoes from "./pages/Cartoes";
 import Economia from "./pages/Economia";
 import DespesasCartao from "./pages/DespesasCartao";
+import Admin from "./pages/Admin";
 
 // Importar Metas como lazy para evitar conflito de case
 import { lazy, Suspense } from "react";
@@ -114,6 +116,15 @@ const App = () => (
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
               }
             />
 

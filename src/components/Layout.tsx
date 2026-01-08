@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -17,6 +18,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import {
   Collapsible,
@@ -53,6 +55,7 @@ const bottomMenuItems = [
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
@@ -159,6 +162,23 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Separador */}
             <div className="my-3 border-t" />
+
+            {/* Link Admin - apenas para admins */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  isActive("/admin")
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                )}
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
 
             {/* Menu secundário */}
             {bottomMenuItems.map((item) => (
