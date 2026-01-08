@@ -35,11 +35,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key, UserCheck, UserX, Clock } from "lucide-react";
+import { Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key, UserCheck, UserX, Clock, RefreshCw } from "lucide-react";
 import { format, parseISO, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EditarUsuarioDialog } from "@/components/admin/EditarUsuarioDialog";
 import { AlterarStatusDialog } from "@/components/admin/AlterarStatusDialog";
+import { RenovarPlanoDialog } from "@/components/admin/RenovarPlanoDialog";
 import { ResetarSenhaDialog } from "@/components/admin/ResetarSenhaDialog";
 
 export default function Admin() {
@@ -58,6 +59,7 @@ export default function Admin() {
   // Estados dos dialogs
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [statusUser, setStatusUser] = useState<AdminUser | null>(null);
+  const [renovarUser, setRenovarUser] = useState<AdminUser | null>(null);
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
@@ -138,6 +140,24 @@ export default function Admin() {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao resetar senha",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }
+
+  async function handleRenovarPlano(user_id: string, tipo_plano: TipoPlano) {
+    try {
+      await updateUser(user_id, { tipo_plano });
+      toast({
+        title: "Plano renovado",
+        description: "A validade foi recalculada com sucesso."
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({
+        title: "Erro ao renovar plano",
         description: message,
         variant: "destructive"
       });
@@ -435,6 +455,10 @@ export default function Admin() {
                               <Power className="h-4 w-4 mr-2" />
                               {user.ativo ? "Desativar" : "Reativar"}
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setRenovarUser(user)}>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Renovar Plano
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setResetUser(user)}>
                               <Key className="h-4 w-4 mr-2" />
                               Resetar Senha
@@ -471,6 +495,13 @@ export default function Admin() {
         open={!!resetUser}
         onOpenChange={(open) => !open && setResetUser(null)}
         onReset={handleResetPassword}
+      />
+
+      <RenovarPlanoDialog
+        user={renovarUser}
+        open={!!renovarUser}
+        onOpenChange={(open) => !open && setRenovarUser(null)}
+        onConfirm={handleRenovarPlano}
       />
     </Layout>
   );
