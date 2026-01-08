@@ -30,12 +30,15 @@ export type ResumoCartoes = {
   quantidadeCartoes: number;
 };
 
+export type CategoriaAlerta = "cartao" | "transacao" | "meta" | "orcamento" | "acerto" | "economia";
+
 export type Alerta = {
   id: string;
   tipo: "warning" | "danger" | "info" | "success";
   titulo: string;
   mensagem: string;
   icone: string;
+  categoria?: CategoriaAlerta;
 };
 
 export type ProximaFatura = {
@@ -258,6 +261,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             titulo: "Limite crítico!",
             mensagem: `${cartao.nome} está com ${cartao.usoPct.toFixed(0)}% do limite usado.`,
             icone: "alert-triangle",
+            categoria: "cartao",
           });
         } else if (cartao.usoPct >= 75) {
           alertas.push({
@@ -266,19 +270,63 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             titulo: "Limite alto",
             mensagem: `${cartao.nome} está com ${cartao.usoPct.toFixed(0)}% do limite usado.`,
             icone: "alert-circle",
+            categoria: "cartao",
           });
         }
       });
 
-      // Alerta de vencimento próximo
+      // Alertas de vencimento de fatura
       cartoesFormatados.forEach((cartao) => {
-        if (cartao.totalPendente > 0 && cartao.diasParaVencimento <= 3 && cartao.diasParaVencimento >= 0) {
+        if (cartao.totalPendente > 0) {
+          const valorFormatado = cartao.totalPendente.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
+
+          // Fatura VENCIDA
+          if (cartao.diasParaVencimento < 0) {
+            alertas.push({
+              id: `fatura-vencida-${cartao.id}`,
+              tipo: "danger",
+              titulo: "Fatura VENCIDA!",
+              mensagem: `${cartao.nome} está vencida há ${Math.abs(cartao.diasParaVencimento)} dia(s). Valor: ${valorFormatado}.`,
+              icone: "alert-octagon",
+              categoria: "cartao",
+            });
+          }
+          // Fatura vence HOJE
+          else if (cartao.diasParaVencimento === 0) {
+            alertas.push({
+              id: `fatura-hoje-${cartao.id}`,
+              tipo: "danger",
+              titulo: "Fatura vence HOJE!",
+              mensagem: `${cartao.nome} vence hoje. Valor: ${valorFormatado}.`,
+              icone: "clock",
+              categoria: "cartao",
+            });
+          }
+          // Fatura vence em breve (1-3 dias)
+          else if (cartao.diasParaVencimento <= 3) {
+            alertas.push({
+              id: `vencimento-${cartao.id}`,
+              tipo: "warning",
+              titulo: "Fatura vence em breve!",
+              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+              icone: "calendar",
+              categoria: "cartao",
+            });
+          }
+        }
+
+        // Limite disponível muito baixo (< R$ 500)
+        if (cartao.disponivel < 500 && cartao.disponivel > 0 && cartao.limite >= 1000) {
           alertas.push({
-            id: `vencimento-${cartao.id}`,
-            tipo: "warning",
-            titulo: "Fatura vence em breve!",
-            mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s).`,
-            icone: "calendar",
+            id: `limite-baixo-${cartao.id}`,
+            tipo: "info",
+            titulo: "Limite disponível baixo",
+            mensagem: `${cartao.nome} tem apenas R$ ${cartao.disponivel.toFixed(2)} disponível.`,
+            icone: "credit-card",
+            categoria: "cartao",
           });
         }
       });

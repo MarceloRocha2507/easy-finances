@@ -1,16 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useDashboardCompleto, Alerta } from "./useDashboardCompleto";
+import { useAlertasCompletos, AlertaCompleto, CategoriaAlerta } from "./useAlertasCompletos";
 import { useAuth } from "./useAuth";
 
-export type NotificacaoComStatus = Alerta & {
+export type NotificacaoComStatus = AlertaCompleto & {
   lido: boolean;
 };
 
 export function useNotificacoes() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { data: dashboard, isLoading: loadingDashboard } = useDashboardCompleto();
+  const { data: alertas, isLoading: loadingAlertas, categorias } = useAlertasCompletos();
 
   // Buscar IDs dos alertas já lidos
   const { data: alertasLidos = [], isLoading: loadingLidos } = useQuery({
@@ -33,7 +33,7 @@ export function useNotificacoes() {
   });
 
   // Combinar alertas com status de leitura
-  const notificacoes: NotificacaoComStatus[] = (dashboard?.alertas || []).map((alerta) => ({
+  const notificacoes: NotificacaoComStatus[] = (alertas || []).map((alerta) => ({
     ...alerta,
     lido: alertasLidos.includes(alerta.id),
   }));
@@ -99,11 +99,14 @@ export function useNotificacoes() {
 
   return {
     notificacoes,
-    isLoading: loadingDashboard || loadingLidos,
+    isLoading: loadingAlertas || loadingLidos,
     marcarComoLido,
     marcarComoNaoLido,
     marcarTodosComoLidos,
     naoLidas: notificacoes.filter((n) => !n.lido).length,
     total: notificacoes.length,
+    categorias,
   };
 }
+
+export type { CategoriaAlerta };
