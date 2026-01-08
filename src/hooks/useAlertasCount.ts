@@ -1,20 +1,21 @@
-import { useDashboardCompleto } from "./useDashboardCompleto";
+import { useNotificacoes } from "./useNotificacoes";
 
 export function useAlertasCount() {
-  const { data, isLoading } = useDashboardCompleto();
+  const { notificacoes, isLoading } = useNotificacoes();
 
-  const alertas = data?.alertas || [];
+  // Filter only unread alerts
+  const naoLidas = notificacoes.filter((n) => !n.lido);
   
   // Count only danger and warning alerts (important ones)
-  const alertasImportantes = alertas.filter(
+  const alertasImportantes = naoLidas.filter(
     (a) => a.tipo === "danger" || a.tipo === "warning"
   );
 
   return {
-    total: alertas.length,
+    total: naoLidas.length,
     importantes: alertasImportantes.length,
-    hasDanger: alertas.some((a) => a.tipo === "danger"),
-    hasWarning: alertas.some((a) => a.tipo === "warning"),
+    hasDanger: naoLidas.some((a) => a.tipo === "danger"),
+    hasWarning: naoLidas.some((a) => a.tipo === "warning"),
     isLoading,
   };
 }

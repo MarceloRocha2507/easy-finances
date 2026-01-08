@@ -261,6 +261,27 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes_lidas: {
+        Row: {
+          alerta_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          alerta_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          alerta_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           category_id: string
