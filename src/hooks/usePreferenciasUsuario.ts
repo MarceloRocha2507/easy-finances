@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 export interface PreferenciasUsuario {
   id: string;
@@ -25,6 +27,7 @@ export function usePreferenciasUsuario() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { setTheme } = useTheme();
 
   const { data: preferencias, isLoading } = useQuery({
     queryKey: ['preferencias-usuario', user?.id],
@@ -51,6 +54,13 @@ export function usePreferenciasUsuario() {
     },
     enabled: !!user?.id,
   });
+
+  // Sincronizar tema do banco com next-themes
+  useEffect(() => {
+    if (preferencias?.tema) {
+      setTheme(preferencias.tema);
+    }
+  }, [preferencias?.tema, setTheme]);
 
   const salvarPreferencias = useMutation({
     mutationFn: async (novasPreferencias: Partial<PreferenciasUsuario>) => {
