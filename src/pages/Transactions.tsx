@@ -82,12 +82,19 @@ const FIXED_EXPENSE_CATEGORIES = ['Moradia', 'Contas'];
 
 type TabType = 'all' | 'income' | 'expense' | 'pending' | 'fixed';
 
-// Formatar label de data
-function formatDateLabel(dateStr: string): string {
+// Formatar label de mês
+function formatMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return format(date, "MMMM 'de' yyyy", { locale: ptBR });
+}
+
+// Formatar dia da transação
+function formatTransactionDay(dateStr: string): string {
   const date = parseISO(dateStr);
   if (isToday(date)) return 'Hoje';
   if (isYesterday(date)) return 'Ontem';
-  return format(date, "dd 'de' MMMM", { locale: ptBR });
+  return format(date, "dd/MM", { locale: ptBR });
 }
 
 export default function Transactions() {
@@ -153,17 +160,25 @@ export default function Transactions() {
     }
   }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions]);
 
-  // Agrupar transações por data
+  // Agrupar transações por mês
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
     activeTransactions.forEach(t => {
-      const dateKey = t.date;
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(t);
+      const date = parseISO(t.date);
+      const monthKey = format(date, 'yyyy-MM');
+      if (!groups[monthKey]) groups[monthKey] = [];
+      groups[monthKey].push(t);
     });
-    return Object.entries(groups).sort(([a], [b]) => 
-      new Date(b).getTime() - new Date(a).getTime()
-    );
+    
+    // Ordenar grupos por mês (mais recente primeiro) e transações por data
+    return Object.entries(groups)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([month, transactions]) => [
+        month,
+        transactions.sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      ] as [string, Transaction[]]);
   }, [activeTransactions]);
 
   // Filtrar categorias pelo tipo selecionado
@@ -797,10 +812,10 @@ export default function Transactions() {
               </CardContent>
             </Card>
           ) : (
-            groupedTransactions.map(([date, transactions]) => (
-              <div key={date}>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background py-2 z-10">
-                  {formatDateLabel(date)}
+            groupedTransactions.map(([monthKey, transactions]) => (
+              <div key={monthKey}>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background py-2 z-10 capitalize">
+                  {formatMonthLabel(monthKey)}
                 </h3>
                 <div className="space-y-1">
                   {transactions.map((transaction) => (
@@ -919,6 +934,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           )}
         </div>
         <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {formatTransactionDay(transaction.date)}
+          </p>
+          <span className="text-muted-foreground/50">•</span>
           <p className="text-sm text-muted-foreground truncate">
             {transaction.category?.name || 'Sem categoria'}
           </p>
