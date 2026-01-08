@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key, UserCheck, UserX, Clock, RefreshCw } from "lucide-react";
+import { Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key, UserCheck, UserX, Clock, RefreshCw, AlertTriangle } from "lucide-react";
 import { format, parseISO, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EditarUsuarioDialog } from "@/components/admin/EditarUsuarioDialog";
@@ -210,10 +210,19 @@ export default function Admin() {
     const isExpiringSoon = isBefore(expDate, addDays(new Date(), 7)) && !isExpired;
     
     return (
-      <span className={isExpired ? "text-destructive" : isExpiringSoon ? "text-amber-600" : ""}>
-        {format(expDate, "dd/MM/yyyy", { locale: ptBR })}
-      </span>
+      <div className="flex items-center gap-1.5">
+        {isExpiringSoon && <AlertTriangle className="h-4 w-4 text-amber-600 animate-pulse" />}
+        <span className={isExpired ? "text-destructive font-medium" : isExpiringSoon ? "text-amber-600 font-medium" : ""}>
+          {format(expDate, "dd/MM/yyyy", { locale: ptBR })}
+        </span>
+      </div>
     );
+  }
+
+  function isUserExpiringSoon(user: AdminUser): boolean {
+    if (!user.data_expiracao) return false;
+    const expDate = parseISO(user.data_expiracao);
+    return isBefore(expDate, addDays(new Date(), 7)) && !isBefore(expDate, new Date());
   }
 
   return (
@@ -423,7 +432,10 @@ export default function Admin() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow 
+                      key={user.id}
+                      className={isUserExpiringSoon(user) ? "bg-amber-50 dark:bg-amber-950/30 border-l-2 border-l-amber-500" : ""}
+                    >
                       <TableCell className="font-medium">
                         {user.full_name || "-"}
                       </TableCell>
