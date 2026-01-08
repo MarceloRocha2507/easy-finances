@@ -106,7 +106,7 @@ export function Layout({ children }: LayoutProps) {
                 to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
                   isActive(item.href)
                     ? "bg-secondary text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -223,7 +223,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen">
-        <div className="p-6">{children}</div>
+        <div className="p-6 animate-fade-in">{children}</div>
       </main>
     </div>
   );
