@@ -3,7 +3,7 @@ import { useAlertasTransacoes } from "./useAlertasTransacoes";
 import { useAlertasOrcamento } from "./useAlertasOrcamento";
 import { useAlertasAcertos } from "./useAlertasAcertos";
 import { useAuth } from "./useAuth";
-import { usePreferenciasNotificacao } from "./usePreferenciasNotificacao";
+import { usePreferenciasLeitura } from "./usePreferenciasNotificacao";
 
 export type CategoriaAlerta = "cartao" | "transacao" | "meta" | "orcamento" | "acerto" | "economia";
 
@@ -30,7 +30,7 @@ export function useAlertasCompletos() {
   const { data: alertasTransacoes, isLoading: loadingTransacoes } = useAlertasTransacoes();
   const { data: alertasOrcamento, isLoading: loadingOrcamento } = useAlertasOrcamento();
   const { data: alertasAcertos, isLoading: loadingAcertos } = useAlertasAcertos();
-  const { isAlertaAtivo, isLoading: loadingPreferencias } = usePreferenciasNotificacao();
+  const { isAlertaAtivo, isLoading: loadingPreferencias } = usePreferenciasLeitura();
 
   const isLoading = loadingDashboard || loadingTransacoes || loadingOrcamento || loadingAcertos || loadingPreferencias;
 
