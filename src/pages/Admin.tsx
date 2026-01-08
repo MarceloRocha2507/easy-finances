@@ -44,7 +44,7 @@ import { RenovarPlanoDialog } from "@/components/admin/RenovarPlanoDialog";
 import { ResetarSenhaDialog } from "@/components/admin/ResetarSenhaDialog";
 
 export default function Admin() {
-  const { users, isLoadingUsers, fetchUsers, createUser, updateUser, toggleUserStatus, resetPassword } = useAdmin();
+  const { users, isLoadingUsers, isAdmin, isCheckingRole, fetchUsers, createUser, updateUser, toggleUserStatus, resetPassword } = useAdmin();
   const { toast } = useToast();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -63,8 +63,10 @@ export default function Admin() {
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isAdmin && !isCheckingRole) {
+      fetchUsers();
+    }
+  }, [isAdmin, isCheckingRole]);
 
   async function handleCreateUser(e: React.FormEvent) {
     e.preventDefault();
