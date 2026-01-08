@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useAlertasCount } from "@/hooks/useAlertasCount";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -55,6 +56,7 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { importantes: alertasCount, hasDanger } = useAlertasCount();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
@@ -225,12 +227,24 @@ export function Layout({ children }: LayoutProps) {
                   : "hover:bg-secondary/50"
               )}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                {alertasCount > 0 && (
+                  <span 
+                    className={cn(
+                      "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full text-[10px] font-bold text-white px-1",
+                      hasDanger ? "bg-expense animate-pulse" : "bg-amber-500"
+                    )}
+                  >
+                    {alertasCount > 9 ? "9+" : alertasCount}
+                  </span>
+                )}
+              </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-medium text-foreground truncate">{userName}</span>
                 <span className="text-xs text-muted-foreground">Ver perfil</span>
