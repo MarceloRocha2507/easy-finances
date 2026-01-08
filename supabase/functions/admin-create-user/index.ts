@@ -45,10 +45,11 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    const { action } = await req.json()
+    const body = await req.json()
+    const { action } = body
 
+    // ============ LIST USERS ============
     if (action === 'list') {
-      // Listar usuários
       const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers()
       
       if (listError) {
@@ -63,13 +64,25 @@ Deno.serve(async (req) => {
         .from('user_roles')
         .select('user_id, role')
 
-      const usersWithRoles = users.users.map(u => ({
-        id: u.id,
-        email: u.email,
-        full_name: u.user_metadata?.full_name || null,
-        created_at: u.created_at,
-        role: roles?.find(r => r.user_id === u.id)?.role || 'user'
-      }))
+      // Buscar profiles dos usuários
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, ativo, data_expiracao, motivo_desativacao')
+
+      const usersWithRoles = users.users.map(u => {
+        const profile = profiles?.find(p => p.user_id === u.id)
+        return {
+          id: u.id,
+          email: u.email,
+          full_name: u.user_metadata?.full_name || null,
+          created_at: u.created_at,
+          role: roles?.find(r => r.user_id === u.id)?.role || 'user',
+          ativo: profile?.ativo ?? true,
+          data_expiracao: profile?.data_expiracao || null,
+          motivo_desativacao: profile?.motivo_desativacao || null,
+          banned_until: u.banned_until || null
+        }
+      })
 
       return new Response(
         JSON.stringify({ users: usersWithRoles }),
@@ -77,8 +90,9 @@ Deno.serve(async (req) => {
       )
     }
 
+    // ============ CREATE USER ============
     if (action === 'create') {
-      const { email, password, full_name } = await req.json().catch(() => ({}))
+      const { email, password, full_name, data_expiracao } = body
 
       if (!email || !password) {
         return new Response(
@@ -105,7 +119,9 @@ Deno.serve(async (req) => {
       // Criar profile para o novo usuário
       await supabaseAdmin.from('profiles').insert({
         user_id: newUser.user.id,
-        full_name
+        full_name,
+        ativo: true,
+        data_expiracao: data_expiracao || null
       })
 
       // Atribuir role 'user' por padrão
@@ -122,9 +138,137 @@ Deno.serve(async (req) => {
             email: newUser.user.email,
             full_name,
             created_at: newUser.user.created_at,
-            role: 'user'
+            role: 'user',
+            ativo: true,
+            data_expiracao: data_expiracao || null
           }
         }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ============ UPDATE USER ============
+    if (action === 'update') {
+      const { user_id, email, full_name, data_expiracao } = body
+
+      if (!user_id) {
+        return new Response(
+          JSON.stringify({ error: 'ID do usuário é obrigatório' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Atualizar email via Auth se fornecido
+      if (email) {
+        const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          email,
+          user_metadata: { full_name }
+        })
+
+        if (updateAuthError) {
+          return new Response(
+            JSON.stringify({ error: updateAuthError.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      }
+
+      // Atualizar profile
+      const { error: updateProfileError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          full_name,
+          data_expiracao: data_expiracao || null
+        })
+        .eq('user_id', user_id)
+
+      if (updateProfileError) {
+        return new Response(
+          JSON.stringify({ error: updateProfileError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ============ TOGGLE STATUS ============
+    if (action === 'toggle-status') {
+      const { user_id, ativo, motivo_desativacao } = body
+
+      if (!user_id || ativo === undefined) {
+        return new Response(
+          JSON.stringify({ error: 'ID do usuário e status são obrigatórios' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Atualizar profile
+      const { error: updateProfileError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          ativo,
+          motivo_desativacao: ativo ? null : motivo_desativacao
+        })
+        .eq('user_id', user_id)
+
+      if (updateProfileError) {
+        return new Response(
+          JSON.stringify({ error: updateProfileError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Bloquear/desbloquear no Auth
+      if (!ativo) {
+        // Banir por 100 anos (efetivamente permanente)
+        await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          ban_duration: '876000h' // 100 anos
+        })
+      } else {
+        // Remover ban
+        await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          ban_duration: 'none'
+        })
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ============ RESET PASSWORD ============
+    if (action === 'reset-password') {
+      const { user_id } = body
+
+      if (!user_id) {
+        return new Response(
+          JSON.stringify({ error: 'ID do usuário é obrigatório' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Gerar nova senha aleatória
+      const newPassword = crypto.randomUUID().slice(0, 12)
+
+      // Atualizar senha
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+        password: newPassword
+      })
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, new_password: newPassword }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
