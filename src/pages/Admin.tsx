@@ -328,7 +328,7 @@ export default function Admin() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
+          <Card className="card-hover animate-fade-in-up stagger-1">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -342,7 +342,7 @@ export default function Admin() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="card-hover animate-fade-in-up stagger-2">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -358,7 +358,7 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-fade-in-up stagger-3">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -372,7 +372,7 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-fade-in-up stagger-4">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -386,7 +386,7 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-fade-in-up stagger-5">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -402,7 +402,7 @@ export default function Admin() {
         </div>
 
         {/* Users Table */}
-        <Card>
+        <Card className="animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
           <CardHeader>
             <CardTitle>Usuários Cadastrados</CardTitle>
             <CardDescription>

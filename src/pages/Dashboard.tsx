@@ -140,7 +140,7 @@ export default function Dashboard() {
 
       {/* Stats Cards - Primeira Linha */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Card className="border">
+        <Card className="border card-hover animate-fade-in-up stagger-1">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -173,7 +173,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border">
+        <Card className="border card-hover animate-fade-in-up stagger-2">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -190,7 +190,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border">
+        <Card className="border card-hover animate-fade-in-up stagger-3">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -210,7 +210,7 @@ export default function Dashboard() {
 
       {/* Stats Cards - Segunda Linha (Pendentes + Fatura) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="border border-blue-200 dark:border-blue-900">
+        <Card className="border border-blue-200 dark:border-blue-900 card-hover animate-fade-in-up stagger-4">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -227,7 +227,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-amber-200 dark:border-amber-900">
+        <Card className="border border-amber-200 dark:border-amber-900 card-hover animate-fade-in-up stagger-5">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -248,7 +248,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-purple-200 dark:border-purple-900">
+        <Card className="border border-purple-200 dark:border-purple-900 card-hover animate-fade-in-up stagger-6">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -265,7 +265,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-primary/30">
+        <Card className="border border-primary/30 card-hover animate-fade-in-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -287,7 +287,7 @@ export default function Dashboard() {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Card className="border">
+        <Card className="border card-hover animate-fade-in" style={{ animationDelay: '0.4s', opacity: 0 }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">Despesas por Categoria</CardTitle>
           </CardHeader>
@@ -319,7 +319,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border">
+        <Card className="border card-hover animate-fade-in" style={{ animationDelay: '0.45s', opacity: 0 }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">Receitas vs Despesas ({year})</CardTitle>
           </CardHeader>
@@ -428,7 +428,7 @@ export default function Dashboard() {
       {/* FAB */}
       <div className="fixed bottom-6 right-6">
         <Link to="/transactions">
-          <Button size="lg" className="rounded-full h-12 w-12 shadow-md">
+          <Button size="lg" className="rounded-full h-12 w-12 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-110">
             <Plus className="w-5 h-5" />
           </Button>
         </Link>
