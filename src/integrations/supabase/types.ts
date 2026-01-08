@@ -367,6 +367,33 @@ export type Database = {
           },
         ]
       }
+      preferencias_notificacao: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          tipo_alerta: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          tipo_alerta: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          tipo_alerta?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean | null

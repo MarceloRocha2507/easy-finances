@@ -19,6 +19,7 @@ import Economia from "./pages/Economia";
 import DespesasCartao from "./pages/DespesasCartao";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
+import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
 
 // Importar Metas como lazy para evitar conflito de case
 import { lazy, Suspense } from "react";
@@ -127,7 +128,16 @@ const App = () => (
                 <Notificacoes />
               </ProtectedRoute>
             }
-            />
+          />
+
+          <Route
+            path="/configuracoes/notificacoes"
+            element={
+              <ProtectedRoute>
+                <ConfiguracoesNotificacoes />
+              </ProtectedRoute>
+            }
+          />
 
             <Route
               path="/admin"
