@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, getMonthRange } from '@/lib/formatters';
+import { FiltroPeriodo } from '@/components/dashboard/FiltroPeriodo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,8 +106,15 @@ export default function Transactions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
+  const [mesAtual, setMesAtual] = useState<Date>(new Date());
 
-  const { data: transactions, isLoading } = useTransactions();
+  // Calcular range do mês selecionado
+  const { start: startDate, end: endDate } = useMemo(() => getMonthRange(mesAtual), [mesAtual]);
+
+  const { data: transactions, isLoading, refetch } = useTransactions({
+    startDate,
+    endDate,
+  });
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: stats } = useCompleteStats();
   const createMutation = useCreateTransaction();
@@ -160,25 +168,11 @@ export default function Transactions() {
     }
   }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions]);
 
-  // Agrupar transações por mês
-  const groupedTransactions = useMemo(() => {
-    const groups: Record<string, Transaction[]> = {};
-    activeTransactions.forEach(t => {
-      const date = parseISO(t.date);
-      const monthKey = format(date, 'yyyy-MM');
-      if (!groups[monthKey]) groups[monthKey] = [];
-      groups[monthKey].push(t);
-    });
-    
-    // Ordenar grupos por mês (mais recente primeiro) e transações por data
-    return Object.entries(groups)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([month, transactions]) => [
-        month,
-        transactions.sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      ] as [string, Transaction[]]);
+  // Ordenar transações por data (mais recente primeiro)
+  const sortedTransactions = useMemo(() => {
+    return [...activeTransactions].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   }, [activeTransactions]);
 
   // Filtrar categorias pelo tipo selecionado
@@ -331,9 +325,17 @@ export default function Transactions() {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header Compacto */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-foreground">Transações</h1>
+        {/* Header com Navegação por Mês */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-foreground">Transações</h1>
+            <FiltroPeriodo
+              mesAtual={mesAtual}
+              onMesChange={setMesAtual}
+              onRefresh={() => refetch()}
+              isLoading={isLoading}
+            />
+          </div>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -795,11 +797,11 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Lista de Transações Agrupadas por Data */}
-        <div className="space-y-6">
+        {/* Lista de Transações */}
+        <div className="space-y-1">
           {isLoading ? (
             <LoadingList />
-          ) : groupedTransactions.length === 0 ? (
+          ) : sortedTransactions.length === 0 ? (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
@@ -812,24 +814,15 @@ export default function Transactions() {
               </CardContent>
             </Card>
           ) : (
-            groupedTransactions.map(([monthKey, transactions]) => (
-              <div key={monthKey}>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background py-2 z-10 capitalize">
-                  {formatMonthLabel(monthKey)}
-                </h3>
-                <div className="space-y-1">
-                  {transactions.map((transaction) => (
-                    <TransactionRow 
-                      key={transaction.id} 
-                      transaction={transaction}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onMarkAsPaid={handleMarkAsPaid}
-                      onDuplicate={handleDuplicate}
-                    />
-                  ))}
-                </div>
-              </div>
+            sortedTransactions.map((transaction) => (
+              <TransactionRow 
+                key={transaction.id} 
+                transaction={transaction}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onMarkAsPaid={handleMarkAsPaid}
+                onDuplicate={handleDuplicate}
+              />
             ))
           )}
         </div>
