@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { PlanLimitAlert } from "@/components/ui/plan-limit-alert";
 
 import {
   Dialog,
@@ -51,6 +53,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { canCreate, isLimitReached, usage, limits } = usePlanLimits();
 
   const [titulo, setTitulo] = useState("");
   const [valorAlvo, setValorAlvo] = useState("");
@@ -58,8 +61,14 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
   const [dataLimite, setDataLimite] = useState<Date | undefined>();
   const [cor, setCor] = useState(CORES_DISPONIVEIS[0]);
 
+  const limitReached = isLimitReached("metas");
+
   const criarMeta = useMutation({
     mutationFn: async () => {
+      if (!canCreate("metas")) {
+        throw new Error("Limite de metas atingido");
+      }
+
       const { error } = await (supabase as any).from("metas").insert({
         user_id: user?.id,
         titulo,
@@ -79,6 +88,7 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
         description: "Sua meta foi criada com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["resource-usage"] });
       resetForm();
       onOpenChange(false);
       onSuccess?.();
@@ -101,6 +111,15 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
   }
 
   function handleSubmit() {
+    if (limitReached) {
+      toast({
+        title: "Limite de metas atingido",
+        description: "Faça upgrade do seu plano para adicionar mais metas.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!titulo.trim()) {
       toast({
         title: "Título obrigatório",
@@ -122,6 +141,13 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
     criarMeta.mutate();
   }
 
+  function handleUpgrade() {
+    toast({
+      title: "Upgrade de plano",
+      description: "Entre em contato com o administrador para fazer upgrade do seu plano.",
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -132,122 +158,135 @@ export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialog
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Título */}
-          <div className="space-y-2">
-            <Label className="text-sm">Título</Label>
-            <Input
-              placeholder="Ex: Viagem de férias"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
+        {limitReached ? (
+          <div className="py-4">
+            <PlanLimitAlert
+              recurso="metas"
+              usado={usage.metas}
+              limite={limits.metas}
+              onUpgrade={handleUpgrade}
             />
           </div>
-
-          {/* Valor Alvo */}
-          <div className="space-y-2">
-            <Label className="text-sm">Valor alvo (R$)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="10000,00"
-              value={valorAlvo}
-              onChange={(e) => setValorAlvo(e.target.value)}
-            />
-          </div>
-
-          {/* Valor Atual */}
-          <div className="space-y-2">
-            <Label className="text-sm">Valor atual (R$)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              value={valorAtual}
-              onChange={(e) => setValorAtual(e.target.value)}
-            />
-          </div>
-
-          {/* Data Limite */}
-          <div className="space-y-2">
-            <Label className="text-sm">Data limite (opcional)</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !dataLimite && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dataLimite
-                    ? format(dataLimite, "PPP", { locale: ptBR })
-                    : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dataLimite}
-                  onSelect={setDataLimite}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
+        ) : (
+          <>
+            <div className="space-y-4 py-4">
+              {/* Título */}
+              <div className="space-y-2">
+                <Label className="text-sm">Título</Label>
+                <Input
+                  placeholder="Ex: Viagem de férias"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
                 />
-              </PopoverContent>
-            </Popover>
-          </div>
+              </div>
 
-          {/* Cor */}
-          <div className="space-y-2">
-            <Label className="text-sm flex items-center gap-2">
-              <Palette className="w-3.5 h-3.5" />
-              Cor
-            </Label>
-            <div className="flex gap-2 flex-wrap">
-              {CORES_DISPONIVEIS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={cn(
-                    "w-7 h-7 rounded-full transition-all",
-                    cor === c ? "ring-2 ring-offset-2 ring-primary" : "hover:scale-105"
-                  )}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setCor(c)}
+              {/* Valor Alvo */}
+              <div className="space-y-2">
+                <Label className="text-sm">Valor alvo (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="10000,00"
+                  value={valorAlvo}
+                  onChange={(e) => setValorAlvo(e.target.value)}
                 />
-              ))}
-            </div>
-          </div>
-
-          {/* Preview */}
-          <div className="p-3 rounded-md border bg-secondary/30">
-            <p className="text-xs text-muted-foreground mb-2">Prévia</p>
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-md flex items-center justify-center"
-                style={{ backgroundColor: `${cor}15` }}
-              >
-                <Target className="h-4 w-4" style={{ color: cor }} />
               </div>
-              <div>
-                <p className="text-sm font-medium">{titulo || "Minha meta"}</p>
-                <p className="text-xs text-muted-foreground">
-                  R$ {parseFloat(valorAtual || "0").toFixed(2)} de R${" "}
-                  {parseFloat(valorAlvo || "0").toFixed(2)}
-                </p>
+
+              {/* Valor Atual */}
+              <div className="space-y-2">
+                <Label className="text-sm">Valor atual (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valorAtual}
+                  onChange={(e) => setValorAtual(e.target.value)}
+                />
+              </div>
+
+              {/* Data Limite */}
+              <div className="space-y-2">
+                <Label className="text-sm">Data limite (opcional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataLimite && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataLimite
+                        ? format(dataLimite, "PPP", { locale: ptBR })
+                        : "Selecione uma data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dataLimite}
+                      onSelect={setDataLimite}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Cor */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Palette className="w-3.5 h-3.5" />
+                  Cor
+                </Label>
+                <div className="flex gap-2 flex-wrap">
+                  {CORES_DISPONIVEIS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={cn(
+                        "w-7 h-7 rounded-full transition-all",
+                        cor === c ? "ring-2 ring-offset-2 ring-primary" : "hover:scale-105"
+                      )}
+                      style={{ backgroundColor: c }}
+                      onClick={() => setCor(c)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="p-3 rounded-md border bg-secondary/30">
+                <p className="text-xs text-muted-foreground mb-2">Prévia</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-md flex items-center justify-center"
+                    style={{ backgroundColor: `${cor}15` }}
+                  >
+                    <Target className="h-4 w-4" style={{ color: cor }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{titulo || "Minha meta"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      R$ {parseFloat(valorAtual || "0").toFixed(2)} de R${" "}
+                      {parseFloat(valorAlvo || "0").toFixed(2)}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button onClick={handleSubmit} disabled={criarMeta.isPending}>
-            {criarMeta.isPending ? "Criando..." : "Criar"}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button onClick={handleSubmit} disabled={criarMeta.isPending}>
+                {criarMeta.isPending ? "Criando..." : "Criar"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
