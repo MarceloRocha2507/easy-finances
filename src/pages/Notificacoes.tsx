@@ -21,7 +21,9 @@ import {
   PiggyBank,
   Users,
   TrendingUp,
+  Settings,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type TabStatus = "todas" | "nao_lidas" | "lidas";
 
@@ -113,17 +115,25 @@ export default function Notificacoes() {
               {notificacoes.length} alerta(s) • {naoLidas} não lido(s)
             </p>
           </div>
-          {naoLidas > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => marcarTodosComoLidos.mutate()}
-              disabled={marcarTodosComoLidos.isPending}
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Marcar todos como lidos
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Link to="/configuracoes/notificacoes">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar
+              </Button>
+            </Link>
+            {naoLidas > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => marcarTodosComoLidos.mutate()}
+                disabled={marcarTodosComoLidos.isPending}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Marcar todos como lidos
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filtros por Categoria */}
