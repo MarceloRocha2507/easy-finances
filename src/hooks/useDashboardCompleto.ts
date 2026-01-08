@@ -316,6 +316,28 @@ export function useDashboardCompleto(mesReferencia?: Date) {
               categoria: "cartao",
             });
           }
+          // Fatura vence esta semana (4-7 dias)
+          else if (cartao.diasParaVencimento <= 7) {
+            alertas.push({
+              id: `fatura-semana-${cartao.id}`,
+              tipo: "info",
+              titulo: "Fatura vence esta semana",
+              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+              icone: "calendar",
+              categoria: "cartao",
+            });
+          }
+          // Fatura vence em breve (8-15 dias)
+          else if (cartao.diasParaVencimento <= 15) {
+            alertas.push({
+              id: `fatura-quinzena-${cartao.id}`,
+              tipo: "info",
+              titulo: "Fatura vence em breve",
+              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+              icone: "calendar-days",
+              categoria: "cartao",
+            });
+          }
         }
 
         // Limite disponível muito baixo (< R$ 500)
