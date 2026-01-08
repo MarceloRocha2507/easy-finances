@@ -515,9 +515,13 @@ export type Database = {
           due_date: string | null
           id: string
           is_recurring: boolean | null
+          numero_parcela: number | null
           paid_date: string | null
+          parent_id: string | null
           recurrence_day: number | null
           status: string
+          tipo_lancamento: string | null
+          total_parcelas: number | null
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
           user_id: string
@@ -531,9 +535,13 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_recurring?: boolean | null
+          numero_parcela?: number | null
           paid_date?: string | null
+          parent_id?: string | null
           recurrence_day?: number | null
           status?: string
+          tipo_lancamento?: string | null
+          total_parcelas?: number | null
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id: string
@@ -547,9 +555,13 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_recurring?: boolean | null
+          numero_parcela?: number | null
           paid_date?: string | null
+          parent_id?: string | null
           recurrence_day?: number | null
           status?: string
+          tipo_lancamento?: string | null
+          total_parcelas?: number | null
           type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id?: string
@@ -560,6 +572,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]

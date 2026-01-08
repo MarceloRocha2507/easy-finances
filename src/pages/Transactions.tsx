@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus } from '@/hooks/useTransactions';
+import { useTransactions, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +32,8 @@ interface TransactionFormData {
   due_date: Date | undefined;
   is_recurring: boolean;
   recurrence_day: number;
+  tipoLancamento: TipoLancamento;
+  totalParcelas: number;
 }
 
 const initialFormData: TransactionFormData = {
@@ -44,6 +46,8 @@ const initialFormData: TransactionFormData = {
   due_date: undefined,
   is_recurring: false,
   recurrence_day: 1,
+  tipoLancamento: 'unica',
+  totalParcelas: 2,
 };
 
 // Mapa de ícones para renderização
@@ -99,6 +103,7 @@ export default function Transactions() {
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: stats } = useCompleteStats();
   const createMutation = useCreateTransaction();
+  const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
   const markAsPaidMutation = useMarkAsPaid();
@@ -168,9 +173,10 @@ export default function Transactions() {
     const today = startOfDay(new Date());
     const transactionDate = startOfDay(formData.date);
     
-    // Lógica automática: data futura OU recorrente = pendente
+    // Lógica automática: data futura, recorrente OU parcelada/fixa = pendente
     const isFutureDate = transactionDate > today;
-    const autoStatus: TransactionStatus = (formData.is_recurring || isFutureDate) 
+    const isParceladaOuFixa = formData.tipoLancamento !== 'unica';
+    const autoStatus: TransactionStatus = (formData.is_recurring || isFutureDate || isParceladaOuFixa) 
       ? 'pending' 
       : 'completed';
     
@@ -187,12 +193,24 @@ export default function Transactions() {
       paid_date: autoStatus === 'completed' 
         ? format(formData.date, 'yyyy-MM-dd') 
         : undefined,
-      is_recurring: formData.is_recurring,
+      is_recurring: formData.tipoLancamento === 'fixa' || formData.is_recurring,
       recurrence_day: formData.is_recurring ? formData.recurrence_day : undefined,
     };
 
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...data }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          resetForm();
+        },
+      });
+    } else if (formData.tipoLancamento !== 'unica') {
+      // Usar hook de parcelamento
+      createInstallmentMutation.mutate({
+        baseTransaction: data,
+        totalParcelas: formData.totalParcelas,
+        tipoLancamento: formData.tipoLancamento,
+      }, {
         onSuccess: () => {
           setDialogOpen(false);
           resetForm();
@@ -224,6 +242,8 @@ export default function Transactions() {
       due_date: transaction.due_date ? new Date(transaction.due_date) : undefined,
       is_recurring: transaction.is_recurring || false,
       recurrence_day: transaction.recurrence_day || 1,
+      tipoLancamento: (transaction.tipo_lancamento as TipoLancamento) || 'unica',
+      totalParcelas: transaction.total_parcelas || 2,
     });
     setEditingId(transaction.id);
     setDialogOpen(true);
@@ -248,6 +268,8 @@ export default function Transactions() {
       due_date: undefined,
       is_recurring: transaction.is_recurring || false,
       recurrence_day: transaction.recurrence_day || 1,
+      tipoLancamento: 'unica', // Reset para única na duplicação
+      totalParcelas: 2,
     });
     setEditingId(null); // Nova transação
     setDialogOpen(true);
@@ -446,11 +468,109 @@ export default function Transactions() {
                     />
                   </div>
 
+                  {/* Tipo de Lançamento - Somente para despesas e nova transação */}
+                  {formData.type === 'expense' && !editingId && (
+                    <div className="space-y-3">
+                      <Label>Tipo de lançamento</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          type="button"
+                          variant={formData.tipoLancamento === 'unica' ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            "flex-1",
+                            formData.tipoLancamento === 'unica' && 'bg-primary'
+                          )}
+                          onClick={() => setFormData({ ...formData, tipoLancamento: 'unica', is_recurring: false })}
+                        >
+                          Única
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={formData.tipoLancamento === 'parcelada' ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            "flex-1",
+                            formData.tipoLancamento === 'parcelada' && 'bg-primary'
+                          )}
+                          onClick={() => setFormData({ ...formData, tipoLancamento: 'parcelada', is_recurring: false })}
+                        >
+                          Parcelada
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={formData.tipoLancamento === 'fixa' ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            "flex-1",
+                            formData.tipoLancamento === 'fixa' && 'bg-primary'
+                          )}
+                          onClick={() => setFormData({ ...formData, tipoLancamento: 'fixa', is_recurring: true })}
+                        >
+                          Fixa
+                        </Button>
+                      </div>
+
+                      {/* Seletor de Parcelas */}
+                      {formData.tipoLancamento === 'parcelada' && (
+                        <div className="space-y-2">
+                          <Label>Número de parcelas</Label>
+                          <Select 
+                            value={formData.totalParcelas.toString()} 
+                            onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 47 }, (_, i) => i + 2).map((num) => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num}x
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Resumo Visual */}
+                      {formData.tipoLancamento !== 'unica' && formData.amount && (
+                        <div className="p-3 bg-muted/50 rounded-lg space-y-1">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            {formData.tipoLancamento === 'parcelada' ? (
+                              <>
+                                <Calendar className="w-4 h-4 text-primary" />
+                                <span>
+                                  {formData.totalParcelas}x de {formatCurrency(parseFloat(formData.amount) / formData.totalParcelas)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-4 h-4 text-primary" />
+                                <span>{formatCurrency(parseFloat(formData.amount))}/mês</span>
+                              </>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formData.tipoLancamento === 'parcelada' 
+                              ? `Serão criadas ${formData.totalParcelas} transações pendentes`
+                              : 'Serão criadas 12 transações mensais pendentes'
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Feedback Visual de Status Automático */}
                   {(() => {
                     const today = startOfDay(new Date());
                     const transactionDate = startOfDay(formData.date);
                     const isFutureDate = transactionDate > today;
+                    
+                    if (formData.tipoLancamento !== 'unica' && formData.type === 'expense') {
+                      return null; // O resumo já mostra a informação
+                    }
                     
                     if (isFutureDate) {
                       return (
@@ -461,7 +581,7 @@ export default function Transactions() {
                       );
                     }
                     
-                    if (formData.is_recurring) {
+                    if (formData.is_recurring && formData.tipoLancamento === 'unica') {
                       return (
                         <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
                           <RefreshCw className="w-4 h-4" />
@@ -473,26 +593,28 @@ export default function Transactions() {
                     return null;
                   })()}
 
-                  {/* Recurring Toggle */}
-                  <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                      <Label htmlFor="recurring-toggle" className="font-normal cursor-pointer">
-                        É uma transação recorrente?
-                      </Label>
+                  {/* Recurring Toggle - Somente para receitas ou transações únicas */}
+                  {(formData.type === 'income' || formData.tipoLancamento === 'unica') && (
+                    <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                        <Label htmlFor="recurring-toggle" className="font-normal cursor-pointer">
+                          É uma transação recorrente?
+                        </Label>
+                      </div>
+                      <Switch
+                        id="recurring-toggle"
+                        checked={formData.is_recurring}
+                        onCheckedChange={(checked) => setFormData({ 
+                          ...formData, 
+                          is_recurring: checked
+                        })}
+                      />
                     </div>
-                    <Switch
-                      id="recurring-toggle"
-                      checked={formData.is_recurring}
-                      onCheckedChange={(checked) => setFormData({ 
-                        ...formData, 
-                        is_recurring: checked
-                      })}
-                    />
-                  </div>
+                  )}
 
-                  {/* Recurrence Day (only if recurring) */}
-                  {formData.is_recurring && (
+                  {/* Recurrence Day (only if recurring and not fixed) */}
+                  {formData.is_recurring && formData.tipoLancamento !== 'fixa' && (
                     <div className="space-y-2">
                       <Label>Dia do mês</Label>
                       <Select 
@@ -775,6 +897,16 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <p className="font-medium text-foreground truncate">
             {transaction.description || transaction.category?.name || 'Sem descrição'}
           </p>
+          {/* Badge de Parcela */}
+          {transaction.tipo_lancamento === 'parcelada' && transaction.numero_parcela && transaction.total_parcelas && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+              {transaction.numero_parcela}/{transaction.total_parcelas}
+            </span>
+          )}
+          {/* Ícone de Fixa */}
+          {transaction.tipo_lancamento === 'fixa' && (
+            <RefreshCw className="w-3 h-3 text-muted-foreground shrink-0" />
+          )}
           {isPending && (
             <span className={cn(
               "text-xs px-1.5 py-0.5 rounded-full shrink-0",
