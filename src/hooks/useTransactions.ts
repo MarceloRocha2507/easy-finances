@@ -550,17 +550,18 @@ export function useCompleteStats() {
 
       const saldoInicial = Number(profile?.saldo_inicial) || 0;
 
-      // Buscar transações
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('type, amount, status, due_date');
-
-      if (error) throw error;
-
-      // Buscar fatura do cartão do mês atual (apenas titular)
+      // Definir período do mês atual
       const hoje = new Date();
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
       const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      // Buscar transações: todas concluídas + pendentes apenas do mês atual
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('type, amount, status, due_date')
+        .or(`status.eq.completed,and(status.eq.pending,due_date.gte.${inicioMes},due_date.lte.${fimMes})`);
+
+      if (error) throw error;
 
       const { data: parcelasCartao } = await supabase
         .from('parcelas_cartao')
