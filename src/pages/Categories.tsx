@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { PlanLimitAlert, PlanLimitBadge } from '@/components/ui/plan-limit-alert';
 
 const ICON_OPTIONS = [
   { value: 'dollar-sign', label: 'Dinheiro', icon: DollarSign },
@@ -63,10 +66,19 @@ export default function Categories() {
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
 
+  const { canCreate, isLimitReached, usage, limits } = usePlanLimits();
+  const limiteCategoriasAtingido = isLimitReached("categorias");
+
   const incomeCategories = categories?.filter((c) => c.type === 'income') || [];
   const expenseCategories = categories?.filter((c) => c.type === 'expense') || [];
 
   const handleSubmit = () => {
+    // Verificar limite apenas para novas categorias
+    if (!editingId && !canCreate("categorias")) {
+      toast.error("Limite de categorias atingido. Faça upgrade do seu plano.");
+      return;
+    }
+
     const data: CategoryInsert = {
       name: formData.name,
       icon: formData.icon,
@@ -89,6 +101,15 @@ export default function Categories() {
         },
       });
     }
+  };
+
+  const handleOpenDialog = () => {
+    if (limiteCategoriasAtingido) {
+      toast.error("Limite de categorias atingido. Faça upgrade do seu plano.");
+      return;
+    }
+    resetForm();
+    setDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -179,17 +200,29 @@ export default function Categories() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
+              <PlanLimitBadge usado={usage.categorias} limite={limits.categorias} />
+            </div>
             <p className="text-sm text-muted-foreground">Organize suas transações</p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Categoria
-              </Button>
-            </DialogTrigger>
+          <Button onClick={handleOpenDialog} disabled={limiteCategoriasAtingido}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Categoria
+          </Button>
+        </div>
+
+        {limiteCategoriasAtingido && (
+          <PlanLimitAlert
+            recurso="categorias"
+            usado={usage.categorias}
+            limite={limits.categorias}
+            onUpgrade={() => toast.info("Contate o administrador para fazer upgrade do seu plano")}
+          />
+        )}
+
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-base font-medium">
@@ -305,7 +338,6 @@ export default function Categories() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
 
         {/* Categories Grid */}
         {isLoading ? (

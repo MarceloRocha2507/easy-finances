@@ -51,6 +51,8 @@ import {
   useDesativarResponsavel,
   Responsavel,
 } from "@/services/responsaveis";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { PlanLimitAlert, PlanLimitBadge } from "@/components/ui/plan-limit-alert";
 
 export default function Responsaveis() {
   const { toast } = useToast();
@@ -58,6 +60,9 @@ export default function Responsaveis() {
   const criarMutation = useCriarResponsavel();
   const atualizarMutation = useAtualizarResponsavel();
   const desativarMutation = useDesativarResponsavel();
+
+  const { canCreate, isLimitReached, usage, limits } = usePlanLimits();
+  const limiteResponsaveisAtingido = isLimitReached("responsaveis");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<Responsavel | null>(null);
@@ -75,6 +80,10 @@ export default function Responsaveis() {
   };
 
   const abrirDialogNovo = () => {
+    if (limiteResponsaveisAtingido) {
+      toast({ title: "Limite de responsáveis atingido", description: "Faça upgrade do seu plano.", variant: "destructive" });
+      return;
+    }
     resetForm();
     setDialogOpen(true);
   };
@@ -92,6 +101,12 @@ export default function Responsaveis() {
   const handleSalvar = async () => {
     if (!form.nome.trim()) {
       toast({ title: "Informe o nome", variant: "destructive" });
+      return;
+    }
+
+    // Verificar limite apenas para novos responsáveis
+    if (!editando && !canCreate("responsaveis")) {
+      toast({ title: "Limite de responsáveis atingido", description: "Faça upgrade do seu plano.", variant: "destructive" });
       return;
     }
 
@@ -178,16 +193,28 @@ export default function Responsaveis() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Responsáveis</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight">Responsáveis</h1>
+              <PlanLimitBadge usado={usage.responsaveis} limite={limits.responsaveis} />
+            </div>
             <p className="text-muted-foreground text-sm mt-0.5">
               Gerencie as pessoas que usam seus cartões
             </p>
           </div>
-          <Button onClick={abrirDialogNovo} size="sm">
+          <Button onClick={abrirDialogNovo} size="sm" disabled={limiteResponsaveisAtingido}>
             <UserPlus className="h-4 w-4 mr-1.5" />
             Adicionar pessoa
           </Button>
         </div>
+
+        {limiteResponsaveisAtingido && (
+          <PlanLimitAlert
+            recurso="responsáveis"
+            usado={usage.responsaveis}
+            limite={limits.responsaveis}
+            onUpgrade={() => toast({ title: "Contate o administrador", description: "Para fazer upgrade do seu plano." })}
+          />
+        )}
 
         {/* Lista de responsáveis ativos */}
         <div className="space-y-3">
