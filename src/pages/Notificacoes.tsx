@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { useNotificacoes, NotificacaoComStatus } from "@/hooks/useNotificacoes";
+import { useNotificacoes, CategoriaAlerta } from "@/hooks/useNotificacoes";
+import { NotificacaoComStatus } from "@/hooks/useNotificacoes";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,8 +14,13 @@ import {
   CheckCircle2,
   Check,
   X,
-  Bell,
   BellOff,
+  CreditCard,
+  Receipt,
+  Target,
+  PiggyBank,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 
 type TabStatus = "todas" | "nao_lidas" | "lidas";
@@ -46,8 +52,19 @@ const tipoConfig = {
   },
 };
 
+const categoriaConfig: Record<CategoriaAlerta, { label: string; icon: typeof CreditCard }> = {
+  cartao: { label: "Cartões", icon: CreditCard },
+  transacao: { label: "Transações", icon: Receipt },
+  meta: { label: "Metas", icon: Target },
+  orcamento: { label: "Orçamentos", icon: PiggyBank },
+  acerto: { label: "Acertos", icon: Users },
+  economia: { label: "Economia", icon: TrendingUp },
+};
+
 export default function Notificacoes() {
   const [tab, setTab] = useState<TabStatus>("todas");
+  const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaAlerta | "todas">("todas");
+  
   const {
     notificacoes,
     isLoading,
@@ -55,6 +72,7 @@ export default function Notificacoes() {
     marcarComoNaoLido,
     marcarTodosComoLidos,
     naoLidas,
+    categorias,
   } = useNotificacoes();
 
   const filtrarPorTab = (n: NotificacaoComStatus) => {
@@ -63,7 +81,14 @@ export default function Notificacoes() {
     return true;
   };
 
-  const notificacoesFiltradas = notificacoes.filter(filtrarPorTab);
+  const filtrarPorCategoria = (n: NotificacaoComStatus) => {
+    if (categoriaFiltro === "todas") return true;
+    return n.categoria === categoriaFiltro;
+  };
+
+  const notificacoesFiltradas = notificacoes
+    .filter(filtrarPorTab)
+    .filter(filtrarPorCategoria);
 
   const handleToggleLido = (notificacao: NotificacaoComStatus) => {
     if (notificacao.lido) {
@@ -73,6 +98,10 @@ export default function Notificacoes() {
     }
   };
 
+  const categoriasDisponiveis = Object.entries(categoriaConfig).filter(
+    ([key]) => (categorias?.[key as CategoriaAlerta] || 0) > 0
+  );
+
   return (
     <Layout>
       <div className="space-y-6 max-w-3xl mx-auto">
@@ -81,7 +110,7 @@ export default function Notificacoes() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Notificações</h1>
             <p className="text-sm text-muted-foreground">
-              Acompanhe seus alertas e avisos importantes
+              {notificacoes.length} alerta(s) • {naoLidas} não lido(s)
             </p>
           </div>
           {naoLidas > 0 && (
@@ -97,14 +126,47 @@ export default function Notificacoes() {
           )}
         </div>
 
+        {/* Filtros por Categoria */}
+        {categoriasDisponiveis.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={categoriaFiltro === "todas" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaFiltro("todas")}
+              className="h-8"
+            >
+              Todas
+              <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                {notificacoes.length}
+              </Badge>
+            </Button>
+            {categoriasDisponiveis.map(([key, config]) => {
+              const Icon = config.icon;
+              const count = categorias?.[key as CategoriaAlerta] || 0;
+              return (
+                <Button
+                  key={key}
+                  variant={categoriaFiltro === key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoriaFiltro(key as CategoriaAlerta)}
+                  className="h-8"
+                >
+                  <Icon className="h-3.5 w-3.5 mr-1.5" />
+                  {config.label}
+                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                    {count}
+                  </Badge>
+                </Button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs value={tab} onValueChange={(v) => setTab(v as TabStatus)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="todas" className="gap-2">
               Todas
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {notificacoes.length}
-              </Badge>
             </TabsTrigger>
             <TabsTrigger value="nao_lidas" className="gap-2">
               Não Lidas
@@ -131,6 +193,8 @@ export default function Notificacoes() {
                       ? "Nenhuma notificação não lida"
                       : tab === "lidas"
                       ? "Nenhuma notificação lida"
+                      : categoriaFiltro !== "todas"
+                      ? `Nenhuma notificação de ${categoriaConfig[categoriaFiltro]?.label.toLowerCase()}`
                       : "Nenhuma notificação"}
                   </p>
                   <p className="text-sm text-muted-foreground/60 mt-1">
@@ -142,6 +206,9 @@ export default function Notificacoes() {
               notificacoesFiltradas.map((notificacao, index) => {
                 const config = tipoConfig[notificacao.tipo];
                 const Icon = config.icon;
+                const CategoriaIcon = notificacao.categoria 
+                  ? categoriaConfig[notificacao.categoria]?.icon 
+                  : null;
 
                 return (
                   <Card
@@ -167,14 +234,22 @@ export default function Notificacoes() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h3
-                            className={cn(
-                              "font-medium text-foreground",
-                              notificacao.lido && "text-muted-foreground"
+                          <div className="flex items-center gap-2">
+                            <h3
+                              className={cn(
+                                "font-medium text-foreground",
+                                notificacao.lido && "text-muted-foreground"
+                              )}
+                            >
+                              {notificacao.titulo}
+                            </h3>
+                            {CategoriaIcon && notificacao.categoria && (
+                              <Badge variant="outline" className="text-xs h-5 px-1.5 gap-1">
+                                <CategoriaIcon className="h-3 w-3" />
+                                {categoriaConfig[notificacao.categoria]?.label}
+                              </Badge>
                             )}
-                          >
-                            {notificacao.titulo}
-                          </h3>
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
