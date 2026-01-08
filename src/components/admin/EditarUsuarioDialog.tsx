@@ -2,46 +2,49 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, CalendarIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import type { AdminUser } from "@/hooks/useAdmin";
+import type { AdminUser, TipoPlano } from "@/hooks/useAdmin";
 
 interface EditarUsuarioDialogProps {
   user: AdminUser | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (user_id: string, data: { email?: string; full_name?: string; data_expiracao?: string | null }) => Promise<void>;
+  onSave: (user_id: string, data: { email?: string; full_name?: string; tipo_plano?: TipoPlano }) => Promise<void>;
 }
+
+const PLANOS = {
+  teste: { label: "Período de Teste", dias: 7 },
+  mensal: { label: "Mensal", dias: 30 },
+  anual: { label: "Anual", dias: 365 },
+  ilimitado: { label: "Ilimitado", dias: null },
+} as const;
 
 export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: EditarUsuarioDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [dataExpiracao, setDataExpiracao] = useState<Date | undefined>();
-  const [semLimite, setSemLimite] = useState(true);
+  const [tipoPlano, setTipoPlano] = useState<TipoPlano>("mensal");
 
   useEffect(() => {
     if (user) {
       setEmail(user.email || "");
       setFullName(user.full_name || "");
-      if (user.data_expiracao) {
-        setDataExpiracao(parseISO(user.data_expiracao));
-        setSemLimite(false);
-      } else {
-        setDataExpiracao(undefined);
-        setSemLimite(true);
-      }
+      setTipoPlano(user.tipo_plano || "mensal");
     }
   }, [user]);
 
@@ -54,12 +57,20 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
       await onSave(user.id, {
         email,
         full_name: fullName,
-        data_expiracao: semLimite ? null : dataExpiracao ? format(dataExpiracao, "yyyy-MM-dd") : null
+        tipo_plano: tipoPlano
       });
       onOpenChange(false);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function getNovaExpiracao() {
+    const plano = PLANOS[tipoPlano];
+    if (!plano.dias) return "Sem limite";
+    const novaData = new Date();
+    novaData.setDate(novaData.getDate() + plano.dias);
+    return format(novaData, "dd/MM/yyyy", { locale: ptBR });
   }
 
   return (
@@ -92,47 +103,42 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
           </div>
 
           <div className="space-y-2">
-            <Label>Período de uso</Label>
-            <div className="flex items-center space-x-2 mb-2">
-              <Checkbox
-                id="sem-limite"
-                checked={semLimite}
-                onCheckedChange={(checked) => {
-                  setSemLimite(!!checked);
-                  if (checked) setDataExpiracao(undefined);
-                }}
-              />
-              <label htmlFor="sem-limite" className="text-sm cursor-pointer">
-                Sem limite de validade
-              </label>
-            </div>
-
-            {!semLimite && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dataExpiracao && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataExpiracao ? format(dataExpiracao, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dataExpiracao}
-                    onSelect={setDataExpiracao}
-                    initialFocus
-                    locale={ptBR}
-                    disabled={(date) => date < new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
+            <Label>Tipo de Plano</Label>
+            <Select value={tipoPlano} onValueChange={(v) => setTipoPlano(v as TipoPlano)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="teste">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    Período de Teste (7 dias)
+                  </div>
+                </SelectItem>
+                <SelectItem value="mensal">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    Mensal (30 dias)
+                  </div>
+                </SelectItem>
+                <SelectItem value="anual">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-purple-500" />
+                    Anual (365 dias)
+                  </div>
+                </SelectItem>
+                <SelectItem value="ilimitado">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    Ilimitado
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <p className="text-sm text-muted-foreground">
+              Nova expiração: <strong>{getNovaExpiracao()}</strong>
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

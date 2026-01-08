@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       // Buscar profiles dos usuários
       const { data: profiles } = await supabaseAdmin
         .from('profiles')
-        .select('user_id, ativo, data_expiracao, motivo_desativacao')
+        .select('user_id, ativo, data_expiracao, motivo_desativacao, tipo_plano')
 
       const usersWithRoles = users.users.map(u => {
         const profile = profiles?.find(p => p.user_id === u.id)
@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
           role: roles?.find(r => r.user_id === u.id)?.role || 'user',
           ativo: profile?.ativo ?? true,
           data_expiracao: profile?.data_expiracao || null,
+          tipo_plano: profile?.tipo_plano || 'mensal',
           motivo_desativacao: profile?.motivo_desativacao || null,
           banned_until: u.banned_until || null
         }
@@ -90,9 +91,28 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Função para calcular data de expiração baseado no plano
+    function calcularExpiracao(tipoPlano: string): string | null {
+      const hoje = new Date()
+      switch (tipoPlano) {
+        case 'teste':
+          hoje.setDate(hoje.getDate() + 7)
+          return hoje.toISOString().split('T')[0]
+        case 'mensal':
+          hoje.setDate(hoje.getDate() + 30)
+          return hoje.toISOString().split('T')[0]
+        case 'anual':
+          hoje.setDate(hoje.getDate() + 365)
+          return hoje.toISOString().split('T')[0]
+        case 'ilimitado':
+        default:
+          return null
+      }
+    }
+
     // ============ CREATE USER ============
     if (action === 'create') {
-      const { email, password, full_name, data_expiracao } = body
+      const { email, password, full_name, tipo_plano = 'mensal' } = body
 
       if (!email || !password) {
         return new Response(
@@ -100,6 +120,8 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+
+      const data_expiracao = calcularExpiracao(tipo_plano)
 
       // Criar usuário
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -121,7 +143,8 @@ Deno.serve(async (req) => {
         user_id: newUser.user.id,
         full_name,
         ativo: true,
-        data_expiracao: data_expiracao || null
+        tipo_plano,
+        data_expiracao
       })
 
       // Atribuir role 'user' por padrão
@@ -140,7 +163,8 @@ Deno.serve(async (req) => {
             created_at: newUser.user.created_at,
             role: 'user',
             ativo: true,
-            data_expiracao: data_expiracao || null
+            tipo_plano,
+            data_expiracao
           }
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -149,7 +173,7 @@ Deno.serve(async (req) => {
 
     // ============ UPDATE USER ============
     if (action === 'update') {
-      const { user_id, email, full_name, data_expiracao } = body
+      const { user_id, email, full_name, tipo_plano } = body
 
       if (!user_id) {
         return new Response(
@@ -173,13 +197,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Calcular nova data de expiração se o plano foi alterado
+      const data_expiracao = tipo_plano ? calcularExpiracao(tipo_plano) : undefined
+
       // Atualizar profile
+      const updateData: Record<string, unknown> = { full_name }
+      if (tipo_plano) {
+        updateData.tipo_plano = tipo_plano
+        updateData.data_expiracao = data_expiracao
+      }
+
       const { error: updateProfileError } = await supabaseAdmin
         .from('profiles')
-        .update({
-          full_name,
-          data_expiracao: data_expiracao || null
-        })
+        .update(updateData)
         .eq('user_id', user_id)
 
       if (updateProfileError) {

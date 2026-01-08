@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
-import { useAdmin, AdminUser } from "@/hooks/useAdmin";
+import { useAdmin, AdminUser, TipoPlano } from "@/hooks/useAdmin";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +51,8 @@ export default function Admin() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    full_name: ""
+    full_name: "",
+    tipo_plano: "mensal" as TipoPlano
   });
 
   // Estados dos dialogs
@@ -61,14 +69,14 @@ export default function Admin() {
     setIsCreating(true);
 
     try {
-      await createUser(formData.email, formData.password, formData.full_name || undefined);
+      await createUser(formData.email, formData.password, formData.full_name || undefined, formData.tipo_plano);
       
       toast({
         title: "Usuário criado",
         description: `${formData.email} foi cadastrado com sucesso.`
       });
       
-      setFormData({ email: "", password: "", full_name: "" });
+      setFormData({ email: "", password: "", full_name: "", tipo_plano: "mensal" });
       setIsDialogOpen(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -82,7 +90,7 @@ export default function Admin() {
     }
   }
 
-  async function handleUpdateUser(user_id: string, data: { email?: string; full_name?: string; data_expiracao?: string | null }) {
+  async function handleUpdateUser(user_id: string, data: { email?: string; full_name?: string; tipo_plano?: TipoPlano }) {
     try {
       await updateUser(user_id, data);
       toast({
@@ -156,9 +164,26 @@ export default function Admin() {
     return <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>;
   }
 
+  function getPlanoBadge(user: AdminUser) {
+    const cores = {
+      teste: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
+      mensal: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+      anual: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+      ilimitado: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+    };
+    const labels = {
+      teste: "Teste",
+      mensal: "Mensal",
+      anual: "Anual",
+      ilimitado: "Ilimitado",
+    };
+    const plano = user.tipo_plano || "mensal";
+    return <Badge className={cores[plano]}>{labels[plano]}</Badge>;
+  }
+
   function getValidadeBadge(user: AdminUser) {
     if (!user.data_expiracao) {
-      return <span className="text-muted-foreground">Ilimitado</span>;
+      return <span className="text-muted-foreground">Sem limite</span>;
     }
     const expDate = parseISO(user.data_expiracao);
     const isExpired = isBefore(expDate, new Date());
@@ -232,6 +257,24 @@ export default function Admin() {
                     required
                     minLength={6}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo de Plano</Label>
+                  <Select 
+                    value={formData.tipo_plano} 
+                    onValueChange={(v) => setFormData({ ...formData, tipo_plano: v as TipoPlano })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="teste">Período de Teste (7 dias)</SelectItem>
+                      <SelectItem value="mensal">Mensal (30 dias)</SelectItem>
+                      <SelectItem value="anual">Anual (365 dias)</SelectItem>
+                      <SelectItem value="ilimitado">Ilimitado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
@@ -351,6 +394,7 @@ export default function Admin() {
                     <TableHead>Nome</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Plano</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Validade</TableHead>
                     <TableHead>Criado em</TableHead>
@@ -369,6 +413,7 @@ export default function Admin() {
                           {user.role === 'admin' ? 'Admin' : 'Usuário'}
                         </Badge>
                       </TableCell>
+                      <TableCell>{getPlanoBadge(user)}</TableCell>
                       <TableCell>{getStatusBadge(user)}</TableCell>
                       <TableCell>{getValidadeBadge(user)}</TableCell>
                       <TableCell className="text-muted-foreground">

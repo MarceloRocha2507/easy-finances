@@ -3,6 +3,8 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+export type TipoPlano = 'teste' | 'mensal' | 'anual' | 'ilimitado';
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -10,6 +12,7 @@ export interface AdminUser {
   created_at: string;
   role: 'admin' | 'user';
   ativo: boolean;
+  tipo_plano: TipoPlano;
   data_expiracao: string | null;
   motivo_desativacao: string | null;
   banned_until: string | null;
@@ -91,7 +94,7 @@ export function useAdmin() {
     }
   }
 
-  async function createUser(email: string, password: string, full_name?: string, data_expiracao?: string) {
+  async function createUser(email: string, password: string, full_name?: string, tipo_plano?: TipoPlano) {
     if (!isAdmin) {
       throw new Error('Acesso negado');
     }
@@ -101,14 +104,14 @@ export function useAdmin() {
       email, 
       password, 
       full_name,
-      data_expiracao 
+      tipo_plano: tipo_plano || 'mensal'
     });
 
     await fetchUsers();
     return result.user;
   }
 
-  async function updateUser(user_id: string, data: { email?: string; full_name?: string; data_expiracao?: string | null }) {
+  async function updateUser(user_id: string, data: { email?: string; full_name?: string; tipo_plano?: TipoPlano }) {
     if (!isAdmin) {
       throw new Error('Acesso negado');
     }
