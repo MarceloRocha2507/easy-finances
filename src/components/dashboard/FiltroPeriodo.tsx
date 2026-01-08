@@ -20,6 +20,19 @@ function getMesOptions() {
   const options = [];
   const hoje = new Date();
 
+  // 12 meses futuros
+  for (let i = 12; i >= 1; i--) {
+    const data = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
+    const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+    const label = new Intl.DateTimeFormat("pt-BR", {
+      month: "long",
+      year: "numeric",
+    }).format(data);
+
+    options.push({ value, label, date: data });
+  }
+
+  // Mês atual + 24 meses anteriores
   for (let i = 0; i < 24; i++) {
     const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
     const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
@@ -58,8 +71,8 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
 
   function handleProximoMes() {
     const novoMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
-    const hoje = new Date();
-    if (novoMes <= hoje) {
+    const limiteMaximo = new Date(hoje.getFullYear(), hoje.getMonth() + 12, 1);
+    if (novoMes <= limiteMaximo) {
       onMesChange(novoMes);
     }
   }
@@ -69,7 +82,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
     onMesChange(new Date(Number(ano), Number(mes) - 1, 1));
   }
 
-  const podeAvancar = mesAtual < new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const podeAvancar = mesAtual < new Date(hoje.getFullYear(), hoje.getMonth() + 12, 1);
 
   return (
     <div className="flex items-center gap-2">
