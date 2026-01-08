@@ -49,7 +49,6 @@ const economiaMenu = {
 
 const bottomMenuItems = [
   { icon: BarChart3, label: "Relatórios", href: "/reports" },
-  { icon: User, label: "Perfil", href: "/profile" },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -199,8 +198,21 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* Logout */}
-          <div className="p-3 border-t">
+          {/* User section - Perfil + Logout */}
+          <div className="p-3 border-t space-y-1">
+            <Link
+              to="/profile"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
+                isActive("/profile")
+                  ? "bg-secondary text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              )}
+            >
+              <User className="h-4 w-4" />
+              Perfil
+            </Link>
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground"
