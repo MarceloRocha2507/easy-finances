@@ -25,7 +25,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard } from "lucide-react";
 
 import {
   AlertasInteligentes,
@@ -208,8 +208,8 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Stats Cards - Segunda Linha (Pendentes) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Stats Cards - Segunda Linha (Pendentes + Fatura) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border border-blue-200 dark:border-blue-900">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -248,6 +248,23 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        <Card className="border border-purple-200 dark:border-purple-900">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Fatura do Cartão</p>
+                <p className="text-xl font-semibold text-purple-600">
+                  -{formatCurrency(completeStats?.faturaCartao || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">titular do mês</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-purple-100 dark:bg-purple-950 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border border-primary/30">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -258,11 +275,7 @@ export default function Dashboard() {
                 }`}>
                   {formatCurrency(completeStats?.estimatedBalance || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(completeStats?.faturaCartao || 0) > 0 
-                    ? `incluindo fatura de ${formatCurrency(completeStats?.faturaCartao || 0)}`
-                    : "incluindo pendentes"}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">incluindo pendentes</p>
               </div>
               <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-primary" />
