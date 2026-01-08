@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDashboardCompleto, Alerta } from "./useDashboardCompleto";
+import { useAuth } from "./useAuth";
 
 export type NotificacaoComStatus = Alerta & {
   lido: boolean;
@@ -8,35 +9,48 @@ export type NotificacaoComStatus = Alerta & {
 
 export function useNotificacoes() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: dashboard, isLoading: loadingDashboard } = useDashboardCompleto();
 
   // Buscar IDs dos alertas já lidos
-  const { data: alertasLidos, isLoading: loadingLidos } = useQuery({
-    queryKey: ["notificacoes-lidas"],
+  const { data: alertasLidos = [], isLoading: loadingLidos } = useQuery({
+    queryKey: ["notificacoes-lidas", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("notificacoes_lidas")
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from("notificacoes_lidas" as any)
         .select("alerta_id");
-      return data?.map((n) => n.alerta_id) || [];
+      
+      if (error) {
+        console.error("Erro ao buscar notificações lidas:", error);
+        return [];
+      }
+      
+      return (data || []).map((n: any) => n.alerta_id);
     },
+    enabled: !!user,
   });
 
   // Combinar alertas com status de leitura
   const notificacoes: NotificacaoComStatus[] = (dashboard?.alertas || []).map((alerta) => ({
     ...alerta,
-    lido: alertasLidos?.includes(alerta.id) || false,
+    lido: alertasLidos.includes(alerta.id),
   }));
 
   // Marcar como lido
   const marcarComoLido = useMutation({
     mutationFn: async (alertaId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
       
-      await supabase.from("notificacoes_lidas").insert({
-        user_id: user.id,
-        alerta_id: alertaId,
-      });
+      const { error } = await supabase
+        .from("notificacoes_lidas" as any)
+        .insert({
+          user_id: user.id,
+          alerta_id: alertaId,
+        });
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notificacoes-lidas"] });
@@ -46,10 +60,12 @@ export function useNotificacoes() {
   // Marcar como não lido
   const marcarComoNaoLido = useMutation({
     mutationFn: async (alertaId: string) => {
-      await supabase
-        .from("notificacoes_lidas")
+      const { error } = await supabase
+        .from("notificacoes_lidas" as any)
         .delete()
         .eq("alerta_id", alertaId);
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notificacoes-lidas"] });
@@ -59,7 +75,6 @@ export function useNotificacoes() {
   // Marcar todos como lidos
   const marcarTodosComoLidos = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
       
       const novosLidos = notificacoes
@@ -70,7 +85,11 @@ export function useNotificacoes() {
         }));
       
       if (novosLidos.length > 0) {
-        await supabase.from("notificacoes_lidas").insert(novosLidos);
+        const { error } = await supabase
+          .from("notificacoes_lidas" as any)
+          .insert(novosLidos);
+        
+        if (error) throw error;
       }
     },
     onSuccess: () => {
