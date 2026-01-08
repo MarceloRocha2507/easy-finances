@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronRight,
   Shield,
+  Bell,
 } from "lucide-react";
 import {
   Collapsible,
@@ -215,8 +216,36 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* User section - Avatar + Perfil + Logout */}
-          <div className="p-3 border-t">
+          {/* User section - Notificações + Avatar + Perfil + Logout */}
+          <div className="p-3 border-t space-y-1">
+            {/* Link para Notificações */}
+            <Link
+              to="/notificacoes"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
+                isActive("/notificacoes")
+                  ? "bg-secondary text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="h-4 w-4" />
+                Notificações
+              </div>
+              {alertasCount > 0 && (
+                <span 
+                  className={cn(
+                    "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
+                    hasDanger ? "bg-expense animate-pulse" : "bg-amber-500"
+                  )}
+                >
+                  {alertasCount > 9 ? "9+" : alertasCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Link para Perfil */}
             <Link
               to="/profile"
               onClick={() => setSidebarOpen(false)}
@@ -227,24 +256,12 @@ export function Layout({ children }: LayoutProps) {
                   : "hover:bg-secondary/50"
               )}
             >
-              <div className="relative">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                {alertasCount > 0 && (
-                  <span 
-                    className={cn(
-                      "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full text-[10px] font-bold text-white px-1",
-                      hasDanger ? "bg-expense animate-pulse" : "bg-amber-500"
-                    )}
-                  >
-                    {alertasCount > 9 ? "9+" : alertasCount}
-                  </span>
-                )}
-              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-medium text-foreground truncate">{userName}</span>
                 <span className="text-xs text-muted-foreground">Ver perfil</span>

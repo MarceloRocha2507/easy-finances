@@ -18,6 +18,7 @@ import Cartoes from "./pages/Cartoes";
 import Economia from "./pages/Economia";
 import DespesasCartao from "./pages/DespesasCartao";
 import Admin from "./pages/Admin";
+import Notificacoes from "./pages/Notificacoes";
 
 // Importar Metas como lazy para evitar conflito de case
 import { lazy, Suspense } from "react";
@@ -115,8 +116,17 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
-                </ProtectedRoute>
-              }
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/notificacoes"
+            element={
+              <ProtectedRoute>
+                <Notificacoes />
+              </ProtectedRoute>
+            }
             />
 
             <Route
