@@ -13,6 +13,7 @@ interface Props {
   onMesChange: (mes: Date) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
+  onResetToCurrentMonth?: () => void;
 }
 
 function getMesOptions() {
@@ -33,10 +34,22 @@ function getMesOptions() {
   return options;
 }
 
-export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading }: Props) {
+export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onResetToCurrentMonth }: Props) {
   const mesOptions = getMesOptions();
   
   const mesValue = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, "0")}`;
+  
+  // Verificar se está no mês atual
+  const hoje = new Date();
+  const isMesAtual = mesAtual.getFullYear() === hoje.getFullYear() && mesAtual.getMonth() === hoje.getMonth();
+
+  function handleResetToCurrentMonth() {
+    if (!isMesAtual) {
+      const mesAtualDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      onMesChange(mesAtualDate);
+      onResetToCurrentMonth?.();
+    }
+  }
 
   function handleMesAnterior() {
     const novoMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1);
@@ -82,6 +95,18 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading }: P
           ))}
         </SelectContent>
       </Select>
+
+      {!isMesAtual && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleResetToCurrentMonth}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          title="Voltar ao mês atual"
+        >
+          Hoje
+        </Button>
+      )}
 
       <Button
         variant="outline"
