@@ -21,24 +21,6 @@ const PREFERENCIAS_PADRAO: Omit<PreferenciasUsuario, 'id' | 'user_id' | 'created
   primeiro_dia_semana: 0,
 };
 
-export const MOEDAS_DISPONIVEIS = [
-  { codigo: 'BRL', nome: 'Real Brasileiro', simbolo: 'R$', locale: 'pt-BR' },
-  { codigo: 'USD', nome: 'Dólar Americano', simbolo: '$', locale: 'en-US' },
-  { codigo: 'EUR', nome: 'Euro', simbolo: '€', locale: 'de-DE' },
-  { codigo: 'GBP', nome: 'Libra Esterlina', simbolo: '£', locale: 'en-GB' },
-];
-
-export const FORMATOS_DATA = [
-  { valor: 'DD/MM/YYYY', exemplo: '08/01/2026' },
-  { valor: 'MM/DD/YYYY', exemplo: '01/08/2026' },
-  { valor: 'YYYY-MM-DD', exemplo: '2026-01-08' },
-];
-
-export const DIAS_SEMANA = [
-  { valor: 0, nome: 'Domingo' },
-  { valor: 1, nome: 'Segunda-feira' },
-];
-
 export function usePreferenciasUsuario() {
   const { user } = useAuth();
   const { toast } = useToast();
