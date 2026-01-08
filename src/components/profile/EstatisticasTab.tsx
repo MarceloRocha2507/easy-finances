@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Wallet, 
   TrendingUp, 
@@ -10,13 +11,17 @@ import {
   Target,
   Crown,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import { formatCurrency, formatDateLong } from '@/lib/formatters';
 import { useProfileStats } from '@/hooks/useProfileStats';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { cn } from '@/lib/utils';
 
 export function EstatisticasTab() {
   const stats = useProfileStats();
+  const { tipoPlano, limits, usage, getUsagePercentage, isLimitReached } = usePlanLimits();
 
   const statsCards = [
     {
@@ -42,35 +47,49 @@ export function EstatisticasTab() {
     },
   ];
 
-  const accountStats = [
+  const resourceUsage = [
     {
-      title: 'Transações',
-      value: stats.totalTransacoes,
-      icon: ArrowLeftRight,
-    },
-    {
-      title: 'Categorias',
-      value: stats.totalCategorias,
-      icon: Tag,
-    },
-    {
+      key: 'cartoes' as const,
       title: 'Cartões',
-      value: stats.totalCartoes,
       icon: CreditCard,
+      used: usage.cartoes,
+      limit: limits.cartoes,
     },
     {
+      key: 'metas' as const,
       title: 'Metas',
-      value: `${stats.metasConcluidas}/${stats.totalMetas}`,
-      subtitle: 'atingidas',
       icon: Target,
+      used: usage.metas,
+      limit: limits.metas,
+    },
+    {
+      key: 'categorias' as const,
+      title: 'Categorias',
+      icon: Tag,
+      used: usage.categorias,
+      limit: limits.categorias,
+    },
+    {
+      key: 'transacoesMes' as const,
+      title: 'Transações (mês)',
+      icon: ArrowLeftRight,
+      used: usage.transacoesMes,
+      limit: limits.transacoesMes,
+    },
+    {
+      key: 'responsaveis' as const,
+      title: 'Responsáveis',
+      icon: Users,
+      used: usage.responsaveis,
+      limit: limits.responsaveis,
     },
   ];
 
   const getPlanoBadge = () => {
-    const tipo = stats.plano.tipo;
-    if (tipo === 'anual') return { label: 'Anual', variant: 'default' as const };
-    if (tipo === 'mensal') return { label: 'Mensal', variant: 'secondary' as const };
-    return { label: tipo || 'Mensal', variant: 'outline' as const };
+    if (tipoPlano === 'ilimitado') return { label: 'Ilimitado', variant: 'default' as const, icon: Crown };
+    if (tipoPlano === 'anual') return { label: 'Anual', variant: 'default' as const, icon: Crown };
+    if (tipoPlano === 'mensal') return { label: 'Mensal', variant: 'secondary' as const, icon: null };
+    return { label: 'Teste', variant: 'outline' as const, icon: null };
   };
 
   const planoBadge = getPlanoBadge();
@@ -109,30 +128,56 @@ export function EstatisticasTab() {
         </CardContent>
       </Card>
 
-      {/* Estatísticas da Conta */}
+      {/* Uso de Recursos por Plano */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowLeftRight className="w-5 h-5" />
-            Estatísticas da Conta
+            Uso de Recursos
           </CardTitle>
+          <CardDescription>
+            Acompanhe o uso dos recursos do seu plano
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {accountStats.map((stat) => {
-              const Icon = stat.icon;
+          <div className="space-y-4">
+            {resourceUsage.map((resource) => {
+              const Icon = resource.icon;
+              const percentage = getUsagePercentage(resource.key);
+              const isUnlimited = resource.limit === Infinity;
+              const limitHit = isLimitReached(resource.key);
+              
               return (
-                <div
-                  key={stat.title}
-                  className="p-4 rounded-xl bg-secondary text-center"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <Icon className="w-5 h-5 text-primary" />
+                <div key={resource.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        limitHit ? "bg-destructive/10" : "bg-primary/10"
+                      )}>
+                        <Icon className={cn(
+                          "w-4 h-4",
+                          limitHit ? "text-destructive" : "text-primary"
+                        )} />
+                      </div>
+                      <span className="text-sm font-medium">{resource.title}</span>
+                    </div>
+                    <span className={cn(
+                      "text-sm font-medium",
+                      limitHit ? "text-destructive" : "text-muted-foreground"
+                    )}>
+                      {resource.used}{isUnlimited ? " (∞)" : `/${resource.limit}`}
+                    </span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+                  {!isUnlimited && (
+                    <Progress 
+                      value={percentage} 
+                      className={cn(
+                        "h-2",
+                        limitHit && "[&>div]:bg-destructive",
+                        percentage >= 80 && !limitHit && "[&>div]:bg-warning"
+                      )}
+                    />
                   )}
                 </div>
               );
@@ -157,7 +202,10 @@ export function EstatisticasTab() {
               </div>
               <div>
                 <p className="font-medium text-foreground">Tipo de Plano</p>
-                <Badge variant={planoBadge.variant}>{planoBadge.label}</Badge>
+                <Badge variant={planoBadge.variant} className="mt-1">
+                  {planoBadge.icon && <Crown className="w-3 h-3 mr-1" />}
+                  {planoBadge.label}
+                </Badge>
               </div>
             </div>
             <div className="flex items-center gap-2">

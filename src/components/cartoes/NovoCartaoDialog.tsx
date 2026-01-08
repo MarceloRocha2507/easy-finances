@@ -12,7 +12,9 @@ import { Label } from "@/components/ui/label";
 import { criarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
 import { DaySelector } from "@/components/ui/day-selector";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, Lock, Crown } from "lucide-react";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { PlanLimitAlert } from "@/components/ui/plan-limit-alert";
 
 const CORES_PREDEFINIDAS = [
   { nome: "Inter", cor: "#00A859" },
@@ -37,6 +39,7 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { canCreate, isLimitReached, usage, limits } = usePlanLimits();
 
   const [form, setForm] = useState({
     nome: "",
@@ -47,6 +50,8 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
     cor: "#6366f1",
   });
 
+  const limitReached = isLimitReached("cartoes");
+
   async function salvar() {
     if (!form.nome.trim()) {
       toast({ title: "Informe o nome do cartão", variant: "destructive" });
@@ -55,6 +60,15 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
 
     if (form.limite <= 0) {
       toast({ title: "Informe o limite do cartão", variant: "destructive" });
+      return;
+    }
+
+    if (!canCreate("cartoes")) {
+      toast({ 
+        title: "Limite de cartões atingido", 
+        description: "Faça upgrade do seu plano para adicionar mais cartões.",
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -79,12 +93,28 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
     }
   }
 
+  function handleUpgrade() {
+    toast({
+      title: "Upgrade de plano",
+      description: "Entre em contato com o administrador para fazer upgrade do seu plano.",
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-1.5" />
-          Novo Cartão
+        <Button size="sm" disabled={limitReached}>
+          {limitReached ? (
+            <>
+              <Lock className="h-4 w-4 mr-1.5" />
+              Limite atingido
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-1.5" />
+              Novo Cartão
+            </>
+          )}
         </Button>
       </DialogTrigger>
 
@@ -96,90 +126,101 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
           </p>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome do cartão</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Nubank, Inter, Itaú..."
-              value={form.nome}
-              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+        {limitReached ? (
+          <div className="py-4">
+            <PlanLimitAlert
+              recurso="cartões"
+              usado={usage.cartoes}
+              limite={limits.cartoes}
+              onUpgrade={handleUpgrade}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bandeira">Bandeira</Label>
-            <Input
-              id="bandeira"
-              placeholder="Ex: Mastercard, Visa..."
-              value={form.bandeira}
-              onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="limite">Limite (R$)</Label>
-            <Input
-              id="limite"
-              type="number"
-              placeholder="0,00"
-              value={form.limite || ""}
-              onChange={(e) => setForm({ ...form, limite: Number(e.target.value) })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <DaySelector
-              label="Dia de fechamento"
-              value={form.dia_fechamento}
-              onChange={(day) => setForm({ ...form, dia_fechamento: day })}
-            />
-            <DaySelector
-              label="Dia de vencimento"
-              value={form.dia_vencimento}
-              onChange={(day) => setForm({ ...form, dia_vencimento: day })}
-            />
-          </div>
-
-          {/* Seletor de Cor */}
-          <div className="space-y-2">
-            <Label>Cor do cartão</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {CORES_PREDEFINIDAS.map((item) => (
-                <button
-                  key={item.cor}
-                  type="button"
-                  onClick={() => setForm({ ...form, cor: item.cor })}
-                  className="relative w-10 h-10 rounded-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-                  style={{ backgroundColor: item.cor }}
-                  title={item.nome}
-                >
-                  {form.cor === item.cor && (
-                    <Check className="absolute inset-0 m-auto h-5 w-5 text-white drop-shadow-md" />
-                  )}
-                </button>
-              ))}
+        ) : (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome do cartão</Label>
+              <Input
+                id="nome"
+                placeholder="Ex: Nubank, Inter, Itaú..."
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              />
             </div>
-          </div>
 
-          {/* Preview do card */}
-          <div
-            className="p-4 rounded-lg text-white text-center"
-            style={{
-              background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${form.cor}50 100%)`,
-            }}
-          >
-            <p className="text-xs opacity-70 mb-1">Preview</p>
-            <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
-            {form.bandeira && (
-              <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="bandeira">Bandeira</Label>
+              <Input
+                id="bandeira"
+                placeholder="Ex: Mastercard, Visa..."
+                value={form.bandeira}
+                onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
+              />
+            </div>
 
-          <Button className="w-full" onClick={salvar} disabled={loading}>
-            {loading ? "Salvando..." : "Salvar cartão"}
-          </Button>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="limite">Limite (R$)</Label>
+              <Input
+                id="limite"
+                type="number"
+                placeholder="0,00"
+                value={form.limite || ""}
+                onChange={(e) => setForm({ ...form, limite: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <DaySelector
+                label="Dia de fechamento"
+                value={form.dia_fechamento}
+                onChange={(day) => setForm({ ...form, dia_fechamento: day })}
+              />
+              <DaySelector
+                label="Dia de vencimento"
+                value={form.dia_vencimento}
+                onChange={(day) => setForm({ ...form, dia_vencimento: day })}
+              />
+            </div>
+
+            {/* Seletor de Cor */}
+            <div className="space-y-2">
+              <Label>Cor do cartão</Label>
+              <div className="grid grid-cols-6 gap-2">
+                {CORES_PREDEFINIDAS.map((item) => (
+                  <button
+                    key={item.cor}
+                    type="button"
+                    onClick={() => setForm({ ...form, cor: item.cor })}
+                    className="relative w-10 h-10 rounded-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                    style={{ backgroundColor: item.cor }}
+                    title={item.nome}
+                  >
+                    {form.cor === item.cor && (
+                      <Check className="absolute inset-0 m-auto h-5 w-5 text-white drop-shadow-md" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Preview do card */}
+            <div
+              className="p-4 rounded-lg text-white text-center"
+              style={{
+                background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${form.cor}50 100%)`,
+              }}
+            >
+              <p className="text-xs opacity-70 mb-1">Preview</p>
+              <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
+              {form.bandeira && (
+                <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
+              )}
+            </div>
+
+            <Button className="w-full" onClick={salvar} disabled={loading}>
+              {loading ? "Salvando..." : "Salvar cartão"}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
