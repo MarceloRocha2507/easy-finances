@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay } from 'date-fns';
@@ -235,6 +235,22 @@ export default function Transactions() {
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id);
+  };
+
+  const handleDuplicate = (transaction: Transaction) => {
+    setFormData({
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      category_id: transaction.category_id || '',
+      description: transaction.description || '',
+      date: new Date(), // Data atual para a duplicação
+      status: 'completed',
+      due_date: undefined,
+      is_recurring: transaction.is_recurring || false,
+      recurrence_day: transaction.recurrence_day || 1,
+    });
+    setEditingId(null); // Nova transação
+    setDialogOpen(true);
   };
 
   const tabs: { value: TabType; label: string; icon: React.ReactNode; count: number; activeClass: string }[] = [
@@ -672,6 +688,7 @@ export default function Transactions() {
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onMarkAsPaid={handleMarkAsPaid}
+                      onDuplicate={handleDuplicate}
                     />
                   ))}
                 </div>
@@ -718,9 +735,10 @@ interface TransactionRowProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
   onMarkAsPaid: (id: string) => void;
+  onDuplicate: (transaction: Transaction) => void;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate }: TransactionRowProps) {
   const IconComponent = getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
@@ -805,7 +823,16 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid }: Transac
             <Check className="w-3.5 h-3.5" />
           </Button>
         )}
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8" 
+          onClick={() => onDuplicate(transaction)}
+          title="Duplicar transação"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)} title="Editar">
           <Pencil className="w-3.5 h-3.5" />
         </Button>
         <AlertDialog>
