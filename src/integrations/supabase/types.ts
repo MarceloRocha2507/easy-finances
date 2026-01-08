@@ -394,6 +394,39 @@ export type Database = {
         }
         Relationships: []
       }
+      preferencias_usuario: {
+        Row: {
+          created_at: string
+          formato_data: string
+          id: string
+          moeda: string
+          primeiro_dia_semana: number
+          tema: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          formato_data?: string
+          id?: string
+          moeda?: string
+          primeiro_dia_semana?: number
+          tema?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          formato_data?: string
+          id?: string
+          moeda?: string
+          primeiro_dia_semana?: number
+          tema?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean | null
