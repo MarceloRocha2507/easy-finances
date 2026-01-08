@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAlertasCount } from "@/hooks/useAlertasCount";
+import { useProfile } from "@/hooks/useProfile";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -58,6 +59,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { importantes: alertasCount, hasDanger } = useAlertasCount();
+  const { data: profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
@@ -257,7 +259,7 @@ export function Layout({ children }: LayoutProps) {
               )}
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+                <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                   {getUserInitials()}
                 </AvatarFallback>
