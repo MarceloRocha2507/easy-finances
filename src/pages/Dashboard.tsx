@@ -89,7 +89,7 @@ export default function Dashboard() {
     endDate: monthRange.end,
   });
   const { data: monthlyData } = useMonthlyData(year);
-  const { data: completeStats } = useCompleteStats();
+  const { data: completeStats } = useCompleteStats(mesReferencia);
 
   const {
     data: dashboardData,

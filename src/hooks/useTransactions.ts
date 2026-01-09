@@ -535,11 +535,14 @@ export function usePendingStats() {
   });
 }
 
-export function useCompleteStats() {
+export function useCompleteStats(mesReferencia?: Date) {
   const { user } = useAuth();
+  const mesRef = mesReferencia || new Date();
+  const inicioMes = new Date(mesRef.getFullYear(), mesRef.getMonth(), 1).toISOString().split('T')[0];
+  const fimMes = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0).toISOString().split('T')[0];
 
   return useQuery({
-    queryKey: ['complete-stats', user?.id],
+    queryKey: ['complete-stats', user?.id, inicioMes],
     queryFn: async () => {
       // Buscar saldo inicial do profile
       const { data: profile } = await supabase
@@ -549,11 +552,6 @@ export function useCompleteStats() {
         .single();
 
       const saldoInicial = Number(profile?.saldo_inicial) || 0;
-
-      // Definir período do mês atual
-      const hoje = new Date();
-      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
 
       // Buscar transações: todas concluídas + pendentes apenas do mês atual
       const { data, error } = await supabase
