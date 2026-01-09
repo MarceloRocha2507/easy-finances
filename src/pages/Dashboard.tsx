@@ -209,7 +209,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards - Segunda Linha (Pendentes + Fatura) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card className="border border-blue-200 dark:border-blue-900 card-hover animate-fade-in-up stagger-4">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -252,7 +252,7 @@ export default function Dashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Fatura do Cartão</p>
+                <p className="text-sm text-muted-foreground mb-1">Fatura Cartão</p>
                 <p className="text-xl font-semibold text-purple-600">
                   -{formatCurrency(completeStats?.faturaCartao || 0)}
                 </p>
@@ -265,7 +265,27 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-primary/30 card-hover animate-fade-in-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
+        <Card className="border border-red-200 dark:border-red-900 card-hover animate-fade-in-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total a Pagar</p>
+                <p className="text-xl font-semibold text-red-600">
+                  -{formatCurrency(
+                    (completeStats?.pendingExpense || 0) + 
+                    (completeStats?.faturaCartao || 0)
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">contas + cartão</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-red-100 dark:bg-red-950 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-primary/30 card-hover animate-fade-in-up" style={{ animationDelay: '0.4s', opacity: 0 }}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
