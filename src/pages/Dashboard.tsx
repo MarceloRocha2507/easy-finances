@@ -9,7 +9,7 @@ import {
   useCompleteStats,
 } from "@/hooks/useTransactions";
 import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompleto";
-import { formatCurrency, getMonthRange } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,9 +69,6 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [year] = useState(new Date().getFullYear());
-  const monthRange = getMonthRange();
-
   const [mesReferencia, setMesReferencia] = useState(new Date());
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoDashboard | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
@@ -80,15 +77,19 @@ export default function Dashboard() {
   const [gerenciarMetaOpen, setGerenciarMetaOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
 
+  // Calcular range do mês selecionado
+  const inicioMesSelecionado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1).toISOString().split('T')[0];
+  const fimMesSelecionado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, 0).toISOString().split('T')[0];
+
   const { data: stats } = useTransactionStats({
-    startDate: monthRange.start,
-    endDate: monthRange.end,
+    startDate: inicioMesSelecionado,
+    endDate: fimMesSelecionado,
   });
   const { data: expensesByCategory } = useExpensesByCategory({
-    startDate: monthRange.start,
-    endDate: monthRange.end,
+    startDate: inicioMesSelecionado,
+    endDate: fimMesSelecionado,
   });
-  const { data: monthlyData } = useMonthlyData(year);
+  const { data: monthlyData } = useMonthlyData(mesReferencia.getFullYear());
   const { data: completeStats } = useCompleteStats(mesReferencia);
 
   const {
@@ -343,7 +344,7 @@ export default function Dashboard() {
 
         <Card className="border card-hover animate-fade-in" style={{ animationDelay: '0.45s', opacity: 0 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Receitas vs Despesas ({year})</CardTitle>
+            <CardTitle className="text-base font-medium">Receitas vs Despesas ({mesReferencia.getFullYear()})</CardTitle>
           </CardHeader>
           <CardContent>
             {hasMonthlyData ? (
