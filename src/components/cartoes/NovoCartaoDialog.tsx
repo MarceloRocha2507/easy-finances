@@ -9,12 +9,41 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { criarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
 import { DaySelector } from "@/components/ui/day-selector";
-import { Check, Plus, Lock, Crown } from "lucide-react";
+import { Check, Plus, Lock } from "lucide-react";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { PlanLimitAlert } from "@/components/ui/plan-limit-alert";
+
+// Lista de cartões brasileiros com bandeira e cor padrão
+const CARTOES_BRASIL = [
+  { nome: "Nubank", bandeira: "Mastercard", cor: "#820AD1" },
+  { nome: "Inter", bandeira: "Mastercard", cor: "#00A859" },
+  { nome: "C6 Bank", bandeira: "Mastercard", cor: "#242424" },
+  { nome: "Next", bandeira: "Visa", cor: "#D50032" },
+  { nome: "Itaú", bandeira: "Visa", cor: "#003399" },
+  { nome: "Santander", bandeira: "Mastercard", cor: "#CC0000" },
+  { nome: "Bradesco", bandeira: "Visa", cor: "#CC092F" },
+  { nome: "Banco do Brasil", bandeira: "Visa", cor: "#FFCD00" },
+  { nome: "Caixa", bandeira: "Elo", cor: "#0070C0" },
+  { nome: "PAN", bandeira: "Mastercard", cor: "#F37021" },
+  { nome: "XP", bandeira: "Visa", cor: "#000000" },
+  { nome: "BTG", bandeira: "Mastercard", cor: "#1A1A2E" },
+  { nome: "Neon", bandeira: "Visa", cor: "#00E5FF" },
+  { nome: "PicPay", bandeira: "Mastercard", cor: "#21C25E" },
+  { nome: "Mercado Pago", bandeira: "Mastercard", cor: "#00AEEF" },
+  { nome: "Digio", bandeira: "Visa", cor: "#0066CC" },
+  { nome: "Credicard", bandeira: "Mastercard", cor: "#00A551" },
+  { nome: "Outro", bandeira: "", cor: "#6366f1" },
+];
 
 const CORES_PREDEFINIDAS = [
   { nome: "Inter", cor: "#00A859" },
@@ -41,6 +70,9 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
   const [loading, setLoading] = useState(false);
   const { canCreate, isLimitReached, usage, limits } = usePlanLimits();
 
+  const [cartaoSelecionado, setCartaoSelecionado] = useState("");
+  const [nomePersonalizado, setNomePersonalizado] = useState("");
+  
   const [form, setForm] = useState({
     nome: "",
     bandeira: "",
@@ -51,9 +83,41 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
   });
 
   const limitReached = isLimitReached("cartoes");
+  const isOutro = cartaoSelecionado === "Outro";
+
+  function handleCartaoChange(nomeCartao: string) {
+    setCartaoSelecionado(nomeCartao);
+    
+    const cartao = CARTOES_BRASIL.find((c) => c.nome === nomeCartao);
+    if (cartao) {
+      if (nomeCartao === "Outro") {
+        setForm({
+          ...form,
+          nome: nomePersonalizado,
+          bandeira: "",
+          cor: cartao.cor,
+        });
+      } else {
+        setNomePersonalizado("");
+        setForm({
+          ...form,
+          nome: cartao.nome,
+          bandeira: cartao.bandeira,
+          cor: cartao.cor,
+        });
+      }
+    }
+  }
+
+  function handleNomePersonalizadoChange(nome: string) {
+    setNomePersonalizado(nome);
+    setForm({ ...form, nome });
+  }
 
   async function salvar() {
-    if (!form.nome.trim()) {
+    const nomeCartao = isOutro ? nomePersonalizado : cartaoSelecionado;
+    
+    if (!nomeCartao.trim()) {
       toast({ title: "Informe o nome do cartão", variant: "destructive" });
       return;
     }
@@ -74,23 +138,32 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
 
     setLoading(true);
     try {
-      await criarCartao(form);
+      await criarCartao({
+        ...form,
+        nome: nomeCartao,
+      });
       toast({ title: "Cartão cadastrado com sucesso" });
       setOpen(false);
-      setForm({
-        nome: "",
-        bandeira: "",
-        limite: 0,
-        dia_fechamento: 5,
-        dia_vencimento: 12,
-        cor: "#6366f1",
-      });
+      resetForm();
       onSaved();
     } catch {
       toast({ title: "Erro ao salvar cartão", variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  }
+
+  function resetForm() {
+    setCartaoSelecionado("");
+    setNomePersonalizado("");
+    setForm({
+      nome: "",
+      bandeira: "",
+      limite: 0,
+      dia_fechamento: 5,
+      dia_vencimento: 12,
+      cor: "#6366f1",
+    });
   }
 
   function handleUpgrade() {
@@ -100,8 +173,13 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
     });
   }
 
+  const displayNome = isOutro ? nomePersonalizado : cartaoSelecionado;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button size="sm" disabled={limitReached}>
           {limitReached ? (
@@ -137,24 +215,65 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
           </div>
         ) : (
           <div className="space-y-4 pt-2">
+            {/* Seletor de Cartão */}
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome do cartão</Label>
-              <Input
-                id="nome"
-                placeholder="Ex: Nubank, Inter, Itaú..."
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              />
+              <Label>Cartão</Label>
+              <Select value={cartaoSelecionado} onValueChange={handleCartaoChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cartão" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {CARTOES_BRASIL.map((cartao) => (
+                    <SelectItem key={cartao.nome} value={cartao.nome}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: cartao.cor }}
+                        />
+                        <span>{cartao.nome}</span>
+                        {cartao.bandeira && (
+                          <span className="text-xs text-muted-foreground">
+                            ({cartao.bandeira})
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Nome personalizado (apenas se "Outro") */}
+            {isOutro && (
+              <div className="space-y-2">
+                <Label htmlFor="nomePersonalizado">Nome do cartão</Label>
+                <Input
+                  id="nomePersonalizado"
+                  placeholder="Digite o nome do cartão"
+                  value={nomePersonalizado}
+                  onChange={(e) => handleNomePersonalizadoChange(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Bandeira */}
             <div className="space-y-2">
               <Label htmlFor="bandeira">Bandeira</Label>
-              <Input
-                id="bandeira"
-                placeholder="Ex: Mastercard, Visa..."
-                value={form.bandeira}
-                onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
-              />
+              {isOutro ? (
+                <Input
+                  id="bandeira"
+                  placeholder="Ex: Mastercard, Visa, Elo..."
+                  value={form.bandeira}
+                  onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
+                />
+              ) : (
+                <Input
+                  id="bandeira"
+                  value={form.bandeira}
+                  disabled
+                  className="bg-muted"
+                />
+              )}
             </div>
 
             <div className="space-y-2">
@@ -210,13 +329,13 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
               }}
             >
               <p className="text-xs opacity-70 mb-1">Preview</p>
-              <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
+              <p className="font-semibold">{displayNome || "Nome do Cartão"}</p>
               {form.bandeira && (
                 <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
               )}
             </div>
 
-            <Button className="w-full" onClick={salvar} disabled={loading}>
+            <Button className="w-full" onClick={salvar} disabled={loading || !cartaoSelecionado}>
               {loading ? "Salvando..." : "Salvar cartão"}
             </Button>
           </div>
