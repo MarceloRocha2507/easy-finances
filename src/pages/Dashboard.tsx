@@ -208,8 +208,8 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Stats Cards - Segunda Linha (Pendentes + Fatura) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      {/* Stats Cards - Segunda Linha (Pendentes) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <Card className="border border-blue-200 dark:border-blue-900 card-hover animate-fade-in-up stagger-4">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -271,9 +271,8 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total a Pagar</p>
                 <p className="text-xl font-semibold text-red-600">
-                  -{formatCurrency(
-                    (completeStats?.pendingExpense || 0) + 
-                    (completeStats?.faturaCartao || 0)
+                  {formatCurrency(
+                    -((completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0))
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">contas + cartão</p>
@@ -284,26 +283,29 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card className="border border-primary/30 card-hover animate-fade-in-up" style={{ animationDelay: '0.4s', opacity: 0 }}>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+      {/* Stats Cards - Terceira Linha (Saldo Estimado) */}
+      <Card className="border-2 border-primary/40 bg-primary/5 card-hover animate-fade-in-up mb-6" style={{ animationDelay: '0.4s', opacity: 0 }}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Estimado</p>
-                <p className={`text-xl font-semibold ${
+                <p className="text-sm text-muted-foreground mb-1">Saldo Estimado do Mês</p>
+                <p className={`text-2xl font-bold ${
                   (completeStats?.estimatedBalance || 0) >= 0 ? "text-primary" : "text-expense"
                 }`}>
                   {formatCurrency(completeStats?.estimatedBalance || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">incluindo pendentes</p>
-              </div>
-              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-sm text-muted-foreground">saldo real + receitas pendentes - despesas pendentes - cartão</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
