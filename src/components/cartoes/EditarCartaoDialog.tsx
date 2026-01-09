@@ -9,10 +9,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Cartao, atualizarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
 import { DaySelector } from "@/components/ui/day-selector";
 import { Check } from "lucide-react";
+
+// Lista de cartões brasileiros com bandeira e cor padrão
+const CARTOES_BRASIL = [
+  { nome: "Nubank", bandeira: "Mastercard", cor: "#820AD1" },
+  { nome: "Inter", bandeira: "Mastercard", cor: "#00A859" },
+  { nome: "C6 Bank", bandeira: "Mastercard", cor: "#242424" },
+  { nome: "Next", bandeira: "Visa", cor: "#D50032" },
+  { nome: "Itaú", bandeira: "Visa", cor: "#003399" },
+  { nome: "Santander", bandeira: "Mastercard", cor: "#CC0000" },
+  { nome: "Bradesco", bandeira: "Visa", cor: "#CC092F" },
+  { nome: "Banco do Brasil", bandeira: "Visa", cor: "#FFCD00" },
+  { nome: "Caixa", bandeira: "Elo", cor: "#0070C0" },
+  { nome: "PAN", bandeira: "Mastercard", cor: "#F37021" },
+  { nome: "XP", bandeira: "Visa", cor: "#000000" },
+  { nome: "BTG", bandeira: "Mastercard", cor: "#1A1A2E" },
+  { nome: "Neon", bandeira: "Visa", cor: "#00E5FF" },
+  { nome: "PicPay", bandeira: "Mastercard", cor: "#21C25E" },
+  { nome: "Mercado Pago", bandeira: "Mastercard", cor: "#00AEEF" },
+  { nome: "Digio", bandeira: "Visa", cor: "#0066CC" },
+  { nome: "Credicard", bandeira: "Mastercard", cor: "#00A551" },
+  { nome: "Outro", bandeira: "", cor: "#6366f1" },
+];
 
 const CORES_PREDEFINIDAS = [
   { nome: "Inter", cor: "#00A859" },
@@ -45,6 +74,9 @@ export function EditarCartaoDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
+  const [cartaoSelecionado, setCartaoSelecionado] = useState("");
+  const [nomePersonalizado, setNomePersonalizado] = useState("");
+
   const [form, setForm] = useState({
     nome: "",
     bandeira: "",
@@ -54,9 +86,24 @@ export function EditarCartaoDialog({
     cor: "#6366f1",
   });
 
+  const isOutro = cartaoSelecionado === "Outro";
+
   // Sincroniza o form sempre que o cartão mudar
   useEffect(() => {
     if (!cartao) return;
+
+    // Verifica se o nome do cartão existe na lista
+    const cartaoEncontrado = CARTOES_BRASIL.find(
+      (c) => c.nome.toLowerCase() === cartao.nome.toLowerCase()
+    );
+
+    if (cartaoEncontrado && cartaoEncontrado.nome !== "Outro") {
+      setCartaoSelecionado(cartaoEncontrado.nome);
+      setNomePersonalizado("");
+    } else {
+      setCartaoSelecionado("Outro");
+      setNomePersonalizado(cartao.nome);
+    }
 
     setForm({
       nome: cartao.nome,
@@ -68,8 +115,38 @@ export function EditarCartaoDialog({
     });
   }, [cartao, open]);
 
+  function handleCartaoChange(nomeCartao: string) {
+    setCartaoSelecionado(nomeCartao);
+
+    const cartaoInfo = CARTOES_BRASIL.find((c) => c.nome === nomeCartao);
+    if (cartaoInfo) {
+      if (nomeCartao === "Outro") {
+        setForm({
+          ...form,
+          nome: nomePersonalizado,
+          bandeira: "",
+        });
+      } else {
+        setNomePersonalizado("");
+        setForm({
+          ...form,
+          nome: cartaoInfo.nome,
+          bandeira: cartaoInfo.bandeira,
+          cor: cartaoInfo.cor,
+        });
+      }
+    }
+  }
+
+  function handleNomePersonalizadoChange(nome: string) {
+    setNomePersonalizado(nome);
+    setForm({ ...form, nome });
+  }
+
   async function salvar() {
-    if (!form.nome.trim()) {
+    const nomeCartao = isOutro ? nomePersonalizado : cartaoSelecionado;
+
+    if (!nomeCartao.trim()) {
       toast({ title: "Informe o nome do cartão", variant: "destructive" });
       return;
     }
@@ -77,7 +154,7 @@ export function EditarCartaoDialog({
     setLoading(true);
     try {
       await atualizarCartao(cartao.id, {
-        nome: form.nome,
+        nome: nomeCartao,
         bandeira: form.bandeira,
         limite: Number(form.limite),
         dia_fechamento: form.dia_fechamento,
@@ -103,6 +180,8 @@ export function EditarCartaoDialog({
     }
   }
 
+  const displayNome = isOutro ? nomePersonalizado : cartaoSelecionado;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -114,24 +193,65 @@ export function EditarCartaoDialog({
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
+          {/* Seletor de Cartão */}
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome do cartão</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Nubank, Inter, Itaú..."
-              value={form.nome}
-              onChange={(e) => setForm({ ...form, nome: e.target.value })}
-            />
+            <Label>Cartão</Label>
+            <Select value={cartaoSelecionado} onValueChange={handleCartaoChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o cartão" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {CARTOES_BRASIL.map((c) => (
+                  <SelectItem key={c.nome} value={c.nome}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: c.cor }}
+                      />
+                      <span>{c.nome}</span>
+                      {c.bandeira && (
+                        <span className="text-xs text-muted-foreground">
+                          ({c.bandeira})
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Nome personalizado (apenas se "Outro") */}
+          {isOutro && (
+            <div className="space-y-2">
+              <Label htmlFor="nomePersonalizado">Nome do cartão</Label>
+              <Input
+                id="nomePersonalizado"
+                placeholder="Digite o nome do cartão"
+                value={nomePersonalizado}
+                onChange={(e) => handleNomePersonalizadoChange(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* Bandeira */}
           <div className="space-y-2">
             <Label htmlFor="bandeira">Bandeira</Label>
-            <Input
-              id="bandeira"
-              placeholder="Ex: Mastercard, Visa..."
-              value={form.bandeira}
-              onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
-            />
+            {isOutro ? (
+              <Input
+                id="bandeira"
+                placeholder="Ex: Mastercard, Visa, Elo..."
+                value={form.bandeira}
+                onChange={(e) => setForm({ ...form, bandeira: e.target.value })}
+              />
+            ) : (
+              <Input
+                id="bandeira"
+                value={form.bandeira}
+                disabled
+                className="bg-muted"
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -188,7 +308,7 @@ export function EditarCartaoDialog({
             }}
           >
             <p className="text-xs opacity-70 mb-1">Preview</p>
-            <p className="font-semibold">{form.nome || "Nome do Cartão"}</p>
+            <p className="font-semibold">{displayNome || "Nome do Cartão"}</p>
             {form.bandeira && (
               <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
             )}
