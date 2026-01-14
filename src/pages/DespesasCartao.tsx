@@ -179,11 +179,21 @@ export default function DespesasCartao() {
 
   const parcelasFiltradas = useMemo(() => {
     return parcelas.filter((p) => {
-      if (
-        filtros.busca &&
-        !p.descricao.toLowerCase().includes(filtros.busca.toLowerCase())
-      ) {
-        return false;
+      if (filtros.busca) {
+        const termoBusca = filtros.busca.toLowerCase().trim();
+        
+        // Buscar por descrição
+        const matchDescricao = p.descricao.toLowerCase().includes(termoBusca);
+        
+        // Buscar por valor (formatado e numérico)
+        const valorFormatado = formatCurrency(Math.abs(p.valor)).toLowerCase();
+        const valorNumerico = String(Math.abs(p.valor));
+        const matchValor = valorFormatado.includes(termoBusca) || 
+                           valorNumerico.includes(termoBusca.replace(',', '.'));
+        
+        if (!matchDescricao && !matchValor) {
+          return false;
+        }
       }
 
       if (filtros.status === "pendente" && p.paga) return false;
@@ -400,6 +410,7 @@ export default function DespesasCartao() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Descrição</TableHead>
+                  <TableHead className="hidden lg:table-cell">Data</TableHead>
                   <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                   <TableHead className="hidden md:table-cell">Responsável</TableHead>
                   <TableHead className="text-center w-20">Parcela</TableHead>
@@ -410,7 +421,7 @@ export default function DespesasCartao() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
@@ -418,7 +429,7 @@ export default function DespesasCartao() {
 
                 {!loading && parcelasFiltradas.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
+                    <TableCell colSpan={8} className="text-center py-12">
                       <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
                       <p className="text-muted-foreground text-sm">
                         {temFiltrosAtivos
@@ -452,6 +463,14 @@ export default function DespesasCartao() {
                         )}>
                           {p.descricao}
                         </p>
+                      </TableCell>
+
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="text-sm text-muted-foreground">
+                          {p.data_compra 
+                            ? new Date(p.data_compra + 'T00:00:00').toLocaleDateString('pt-BR')
+                            : '-'}
+                        </span>
                       </TableCell>
 
                       <TableCell className="hidden sm:table-cell">
