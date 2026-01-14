@@ -1,4 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  calcularMesReferenciaParcela, 
+  formatarDataISO 
+} from "@/lib/dateUtils";
 
 /* ======================================================
    TIPOS
@@ -655,4 +659,117 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
         });
     }
   }
+}
+
+/* ======================================================
+   ENCERRAR DESPESA FIXA
+   - Marca a compra como inativa
+   - Desativa parcelas futuras não pagas
+====================================================== */
+
+export async function encerrarDespesaFixa(compraId: string): Promise<void> {
+  // Marca a compra como inativa
+  const { error: compraError } = await (supabase as any)
+    .from("compras_cartao")
+    .update({ ativo: false })
+    .eq("id", compraId);
+
+  if (compraError) {
+    throw new Error("Não foi possível encerrar a despesa fixa");
+  }
+
+  // Remove parcelas futuras não pagas
+  const hoje = formatarDataISO(new Date());
+  const { error: parcelasError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .update({ ativo: false })
+    .eq("compra_id", compraId)
+    .eq("paga", false)
+    .gte("mes_referencia", hoje);
+
+  if (parcelasError) {
+    console.error("Erro ao desativar parcelas:", parcelasError);
+  }
+}
+
+/* ======================================================
+   GERAR PRÓXIMAS PARCELAS FIXAS
+   - Expande o horizonte de planejamento para despesas fixas
+====================================================== */
+
+export async function gerarProximasParcelasFixas(
+  compraId: string,
+  mesesAdicionais: number = 6
+): Promise<void> {
+  // Busca a compra
+  const { data: compra, error: compraError } = await (supabase as any)
+    .from("compras_cartao")
+    .select("*")
+    .eq("id", compraId)
+    .eq("tipo_lancamento", "fixa")
+    .eq("ativo", true)
+    .single();
+
+  if (compraError || !compra) {
+    throw new Error("Compra fixa não encontrada");
+  }
+
+  // Busca a última parcela
+  const { data: ultimaParcela, error: parcelaError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select("numero_parcela, mes_referencia")
+    .eq("compra_id", compraId)
+    .eq("ativo", true)
+    .order("numero_parcela", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (parcelaError) {
+    throw new Error("Erro ao buscar parcelas");
+  }
+
+  const ultimoNumero = ultimaParcela?.numero_parcela || 0;
+  const ultimoMes = ultimaParcela?.mes_referencia 
+    ? new Date(ultimaParcela.mes_referencia) 
+    : new Date(compra.mes_inicio);
+
+  // Gera novas parcelas
+  const novasParcelas: Array<{
+    compra_id: string;
+    numero_parcela: number;
+    total_parcelas: number;
+    valor: number;
+    mes_referencia: string;
+    paga: boolean;
+    tipo_recorrencia: string;
+    ativo: boolean;
+  }> = [];
+
+  for (let i = 1; i <= mesesAdicionais; i++) {
+    const mesReferencia = calcularMesReferenciaParcela(ultimoMes, i + 1, 1);
+    novasParcelas.push({
+      compra_id: compraId,
+      numero_parcela: ultimoNumero + i,
+      total_parcelas: ultimoNumero + mesesAdicionais,
+      valor: Number(compra.valor_total),
+      mes_referencia: formatarDataISO(mesReferencia),
+      paga: false,
+      tipo_recorrencia: "fixa",
+      ativo: true,
+    });
+  }
+
+  const { error: insertError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .insert(novasParcelas);
+
+  if (insertError) {
+    throw new Error("Erro ao gerar novas parcelas");
+  }
+
+  // Atualiza total de parcelas na compra
+  await (supabase as any)
+    .from("compras_cartao")
+    .update({ parcelas: ultimoNumero + mesesAdicionais })
+    .eq("id", compraId);
 }
