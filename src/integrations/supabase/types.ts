@@ -219,6 +219,42 @@ export type Database = {
           },
         ]
       }
+      historico_ajustes_saldo: {
+        Row: {
+          created_at: string
+          diferenca: number
+          id: string
+          observacao: string | null
+          saldo_anterior: number
+          saldo_inicial_anterior: number
+          saldo_inicial_novo: number
+          saldo_novo: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diferenca: number
+          id?: string
+          observacao?: string | null
+          saldo_anterior: number
+          saldo_inicial_anterior: number
+          saldo_inicial_novo: number
+          saldo_novo: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diferenca?: number
+          id?: string
+          observacao?: string | null
+          saldo_anterior?: number
+          saldo_inicial_anterior?: number
+          saldo_inicial_novo?: number
+          saldo_novo?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       metas: {
         Row: {
           concluida: boolean
