@@ -535,3 +535,93 @@ export async function excluirCompra(compraId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+/* ======================================================
+   PAGAR FATURA COM TRANSAÇÃO
+   - Marca todas as parcelas como pagas
+   - Cria uma transação de despesa no saldo real
+   - Registra acertos para os responsáveis que pagaram
+====================================================== */
+
+export type PagarFaturaInput = {
+  cartaoId: string;
+  nomeCartao: string;
+  mesReferencia: Date;
+  valorTotal: number;
+  acertosRecebidos: Array<{
+    responsavel_id: string;
+    valor: number;
+  }>;
+};
+
+export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // 1. Marcar todas as parcelas como pagas
+  await pagarFaturaDoMes(input.cartaoId, input.mesReferencia);
+
+  // 2. Criar transação de despesa (valor que EU paguei ao banco)
+  if (input.valorTotal > 0) {
+    const mesLabel = input.mesReferencia.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const { error: transactionError } = await (supabase as any)
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        description: `Fatura ${input.nomeCartao} - ${mesLabel}`,
+        amount: input.valorTotal,
+        type: "expense",
+        status: "completed",
+        date: new Date().toISOString().split("T")[0],
+        paid_date: new Date().toISOString().split("T")[0],
+        category_id: null,
+        tipo_lancamento: "unica",
+      });
+
+    if (transactionError) throw transactionError;
+  }
+
+  // 3. Registrar acertos para quem pagou sua parte
+  const mesStr = `${input.mesReferencia.getFullYear()}-${String(input.mesReferencia.getMonth() + 1).padStart(2, "0")}-01`;
+
+  for (const acerto of input.acertosRecebidos) {
+    // Buscar ou criar acerto
+    const { data: acertoExistente } = await (supabase as any)
+      .from("acertos_fatura")
+      .select("*")
+      .eq("cartao_id", input.cartaoId)
+      .eq("responsavel_id", acerto.responsavel_id)
+      .eq("mes_referencia", mesStr)
+      .single();
+
+    if (acertoExistente) {
+      // Atualizar como quitado
+      await (supabase as any)
+        .from("acertos_fatura")
+        .update({
+          valor_pago: acerto.valor,
+          data_acerto: new Date().toISOString(),
+          status: "quitado",
+        })
+        .eq("id", acertoExistente.id);
+    } else {
+      // Criar novo acerto já quitado
+      await (supabase as any)
+        .from("acertos_fatura")
+        .insert({
+          user_id: user.id,
+          cartao_id: input.cartaoId,
+          responsavel_id: acerto.responsavel_id,
+          mes_referencia: mesStr,
+          valor_devido: acerto.valor,
+          valor_pago: acerto.valor,
+          data_acerto: new Date().toISOString(),
+          status: "quitado",
+        });
+    }
+  }
+}

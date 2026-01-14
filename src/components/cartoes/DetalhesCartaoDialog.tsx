@@ -4,7 +4,6 @@ import {
   listarParcelasDaFatura,
   ParcelaFatura,
   marcarParcelaComoPaga,
-  pagarFaturaDoMes,
 } from "@/services/compras-cartao";
 import { useAcertosMes } from "@/services/acertos";
 import { useResponsaveis } from "@/services/responsaveis";
@@ -38,6 +37,7 @@ import { GerarMensagemDialog } from "./GerarMensagemDialog";
 import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
 import { EditarCompraDialog } from "./EditarCompraDialog";
 import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
+import { PagarFaturaDialog } from "./PagarFaturaDialog";
 
 import {
   MoreVertical,
@@ -113,6 +113,7 @@ export function DetalhesCartaoDialog({
   const [editarCartaoOpen, setEditarCartaoOpen] = useState(false);
   const [excluirCartaoOpen, setExcluirCartaoOpen] = useState(false);
   const [gerarMensagemOpen, setGerarMensagemOpen] = useState(false);
+  const [pagarFaturaOpen, setPagarFaturaOpen] = useState(false);
   const [registrarAcertoOpen, setRegistrarAcertoOpen] = useState(false);
 
   // Dialogs da compra
@@ -330,14 +331,10 @@ export function DetalhesCartaoDialog({
                     variant="ghost"
                     size="sm"
                     className="ml-auto h-6 text-xs gap-1"
-                    onClick={async () => {
-                      await pagarFaturaDoMes(cartao.id, mesRef);
-                      carregarFatura();
-                      onUpdated();
-                    }}
+                    onClick={() => setPagarFaturaOpen(true)}
                   >
                     <Check className="h-3 w-3" />
-                    Pagar tudo
+                    Pagar fatura
                   </Button>
                 )}
               </div>
@@ -524,6 +521,19 @@ export function DetalhesCartaoDialog({
         onOpenChange={setRegistrarAcertoOpen}
         onSaved={() => {
           refetchAcertos();
+        }}
+      />
+
+      <PagarFaturaDialog
+        cartao={cartao}
+        mesReferencia={mesRef}
+        parcelas={parcelas}
+        open={pagarFaturaOpen}
+        onOpenChange={setPagarFaturaOpen}
+        onPaid={() => {
+          carregarFatura();
+          refetchAcertos();
+          onUpdated();
         }}
       />
 
