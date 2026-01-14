@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay } from 'date-fns';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
+import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 
 
 interface TransactionFormData {
@@ -106,6 +107,7 @@ export default function Transactions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
+  const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
   const [mesAtual, setMesAtual] = useState<Date>(new Date());
 
   // Calcular range do mês selecionado
@@ -732,14 +734,21 @@ export default function Transactions() {
             </div>
             
             {/* Saldo Real */}
-            <div className="flex flex-col p-3 bg-muted/50 rounded-lg">
-              <span className="text-xs text-muted-foreground">Saldo Real</span>
+            <div 
+              className="flex flex-col p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors group"
+              onClick={() => setAjustarSaldoOpen(true)}
+              title="Clique para ajustar"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Saldo Real</span>
+                <Scale className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
               <span className={cn("font-semibold", 
                 (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
               )}>
                 {formatCurrency(stats?.realBalance || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">base + receitas - despesas</span>
+              <span className="text-[10px] text-muted-foreground">clique para ajustar</span>
             </div>
             
             {/* Saldo Estimado */}
@@ -757,6 +766,15 @@ export default function Transactions() {
 
         {/* Dialog Editar Saldo */}
         <EditarSaldoDialog open={editarSaldoOpen} onOpenChange={setEditarSaldoOpen} />
+
+        {/* Dialog Ajustar Saldo Real */}
+        <AjustarSaldoDialog 
+          open={ajustarSaldoOpen} 
+          onOpenChange={setAjustarSaldoOpen}
+          saldoRealCalculado={stats?.realBalance || 0}
+          totalReceitas={stats?.completedIncome || 0}
+          totalDespesas={stats?.completedExpense || 0}
+        />
 
         {/* Tabs + Busca Integrados */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-0">
