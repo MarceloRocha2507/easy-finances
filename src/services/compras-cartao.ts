@@ -568,6 +568,37 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
       year: "numeric",
     });
 
+    // Buscar ou criar categoria "Fatura de Cartão"
+    let categoryId: string | null = null;
+    
+    const { data: categoriaExistente } = await (supabase as any)
+      .from("categories")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("name", "Fatura de Cartão")
+      .eq("type", "expense")
+      .single();
+
+    if (categoriaExistente) {
+      categoryId = categoriaExistente.id;
+    } else {
+      // Criar categoria automaticamente
+      const { data: novaCategoria } = await (supabase as any)
+        .from("categories")
+        .insert({
+          user_id: user.id,
+          name: "Fatura de Cartão",
+          icon: "credit-card",
+          color: "#8B5CF6",
+          type: "expense",
+          is_default: true,
+        })
+        .select("id")
+        .single();
+      
+      categoryId = novaCategoria?.id || null;
+    }
+
     const { error: transactionError } = await (supabase as any)
       .from("transactions")
       .insert({
@@ -578,7 +609,7 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
         status: "completed",
         date: new Date().toISOString().split("T")[0],
         paid_date: new Date().toISOString().split("T")[0],
-        category_id: null,
+        category_id: categoryId,
         tipo_lancamento: "unica",
       });
 
