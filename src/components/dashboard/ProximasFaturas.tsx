@@ -19,7 +19,10 @@ interface Props {
 }
 
 export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
-  if (faturas.length === 0) {
+  // Filtrar apenas faturas com valor pendente (> 0)
+  const faturasPendentes = faturas.filter(f => f.valor > 0);
+
+  if (faturasPendentes.length === 0) {
     return (
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -47,7 +50,7 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {faturas.slice(0, 4).map((fatura) => {
+        {faturasPendentes.slice(0, 4).map((fatura) => {
           const cor = CORES_BANDEIRA[fatura.bandeira?.toLowerCase() || "default"] || CORES_BANDEIRA.default;
           const urgente = fatura.diasRestantes <= 3;
 
