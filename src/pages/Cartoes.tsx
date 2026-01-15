@@ -236,7 +236,9 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
     (dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  const nomeMes = mesReferencia.toLocaleDateString("pt-BR", {
+  // Usar o mês que deve ser exibido (atual ou próximo se pago)
+  const mesParaExibir = cartao.mesExibicao || mesReferencia;
+  const nomeMesFatura = mesParaExibir.toLocaleDateString("pt-BR", {
     month: "long",
     year: "numeric",
   });
@@ -274,8 +276,14 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="text-xs">
-            Aberta
+          <Badge 
+            variant={cartao.faturaAtualPaga ? "default" : "outline"} 
+            className={cn(
+              "text-xs",
+              cartao.faturaAtualPaga && "bg-emerald-500 hover:bg-emerald-600"
+            )}
+          >
+            {cartao.faturaAtualPaga ? "Paga" : "Aberta"}
           </Badge>
         </div>
 
@@ -340,14 +348,25 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
         </div>
 
         {/* Fatura do Mês - Destaque */}
-        <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+        <div className={cn(
+          "p-3 rounded-lg border",
+          cartao.faturaAtualPaga 
+            ? "bg-emerald-500/5 border-emerald-500/20" 
+            : "bg-red-500/5 border-red-500/20"
+        )}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium capitalize">Fatura {nomeMes}</span>
+              <Receipt className={cn(
+                "h-4 w-4",
+                cartao.faturaAtualPaga ? "text-emerald-500" : "text-red-500"
+              )} />
+              <span className="text-sm font-medium capitalize">Fatura {nomeMesFatura}</span>
             </div>
-            <span className="text-lg font-bold value-display text-red-600">
-              {formatCurrency(cartao.faturaAtual)}
+            <span className={cn(
+              "text-lg font-bold value-display",
+              cartao.faturaAtualPaga ? "text-emerald-600" : "text-red-600"
+            )}>
+              {formatCurrency(cartao.faturaExibida)}
             </span>
           </div>
         </div>
