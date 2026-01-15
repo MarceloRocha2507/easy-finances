@@ -97,6 +97,7 @@ export function useCriarMeta() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       toast({
         title: "Meta criada!",
         description: "Sua meta de economia foi criada com sucesso.",
@@ -157,6 +158,7 @@ export function useAtualizarMeta() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       toast({
         title: "Meta atualizada!",
         description: "As alterações foram salvas.",
@@ -201,6 +203,7 @@ export function useAdicionarValorMeta() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
 
       if (result.concluida) {
         toast({
@@ -244,6 +247,7 @@ export function useExcluirMeta() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       toast({
         title: "Meta excluída",
         description: "A meta foi removida com sucesso.",
