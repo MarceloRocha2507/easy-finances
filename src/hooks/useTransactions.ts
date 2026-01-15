@@ -553,6 +553,17 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       const saldoInicial = Number(profile?.saldo_inicial) || 0;
 
+      // Buscar total de investimentos ativos
+      const { data: investimentos } = await supabase
+        .from('investimentos')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('ativo', true);
+
+      const totalInvestido = (investimentos || []).reduce(
+        (sum, inv) => sum + Number(inv.valor_atual), 0
+      );
+
       // Buscar transações: todas concluídas + pendentes apenas do mês atual
       const { data, error } = await supabase
         .from('transactions')
@@ -594,6 +605,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         overdueCount: 0,
         pendingCount: 0,
         faturaCartao: faturaCartaoTitular,
+        totalInvestido,
       };
 
       data?.forEach((t) => {
@@ -610,14 +622,22 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
       });
 
-      // Saldo Real = Saldo Inicial + Receitas Recebidas - Despesas Pagas
-      const realBalance = saldoInicial + stats.completedIncome - stats.completedExpense;
-      // Saldo Estimado = Saldo Real + A Receber - A Pagar - Fatura do Cartão
-      const estimatedBalance = realBalance + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      // Saldo Base = Saldo Inicial + Receitas Recebidas - Despesas Pagas
+      const saldoBase = saldoInicial + stats.completedIncome - stats.completedExpense;
+      // Saldo Disponível = Saldo Base - Total Investido (dinheiro "na mão")
+      const saldoDisponivel = saldoBase - totalInvestido;
+      // Patrimônio Total = Saldo Base (já inclui o que está investido)
+      const patrimonioTotal = saldoBase;
+      // Saldo Real (retrocompatibilidade) = saldoDisponivel
+      const realBalance = saldoDisponivel;
+      // Saldo Estimado = Saldo Disponível + A Receber - A Pagar - Fatura do Cartão
+      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
         ...stats,
         realBalance,
+        saldoDisponivel,
+        patrimonioTotal,
         estimatedBalance,
       };
     },

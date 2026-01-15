@@ -146,17 +146,24 @@ export default function Dashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Real</p>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Disponível</p>
                 <p
                   className={`text-xl font-semibold ${
-                    (completeStats?.realBalance || 0) >= 0 ? "text-income" : "text-expense"
+                    (completeStats?.saldoDisponivel || 0) >= 0 ? "text-income" : "text-expense"
                   }`}
                 >
-                  {formatCurrency(completeStats?.realBalance || 0)}
+                  {formatCurrency(completeStats?.saldoDisponivel || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Base: {formatCurrency(completeStats?.saldoInicial || 0)}
-                </p>
+                <div className="flex flex-col gap-0.5 mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Patrimônio: {formatCurrency(completeStats?.patrimonioTotal || 0)}
+                  </p>
+                  {(completeStats?.totalInvestido || 0) > 0 && (
+                    <p className="text-xs text-primary">
+                      Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button 

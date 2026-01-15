@@ -29,6 +29,22 @@ export function useProfileStats() {
     enabled: !!user?.id,
   });
 
+  // Buscar investimentos ativos
+  const { data: investimentos } = useQuery({
+    queryKey: ['investimentos-total', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('investimentos')
+        .select('valor_atual')
+        .eq('user_id', user.id)
+        .eq('ativo', true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Buscar informações do plano
   const { data: profile } = useQuery({
     queryKey: ['profile-plan', user?.id],
@@ -68,7 +84,14 @@ export function useProfileStats() {
   const totalDespesas = transactions?.filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-  const saldoAtual = (saldoInicial || 0) + totalReceitas - totalDespesas;
+  const totalInvestido = (investimentos || []).reduce(
+    (sum, inv) => sum + Number(inv.valor_atual), 0
+  );
+
+  // Saldo base (patrimônio total)
+  const patrimonioTotal = (saldoInicial || 0) + totalReceitas - totalDespesas;
+  // Saldo disponível (descontando investimentos)
+  const saldoAtual = patrimonioTotal - totalInvestido;
 
   const metasConcluidas = metas?.filter(m => m.concluida).length || 0;
   const metasEmAndamento = metas?.filter(m => !m.concluida).length || 0;
@@ -80,6 +103,8 @@ export function useProfileStats() {
     receitasMes,
     despesasMes,
     saldoAtual,
+    patrimonioTotal,
+    totalInvestido,
     metasConcluidas,
     metasEmAndamento,
     totalMetas: (metas?.length || 0),
