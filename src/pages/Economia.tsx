@@ -26,16 +26,19 @@ export default function Economia() {
   const {
     data: analise,
     isLoading: analiseLoading,
+    isFetching: analiseFetching,
     refetch,
   } = useAnaliseGastos(mesReferencia);
 
   const {
     data: orcamentos,
     isLoading: orcamentosLoading,
+    isFetching: orcamentosFetching,
     refetch: refetchOrcamentos,
   } = useOrcamentos(mesReferencia);
 
   const isLoading = analiseLoading || orcamentosLoading;
+  const isFetching = analiseFetching || orcamentosFetching;
 
   // Dados para o gráfico de pizza
   const pieData =
@@ -66,7 +69,7 @@ export default function Economia() {
               refetch();
               refetchOrcamentos();
             }}
-            isLoading={isLoading}
+            isLoading={isFetching}
           />
         </div>
 
