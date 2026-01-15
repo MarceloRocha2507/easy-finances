@@ -564,6 +564,20 @@ export function useCompleteStats(mesReferencia?: Date) {
         (sum, inv) => sum + Number(inv.valor_atual), 0
       );
 
+      // Buscar total de metas de economia (não concluídas)
+      const { data: metas } = await supabase
+        .from('metas')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('concluida', false);
+
+      const totalMetas = (metas || []).reduce(
+        (sum, meta) => sum + Number(meta.valor_atual), 0
+      );
+
+      // Total guardado = Investimentos + Metas
+      const totalGuardado = totalInvestido + totalMetas;
+
       // Buscar transações: todas concluídas + pendentes apenas do mês atual
       const { data, error } = await supabase
         .from('transactions')
@@ -624,9 +638,9 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       // Saldo Base = Saldo Inicial + Receitas Recebidas - Despesas Pagas
       const saldoBase = saldoInicial + stats.completedIncome - stats.completedExpense;
-      // Saldo Disponível = Saldo Base - Total Investido (dinheiro "na mão")
-      const saldoDisponivel = saldoBase - totalInvestido;
-      // Patrimônio Total = Saldo Base (já inclui o que está investido)
+      // Saldo Disponível = Saldo Base - Total Guardado (Investimentos + Metas)
+      const saldoDisponivel = saldoBase - totalGuardado;
+      // Patrimônio Total = Saldo Base (já inclui o que está guardado)
       const patrimonioTotal = saldoBase;
       // Saldo Real (retrocompatibilidade) = saldoDisponivel
       const realBalance = saldoDisponivel;
@@ -639,6 +653,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         saldoDisponivel,
         patrimonioTotal,
         estimatedBalance,
+        totalMetas,
+        totalGuardado,
       };
     },
     enabled: !!user,

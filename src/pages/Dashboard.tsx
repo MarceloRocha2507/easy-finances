@@ -163,6 +163,11 @@ export default function Dashboard() {
                       Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
                     </p>
                   )}
+                  {(completeStats?.totalMetas || 0) > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
