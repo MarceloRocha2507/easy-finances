@@ -41,6 +41,7 @@ import {
   X,
   Crown,
   Plus,
+  Scale,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +59,7 @@ import { cn } from "@/lib/utils";
 import { EditarCompraDialog } from "@/components/cartoes/EditarCompraDialog";
 import { ExcluirCompraDialog } from "@/components/cartoes/ExcluirCompraDialog";
 import { NovaCompraCartaoDialog } from "@/components/cartoes/NovaCompraCartaoDialog";
+import { AjustarFaturaDialog } from "@/components/cartoes/AjustarFaturaDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 /* ======================================================
@@ -115,6 +117,7 @@ export default function DespesasCartao() {
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
   const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
+  const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Hooks
@@ -255,6 +258,17 @@ export default function DespesasCartao() {
               <p className="text-xs text-muted-foreground">Despesas do mês</p>
             </div>
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" variant="outline" onClick={() => setAjustarFaturaOpen(true)} className="gap-1">
+                  <Scale className="h-4 w-4" />
+                  Ajustar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
             <Plus className="h-4 w-4" />
             Nova compra
@@ -605,6 +619,18 @@ export default function DespesasCartao() {
           carregarFatura();
         }}
       />
+
+      {id && (
+        <AjustarFaturaDialog
+          cartaoId={id}
+          mesReferencia={mesRef}
+          open={ajustarFaturaOpen}
+          onOpenChange={setAjustarFaturaOpen}
+          onSuccess={() => {
+            carregarFatura();
+          }}
+        />
+      )}
     </Layout>
   );
 }

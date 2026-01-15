@@ -773,3 +773,72 @@ export async function gerarProximasParcelasFixas(
     .update({ parcelas: ultimoNumero + mesesAdicionais })
     .eq("id", compraId);
 }
+
+/* ======================================================
+   CRIAR AJUSTE DE FATURA
+   - Cria uma transação de ajuste (crédito ou débito)
+   - Crédito: reduz o valor da fatura (estorno, cashback)
+   - Débito: aumenta o valor da fatura (taxa, juros)
+====================================================== */
+
+export type AjusteFaturaInput = {
+  cartao_id: string;
+  valor: number;
+  tipo: "credito" | "debito";
+  descricao: string;
+  mes_referencia: Date;
+  categoria_id?: string;
+  responsavel_id?: string;
+  observacao?: string;
+};
+
+export async function criarAjusteFatura(input: AjusteFaturaInput): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // Para ajustes:
+  // - Crédito (reduz fatura): valor negativo na parcela
+  // - Débito (aumenta fatura): valor positivo na parcela
+  const valorParcela = input.tipo === "credito" ? -input.valor : input.valor;
+  const mesRef = new Date(
+    input.mes_referencia.getFullYear(),
+    input.mes_referencia.getMonth(),
+    1
+  );
+
+  // 1. Criar a compra de ajuste
+  const { data: compra, error: compraError } = await (supabase as any)
+    .from("compras_cartao")
+    .insert({
+      user_id: user.id,
+      cartao_id: input.cartao_id,
+      descricao: input.descricao,
+      valor_total: input.valor,
+      parcelas: 1,
+      parcela_inicial: 1,
+      tipo_lancamento: "ajuste",
+      mes_inicio: mesRef.toISOString().split("T")[0],
+      data_compra: new Date().toISOString().split("T")[0],
+      categoria_id: input.categoria_id || null,
+      responsavel_id: input.responsavel_id || null,
+    })
+    .select()
+    .single();
+
+  if (compraError) throw compraError;
+
+  // 2. Criar a parcela de ajuste
+  const { error: parcelaError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .insert({
+      compra_id: compra.id,
+      numero_parcela: 1,
+      total_parcelas: 1,
+      valor: valorParcela,
+      mes_referencia: mesRef.toISOString().split("T")[0],
+      paga: false,
+      tipo_recorrencia: "ajuste",
+    });
+
+  if (parcelaError) throw parcelaError;
+}

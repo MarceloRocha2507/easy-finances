@@ -38,6 +38,7 @@ import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
 import { EditarCompraDialog } from "./EditarCompraDialog";
 import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
 import { PagarFaturaDialog } from "./PagarFaturaDialog";
+import { AjustarFaturaDialog } from "./AjustarFaturaDialog";
 
 import {
   MoreVertical,
@@ -54,6 +55,7 @@ import {
   Wallet,
   User,
   ExternalLink,
+  Scale,
   Settings,
 } from "lucide-react";
 
@@ -115,6 +117,7 @@ export function DetalhesCartaoDialog({
   const [gerarMensagemOpen, setGerarMensagemOpen] = useState(false);
   const [pagarFaturaOpen, setPagarFaturaOpen] = useState(false);
   const [registrarAcertoOpen, setRegistrarAcertoOpen] = useState(false);
+  const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
 
   // Dialogs da compra
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
@@ -285,6 +288,16 @@ export function DetalhesCartaoDialog({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Registrar acerto</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setAjustarFaturaOpen(true)}>
+                        <Scale className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Ajustar fatura</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <Button size="sm" className="h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
@@ -531,6 +544,18 @@ export function DetalhesCartaoDialog({
         open={pagarFaturaOpen}
         onOpenChange={setPagarFaturaOpen}
         onPaid={() => {
+          carregarFatura();
+          refetchAcertos();
+          onUpdated();
+        }}
+      />
+
+      <AjustarFaturaDialog
+        cartaoId={cartao.id}
+        mesReferencia={mesRef}
+        open={ajustarFaturaOpen}
+        onOpenChange={setAjustarFaturaOpen}
+        onSuccess={() => {
           carregarFatura();
           refetchAcertos();
           onUpdated();
