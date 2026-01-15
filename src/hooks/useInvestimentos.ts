@@ -179,6 +179,9 @@ export function useCriarInvestimento() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["investimentos"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["investimentos-total"] });
       toast.success("Investimento criado com sucesso!");
     },
     onError: (error) => {
@@ -252,6 +255,9 @@ export function useExcluirInvestimento() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["investimentos"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["investimentos-total"] });
       toast.success("Investimento excluído!");
     },
     onError: (error) => {
@@ -327,6 +333,10 @@ export function useCriarMovimentacao() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["investimentos"] });
       queryClient.invalidateQueries({ queryKey: ["movimentacoes-investimento", variables.investimentoId] });
+      // Invalidar cache do saldo para refletir imediatamente
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["investimentos-total"] });
       
       const mensagens = {
         aporte: "Aporte registrado com sucesso!",
