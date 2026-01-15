@@ -40,6 +40,8 @@ const mainMenuItems = [
   { icon: CreditCard, label: "Cartões", href: "/cartoes" },
 ];
 
+import { TrendingUp } from "lucide-react";
+
 const economiaMenu = {
   icon: PiggyBank,
   label: "Economia",
@@ -47,6 +49,7 @@ const economiaMenu = {
   subItems: [
     { icon: PiggyBank, label: "Visão Geral", href: "/economia" },
     { icon: Target, label: "Metas", href: "/economia/metas" },
+    { icon: TrendingUp, label: "Investimentos", href: "/economia/investimentos" },
   ],
 };
 

@@ -255,6 +255,63 @@ export type Database = {
         }
         Relationships: []
       }
+      investimentos: {
+        Row: {
+          ativo: boolean
+          cor: string
+          created_at: string
+          data_inicio: string
+          data_vencimento: string | null
+          icone: string
+          id: string
+          instituicao: string | null
+          nome: string
+          observacao: string | null
+          rentabilidade_anual: number | null
+          tipo: string
+          updated_at: string
+          user_id: string
+          valor_atual: number
+          valor_inicial: number
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          data_inicio?: string
+          data_vencimento?: string | null
+          icone?: string
+          id?: string
+          instituicao?: string | null
+          nome: string
+          observacao?: string | null
+          rentabilidade_anual?: number | null
+          tipo?: string
+          updated_at?: string
+          user_id: string
+          valor_atual?: number
+          valor_inicial?: number
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          data_inicio?: string
+          data_vencimento?: string | null
+          icone?: string
+          id?: string
+          instituicao?: string | null
+          nome?: string
+          observacao?: string | null
+          rentabilidade_anual?: number | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valor_atual?: number
+          valor_inicial?: number
+        }
+        Relationships: []
+      }
       metas: {
         Row: {
           concluida: boolean
@@ -296,6 +353,47 @@ export type Database = {
           valor_atual?: number
         }
         Relationships: []
+      }
+      movimentacoes_investimento: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          investimento_id: string
+          observacao: string | null
+          tipo: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          id?: string
+          investimento_id: string
+          observacao?: string | null
+          tipo?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          investimento_id?: string
+          observacao?: string | null
+          tipo?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_investimento_investimento_id_fkey"
+            columns: ["investimento_id"]
+            isOneToOne: false
+            referencedRelation: "investimentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notificacoes_lidas: {
         Row: {
