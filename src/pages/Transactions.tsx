@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency, getMonthRange } from '@/lib/formatters';
 import { FiltroPeriodo } from '@/components/dashboard/FiltroPeriodo';
@@ -113,11 +115,18 @@ export default function Transactions() {
   // Calcular range do mês selecionado
   const { start: startDate, end: endDate } = useMemo(() => getMonthRange(mesAtual), [mesAtual]);
 
-  const { data: transactions, isLoading, isFetching, refetch } = useTransactions({
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: transactions, isLoading, isFetching } = useTransactions({
     startDate,
     endDate,
   });
   const { data: categories, isLoading: categoriesLoading } = useCategories();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+  };
   const { data: stats } = useCompleteStats();
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
@@ -334,7 +343,7 @@ export default function Transactions() {
             <FiltroPeriodo
               mesAtual={mesAtual}
               onMesChange={setMesAtual}
-              onRefresh={() => refetch()}
+              onRefresh={handleRefresh}
               isLoading={isFetching}
             />
           </div>
