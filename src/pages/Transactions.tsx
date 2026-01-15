@@ -113,7 +113,7 @@ export default function Transactions() {
   // Calcular range do mês selecionado
   const { start: startDate, end: endDate } = useMemo(() => getMonthRange(mesAtual), [mesAtual]);
 
-  const { data: transactions, isLoading, refetch } = useTransactions({
+  const { data: transactions, isLoading, isFetching, refetch } = useTransactions({
     startDate,
     endDate,
   });
@@ -335,7 +335,7 @@ export default function Transactions() {
               mesAtual={mesAtual}
               onMesChange={setMesAtual}
               onRefresh={() => refetch()}
-              isLoading={isLoading}
+              isLoading={isFetching}
             />
           </div>
           <div className="flex gap-2">

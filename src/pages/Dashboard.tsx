@@ -95,6 +95,7 @@ export default function Dashboard() {
   const {
     data: dashboardData,
     isLoading,
+    isFetching,
     refetch,
   } = useDashboardCompleto(mesReferencia);
 
@@ -128,7 +129,7 @@ export default function Dashboard() {
           mesAtual={mesReferencia}
           onMesChange={setMesReferencia}
           onRefresh={() => refetch()}
-          isLoading={isLoading}
+          isLoading={isFetching}
         />
       </div>
 
