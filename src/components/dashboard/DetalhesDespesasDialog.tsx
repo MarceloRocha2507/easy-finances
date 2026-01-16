@@ -171,8 +171,8 @@ export function DetalhesDespesasDialog({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="mb-4">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
+        <SheetHeader className="flex-shrink-0 mb-4">
           <SheetTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-red-600" />
             Despesas a Pagar
@@ -180,7 +180,7 @@ export function DetalhesDespesasDialog({
           <p className="text-sm text-muted-foreground capitalize">{mesFormatado}</p>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-200px)]">
+        <ScrollArea className="flex-1 -mr-4 pr-4">
           <div className="space-y-6 pr-4">
             {/* Seção: Contas Pendentes */}
             <div>
@@ -295,7 +295,7 @@ export function DetalhesDespesasDialog({
         </ScrollArea>
 
         {/* Footer com total */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background">
           <div className="flex items-center justify-between mb-3">
             <span className="text-base font-semibold">Total a Pagar</span>
             <span className="text-xl font-bold text-red-600">
