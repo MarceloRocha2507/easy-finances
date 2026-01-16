@@ -172,7 +172,7 @@ export function DetalhesDespesasDialog({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
-        <SheetHeader className="flex-shrink-0 mb-4">
+        <SheetHeader className="flex-shrink-0 mb-4 animate-fade-in" style={{ animationDelay: '0.05s' }}>
           <SheetTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-red-600" />
             Despesas a Pagar
@@ -180,7 +180,7 @@ export function DetalhesDespesasDialog({
           <p className="text-sm text-muted-foreground capitalize">{mesFormatado}</p>
         </SheetHeader>
 
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Fade indicator no topo */}
           <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
           
@@ -303,7 +303,7 @@ export function DetalhesDespesasDialog({
         </div>
 
         {/* Footer com total */}
-        <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background animate-fade-in" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-base font-semibold">Total a Pagar</span>
             <span className="text-xl font-bold text-red-600">
