@@ -180,8 +180,12 @@ export function DetalhesDespesasDialog({
           <p className="text-sm text-muted-foreground capitalize">{mesFormatado}</p>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 -mr-4 pr-4">
-          <div className="space-y-6 pr-4">
+        <div className="flex-1 relative overflow-hidden">
+          {/* Fade indicator no topo */}
+          <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
+          
+          <ScrollArea className="h-full -mr-4 pr-4">
+            <div className="space-y-6 pr-4 pt-2 pb-4">
             {/* Seção: Contas Pendentes */}
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -293,6 +297,10 @@ export function DetalhesDespesasDialog({
             </div>
           </div>
         </ScrollArea>
+          
+          {/* Fade indicator na base */}
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
+        </div>
 
         {/* Footer com total */}
         <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background">
