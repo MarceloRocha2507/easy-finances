@@ -8,3 +8,4 @@ export { FiltroPeriodo } from "./FiltroPeriodo";
 export { CartoesCredito } from "./CartoesCredito";
 export { NovaMetaDialog } from "./NovaMetaDialog";
 export { GerenciarMetaDialog } from "./GerenciarMetaDialog";
+export { DetalhesDespesasDialog } from "./DetalhesDespesasDialog";

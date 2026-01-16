@@ -40,6 +40,7 @@ import {
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
+import { DetalhesDespesasDialog } from "@/components/dashboard/DetalhesDespesasDialog";
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
@@ -76,6 +77,7 @@ export default function Dashboard() {
   const [metaSelecionada, setMetaSelecionada] = useState<Meta | null>(null);
   const [gerenciarMetaOpen, setGerenciarMetaOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
+  const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
 
   // Calcular range do mês selecionado
   const inicioMesSelecionado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1).toISOString().split('T')[0];
@@ -279,7 +281,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-red-200 dark:border-red-900 card-hover animate-fade-in-up" style={{ animationDelay: '0.35s', opacity: 0 }}>
+        <Card 
+          className="border border-red-200 dark:border-red-900 card-hover animate-fade-in-up cursor-pointer hover:border-red-400 dark:hover:border-red-700 transition-colors" 
+          style={{ animationDelay: '0.35s', opacity: 0 }}
+          onClick={() => setDespesasDialogOpen(true)}
+        >
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -496,6 +502,14 @@ export default function Dashboard() {
       <EditarSaldoDialog
         open={editarSaldoOpen}
         onOpenChange={setEditarSaldoOpen}
+      />
+
+      <DetalhesDespesasDialog
+        open={despesasDialogOpen}
+        onOpenChange={setDespesasDialogOpen}
+        mesReferencia={mesReferencia}
+        pendingExpense={completeStats?.pendingExpense || 0}
+        faturaCartao={completeStats?.faturaCartao || 0}
       />
     </Layout>
   );
