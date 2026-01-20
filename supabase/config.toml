@@ -1,1 +1,7 @@
 project_id = "vcpnairzcpljyartrafm"
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.seed-demo-account]
+verify_jwt = false
