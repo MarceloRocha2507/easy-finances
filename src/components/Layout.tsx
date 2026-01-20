@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAlertasCount } from "@/hooks/useAlertasCount";
 import { useProfile } from "@/hooks/useProfile";
+import { DemoBanner } from "@/components/DemoBanner";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -28,6 +29,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
+const DEMO_EMAIL = "demo@fina.app";
 
 interface LayoutProps {
   children: ReactNode;
@@ -67,6 +70,8 @@ export function Layout({ children }: LayoutProps) {
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
   );
+
+  const isDemoUser = user?.email === DEMO_EMAIL;
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -242,7 +247,7 @@ export function Layout({ children }: LayoutProps) {
                 <span 
                   className={cn(
                     "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
-                    hasDanger ? "bg-expense animate-pulse" : "bg-amber-500"
+                    hasDanger ? "bg-expense animate-pulse" : "bg-warning"
                   )}
                 >
                   {alertasCount > 9 ? "9+" : alertasCount}
@@ -293,8 +298,9 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen">
-        <div className="p-6 animate-fade-in">{children}</div>
+      <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen flex flex-col">
+        {isDemoUser && <DemoBanner className="lg:ml-0" />}
+        <div className="p-6 animate-fade-in flex-1">{children}</div>
       </main>
     </div>
   );
