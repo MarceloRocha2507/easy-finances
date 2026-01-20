@@ -215,37 +215,59 @@ Deno.serve(async (req) => {
     console.log('✅ Transações criadas:', transacoes.length);
 
     // 7. Criar compras no cartão (estrutura correta)
-    const mesAtual = hoje.toISOString().slice(0, 7);
+    // Helper para formatar data como YYYY-MM-01 (primeiro dia do mês)
+    const formatMesInicio = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}-01`;
+    };
+    
+    const mesAtualDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const mesAtual = formatMesInicio(mesAtualDate);
     
     // Celular parcelado em 12x no Nubank
     const dataCompraCelular = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 15);
-    const { data: compraCelular } = await supabaseAdmin.from('compras_cartao').insert({
+    const mesInicioCelular = new Date(dataCompraCelular.getFullYear(), dataCompraCelular.getMonth() + 1, 1);
+    
+    console.log('📦 Inserindo compra celular...', {
+      cartao_id: cartaoMap['Nubank'],
+      responsavel_id: respMap['Titular'],
+      mes_inicio: formatMesInicio(mesInicioCelular),
+    });
+    
+    const { data: compraCelular, error: errorCelular } = await supabaseAdmin.from('compras_cartao').insert({
       user_id: demoUserId,
       cartao_id: cartaoMap['Nubank'],
       responsavel_id: respMap['Titular'],
       descricao: 'iPhone 15 Pro',
       valor_total: 2400,
       data_compra: dataCompraCelular.toISOString().slice(0, 10),
-      mes_inicio: new Date(dataCompraCelular.getFullYear(), dataCompraCelular.getMonth() + 1, 1).toISOString().slice(0, 7),
+      mes_inicio: formatMesInicio(mesInicioCelular),
       parcelas: 12,
       parcela_inicial: 1,
-      tipo_lancamento: 'parcelado',
+      tipo_lancamento: 'parcelada',
       categoria_id: catMap['Compras_expense'],
     }).select().single();
+    
+    if (errorCelular) {
+      console.error('❌ Erro ao inserir compra celular:', errorCelular);
+    } else {
+      console.log('✅ Compra celular inserida:', compraCelular?.id);
+    }
 
     // Criar parcelas do celular
     if (compraCelular) {
       const parcelasCelular = [];
       for (let i = 0; i < 12; i++) {
-        const dataParcela = new Date(dataCompraCelular.getFullYear(), dataCompraCelular.getMonth() + 1 + i, 1);
+        const dataParcela = new Date(mesInicioCelular.getFullYear(), mesInicioCelular.getMonth() + i, 1);
         parcelasCelular.push({
           compra_id: compraCelular.id,
-          mes_referencia: dataParcela.toISOString().slice(0, 7),
+          mes_referencia: formatMesInicio(dataParcela),
           numero_parcela: i + 1,
           total_parcelas: 12,
           valor: 200,
           paga: i < 2, // Primeiras 2 parcelas pagas
-          tipo_recorrencia: 'parcelado',
+          tipo_recorrencia: 'normal',
         });
       }
       await supabaseAdmin.from('parcelas_cartao').insert(parcelasCelular);
@@ -253,6 +275,7 @@ Deno.serve(async (req) => {
 
     // Passagem parcelada em 6x no Inter
     const dataCompraPassagem = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 20);
+    const mesInicioPassagem = new Date(dataCompraPassagem.getFullYear(), dataCompraPassagem.getMonth() + 1, 1);
     const { data: compraPassagem } = await supabaseAdmin.from('compras_cartao').insert({
       user_id: demoUserId,
       cartao_id: cartaoMap['Inter'],
@@ -260,10 +283,10 @@ Deno.serve(async (req) => {
       descricao: 'Passagem aérea São Paulo',
       valor_total: 1800,
       data_compra: dataCompraPassagem.toISOString().slice(0, 10),
-      mes_inicio: new Date(dataCompraPassagem.getFullYear(), dataCompraPassagem.getMonth() + 1, 1).toISOString().slice(0, 7),
+      mes_inicio: formatMesInicio(mesInicioPassagem),
       parcelas: 6,
       parcela_inicial: 1,
-      tipo_lancamento: 'parcelado',
+      tipo_lancamento: 'parcelada',
       categoria_id: catMap['Lazer_expense'],
     }).select().single();
 
@@ -271,15 +294,15 @@ Deno.serve(async (req) => {
     if (compraPassagem) {
       const parcelasPassagem = [];
       for (let i = 0; i < 6; i++) {
-        const dataParcela = new Date(dataCompraPassagem.getFullYear(), dataCompraPassagem.getMonth() + 1 + i, 1);
+        const dataParcela = new Date(mesInicioPassagem.getFullYear(), mesInicioPassagem.getMonth() + i, 1);
         parcelasPassagem.push({
           compra_id: compraPassagem.id,
-          mes_referencia: dataParcela.toISOString().slice(0, 7),
+          mes_referencia: formatMesInicio(dataParcela),
           numero_parcela: i + 1,
           total_parcelas: 6,
           valor: 300,
           paga: i < 1, // Primeira parcela paga
-          tipo_recorrencia: 'parcelado',
+          tipo_recorrencia: 'normal',
         });
       }
       await supabaseAdmin.from('parcelas_cartao').insert(parcelasPassagem);
@@ -309,7 +332,7 @@ Deno.serve(async (req) => {
         mes_inicio: mesAtual,
         parcelas: 1,
         parcela_inicial: 1,
-        tipo_lancamento: 'avista',
+        tipo_lancamento: 'unica',
         categoria_id: catMap['Compras_expense'],
       }).select().single();
 
@@ -322,7 +345,7 @@ Deno.serve(async (req) => {
           total_parcelas: 1,
           valor: c.valor,
           paga: false,
-          tipo_recorrencia: 'avista',
+          tipo_recorrencia: 'normal',
         });
       }
     }
