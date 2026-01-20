@@ -39,9 +39,8 @@ Deno.serve(async (req) => {
       demoUserId = existingDemo.id;
 
       // Limpar dados existentes na ordem correta (respeitar foreign keys)
-      await supabaseAdmin.from('aportes_investimento').delete().eq('user_id', demoUserId);
-      await supabaseAdmin.from('resgates_investimento').delete().eq('user_id', demoUserId);
-      await supabaseAdmin.from('rendimentos_investimento').delete().eq('user_id', demoUserId);
+      await supabaseAdmin.from('parcelas_cartao').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabaseAdmin.from('movimentacoes_investimento').delete().eq('user_id', demoUserId);
       await supabaseAdmin.from('investimentos').delete().eq('user_id', demoUserId);
       await supabaseAdmin.from('metas').delete().eq('user_id', demoUserId);
       await supabaseAdmin.from('orcamentos').delete().eq('user_id', demoUserId);
@@ -100,7 +99,7 @@ Deno.serve(async (req) => {
       { user_id: demoUserId, name: 'Freelance', icon: 'briefcase', color: '#10b981', type: 'income', is_default: true },
       { user_id: demoUserId, name: 'Investimentos', icon: 'trending-up', color: '#14b8a6', type: 'income', is_default: true },
       { user_id: demoUserId, name: 'Vendas', icon: 'tag', color: '#06b6d4', type: 'income', is_default: true },
-      { user_id: demoUserId, name: 'Outros', icon: 'wallet', color: '#0ea5e9', type: 'income', is_default: true },
+      { user_id: demoUserId, name: 'Outros Receita', icon: 'wallet', color: '#0ea5e9', type: 'income', is_default: true },
     ];
 
     const { data: categorias } = await supabaseAdmin.from('categories').insert(categoriasData).select();
@@ -215,48 +214,78 @@ Deno.serve(async (req) => {
     await supabaseAdmin.from('transactions').insert(transacoes);
     console.log('✅ Transações criadas:', transacoes.length);
 
-    // 7. Criar compras no cartão (com parcelas)
-    const comprasCartao = [];
+    // 7. Criar compras no cartão (estrutura correta)
     const mesAtual = hoje.toISOString().slice(0, 7);
-    const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().slice(0, 7);
-
+    
     // Celular parcelado em 12x no Nubank
-    for (let i = 0; i < 12; i++) {
-      const dataCompra = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 15);
-      const dataParcela = new Date(dataCompra.getFullYear(), dataCompra.getMonth() + i, 15);
-      comprasCartao.push({
-        user_id: demoUserId,
-        cartao_id: cartaoMap['Nubank'],
-        responsavel_id: respMap['Titular'],
-        descricao: 'iPhone 15 Pro',
-        valor: 200,
-        data_compra: dataCompra.toISOString().slice(0, 10),
-        mes_fatura: dataParcela.toISOString().slice(0, 7),
-        parcela_atual: i + 1,
-        total_parcelas: 12,
-        categoria_id: catMap['Compras_expense'],
-      });
+    const dataCompraCelular = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 15);
+    const { data: compraCelular } = await supabaseAdmin.from('compras_cartao').insert({
+      user_id: demoUserId,
+      cartao_id: cartaoMap['Nubank'],
+      responsavel_id: respMap['Titular'],
+      descricao: 'iPhone 15 Pro',
+      valor_total: 2400,
+      data_compra: dataCompraCelular.toISOString().slice(0, 10),
+      mes_inicio: new Date(dataCompraCelular.getFullYear(), dataCompraCelular.getMonth() + 1, 1).toISOString().slice(0, 7),
+      parcelas: 12,
+      parcela_inicial: 1,
+      tipo_lancamento: 'parcelado',
+      categoria_id: catMap['Compras_expense'],
+    }).select().single();
+
+    // Criar parcelas do celular
+    if (compraCelular) {
+      const parcelasCelular = [];
+      for (let i = 0; i < 12; i++) {
+        const dataParcela = new Date(dataCompraCelular.getFullYear(), dataCompraCelular.getMonth() + 1 + i, 1);
+        parcelasCelular.push({
+          compra_id: compraCelular.id,
+          mes_referencia: dataParcela.toISOString().slice(0, 7),
+          numero_parcela: i + 1,
+          total_parcelas: 12,
+          valor: 200,
+          paga: i < 2, // Primeiras 2 parcelas pagas
+          tipo_recorrencia: 'parcelado',
+        });
+      }
+      await supabaseAdmin.from('parcelas_cartao').insert(parcelasCelular);
     }
 
     // Passagem parcelada em 6x no Inter
-    for (let i = 0; i < 6; i++) {
-      const dataCompra = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 20);
-      const dataParcela = new Date(dataCompra.getFullYear(), dataCompra.getMonth() + i, 20);
-      comprasCartao.push({
-        user_id: demoUserId,
-        cartao_id: cartaoMap['Inter'],
-        responsavel_id: respMap['Titular'],
-        descricao: 'Passagem aérea São Paulo',
-        valor: 300,
-        data_compra: dataCompra.toISOString().slice(0, 10),
-        mes_fatura: dataParcela.toISOString().slice(0, 7),
-        parcela_atual: i + 1,
-        total_parcelas: 6,
-        categoria_id: catMap['Lazer_expense'],
-      });
+    const dataCompraPassagem = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 20);
+    const { data: compraPassagem } = await supabaseAdmin.from('compras_cartao').insert({
+      user_id: demoUserId,
+      cartao_id: cartaoMap['Inter'],
+      responsavel_id: respMap['Titular'],
+      descricao: 'Passagem aérea São Paulo',
+      valor_total: 1800,
+      data_compra: dataCompraPassagem.toISOString().slice(0, 10),
+      mes_inicio: new Date(dataCompraPassagem.getFullYear(), dataCompraPassagem.getMonth() + 1, 1).toISOString().slice(0, 7),
+      parcelas: 6,
+      parcela_inicial: 1,
+      tipo_lancamento: 'parcelado',
+      categoria_id: catMap['Lazer_expense'],
+    }).select().single();
+
+    // Criar parcelas da passagem
+    if (compraPassagem) {
+      const parcelasPassagem = [];
+      for (let i = 0; i < 6; i++) {
+        const dataParcela = new Date(dataCompraPassagem.getFullYear(), dataCompraPassagem.getMonth() + 1 + i, 1);
+        parcelasPassagem.push({
+          compra_id: compraPassagem.id,
+          mes_referencia: dataParcela.toISOString().slice(0, 7),
+          numero_parcela: i + 1,
+          total_parcelas: 6,
+          valor: 300,
+          paga: i < 1, // Primeira parcela paga
+          tipo_recorrencia: 'parcelado',
+        });
+      }
+      await supabaseAdmin.from('parcelas_cartao').insert(parcelasPassagem);
     }
 
-    // Compras avulsas recentes
+    // Compras avulsas recentes (à vista)
     const comprasAvulsas = [
       { desc: 'Mercado Pão de Açúcar', valor: 280, cartao: 'Nubank', resp: 'Titular', dias: -5 },
       { desc: 'Farmácia Drogasil', valor: 95, cartao: 'Nubank', resp: 'Cônjuge', dias: -3 },
@@ -266,63 +295,77 @@ Deno.serve(async (req) => {
       { desc: 'Posto Shell', valor: 200, cartao: 'Nubank', resp: 'Titular', dias: -7 },
     ];
 
-    comprasAvulsas.forEach(c => {
+    for (const c of comprasAvulsas) {
       const dataCompra = new Date(hoje);
       dataCompra.setDate(dataCompra.getDate() + c.dias);
-      comprasCartao.push({
+      
+      const { data: compraAvulsa } = await supabaseAdmin.from('compras_cartao').insert({
         user_id: demoUserId,
         cartao_id: cartaoMap[c.cartao],
         responsavel_id: respMap[c.resp],
         descricao: c.desc,
-        valor: c.valor,
+        valor_total: c.valor,
         data_compra: dataCompra.toISOString().slice(0, 10),
-        mes_fatura: mesAtual,
-        parcela_atual: 1,
-        total_parcelas: 1,
+        mes_inicio: mesAtual,
+        parcelas: 1,
+        parcela_inicial: 1,
+        tipo_lancamento: 'avista',
         categoria_id: catMap['Compras_expense'],
-      });
-    });
+      }).select().single();
 
-    await supabaseAdmin.from('compras_cartao').insert(comprasCartao);
-    console.log('✅ Compras no cartão criadas:', comprasCartao.length);
+      // Criar parcela única
+      if (compraAvulsa) {
+        await supabaseAdmin.from('parcelas_cartao').insert({
+          compra_id: compraAvulsa.id,
+          mes_referencia: mesAtual,
+          numero_parcela: 1,
+          total_parcelas: 1,
+          valor: c.valor,
+          paga: false,
+          tipo_recorrencia: 'avista',
+        });
+      }
+    }
 
-    // 8. Criar metas de economia
+    console.log('✅ Compras no cartão criadas');
+
+    // 8. Criar metas de economia (estrutura correta: titulo, data_limite)
     await supabaseAdmin.from('metas').insert([
       {
         user_id: demoUserId,
-        nome: 'Reserva de Emergência',
-        descricao: '6 meses de despesas',
+        titulo: 'Reserva de Emergência',
         valor_alvo: 15000,
         valor_atual: 8500,
-        prazo: new Date(hoje.getFullYear() + 1, 5, 30).toISOString().slice(0, 10),
+        data_limite: new Date(hoje.getFullYear() + 1, 5, 30).toISOString().slice(0, 10),
         cor: '#22c55e',
         icone: 'shield',
+        concluida: false,
       },
       {
         user_id: demoUserId,
-        nome: 'Viagem de Férias',
-        descricao: 'Viagem para praia em dezembro',
+        titulo: 'Viagem de Férias',
         valor_alvo: 6000,
         valor_atual: 2100,
-        prazo: new Date(hoje.getFullYear(), 11, 15).toISOString().slice(0, 10),
+        data_limite: new Date(hoje.getFullYear(), 11, 15).toISOString().slice(0, 10),
         cor: '#0ea5e9',
         icone: 'plane',
+        concluida: false,
       },
       {
         user_id: demoUserId,
-        nome: 'Trocar de Carro',
-        descricao: 'Entrada para carro novo',
+        titulo: 'Trocar de Carro',
         valor_alvo: 40000,
         valor_atual: 12000,
-        prazo: new Date(hoje.getFullYear() + 2, 0, 1).toISOString().slice(0, 10),
+        data_limite: new Date(hoje.getFullYear() + 2, 0, 1).toISOString().slice(0, 10),
         cor: '#f97316',
         icone: 'car',
+        concluida: false,
       },
     ]);
     console.log('✅ Metas criadas');
 
-    // 9. Criar investimentos
-    const { data: investimentos } = await supabaseAdmin.from('investimentos').insert([
+    // 9. Criar investimentos (estrutura correta com icone e cor)
+    await supabaseAdmin.from('investimentos').insert([
       {
         user_id: demoUserId,
         nome: 'Poupança Caixa',
@@ -332,6 +375,8 @@ Deno.serve(async (req) => {
         valor_atual: 3500,
         data_inicio: new Date(hoje.getFullYear() - 1, 0, 15).toISOString().slice(0, 10),
         rentabilidade_anual: 6.17,
+        icone: 'piggy-bank',
+        cor: '#22c55e',
       },
       {
         user_id: demoUserId,
@@ -343,6 +388,8 @@ Deno.serve(async (req) => {
         data_inicio: new Date(hoje.getFullYear(), 0, 10).toISOString().slice(0, 10),
         rentabilidade_anual: 12.5,
         data_vencimento: new Date(hoje.getFullYear() + 1, 0, 10).toISOString().slice(0, 10),
+        icone: 'landmark',
+        cor: '#f97316',
       },
       {
         user_id: demoUserId,
@@ -353,6 +400,8 @@ Deno.serve(async (req) => {
         valor_atual: 8200,
         data_inicio: new Date(hoje.getFullYear() - 1, 5, 1).toISOString().slice(0, 10),
         rentabilidade_anual: 13.25,
+        icone: 'building-2',
+        cor: '#0ea5e9',
       },
       {
         user_id: demoUserId,
@@ -363,17 +412,19 @@ Deno.serve(async (req) => {
         valor_atual: 2800,
         data_inicio: new Date(hoje.getFullYear(), 2, 15).toISOString().slice(0, 10),
         rentabilidade_anual: -8.5,
+        icone: 'trending-up',
+        cor: '#8b5cf6',
       },
-    ]).select();
+    ]);
     console.log('✅ Investimentos criados');
 
-    // 10. Criar orçamentos por categoria
+    // 10. Criar orçamentos por categoria (estrutura correta: category_id, mes_referencia)
     await supabaseAdmin.from('orcamentos').insert([
-      { user_id: demoUserId, categoria_id: catMap['Alimentação_expense'], valor_limite: 1200 },
-      { user_id: demoUserId, categoria_id: catMap['Transporte_expense'], valor_limite: 600 },
-      { user_id: demoUserId, categoria_id: catMap['Lazer_expense'], valor_limite: 400 },
-      { user_id: demoUserId, categoria_id: catMap['Compras_expense'], valor_limite: 500 },
-      { user_id: demoUserId, categoria_id: catMap['Saúde_expense'], valor_limite: 300 },
+      { user_id: demoUserId, category_id: catMap['Alimentação_expense'], mes_referencia: mesAtual, valor_limite: 1200 },
+      { user_id: demoUserId, category_id: catMap['Transporte_expense'], mes_referencia: mesAtual, valor_limite: 600 },
+      { user_id: demoUserId, category_id: catMap['Lazer_expense'], mes_referencia: mesAtual, valor_limite: 400 },
+      { user_id: demoUserId, category_id: catMap['Compras_expense'], mes_referencia: mesAtual, valor_limite: 500 },
+      { user_id: demoUserId, category_id: catMap['Saúde_expense'], mes_referencia: mesAtual, valor_limite: 300 },
     ]);
     console.log('✅ Orçamentos criados');
 
