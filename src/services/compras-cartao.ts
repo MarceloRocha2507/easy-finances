@@ -1130,6 +1130,9 @@ export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao
         for (let i = 0; i < numParcelasEsperadas; i++) {
           const numeroParcela = compra.parcela_inicial + i;
           
+          // VALIDAÇÃO CRÍTICA: nunca criar parcela maior que o total
+          if (numeroParcela > compra.parcelas) continue;
+          
           // Pular se já existe
           if (numerosExistentes.has(numeroParcela)) continue;
 
