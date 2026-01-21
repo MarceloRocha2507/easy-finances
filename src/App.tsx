@@ -34,6 +34,8 @@ const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategori
 const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
+const RecorrentesPage = lazy(() => import("./pages/transactions/Recorrentes"));
+const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 
 const queryClient = new QueryClient();
 
@@ -63,6 +65,28 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Transactions />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/transactions/recorrentes"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <RecorrentesPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/transactions/importar"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <ImportarPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
