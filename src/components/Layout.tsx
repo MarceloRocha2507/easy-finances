@@ -36,14 +36,26 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+import { TrendingUp, Receipt, Layers, Users, Gauge } from "lucide-react";
+
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: ArrowLeftRight, label: "Transações", href: "/transactions" },
   { icon: Tags, label: "Categorias", href: "/categories" },
-  { icon: CreditCard, label: "Cartões", href: "/cartoes" },
 ];
 
-import { TrendingUp } from "lucide-react";
+const cartoesMenu = {
+  icon: CreditCard,
+  label: "Cartões",
+  href: "/cartoes",
+  subItems: [
+    { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
+    { icon: Receipt, label: "Faturas", href: "/cartoes/faturas" },
+    { icon: Layers, label: "Parcelamentos", href: "/cartoes/parcelamentos" },
+    { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
+    { icon: Gauge, label: "Limites", href: "/cartoes/limites" },
+  ],
+};
 
 const economiaMenu = {
   icon: PiggyBank,
@@ -67,6 +79,9 @@ export function Layout({ children }: LayoutProps) {
   const { importantes: alertasCount, hasDanger } = useAlertasCount();
   const { data: profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [cartoesOpen, setCartoesOpen] = useState(
+    location.pathname.startsWith("/cartoes")
+  );
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
   );
@@ -92,9 +107,13 @@ export function Layout({ children }: LayoutProps) {
     if (href === "/economia") {
       return location.pathname === "/economia";
     }
+    if (href === "/cartoes") {
+      return location.pathname === "/cartoes";
+    }
     return location.pathname === href;
   };
 
+  const isCartoesActive = location.pathname.startsWith("/cartoes");
   const isEconomiaActive = location.pathname.startsWith("/economia");
 
   return (
@@ -143,6 +162,49 @@ export function Layout({ children }: LayoutProps) {
                 {item.label}
               </Link>
             ))}
+
+            {/* Menu Cartões com submenu */}
+            <Collapsible open={cartoesOpen} onOpenChange={setCartoesOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isCartoesActive
+                      ? "bg-secondary/50 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <cartoesMenu.icon className="h-4 w-4" />
+                    {cartoesMenu.label}
+                  </div>
+                  {cartoesOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
+                {cartoesMenu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                      isActive(subItem.href)
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <subItem.icon className="h-3.5 w-3.5" />
+                    {subItem.label}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Menu Economia com submenu */}
             <Collapsible open={economiaOpen} onOpenChange={setEconomiaOpen}>
