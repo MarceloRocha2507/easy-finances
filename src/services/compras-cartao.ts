@@ -1022,7 +1022,7 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
       descricao: descricaoEstorno,
       valor_total: input.escopoEstorno === "todas" ? input.valor * numParcelas : input.valor,
       parcelas: numParcelas,
-      parcela_inicial: 1,
+      parcela_inicial: parcelaOriginal.numero_parcela,
       tipo_lancamento: "estorno",
       mes_inicio: mesReferencia.toISOString().split("T")[0],
       data_compra: new Date().toISOString().split("T")[0],
@@ -1047,8 +1047,8 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
 
     parcelasData.push({
       compra_id: compraEstorno.id,
-      numero_parcela: i + 1,
-      total_parcelas: numParcelas,
+      numero_parcela: parcelaOriginal.numero_parcela + i,
+      total_parcelas: parcelaOriginal.total_parcelas,
       valor: -Math.abs(valorEstorno), // Valor negativo para crédito
       mes_referencia: mesParcela.toISOString().split("T")[0],
       paga: false,
