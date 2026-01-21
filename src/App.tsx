@@ -21,11 +21,15 @@ import DespesasCartao from "./pages/DespesasCartao";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
 import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
+import Responsaveis from "./pages/Responsaveis";
 
-// Importar Metas como lazy para evitar conflito de case
+// Importar páginas com lazy
 import { lazy, Suspense } from "react";
 const MetasPage = lazy(() => import("./pages/Metas"));
 const InvestimentosPage = lazy(() => import("./pages/Investimentos"));
+const FaturasPage = lazy(() => import("./pages/cartoes/Faturas"));
+const ParcelamentosPage = lazy(() => import("./pages/cartoes/Parcelamentos"));
+const LimitesPage = lazy(() => import("./pages/cartoes/Limites"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +89,51 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/cartoes/faturas"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <FaturasPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cartoes/parcelamentos"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <ParcelamentosPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cartoes/responsaveis"
+              element={
+                <ProtectedRoute>
+                  <Responsaveis />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cartoes/limites"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <LimitesPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Redirect antigo /responsaveis para novo caminho */}
+            <Route path="/responsaveis" element={<Navigate to="/cartoes/responsaveis" replace />} />
 
             <Route
               path="/economia"
