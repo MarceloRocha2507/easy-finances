@@ -93,12 +93,17 @@ function formatMonthLabel(monthKey: string): string {
   return format(date, "MMMM 'de' yyyy", { locale: ptBR });
 }
 
-// Formatar dia da transação
-function formatTransactionDay(dateStr: string): string {
+// Formatar dia da transação com horário de cadastro
+function formatTransactionDay(dateStr: string, createdAt?: string): string {
   const date = parseISO(dateStr);
-  if (isToday(date)) return 'Hoje';
-  if (isYesterday(date)) return 'Ontem';
-  return format(date, "dd/MM", { locale: ptBR });
+  const hour = createdAt ? format(parseISO(createdAt), "HH:mm") : null;
+  
+  let dayLabel: string;
+  if (isToday(date)) dayLabel = 'Hoje';
+  else if (isYesterday(date)) dayLabel = 'Ontem';
+  else dayLabel = format(date, "dd/MM", { locale: ptBR });
+  
+  return hour ? `${dayLabel}, ${hour}` : dayLabel;
 }
 
 export default function Transactions() {
@@ -955,7 +960,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </div>
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            {formatTransactionDay(transaction.date)}
+            {formatTransactionDay(transaction.date, transaction.created_at)}
           </p>
           <span className="text-muted-foreground/50">•</span>
           <p className="text-sm text-muted-foreground truncate">
