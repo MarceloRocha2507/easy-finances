@@ -31,11 +31,13 @@ export function ExcluirCompraDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [escopo, setEscopo] = useState<EscopoExclusao>("todas");
+  const [etapaConfirmacao, setEtapaConfirmacao] = useState(false);
 
-  // Reset escopo quando abrir dialog
+  // Reset estados quando abrir dialog
   useEffect(() => {
     if (open) {
       setEscopo("todas");
+      setEtapaConfirmacao(false);
     }
   }, [open]);
 
@@ -44,6 +46,15 @@ export function ExcluirCompraDialog({
   const temMultiplasParcelas = parcela.total_parcelas > 1;
   const naoEUltimaParcela = parcela.numero_parcela < parcela.total_parcelas;
   const parcelasRestantes = parcela.total_parcelas - parcela.numero_parcela + 1;
+  const requerConfirmacaoExtra = escopo === "todas" && parcela.total_parcelas > 6;
+
+  function handleClickExcluir() {
+    if (requerConfirmacaoExtra && !etapaConfirmacao) {
+      setEtapaConfirmacao(true);
+    } else {
+      handleExcluir();
+    }
+  }
 
   async function handleExcluir() {
     if (!parcela) return;
@@ -156,30 +167,71 @@ export function ExcluirCompraDialog({
                 </p>
               )}
 
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-amber-700 dark:text-amber-400">
-                  Esta ação não pode ser desfeita.
-                </p>
-              </div>
+              {/* Confirmação extra para compras com muitas parcelas */}
+              {etapaConfirmacao && (
+                <div className="space-y-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="font-semibold">Atenção!</span>
+                  </div>
+                  <p className="text-sm">
+                    Você está prestes a excluir <strong>"{parcela.descricao}"</strong> com{" "}
+                    <strong>{parcela.total_parcelas} parcelas</strong> no total de{" "}
+                    <strong>{formatCurrency(parcela.valor * parcela.total_parcelas)}</strong>.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Tem certeza que deseja continuar? Esta ação é irreversível.
+                  </p>
+                </div>
+              )}
+
+              {!etapaConfirmacao && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              )}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleExcluir}
-            disabled={loading}
-          >
-            {loading ? "Excluindo..." : "Excluir"}
-          </Button>
+          {etapaConfirmacao ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setEtapaConfirmacao(false)}
+                disabled={loading}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleExcluir}
+                disabled={loading}
+              >
+                {loading ? "Excluindo..." : "Confirmar Exclusão"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClickExcluir}
+                disabled={loading}
+              >
+                {loading ? "Excluindo..." : "Excluir"}
+              </Button>
+            </>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
