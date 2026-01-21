@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,10 @@ import {
   ChevronRight,
   ChevronLeft,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
+import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
+import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
 import { formatCurrency } from "@/lib/formatters";
 import { useCartoes, usePrevisaoPorResponsavel, CartaoComResumo } from "@/services/cartoes";
 import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
@@ -23,9 +26,26 @@ export default function Cartoes() {
   const { data: previsaoData } = usePrevisaoPorResponsavel(mesReferencia);
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoComResumo | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
+  const regenerarParcelas = useRegenerarParcelas();
 
   const responsaveis = previsaoData?.responsaveis || [];
-  const previsao = previsaoData?.previsao || {};
+  const previsao = previsaoData?.previsao || [];
+
+  // Verificação automática silenciosa ao carregar a página
+  useEffect(() => {
+    const verificarParcelas = async () => {
+      try {
+        const resultado = await regenerarParcelasFaltantes();
+        if (resultado.parcelasRegeneradas > 0) {
+          refetch();
+        }
+      } catch (e) {
+        console.error("Erro na verificação automática:", e);
+      }
+    };
+    
+    verificarParcelas();
+  }, []);
 
   // Navegação de mês
   const irMesAnterior = () => {
@@ -103,7 +123,21 @@ export default function Cartoes() {
               Gerencie seus cartões e acompanhe as faturas
             </p>
           </div>
-          <NovoCartaoDialog onSaved={() => refetch()} />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await regenerarParcelas.mutateAsync();
+                refetch();
+              }}
+              disabled={regenerarParcelas.isPending}
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
+              {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
+            </Button>
+            <NovoCartaoDialog onSaved={() => refetch()} />
+          </div>
         </div>
 
         {/* Previsão de Faturas */}

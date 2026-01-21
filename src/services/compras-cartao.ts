@@ -1062,3 +1062,108 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
 
   if (insertError) throw insertError;
 }
+
+/* ======================================================
+   REGENERAR PARCELAS FALTANTES
+====================================================== */
+
+export type ResultadoRegeneracao = {
+  comprasVerificadas: number;
+  parcelasRegeneradas: number;
+  erros: string[];
+};
+
+export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  const resultado: ResultadoRegeneracao = {
+    comprasVerificadas: 0,
+    parcelasRegeneradas: 0,
+    erros: [],
+  };
+
+  // 1. Buscar todas as compras ativas do usuário
+  const { data: compras, error: comprasError } = await supabase
+    .from("compras_cartao")
+    .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, tipo_lancamento")
+    .eq("user_id", user.id)
+    .eq("ativo", true);
+
+  if (comprasError) throw comprasError;
+  if (!compras || compras.length === 0) return resultado;
+
+  resultado.comprasVerificadas = compras.length;
+
+  for (const compra of compras) {
+    try {
+      // 2. Verificar quantas parcelas existem para esta compra
+      const { count, error: countError } = await supabase
+        .from("parcelas_cartao")
+        .select("*", { count: "exact", head: true })
+        .eq("compra_id", compra.id);
+
+      if (countError) {
+        resultado.erros.push(`Erro ao verificar ${compra.descricao}: ${countError.message}`);
+        continue;
+      }
+
+      // Calcular quantas parcelas deveriam existir
+      const numParcelasEsperadas = compra.parcelas - compra.parcela_inicial + 1;
+      const parcelasExistentes = count || 0;
+
+      // 3. Se faltam parcelas, regenerar
+      if (parcelasExistentes < numParcelasEsperadas) {
+        // Buscar parcelas existentes para saber quais números já existem
+        const { data: parcelasAtuais } = await supabase
+          .from("parcelas_cartao")
+          .select("numero_parcela")
+          .eq("compra_id", compra.id);
+
+        const numerosExistentes = new Set((parcelasAtuais || []).map(p => p.numero_parcela));
+        
+        // Criar parcelas faltantes
+        const valorParcela = compra.valor_total / compra.parcelas;
+        const mesInicio = new Date(compra.mes_inicio + "T00:00:00");
+        const novasParcelas = [];
+
+        for (let i = 0; i < numParcelasEsperadas; i++) {
+          const numeroParcela = compra.parcela_inicial + i;
+          
+          // Pular se já existe
+          if (numerosExistentes.has(numeroParcela)) continue;
+
+          const mesParcela = new Date(mesInicio);
+          mesParcela.setMonth(mesParcela.getMonth() + i);
+
+          novasParcelas.push({
+            compra_id: compra.id,
+            numero_parcela: numeroParcela,
+            total_parcelas: compra.parcelas,
+            valor: valorParcela,
+            mes_referencia: mesParcela.toISOString().split("T")[0],
+            paga: false,
+            ativo: true,
+            tipo_recorrencia: compra.tipo_lancamento === "fixa" ? "fixa" : "normal",
+          });
+        }
+
+        if (novasParcelas.length > 0) {
+          const { error: insertError } = await (supabase as any)
+            .from("parcelas_cartao")
+            .insert(novasParcelas);
+
+          if (insertError) {
+            resultado.erros.push(`Erro ao criar parcelas de ${compra.descricao}: ${insertError.message}`);
+          } else {
+            resultado.parcelasRegeneradas += novasParcelas.length;
+          }
+        }
+      }
+    } catch (err: any) {
+      resultado.erros.push(`Erro em ${compra.descricao}: ${err.message}`);
+    }
+  }
+
+  return resultado;
+}
