@@ -1136,13 +1136,18 @@ export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao
           const mesParcela = new Date(mesInicio);
           mesParcela.setMonth(mesParcela.getMonth() + i);
 
+          // Determinar se a parcela deveria estar paga baseado no mês
+          const hoje = new Date();
+          const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+          const parcelaPaga = mesParcela < mesAtual; // Meses anteriores = pagos
+
           novasParcelas.push({
             compra_id: compra.id,
             numero_parcela: numeroParcela,
             total_parcelas: compra.parcelas,
             valor: valorParcela,
             mes_referencia: mesParcela.toISOString().split("T")[0],
-            paga: false,
+            paga: parcelaPaga,
             ativo: true,
             tipo_recorrencia: compra.tipo_lancamento === "fixa" ? "fixa" : "normal",
           });
