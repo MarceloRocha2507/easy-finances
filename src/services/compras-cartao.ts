@@ -546,6 +546,98 @@ export async function excluirCompra(compraId: string): Promise<void> {
 }
 
 /* ======================================================
+   EXCLUIR PARCELAS (seletivo)
+   - parcela: apenas uma parcela específica
+   - restantes: esta e todas as futuras
+   - todas: excluir compra inteira
+====================================================== */
+
+export type EscopoExclusao = "parcela" | "restantes" | "todas";
+
+export interface ExcluirParcelasInput {
+  compraId: string;
+  parcelaId: string;
+  numeroParcela: number;
+  escopo: EscopoExclusao;
+}
+
+export async function excluirParcelas(input: ExcluirParcelasInput): Promise<number> {
+  const { compraId, parcelaId, numeroParcela, escopo } = input;
+
+  if (escopo === "todas") {
+    // Comportamento atual: excluir compra inteira
+    const { data: parcelas } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("id")
+      .eq("compra_id", compraId);
+    
+    await excluirCompra(compraId);
+    return parcelas?.length || 0;
+  }
+
+  if (escopo === "parcela") {
+    // Excluir apenas uma parcela específica
+    await (supabase as any)
+      .from("parcelas_cartao")
+      .delete()
+      .eq("id", parcelaId);
+    
+    // Atualizar total de parcelas na compra
+    await atualizarTotalParcelasCompra(compraId);
+    return 1;
+  }
+
+  if (escopo === "restantes") {
+    // Excluir esta parcela e todas as futuras
+    const { data: parcelasExcluidas } = await (supabase as any)
+      .from("parcelas_cartao")
+      .select("id")
+      .eq("compra_id", compraId)
+      .gte("numero_parcela", numeroParcela);
+    
+    await (supabase as any)
+      .from("parcelas_cartao")
+      .delete()
+      .eq("compra_id", compraId)
+      .gte("numero_parcela", numeroParcela);
+    
+    // Atualizar total de parcelas na compra
+    await atualizarTotalParcelasCompra(compraId);
+    return parcelasExcluidas?.length || 0;
+  }
+
+  return 0;
+}
+
+// Função auxiliar para atualizar metadata da compra após exclusão parcial
+async function atualizarTotalParcelasCompra(compraId: string): Promise<void> {
+  // Contar parcelas restantes
+  const { data: parcelasRestantes, count } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select("valor", { count: "exact" })
+    .eq("compra_id", compraId);
+  
+  if (!count || count === 0) {
+    // Se não sobrou nenhuma parcela, excluir a compra
+    await (supabase as any)
+      .from("compras_cartao")
+      .delete()
+      .eq("id", compraId);
+  } else {
+    // Atualizar o valor_total e parcelas na compra
+    const novoTotal = parcelasRestantes?.reduce((sum: number, p: { valor: number }) => sum + p.valor, 0) || 0;
+    
+    await (supabase as any)
+      .from("compras_cartao")
+      .update({ 
+        valor_total: novoTotal,
+        parcelas: count 
+      })
+      .eq("id", compraId);
+  }
+}
+
+/* ======================================================
    PAGAR FATURA COM TRANSAÇÃO
    - Marca todas as parcelas como pagas
    - Cria uma transação de despesa no saldo real

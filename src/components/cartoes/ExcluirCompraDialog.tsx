@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -8,9 +8,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ParcelaFatura, excluirCompra } from "@/services/compras-cartao";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ParcelaFatura, excluirParcelas, EscopoExclusao } from "@/services/compras-cartao";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, AlertTriangle } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters";
 
 interface Props {
   parcela: ParcelaFatura | null;
@@ -27,14 +30,40 @@ export function ExcluirCompraDialog({
 }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [escopo, setEscopo] = useState<EscopoExclusao>("todas");
+
+  // Reset escopo quando abrir dialog
+  useEffect(() => {
+    if (open) {
+      setEscopo("todas");
+    }
+  }, [open]);
+
+  if (!parcela) return null;
+
+  const temMultiplasParcelas = parcela.total_parcelas > 1;
+  const naoEUltimaParcela = parcela.numero_parcela < parcela.total_parcelas;
+  const parcelasRestantes = parcela.total_parcelas - parcela.numero_parcela + 1;
 
   async function handleExcluir() {
     if (!parcela) return;
 
     setLoading(true);
     try {
-      await excluirCompra(parcela.compra_id);
-      toast({ title: "Compra excluída!" });
+      const qtdExcluidas = await excluirParcelas({
+        compraId: parcela.compra_id,
+        parcelaId: parcela.id,
+        numeroParcela: parcela.numero_parcela,
+        escopo,
+      });
+
+      const mensagens: Record<EscopoExclusao, string> = {
+        parcela: "Parcela excluída!",
+        restantes: `${qtdExcluidas} parcela(s) excluída(s)!`,
+        todas: "Compra excluída!",
+      };
+
+      toast({ title: mensagens[escopo] });
       onDeleted();
     } catch (error) {
       console.error(error);
@@ -48,38 +77,91 @@ export function ExcluirCompraDialog({
     }
   }
 
-  if (!parcela) return null;
-
-  const temParcelas = parcela.total_parcelas > 1;
-
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-red-500" />
+            <Trash2 className="h-5 w-5 text-destructive" />
             Excluir compra?
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="space-y-3">
-              <p>
-                Você está prestes a excluir a compra{" "}
-                <strong>"{parcela.descricao}"</strong>.
-              </p>
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <p className="font-medium text-foreground">{parcela.descricao}</p>
+                <p className="text-sm text-muted-foreground">
+                  {temMultiplasParcelas 
+                    ? `Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} • ${formatCurrency(parcela.valor)}`
+                    : formatCurrency(parcela.valor)
+                  }
+                </p>
+              </div>
 
-              {temParcelas && (
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Esta compra possui <strong>{parcela.total_parcelas} parcelas</strong>.
-                    Todas as parcelas serão excluídas.
-                  </p>
+              {temMultiplasParcelas && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">O que deseja excluir?</p>
+                  
+                  <RadioGroup 
+                    value={escopo} 
+                    onValueChange={(v) => setEscopo(v as EscopoExclusao)}
+                    className="space-y-2"
+                  >
+                    {/* Opção 1: Apenas esta parcela */}
+                    <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
+                      escopo === "parcela" ? "border-primary bg-primary/5" : "border-border"
+                    }`}>
+                      <RadioGroupItem value="parcela" id="excluir-parcela" className="mt-0.5" />
+                      <Label htmlFor="excluir-parcela" className="flex-1 cursor-pointer">
+                        <span className="font-medium">Apenas esta parcela</span>
+                        <p className="text-sm text-muted-foreground">
+                          Parcela {parcela.numero_parcela} • {formatCurrency(parcela.valor)}
+                        </p>
+                      </Label>
+                    </div>
+                    
+                    {/* Opção 2: Parcelas restantes (só se não for última) */}
+                    {naoEUltimaParcela && (
+                      <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
+                        escopo === "restantes" ? "border-primary bg-primary/5" : "border-border"
+                      }`}>
+                        <RadioGroupItem value="restantes" id="excluir-restantes" className="mt-0.5" />
+                        <Label htmlFor="excluir-restantes" className="flex-1 cursor-pointer">
+                          <span className="font-medium">Esta e todas as futuras</span>
+                          <p className="text-sm text-muted-foreground">
+                            {parcelasRestantes} parcelas restantes • {formatCurrency(parcela.valor * parcelasRestantes)}
+                          </p>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {/* Opção 3: Todas */}
+                    <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
+                      escopo === "todas" ? "border-destructive bg-destructive/5" : "border-border"
+                    }`}>
+                      <RadioGroupItem value="todas" id="excluir-todas" className="mt-0.5" />
+                      <Label htmlFor="excluir-todas" className="flex-1 cursor-pointer">
+                        <span className="font-medium">Excluir compra inteira</span>
+                        <p className="text-sm text-muted-foreground">
+                          Todas as {parcela.total_parcelas} parcelas • {formatCurrency(parcela.valor * parcela.total_parcelas)}
+                        </p>
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               )}
 
-              <p className="text-sm text-muted-foreground">
-                Esta ação não pode ser desfeita.
-              </p>
+              {!temMultiplasParcelas && (
+                <p className="text-sm text-muted-foreground">
+                  Esta compra será excluída permanentemente.
+                </p>
+              )}
+
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  Esta ação não pode ser desfeita.
+                </p>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -96,7 +178,7 @@ export function ExcluirCompraDialog({
             onClick={handleExcluir}
             disabled={loading}
           >
-            {loading ? "Excluindo..." : "Excluir compra"}
+            {loading ? "Excluindo..." : "Excluir"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
