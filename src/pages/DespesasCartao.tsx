@@ -474,12 +474,24 @@ export default function DespesasCartao() {
                       </TableCell>
 
                       <TableCell>
-                        <p className={cn(
-                          "font-medium",
-                          p.paga && "line-through text-muted-foreground"
-                        )}>
-                          {p.descricao}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          {p.tipo_lancamento === 'estorno' && (
+                            <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                              Estorno
+                            </Badge>
+                          )}
+                          {p.tipo_lancamento === 'ajuste' && (
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              Ajuste
+                            </Badge>
+                          )}
+                          <p className={cn(
+                            "font-medium",
+                            p.paga && "line-through text-muted-foreground"
+                          )}>
+                            {p.descricao}
+                          </p>
+                        </div>
                       </TableCell>
 
                       <TableCell className="hidden lg:table-cell">
@@ -527,9 +539,16 @@ export default function DespesasCartao() {
                       <TableCell className="text-right">
                         <span className={cn(
                           "font-semibold",
-                          p.paga ? "line-through text-muted-foreground" : "text-destructive"
+                          p.paga 
+                            ? "line-through text-muted-foreground" 
+                            : p.valor < 0 
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-destructive"
                         )}>
-                          {formatCurrency(Math.abs(p.valor))}
+                          {p.valor < 0 
+                            ? `- ${formatCurrency(Math.abs(p.valor))}`
+                            : formatCurrency(p.valor)
+                          }
                         </span>
                       </TableCell>
 
