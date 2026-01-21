@@ -206,7 +206,8 @@ export async function calcularResumoPorResponsavel(
   let totalGeral = 0;
 
   parcelas.forEach((p) => {
-    const valor = Math.abs(p.valor);
+    // Usar valor real (positivo ou negativo) para que estornos subtraiam
+    const valor = p.valor;
     totalGeral += valor;
 
     const respId = p.responsavel_id || "sem-responsavel";
@@ -227,11 +228,12 @@ export async function calcularResumoPorResponsavel(
     porResponsavel[respId].qtd_compras += 1;
   });
 
-  // Calcular percentuais
+  // Calcular percentuais usando valor absoluto do total para evitar divisão negativa
+  const totalAbsoluto = Math.abs(totalGeral);
   return Object.values(porResponsavel)
     .map((r) => ({
       ...r,
-      percentual: totalGeral > 0 ? (r.total / totalGeral) * 100 : 0,
+      percentual: totalAbsoluto > 0 ? (r.total / totalAbsoluto) * 100 : 0,
     }))
     .sort((a, b) => b.total - a.total);
 }
