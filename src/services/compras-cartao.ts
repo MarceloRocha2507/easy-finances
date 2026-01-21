@@ -837,7 +837,7 @@ export async function criarAjusteFatura(input: AjusteFaturaInput): Promise<void>
       valor: valorParcela,
       mes_referencia: mesRef.toISOString().split("T")[0],
       paga: false,
-      tipo_recorrencia: "ajuste",
+      tipo_recorrencia: "normal",
     });
 
   if (parcelaError) throw parcelaError;
@@ -956,7 +956,7 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
       valor: -Math.abs(valorEstorno), // Valor negativo para crédito
       mes_referencia: mesParcela.toISOString().split("T")[0],
       paga: false,
-      tipo_recorrencia: "estorno",
+      tipo_recorrencia: "normal",
     });
   }
 
