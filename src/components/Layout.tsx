@@ -36,13 +36,23 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders } from "lucide-react";
+import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders, RefreshCw, Upload } from "lucide-react";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: ArrowLeftRight, label: "Transações", href: "/transactions" },
   { icon: Tags, label: "Categorias", href: "/categories" },
 ];
+
+const transacoesMenu = {
+  icon: ArrowLeftRight,
+  label: "Transações",
+  href: "/transactions",
+  subItems: [
+    { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
+    { icon: RefreshCw, label: "Recorrentes", href: "/transactions/recorrentes" },
+    { icon: Upload, label: "Importar", href: "/transactions/importar" },
+  ],
+};
 
 const cartoesMenu = {
   icon: CreditCard,
@@ -96,6 +106,9 @@ export function Layout({ children }: LayoutProps) {
   const { importantes: alertasCount, hasDanger } = useAlertasCount();
   const { data: profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [transacoesOpen, setTransacoesOpen] = useState(
+    location.pathname.startsWith("/transactions")
+  );
   const [cartoesOpen, setCartoesOpen] = useState(
     location.pathname.startsWith("/cartoes")
   );
@@ -136,9 +149,13 @@ export function Layout({ children }: LayoutProps) {
     if (href === "/reports") {
       return location.pathname === "/reports";
     }
+    if (href === "/transactions") {
+      return location.pathname === "/transactions";
+    }
     return location.pathname === href;
   };
 
+  const isTransacoesActive = location.pathname.startsWith("/transactions");
   const isCartoesActive = location.pathname.startsWith("/cartoes");
   const isEconomiaActive = location.pathname.startsWith("/economia");
   const isRelatoriosActive = location.pathname.startsWith("/reports");
@@ -190,6 +207,49 @@ export function Layout({ children }: LayoutProps) {
                 {item.label}
               </Link>
             ))}
+
+            {/* Menu Transações com submenu */}
+            <Collapsible open={transacoesOpen} onOpenChange={setTransacoesOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isTransacoesActive
+                      ? "bg-secondary/50 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <transacoesMenu.icon className="h-4 w-4" />
+                    {transacoesMenu.label}
+                  </div>
+                  {transacoesOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
+                {transacoesMenu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                      isActive(subItem.href)
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <subItem.icon className="h-3.5 w-3.5" />
+                    {subItem.label}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Menu Cartões com submenu */}
             <Collapsible open={cartoesOpen} onOpenChange={setCartoesOpen}>
