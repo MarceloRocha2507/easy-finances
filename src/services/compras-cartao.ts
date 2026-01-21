@@ -18,6 +18,7 @@ export type ParcelaFatura = {
   paga: boolean;
   descricao: string;
   data_compra: string;
+  tipo_lancamento?: string;
   // Campos do responsável
   responsavel_id?: string;
   responsavel_nome?: string;
@@ -144,6 +145,7 @@ export async function listarParcelasDaFatura(
         descricao,
         parcelas,
         data_compra,
+        tipo_lancamento,
         categoria_id,
         responsavel_id,
         categoria:categories(id, name, color, icon),
@@ -185,6 +187,7 @@ export async function listarParcelasDaFatura(
       categoria_nome: p.compra?.categoria?.name || null,
       categoria_cor: p.compra?.categoria?.color || null,
       categoria_icone: p.compra?.categoria?.icon || null,
+      tipo_lancamento: p.compra?.tipo_lancamento || null,
     }));
 }
 
@@ -902,8 +905,7 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
     // Estornar todas as parcelas restantes
     const parcelasRestantes = parcelaOriginal.total_parcelas - parcelaOriginal.numero_parcela + 1;
     numParcelas = parcelasRestantes;
-    // Valor por parcela do estorno
-    valorEstorno = input.valor / parcelasRestantes;
+    // O valor informado já é o valor por parcela, não precisa dividir
   }
 
   // 3. Descrição do estorno
@@ -924,7 +926,7 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
       user_id: user.id,
       cartao_id: compraOriginal.cartao_id,
       descricao: descricaoEstorno,
-      valor_total: input.valor,
+      valor_total: input.escopoEstorno === "todas" ? input.valor * numParcelas : input.valor,
       parcelas: numParcelas,
       parcela_inicial: 1,
       tipo_lancamento: "estorno",
