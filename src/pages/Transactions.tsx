@@ -184,10 +184,10 @@ export default function Transactions() {
     }
   }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions]);
 
-  // Ordenar transações por data (mais recente primeiro)
+  // Ordenar transações por data de criação (mais recente primeiro)
   const sortedTransactions = useMemo(() => {
     return [...activeTransactions].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   }, [activeTransactions]);
 
