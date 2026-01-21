@@ -36,7 +36,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-import { TrendingUp, Receipt, Layers, Users, Gauge } from "lucide-react";
+import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders } from "lucide-react";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -68,9 +68,26 @@ const economiaMenu = {
   ],
 };
 
-const bottomMenuItems = [
-  { icon: BarChart3, label: "Relatórios", href: "/reports" },
-];
+const relatoriosMenu = {
+  icon: BarChart3,
+  label: "Relatórios",
+  href: "/reports",
+  subItems: [
+    { icon: BarChart3, label: "Visão Geral", href: "/reports" },
+    { icon: PieChart, label: "Por Categoria", href: "/reports/categorias" },
+    { icon: Download, label: "Exportações", href: "/reports/exportar" },
+  ],
+};
+
+const configMenu = {
+  icon: Settings,
+  label: "Configurações",
+  subItems: [
+    { icon: Sliders, label: "Preferências", href: "/profile/preferencias" },
+    { icon: Shield, label: "Segurança", href: "/profile/seguranca" },
+    { icon: Bell, label: "Notificações", href: "/configuracoes/notificacoes" },
+  ],
+};
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
@@ -84,6 +101,12 @@ export function Layout({ children }: LayoutProps) {
   );
   const [economiaOpen, setEconomiaOpen] = useState(
     location.pathname.startsWith("/economia")
+  );
+  const [relatoriosOpen, setRelatoriosOpen] = useState(
+    location.pathname.startsWith("/reports")
+  );
+  const [configOpen, setConfigOpen] = useState(
+    location.pathname.startsWith("/profile") || location.pathname.startsWith("/configuracoes")
   );
 
   const isDemoUser = user?.email === DEMO_EMAIL;
@@ -110,11 +133,16 @@ export function Layout({ children }: LayoutProps) {
     if (href === "/cartoes") {
       return location.pathname === "/cartoes";
     }
+    if (href === "/reports") {
+      return location.pathname === "/reports";
+    }
     return location.pathname === href;
   };
 
   const isCartoesActive = location.pathname.startsWith("/cartoes");
   const isEconomiaActive = location.pathname.startsWith("/economia");
+  const isRelatoriosActive = location.pathname.startsWith("/reports");
+  const isConfigActive = location.pathname.startsWith("/profile") || location.pathname.startsWith("/configuracoes");
 
   return (
     <div className="min-h-screen bg-background">
@@ -249,6 +277,49 @@ export function Layout({ children }: LayoutProps) {
               </CollapsibleContent>
             </Collapsible>
 
+            {/* Menu Relatórios com submenu */}
+            <Collapsible open={relatoriosOpen} onOpenChange={setRelatoriosOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isRelatoriosActive
+                      ? "bg-secondary/50 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <relatoriosMenu.icon className="h-4 w-4" />
+                    {relatoriosMenu.label}
+                  </div>
+                  {relatoriosOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
+                {relatoriosMenu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                      isActive(subItem.href)
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <subItem.icon className="h-3.5 w-3.5" />
+                    {subItem.label}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+
             {/* Separador */}
             <div className="my-3 border-t" />
 
@@ -268,29 +339,34 @@ export function Layout({ children }: LayoutProps) {
                 Admin
               </Link>
             )}
-
-            {/* Menu secundário */}
-            {bottomMenuItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  isActive(item.href)
-                    ? "bg-secondary text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
           </nav>
 
-          {/* User section - Notificações + Avatar + Perfil + Logout */}
+          {/* User section - Perfil + Configurações + Logout */}
           <div className="p-3 border-t space-y-1">
-            {/* Link para Notificações */}
+            {/* Link para Perfil com Avatar */}
+            <Link
+              to="/profile"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 hover:translate-x-0.5",
+                isActive("/profile")
+                  ? "bg-secondary"
+                  : "hover:bg-secondary/50"
+              )}
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-foreground truncate">{userName}</span>
+                <span className="text-xs text-muted-foreground">Ver perfil</span>
+              </div>
+            </Link>
+
+            {/* Link para Notificações com badge */}
             <Link
               to="/notificacoes"
               onClick={() => setSidebarOpen(false)}
@@ -317,28 +393,49 @@ export function Layout({ children }: LayoutProps) {
               )}
             </Link>
 
-            {/* Link para Perfil */}
-            <Link
-              to="/profile"
-              onClick={() => setSidebarOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 hover:translate-x-0.5",
-                isActive("/profile")
-                  ? "bg-secondary"
-                  : "hover:bg-secondary/50"
-              )}
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-foreground truncate">{userName}</span>
-                <span className="text-xs text-muted-foreground">Ver perfil</span>
-              </div>
-            </Link>
+            {/* Menu Configurações com submenu */}
+            <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isConfigActive
+                      ? "bg-secondary/50 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <configMenu.icon className="h-4 w-4" />
+                    {configMenu.label}
+                  </div>
+                  {configOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
+                {configMenu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    to={subItem.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                      isActive(subItem.href)
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <subItem.icon className="h-3.5 w-3.5" />
+                    {subItem.label}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground mt-1"

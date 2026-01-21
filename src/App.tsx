@@ -30,6 +30,10 @@ const InvestimentosPage = lazy(() => import("./pages/Investimentos"));
 const FaturasPage = lazy(() => import("./pages/cartoes/Faturas"));
 const ParcelamentosPage = lazy(() => import("./pages/cartoes/Parcelamentos"));
 const LimitesPage = lazy(() => import("./pages/cartoes/Limites"));
+const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategorias"));
+const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
+const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
+const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 
 const queryClient = new QueryClient();
 
@@ -176,13 +180,57 @@ const App = () => (
             />
 
             <Route
+              path="/reports/categorias"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <RelatorioCategorias />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reports/exportar"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <Exportacoes />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
-              </ProtectedRoute>
-            }
-          />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile/preferencias"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <PreferenciasPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile/seguranca"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<div>Carregando...</div>}>
+                    <SegurancaPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
           <Route
             path="/notificacoes"
