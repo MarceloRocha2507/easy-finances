@@ -42,6 +42,7 @@ import {
   Crown,
   Plus,
   Scale,
+  RotateCcw,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,7 @@ import { EditarCompraDialog } from "@/components/cartoes/EditarCompraDialog";
 import { ExcluirCompraDialog } from "@/components/cartoes/ExcluirCompraDialog";
 import { NovaCompraCartaoDialog } from "@/components/cartoes/NovaCompraCartaoDialog";
 import { AjustarFaturaDialog } from "@/components/cartoes/AjustarFaturaDialog";
+import { EstornarCompraDialog } from "@/components/cartoes/EstornarCompraDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 /* ======================================================
@@ -117,6 +119,7 @@ export default function DespesasCartao() {
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
   const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
+  const [estornarCompraOpen, setEstornarCompraOpen] = useState(false);
   const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
@@ -557,6 +560,25 @@ export default function DespesasCartao() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => {
+                                    setParcelaSelecionada(p);
+                                    setEstornarCompraOpen(true);
+                                  }}
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Estornar</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive"
                                   onClick={() => {
                                     setParcelaSelecionada(p);
@@ -615,6 +637,20 @@ export default function DespesasCartao() {
         }}
         onDeleted={() => {
           setExcluirCompraOpen(false);
+          setParcelaSelecionada(null);
+          carregarFatura();
+        }}
+      />
+
+      <EstornarCompraDialog
+        parcela={parcelaSelecionada}
+        open={estornarCompraOpen}
+        onOpenChange={(open) => {
+          setEstornarCompraOpen(open);
+          if (!open) setParcelaSelecionada(null);
+        }}
+        onEstornado={() => {
+          setEstornarCompraOpen(false);
           setParcelaSelecionada(null);
           carregarFatura();
         }}

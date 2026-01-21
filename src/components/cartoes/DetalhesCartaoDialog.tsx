@@ -39,6 +39,7 @@ import { EditarCompraDialog } from "./EditarCompraDialog";
 import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
 import { PagarFaturaDialog } from "./PagarFaturaDialog";
 import { AjustarFaturaDialog } from "./AjustarFaturaDialog";
+import { EstornarCompraDialog } from "./EstornarCompraDialog";
 
 import {
   MoreVertical,
@@ -57,6 +58,7 @@ import {
   ExternalLink,
   Scale,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
@@ -122,6 +124,7 @@ export function DetalhesCartaoDialog({
   // Dialogs da compra
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
   const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
+  const [estornarCompraOpen, setEstornarCompraOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Filtro simples (apenas busca)
@@ -434,6 +437,13 @@ export function DetalhesCartaoDialog({
                             <Pencil className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setParcelaSelecionada(p);
+                            setEstornarCompraOpen(true);
+                          }}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Estornar
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
@@ -588,6 +598,22 @@ export function DetalhesCartaoDialog({
         }}
         onDeleted={() => {
           setExcluirCompraOpen(false);
+          setParcelaSelecionada(null);
+          carregarFatura();
+          refetchAcertos();
+          onUpdated();
+        }}
+      />
+
+      <EstornarCompraDialog
+        parcela={parcelaSelecionada}
+        open={estornarCompraOpen}
+        onOpenChange={(open) => {
+          setEstornarCompraOpen(open);
+          if (!open) setParcelaSelecionada(null);
+        }}
+        onEstornado={() => {
+          setEstornarCompraOpen(false);
           setParcelaSelecionada(null);
           carregarFatura();
           refetchAcertos();

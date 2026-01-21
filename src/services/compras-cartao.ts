@@ -842,3 +842,127 @@ export async function criarAjusteFatura(input: AjusteFaturaInput): Promise<void>
 
   if (parcelaError) throw parcelaError;
 }
+
+/* ======================================================
+   ESTORNAR COMPRA
+   - Cria uma compra de estorno vinculada à original
+   - Registra parcela(s) com valor negativo
+====================================================== */
+
+export type EstornoInput = {
+  parcelaId: string;
+  compraId: string;
+  valor: number;
+  motivo: string;
+  escopoEstorno: "parcela" | "todas";
+  observacao?: string;
+};
+
+export async function estornarCompra(input: EstornoInput): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // 1. Buscar dados da parcela e compra original
+  const { data: parcelaOriginal, error: parcelaError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select(`
+      id,
+      valor,
+      numero_parcela,
+      total_parcelas,
+      mes_referencia,
+      compra:compras_cartao(
+        id,
+        cartao_id,
+        descricao,
+        valor_total,
+        parcelas,
+        responsavel_id,
+        categoria_id
+      )
+    `)
+    .eq("id", input.parcelaId)
+    .single();
+
+  if (parcelaError || !parcelaOriginal) {
+    throw new Error("Parcela não encontrada");
+  }
+
+  const compraOriginal = parcelaOriginal.compra;
+  if (!compraOriginal) {
+    throw new Error("Compra não encontrada");
+  }
+
+  // 2. Calcular valores e parcelas do estorno
+  let valorEstorno = input.valor;
+  let numParcelas = 1;
+  let mesReferencia = new Date(parcelaOriginal.mes_referencia);
+
+  if (input.escopoEstorno === "todas") {
+    // Estornar todas as parcelas restantes
+    const parcelasRestantes = parcelaOriginal.total_parcelas - parcelaOriginal.numero_parcela + 1;
+    numParcelas = parcelasRestantes;
+    // Valor por parcela do estorno
+    valorEstorno = input.valor / parcelasRestantes;
+  }
+
+  // 3. Descrição do estorno
+  const motivoLabel = {
+    cancelamento: "Cancelamento",
+    devolucao: "Devolução",
+    cobranca_indevida: "Cobrança indevida",
+    garantia: "Garantia",
+    outro: "Estorno",
+  }[input.motivo] || "Estorno";
+
+  const descricaoEstorno = `${motivoLabel}: ${compraOriginal.descricao}`;
+
+  // 4. Criar compra de estorno vinculada à original
+  const { data: compraEstorno, error: compraError } = await (supabase as any)
+    .from("compras_cartao")
+    .insert({
+      user_id: user.id,
+      cartao_id: compraOriginal.cartao_id,
+      descricao: descricaoEstorno,
+      valor_total: input.valor,
+      parcelas: numParcelas,
+      parcela_inicial: 1,
+      tipo_lancamento: "estorno",
+      mes_inicio: mesReferencia.toISOString().split("T")[0],
+      data_compra: new Date().toISOString().split("T")[0],
+      categoria_id: compraOriginal.categoria_id,
+      responsavel_id: compraOriginal.responsavel_id,
+      compra_estornada_id: compraOriginal.id,
+    })
+    .select()
+    .single();
+
+  if (compraError) throw compraError;
+
+  // 5. Criar parcela(s) com valor negativo
+  const parcelasData = [];
+
+  for (let i = 0; i < numParcelas; i++) {
+    const mesParcela = new Date(
+      mesReferencia.getFullYear(),
+      mesReferencia.getMonth() + i,
+      1
+    );
+
+    parcelasData.push({
+      compra_id: compraEstorno.id,
+      numero_parcela: i + 1,
+      total_parcelas: numParcelas,
+      valor: -Math.abs(valorEstorno), // Valor negativo para crédito
+      mes_referencia: mesParcela.toISOString().split("T")[0],
+      paga: false,
+      tipo_recorrencia: "estorno",
+    });
+  }
+
+  const { error: insertError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .insert(parcelasData);
+
+  if (insertError) throw insertError;
+}
