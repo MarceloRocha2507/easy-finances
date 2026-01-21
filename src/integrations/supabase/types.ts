@@ -71,6 +71,39 @@ export type Database = {
           },
         ]
       }
+      auditoria_cartao: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          registro_id: string
+          tabela: string
+          user_id: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id: string
+          tabela: string
+          user_id: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id?: string
+          tabela?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cartoes: {
         Row: {
           bandeira: string | null
