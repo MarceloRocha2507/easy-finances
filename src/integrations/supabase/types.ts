@@ -151,6 +151,7 @@ export type Database = {
           ativo: boolean
           cartao_id: string
           categoria_id: string | null
+          compra_estornada_id: string | null
           created_at: string
           data_compra: string | null
           descricao: string
@@ -167,6 +168,7 @@ export type Database = {
           ativo?: boolean
           cartao_id: string
           categoria_id?: string | null
+          compra_estornada_id?: string | null
           created_at?: string
           data_compra?: string | null
           descricao: string
@@ -183,6 +185,7 @@ export type Database = {
           ativo?: boolean
           cartao_id?: string
           categoria_id?: string | null
+          compra_estornada_id?: string | null
           created_at?: string
           data_compra?: string | null
           descricao?: string
@@ -208,6 +211,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_cartao_compra_estornada_id_fkey"
+            columns: ["compra_estornada_id"]
+            isOneToOne: false
+            referencedRelation: "compras_cartao"
             referencedColumns: ["id"]
           },
           {
