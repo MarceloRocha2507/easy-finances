@@ -4,8 +4,8 @@ import { Layout } from '@/components/Layout';
 import { useTransactions, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
-import { formatCurrency, getMonthRange } from '@/lib/formatters';
-import { FiltroPeriodo } from '@/components/dashboard/FiltroPeriodo';
+import { formatCurrency } from '@/lib/formatters';
+import { FiltroDataRange } from '@/components/FiltroDataRange';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -115,10 +115,12 @@ export default function Transactions() {
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
-  const [mesAtual, setMesAtual] = useState<Date>(new Date());
+  const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
+  const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
 
-  // Calcular range do mês selecionado
-  const { start: startDate, end: endDate } = useMemo(() => getMonthRange(mesAtual), [mesAtual]);
+  // Formatar datas para o hook
+  const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
+  const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -345,9 +347,11 @@ export default function Transactions() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-foreground">Transações</h1>
-            <FiltroPeriodo
-              mesAtual={mesAtual}
-              onMesChange={setMesAtual}
+            <FiltroDataRange
+              startDate={dataInicial}
+              endDate={dataFinal}
+              onStartDateChange={setDataInicial}
+              onEndDateChange={setDataFinal}
               onRefresh={handleRefresh}
               isLoading={isFetching}
             />
