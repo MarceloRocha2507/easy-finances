@@ -7,10 +7,18 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+interface BadgeConfig {
+  count?: number;
+  variant?: 'default' | 'warning' | 'danger';
+  pulse?: boolean;
+  dot?: boolean;
+}
+
 interface MenuItem {
   icon: LucideIcon;
   label: string;
   href: string;
+  badge?: BadgeConfig;
 }
 
 interface MenuCollapsibleProps {
@@ -21,6 +29,30 @@ interface MenuCollapsibleProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemClick?: () => void;
+  badge?: BadgeConfig;
+}
+
+function MenuBadge({ count, variant = 'default', pulse, dot }: BadgeConfig) {
+  if (!count && !dot) return null;
+  
+  const colorClasses = {
+    default: 'bg-primary text-primary-foreground',
+    warning: 'bg-warning text-warning-foreground',
+    danger: 'bg-destructive text-destructive-foreground',
+  };
+
+  return (
+    <span 
+      className={cn(
+        "flex items-center justify-center rounded-full font-bold",
+        dot ? "h-2 w-2" : "h-5 min-w-5 text-[10px] px-1.5",
+        colorClasses[variant],
+        pulse && "animate-pulse"
+      )}
+    >
+      {!dot && (count && count > 9 ? "9+" : count)}
+    </span>
+  );
 }
 
 export function MenuCollapsible({
@@ -31,6 +63,7 @@ export function MenuCollapsible({
   open,
   onOpenChange,
   onItemClick,
+  badge,
 }: MenuCollapsibleProps) {
   const location = useLocation();
 
@@ -45,7 +78,7 @@ export function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+            "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all border-l-2",
             open
               ? "border-l-primary bg-secondary/50 text-foreground"
               : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
@@ -54,8 +87,11 @@ export function MenuCollapsible({
               : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
           )}
         >
-          <Icon className="h-4 w-4" />
-          {label}
+          <div className="flex items-center gap-3">
+            <Icon className="h-4 w-4" />
+            {label}
+          </div>
+          {badge && <MenuBadge {...badge} />}
         </button>
       </CollapsibleTrigger>
 
@@ -66,14 +102,17 @@ export function MenuCollapsible({
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              "flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors",
               isItemActive(subItem.href)
                 ? "bg-secondary text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             )}
           >
-            <subItem.icon className="h-3.5 w-3.5" />
-            {subItem.label}
+            <div className="flex items-center gap-3">
+              <subItem.icon className="h-3.5 w-3.5" />
+              {subItem.label}
+            </div>
+            {subItem.badge && <MenuBadge {...subItem.badge} />}
           </Link>
         ))}
       </CollapsibleContent>
