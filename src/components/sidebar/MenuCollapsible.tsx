@@ -78,7 +78,7 @@ export function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            "group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
             "hover:glass-hover",
             open || isMenuActive
               ? "glass text-foreground font-medium"
@@ -87,12 +87,13 @@ export function MenuCollapsible({
         >
           <div className="flex items-center gap-3">
             <div className={cn(
-              "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+              "flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200",
+              "group-hover:scale-110",
               open || isMenuActive
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground"
             )}>
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 transition-transform duration-200" />
             </div>
             {label}
           </div>
@@ -100,7 +101,7 @@ export function MenuCollapsible({
             {badge && <MenuBadge {...badge} />}
             <ChevronDown 
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                "h-4 w-4 text-muted-foreground transition-transform duration-300 ease-out",
                 open && "rotate-180"
               )} 
             />
@@ -108,14 +109,16 @@ export function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1.5 ml-5 space-y-1">
-        {subItems.map((subItem) => (
+      <CollapsibleContent className="mt-1.5 ml-5 space-y-1 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+        {subItems.map((subItem, index) => (
           <Link
             key={subItem.href}
             to={subItem.href}
             onClick={onItemClick}
+            style={{ animationDelay: `${index * 50}ms` }}
             className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200",
+              "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200",
+              "animate-fade-in opacity-0 [animation-fill-mode:forwards]",
               isItemActive(subItem.href)
                 ? "bg-primary/10 text-primary font-medium border border-primary/20 shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:glass-hover"
@@ -123,7 +126,7 @@ export function MenuCollapsible({
           >
             <div className="flex items-center gap-2.5">
               <subItem.icon className={cn(
-                "h-3.5 w-3.5",
+                "h-3.5 w-3.5 transition-transform duration-200 group-hover/item:scale-110",
                 isItemActive(subItem.href) && "text-primary"
               )} />
               {subItem.label}
