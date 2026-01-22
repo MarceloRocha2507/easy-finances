@@ -52,12 +52,31 @@ export async function listarCartoes(): Promise<Cartao[]> {
 }
 
 /**
+ * Calcula o mês da fatura ativa baseado no dia de fechamento do cartão.
+ * Se hoje >= dia_fechamento, a fatura ativa é do mês atual.
+ * Se hoje < dia_fechamento, a fatura ativa é do mês anterior.
+ */
+function calcularMesFaturaAtiva(diaFechamento: number, hoje: Date = new Date()): Date {
+  const diaAtual = hoje.getDate();
+  const mesAtual = hoje.getMonth();
+  const anoAtual = hoje.getFullYear();
+
+  if (diaAtual >= diaFechamento) {
+    // Já passou o fechamento, fatura ativa é do mês atual
+    return new Date(anoAtual, mesAtual, 1);
+  } else {
+    // Ainda não fechou, fatura ativa é do mês anterior
+    return new Date(anoAtual, mesAtual - 1, 1);
+  }
+}
+
+/**
  * Buscar cartões com resumo de limite e fatura
  */
 export async function listarCartoesComResumo(
   mesReferencia?: Date
 ): Promise<CartaoComResumo[]> {
-  const mes = mesReferencia || new Date();
+  const hoje = new Date();
   
   // 1. Buscar cartões
   const { data: cartoes, error: cartoesError } = await (supabase as any)
@@ -91,65 +110,21 @@ export async function listarCartoesComResumo(
 
   const compraIds = (compras || []).map((c: any) => c.id);
 
-  // 4. Buscar TODAS as parcelas não pagas (comprometem o limite)
-  let todasParcelasNaoPagas: any[] = [];
+  // 4. Buscar TODAS as parcelas (para calcular limite e faturas por mês)
+  let todasParcelas: any[] = [];
   if (compraIds.length > 0) {
     const { data: parcelas, error: parcelasError } = await (supabase as any)
       .from("parcelas_cartao")
       .select("id, compra_id, valor, paga, mes_referencia")
-      .in("compra_id", compraIds)
-      .eq("paga", false);
+      .in("compra_id", compraIds);
 
     if (parcelasError) {
-      console.error("Erro ao buscar parcelas não pagas:", parcelasError);
+      console.error("Erro ao buscar parcelas:", parcelasError);
     }
-    todasParcelasNaoPagas = parcelas || [];
+    todasParcelas = parcelas || [];
   }
 
-  // 5. Buscar parcelas do mês atual (para a fatura)
-  const inicioMes = new Date(mes.getFullYear(), mes.getMonth(), 1);
-  const fimMes = new Date(mes.getFullYear(), mes.getMonth() + 1, 1);
-  const inicioStr = inicioMes.toISOString().slice(0, 10);
-  const fimStr = fimMes.toISOString().slice(0, 10);
-
-  // 6. Buscar parcelas do próximo mês também
-  const inicioProximoMes = new Date(mes.getFullYear(), mes.getMonth() + 1, 1);
-  const fimProximoMes = new Date(mes.getFullYear(), mes.getMonth() + 2, 1);
-  const inicioProximoStr = inicioProximoMes.toISOString().slice(0, 10);
-  const fimProximoStr = fimProximoMes.toISOString().slice(0, 10);
-
-  let parcelasDoMes: any[] = [];
-  let parcelasProximoMes: any[] = [];
-  
-  if (compraIds.length > 0) {
-    // Buscar parcelas do mês atual
-    const { data: parcelas, error: parcelasError } = await (supabase as any)
-      .from("parcelas_cartao")
-      .select("id, compra_id, valor, paga, mes_referencia")
-      .in("compra_id", compraIds)
-      .gte("mes_referencia", inicioStr)
-      .lt("mes_referencia", fimStr);
-
-    if (parcelasError) {
-      console.error("Erro ao buscar parcelas do mês:", parcelasError);
-    }
-    parcelasDoMes = parcelas || [];
-
-    // Buscar parcelas do próximo mês
-    const { data: parcelasProx, error: parcelasProxError } = await (supabase as any)
-      .from("parcelas_cartao")
-      .select("id, compra_id, valor, paga, mes_referencia")
-      .in("compra_id", compraIds)
-      .gte("mes_referencia", inicioProximoStr)
-      .lt("mes_referencia", fimProximoStr);
-
-    if (parcelasProxError) {
-      console.error("Erro ao buscar parcelas do próximo mês:", parcelasProxError);
-    }
-    parcelasProximoMes = parcelasProx || [];
-  }
-
-  // 7. Criar mapa de compra -> cartão e compra -> responsável
+  // 5. Criar mapa de compra -> cartão e compra -> responsável
   const compraCartaoMap: Record<string, string> = {};
   const compraResponsavelMap: Record<string, string | null> = {};
   (compras || []).forEach((c: any) => {
@@ -157,92 +132,80 @@ export async function listarCartoesComResumo(
     compraResponsavelMap[c.id] = c.responsavel_id;
   });
 
-  // 8. Calcular totais por cartão
-  const limiteUsadoPorCartao: Record<string, number> = {};
-  const faturaMesPorCartao: Record<string, number> = {};
-  const faturaTitularMesPorCartao: Record<string, number> = {};
-  const faturaNaoPagaPorCartao: Record<string, number> = {};
-  const faturaProximoMesPorCartao: Record<string, number> = {};
-  const faturaTitularProximoMesPorCartao: Record<string, number> = {};
-  const temParcelasNoMesPorCartao: Record<string, boolean> = {};
-
-  // Inicializar
-  (cartoes as Cartao[]).forEach((c) => {
-    limiteUsadoPorCartao[c.id] = 0;
-    faturaMesPorCartao[c.id] = 0;
-    faturaTitularMesPorCartao[c.id] = 0;
-    faturaNaoPagaPorCartao[c.id] = 0;
-    faturaProximoMesPorCartao[c.id] = 0;
-    faturaTitularProximoMesPorCartao[c.id] = 0;
-    temParcelasNoMesPorCartao[c.id] = false;
-  });
-
-  // Somar parcelas não pagas (limite usado)
-  todasParcelasNaoPagas.forEach((p: any) => {
-    const cartaoId = compraCartaoMap[p.compra_id];
-    if (cartaoId) {
-      limiteUsadoPorCartao[cartaoId] += Number(p.valor) || 0;
-    }
-  });
-
-  // Somar parcelas do mês (fatura atual) e verificar não pagas
-  parcelasDoMes.forEach((p: any) => {
-    const cartaoId = compraCartaoMap[p.compra_id];
-    const responsavelId = compraResponsavelMap[p.compra_id];
-    if (cartaoId) {
-      faturaMesPorCartao[cartaoId] += Number(p.valor) || 0;
-      temParcelasNoMesPorCartao[cartaoId] = true;
-      
-      // Somar apenas do titular (EU)
-      if (responsavelId === titularId || responsavelId === null) {
-        faturaTitularMesPorCartao[cartaoId] += Number(p.valor) || 0;
-      }
-      
-      if (!p.paga) {
-        faturaNaoPagaPorCartao[cartaoId] += Number(p.valor) || 0;
-      }
-    }
-  });
-
-  // Somar parcelas do próximo mês
-  parcelasProximoMes.forEach((p: any) => {
-    const cartaoId = compraCartaoMap[p.compra_id];
-    const responsavelId = compraResponsavelMap[p.compra_id];
-    if (cartaoId) {
-      faturaProximoMesPorCartao[cartaoId] += Number(p.valor) || 0;
-      
-      // Somar apenas do titular (EU)
-      if (responsavelId === titularId || responsavelId === null) {
-        faturaTitularProximoMesPorCartao[cartaoId] += Number(p.valor) || 0;
-      }
-    }
-  });
-
-  // 9. Montar resultado
+  // 6. Processar cada cartão individualmente (cada um tem seu dia de fechamento)
   return (cartoes as Cartao[]).map((cartao) => {
-    const limiteUsado = limiteUsadoPorCartao[cartao.id] || 0;
-    const limiteDisponivel = Math.max(cartao.limite - limiteUsado, 0);
-    const percentualUsado = cartao.limite > 0 ? (limiteUsado / cartao.limite) * 100 : 0;
-    const faturaAtual = faturaMesPorCartao[cartao.id] || 0;
-    const faturaTitular = faturaTitularMesPorCartao[cartao.id] || 0;
-    const faturaNaoPaga = faturaNaoPagaPorCartao[cartao.id] || 0;
-    const proximaFatura = faturaProximoMesPorCartao[cartao.id] || 0;
-    const proximaFaturaTitular = faturaTitularProximoMesPorCartao[cartao.id] || 0;
-    const temParcelas = temParcelasNoMesPorCartao[cartao.id];
+    // Usar mesReferencia se fornecido, senão calcular baseado no fechamento
+    const mesFaturaAtiva = mesReferencia 
+      ? new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1)
+      : calcularMesFaturaAtiva(cartao.dia_fechamento, hoje);
+    
+    const mesProximo = new Date(mesFaturaAtiva.getFullYear(), mesFaturaAtiva.getMonth() + 1, 1);
 
-    // Verificar se a fatura do mês está toda paga ou não tem parcelas
-    // Considera como "paga" se:
-    // 1. Não há parcelas no mês (nada a pagar) OU
-    // 2. Há parcelas e todas estão pagas
+    // Filtrar parcelas deste cartão
+    const parcelasDoCartao = todasParcelas.filter(
+      (p: any) => compraCartaoMap[p.compra_id] === cartao.id
+    );
+
+    // Calcular limite usado (todas as parcelas não pagas)
+    const limiteUsado = parcelasDoCartao
+      .filter((p: any) => !p.paga)
+      .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
+
+    // Filtrar parcelas do mês da fatura ativa
+    const inicioMesStr = `${mesFaturaAtiva.getFullYear()}-${String(mesFaturaAtiva.getMonth() + 1).padStart(2, "0")}`;
+    const parcelasDoMes = parcelasDoCartao.filter((p: any) => {
+      const [ano, mes] = p.mes_referencia.split("-").map(Number);
+      return ano === mesFaturaAtiva.getFullYear() && mes === mesFaturaAtiva.getMonth() + 1;
+    });
+
+    // Filtrar parcelas do próximo mês
+    const parcelasProximoMes = parcelasDoCartao.filter((p: any) => {
+      const [ano, mes] = p.mes_referencia.split("-").map(Number);
+      return ano === mesProximo.getFullYear() && mes === mesProximo.getMonth() + 1;
+    });
+
+    // Calcular totais do mês ativo
+    const faturaAtual = parcelasDoMes.reduce(
+      (sum: number, p: any) => sum + (Number(p.valor) || 0), 0
+    );
+    
+    const faturaNaoPaga = parcelasDoMes
+      .filter((p: any) => !p.paga)
+      .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
+
+    const faturaTitular = parcelasDoMes
+      .filter((p: any) => {
+        const respId = compraResponsavelMap[p.compra_id];
+        return respId === titularId || respId === null;
+      })
+      .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
+
+    // Calcular totais do próximo mês
+    const proximaFatura = parcelasProximoMes.reduce(
+      (sum: number, p: any) => sum + (Number(p.valor) || 0), 0
+    );
+
+    const proximaFaturaTitular = parcelasProximoMes
+      .filter((p: any) => {
+        const respId = compraResponsavelMap[p.compra_id];
+        return respId === titularId || respId === null;
+      })
+      .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
+
+    // Verificar se a fatura do mês está toda paga
+    const temParcelas = parcelasDoMes.length > 0;
     const faturaAtualPaga = !temParcelas || faturaNaoPaga === 0;
 
-    // Determinar qual mês exibir
+    // Determinar qual mês exibir: avançar se a fatura ativa está paga/vazia
     const mesExibicao = faturaAtualPaga
-      ? new Date(mes.getFullYear(), mes.getMonth() + 1, 1)
-      : mes;
+      ? mesProximo
+      : mesFaturaAtiva;
 
-    // Valor a exibir: apenas do titular (EU) - próxima fatura se atual paga
+    // Valor a exibir: apenas do titular (EU)
     const faturaExibida = faturaAtualPaga ? proximaFaturaTitular : faturaTitular;
+
+    const limiteDisponivel = Math.max(cartao.limite - limiteUsado, 0);
+    const percentualUsado = cartao.limite > 0 ? (limiteUsado / cartao.limite) * 100 : 0;
 
     return {
       ...cartao,
@@ -250,7 +213,7 @@ export async function listarCartoesComResumo(
       limiteDisponivel,
       percentualUsado,
       faturaAtual,
-      faturaDoMes: faturaAtual, // Alias para compatibilidade
+      faturaDoMes: faturaAtual,
       faturaAtualPaga,
       proximaFatura,
       mesExibicao,
