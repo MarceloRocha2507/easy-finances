@@ -1,0 +1,1 @@
+export { MenuCollapsible } from './MenuCollapsible';

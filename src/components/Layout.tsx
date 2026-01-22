@@ -8,6 +8,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAlertasCount } from "@/hooks/useAlertasCount";
 import { useProfile } from "@/hooks/useProfile";
 import { DemoBanner } from "@/components/DemoBanner";
+import { MenuCollapsible } from "@/components/sidebar";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -22,11 +23,6 @@ import {
   Shield,
   Bell,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 const DEMO_EMAIL = "demo@fina.app";
 
@@ -153,11 +149,6 @@ export function Layout({ children }: LayoutProps) {
     return location.pathname === href;
   };
 
-  const isTransacoesActive = location.pathname.startsWith("/transactions");
-  const isCartoesActive = location.pathname.startsWith("/cartoes");
-  const isEconomiaActive = location.pathname.startsWith("/economia");
-  const isRelatoriosActive = location.pathname.startsWith("/reports");
-  const isConfigActive = location.pathname.startsWith("/profile") || location.pathname.startsWith("/configuracoes");
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,161 +197,46 @@ export function Layout({ children }: LayoutProps) {
               </Link>
             ))}
 
-            {/* Menu Transações com submenu */}
-            <Collapsible open={transacoesOpen} onOpenChange={setTransacoesOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
-                    transacoesOpen
-                      ? "border-l-primary bg-secondary/50 text-foreground"
-                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
-                    isTransacoesActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  <transacoesMenu.icon className="h-4 w-4" />
-                  {transacoesMenu.label}
-                </button>
-              </CollapsibleTrigger>
+            {/* Menus com submenu */}
+            <MenuCollapsible
+              icon={transacoesMenu.icon}
+              label={transacoesMenu.label}
+              subItems={transacoesMenu.subItems}
+              basePath="/transactions"
+              open={transacoesOpen}
+              onOpenChange={setTransacoesOpen}
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
-              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-                {transacoesMenu.subItems.map((subItem) => (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive(subItem.href)
-                        ? "bg-secondary text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5" />
-                    {subItem.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
+            <MenuCollapsible
+              icon={cartoesMenu.icon}
+              label={cartoesMenu.label}
+              subItems={cartoesMenu.subItems}
+              basePath="/cartoes"
+              open={cartoesOpen}
+              onOpenChange={setCartoesOpen}
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
-            {/* Menu Cartões com submenu */}
-            <Collapsible open={cartoesOpen} onOpenChange={setCartoesOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
-                    cartoesOpen
-                      ? "border-l-primary bg-secondary/50 text-foreground"
-                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
-                    isCartoesActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  <cartoesMenu.icon className="h-4 w-4" />
-                  {cartoesMenu.label}
-                </button>
-              </CollapsibleTrigger>
+            <MenuCollapsible
+              icon={economiaMenu.icon}
+              label={economiaMenu.label}
+              subItems={economiaMenu.subItems}
+              basePath="/economia"
+              open={economiaOpen}
+              onOpenChange={setEconomiaOpen}
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
-              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-                {cartoesMenu.subItems.map((subItem) => (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive(subItem.href)
-                        ? "bg-secondary text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5" />
-                    {subItem.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Menu Economia com submenu */}
-            <Collapsible open={economiaOpen} onOpenChange={setEconomiaOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
-                    economiaOpen
-                      ? "border-l-primary bg-secondary/50 text-foreground"
-                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
-                    isEconomiaActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  <economiaMenu.icon className="h-4 w-4" />
-                  {economiaMenu.label}
-                </button>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-                {economiaMenu.subItems.map((subItem) => (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive(subItem.href)
-                        ? "bg-secondary text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5" />
-                    {subItem.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Menu Relatórios com submenu */}
-            <Collapsible open={relatoriosOpen} onOpenChange={setRelatoriosOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
-                    relatoriosOpen
-                      ? "border-l-primary bg-secondary/50 text-foreground"
-                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
-                    isRelatoriosActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  <relatoriosMenu.icon className="h-4 w-4" />
-                  {relatoriosMenu.label}
-                </button>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-                {relatoriosMenu.subItems.map((subItem) => (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive(subItem.href)
-                        ? "bg-secondary text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5" />
-                    {subItem.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
+            <MenuCollapsible
+              icon={relatoriosMenu.icon}
+              label={relatoriosMenu.label}
+              subItems={relatoriosMenu.subItems}
+              basePath="/reports"
+              open={relatoriosOpen}
+              onOpenChange={setRelatoriosOpen}
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
             {/* Separador */}
             <div className="my-3 border-t" />
@@ -436,43 +312,15 @@ export function Layout({ children }: LayoutProps) {
             </Link>
 
             {/* Menu Configurações com submenu */}
-            <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
-                    configOpen
-                      ? "border-l-primary bg-secondary/50 text-foreground"
-                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
-                    isConfigActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  <configMenu.icon className="h-4 w-4" />
-                  {configMenu.label}
-                </button>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-                {configMenu.subItems.map((subItem) => (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive(subItem.href)
-                        ? "bg-secondary text-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5" />
-                    {subItem.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
+            <MenuCollapsible
+              icon={configMenu.icon}
+              label={configMenu.label}
+              subItems={configMenu.subItems}
+              basePath={["/profile", "/configuracoes"]}
+              open={configOpen}
+              onOpenChange={setConfigOpen}
+              onItemClick={() => setSidebarOpen(false)}
+            />
 
             <Button
               variant="ghost"
