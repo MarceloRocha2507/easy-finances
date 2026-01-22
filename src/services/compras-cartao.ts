@@ -1157,12 +1157,20 @@ export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao
         }
 
         if (novasParcelas.length > 0) {
+          // Usar upsert com onConflict para evitar erro de duplicata
+          // O índice único idx_parcelas_unique impede duplicatas
           const { error: insertError } = await (supabase as any)
             .from("parcelas_cartao")
-            .insert(novasParcelas);
+            .upsert(novasParcelas, { 
+              onConflict: "compra_id,numero_parcela,mes_referencia",
+              ignoreDuplicates: true 
+            });
 
           if (insertError) {
-            resultado.erros.push(`Erro ao criar parcelas de ${compra.descricao}: ${insertError.message}`);
+            // Ignorar erro de duplicata (código 23505)
+            if (!insertError.code?.includes("23505")) {
+              resultado.erros.push(`Erro ao criar parcelas de ${compra.descricao}: ${insertError.message}`);
+            }
           } else {
             resultado.parcelasRegeneradas += novasParcelas.length;
           }
