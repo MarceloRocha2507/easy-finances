@@ -30,7 +30,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders, RefreshCw, Upload } from "lucide-react";
+import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders, RefreshCw, Upload, History } from "lucide-react";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -58,6 +58,7 @@ const cartoesMenu = {
     { icon: Layers, label: "Parcelamentos", href: "/cartoes/parcelamentos" },
     { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
     { icon: Gauge, label: "Limites", href: "/cartoes/limites" },
+    { icon: History, label: "Auditoria", href: "/cartoes/auditoria" },
   ],
 };
 
