@@ -142,6 +142,9 @@ export function NovaCompraCartaoDialog({
   }, [form.parcelas]);
 
   async function handleSalvar() {
+    // Proteção contra cliques duplos
+    if (loading) return;
+    
     if (!form.descricao.trim()) {
       toast({ title: "Informe a descrição", variant: "destructive" });
       return;
@@ -460,6 +463,7 @@ export function NovaCompraCartaoDialog({
             className="w-full"
             onClick={handleSalvar}
             disabled={loading}
+            aria-disabled={loading}
           >
             {loading ? "Salvando..." : "Registrar compra"}
           </Button>
