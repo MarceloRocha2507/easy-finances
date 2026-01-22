@@ -151,13 +151,22 @@ export function Layout({ children }: LayoutProps) {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Decorative gradient background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b z-50 flex items-center justify-between px-4">
-        <span className="text-base font-semibold text-foreground">Fina</span>
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 glass z-50 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/10">
+          <span className="text-sm font-semibold text-primary">Fina</span>
+        </div>
         <Button
           variant="ghost"
           size="icon"
+          className="hover:glass-hover"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -167,32 +176,41 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-60 bg-card border-r z-40 transition-transform duration-200",
+          "fixed top-0 left-0 h-full w-60 glass z-40 transition-transform duration-300",
           "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-14 flex items-center px-5 border-b">
-            <span className="text-base font-semibold text-foreground">Fina</span>
+          <div className="h-14 flex items-center px-4 border-b border-border/50">
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-primary/10">
+              <span className="text-base font-semibold text-primary">Fina</span>
+            </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-0.5">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {mainMenuItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive(item.href)
-                    ? "bg-secondary text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    ? "glass text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:glass-hover"
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  <item.icon className="h-4 w-4" />
+                </div>
                 {item.label}
               </Link>
             ))}
@@ -239,7 +257,7 @@ export function Layout({ children }: LayoutProps) {
             />
 
             {/* Separador */}
-            <div className="my-3 border-t" />
+            <div className="my-3 border-t border-border/50" />
 
             {/* Link Admin - apenas para admins */}
             {isAdmin && (
@@ -247,32 +265,39 @@ export function Layout({ children }: LayoutProps) {
                 to="/admin"
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive("/admin")
-                    ? "bg-secondary text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    ? "glass text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:glass-hover"
                 )}
               >
-                <Shield className="h-4 w-4" />
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+                  isActive("/admin")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  <Shield className="h-4 w-4" />
+                </div>
                 Admin
               </Link>
             )}
           </nav>
 
           {/* User section - Perfil + Configurações + Logout */}
-          <div className="p-3 border-t space-y-1">
+          <div className="p-3 border-t border-border/50 space-y-1">
             {/* Link para Perfil com Avatar */}
             <Link
               to="/profile"
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 hover:translate-x-0.5",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
                 isActive("/profile")
-                  ? "bg-secondary"
-                  : "hover:bg-secondary/50"
+                  ? "glass"
+                  : "hover:glass-hover"
               )}
             >
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-9 w-9 ring-2 ring-primary/20">
                 <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                   {getUserInitials()}
@@ -289,14 +314,21 @@ export function Layout({ children }: LayoutProps) {
               to="/notificacoes"
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 hover:translate-x-0.5",
+                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                 isActive("/notificacoes")
-                  ? "bg-secondary text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  ? "glass text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:glass-hover"
               )}
             >
               <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4" />
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+                  isActive("/notificacoes")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  <Bell className="h-4 w-4" />
+                </div>
                 Notificações
               </div>
               {alertasCount > 0 && (
@@ -324,10 +356,12 @@ export function Layout({ children }: LayoutProps) {
 
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground mt-1"
+              className="w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm text-muted-foreground hover:text-foreground hover:glass-hover rounded-xl mt-1"
               onClick={() => signOut()}
             >
-              <LogOut className="h-4 w-4" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground">
+                <LogOut className="h-4 w-4" />
+              </div>
               Sair
             </Button>
           </div>
