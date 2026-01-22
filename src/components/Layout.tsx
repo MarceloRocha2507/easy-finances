@@ -68,7 +68,6 @@ const economiaMenu = {
   subItems: [
     { icon: PiggyBank, label: "Visão Geral", href: "/economia" },
     { icon: Target, label: "Metas", href: "/economia/metas" },
-    { icon: TrendingUp, label: "Investimentos", href: "/economia/investimentos" },
   ],
 };
 
