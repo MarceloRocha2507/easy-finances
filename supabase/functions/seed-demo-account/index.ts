@@ -270,7 +270,10 @@ Deno.serve(async (req) => {
           tipo_recorrencia: 'normal',
         });
       }
-      await supabaseAdmin.from('parcelas_cartao').insert(parcelasCelular);
+      await supabaseAdmin.from('parcelas_cartao').upsert(parcelasCelular, {
+        onConflict: 'compra_id,numero_parcela,mes_referencia',
+        ignoreDuplicates: true
+      });
     }
 
     // Passagem parcelada em 6x no Inter
@@ -305,7 +308,10 @@ Deno.serve(async (req) => {
           tipo_recorrencia: 'normal',
         });
       }
-      await supabaseAdmin.from('parcelas_cartao').insert(parcelasPassagem);
+      await supabaseAdmin.from('parcelas_cartao').upsert(parcelasPassagem, {
+        onConflict: 'compra_id,numero_parcela,mes_referencia',
+        ignoreDuplicates: true
+      });
     }
 
     // Compras avulsas recentes (à vista)
@@ -338,7 +344,7 @@ Deno.serve(async (req) => {
 
       // Criar parcela única
       if (compraAvulsa) {
-        await supabaseAdmin.from('parcelas_cartao').insert({
+        await supabaseAdmin.from('parcelas_cartao').upsert({
           compra_id: compraAvulsa.id,
           mes_referencia: mesAtual,
           numero_parcela: 1,
@@ -346,6 +352,9 @@ Deno.serve(async (req) => {
           valor: c.valor,
           paga: false,
           tipo_recorrencia: 'normal',
+        }, {
+          onConflict: 'compra_id,numero_parcela,mes_referencia',
+          ignoreDuplicates: true
         });
       }
     }

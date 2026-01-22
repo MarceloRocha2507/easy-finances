@@ -110,9 +110,12 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
 
   const { error: parcelasError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert(parcelasData);
+    .upsert(parcelasData, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
+    });
 
-  if (parcelasError) throw parcelasError;
+  if (parcelasError && !parcelasError.code?.includes("23505")) throw parcelasError;
 }
 
 /* ======================================================
@@ -518,9 +521,12 @@ export async function editarCompra(
     if (novasParcelas.length > 0) {
       const { error: insertError } = await (supabase as any)
         .from("parcelas_cartao")
-        .insert(novasParcelas);
+        .upsert(novasParcelas, {
+          onConflict: "compra_id,numero_parcela,mes_referencia",
+          ignoreDuplicates: true
+        });
 
-      if (insertError) throw insertError;
+      if (insertError && !insertError.code?.includes("23505")) throw insertError;
     }
   }
 }
@@ -858,9 +864,12 @@ export async function gerarProximasParcelasFixas(
 
   const { error: insertError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert(novasParcelas);
+    .upsert(novasParcelas, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
+    });
 
-  if (insertError) {
+  if (insertError && !insertError.code?.includes("23505")) {
     throw new Error("Erro ao gerar novas parcelas");
   }
 
@@ -927,7 +936,7 @@ export async function criarAjusteFatura(input: AjusteFaturaInput): Promise<void>
   // 2. Criar a parcela de ajuste
   const { error: parcelaError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert({
+    .upsert({
       compra_id: compra.id,
       numero_parcela: 1,
       total_parcelas: 1,
@@ -935,9 +944,12 @@ export async function criarAjusteFatura(input: AjusteFaturaInput): Promise<void>
       mes_referencia: mesRef.toISOString().split("T")[0],
       paga: false,
       tipo_recorrencia: "normal",
+    }, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
     });
 
-  if (parcelaError) throw parcelaError;
+  if (parcelaError && !parcelaError.code?.includes("23505")) throw parcelaError;
 }
 
 /* ======================================================
@@ -1058,9 +1070,12 @@ export async function estornarCompra(input: EstornoInput): Promise<void> {
 
   const { error: insertError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert(parcelasData);
+    .upsert(parcelasData, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
+    });
 
-  if (insertError) throw insertError;
+  if (insertError && !insertError.code?.includes("23505")) throw insertError;
 }
 
 /* ======================================================
