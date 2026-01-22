@@ -49,6 +49,12 @@
     --sidebar-accent-foreground: 220 15% 15%;
     --sidebar-border: 220 13% 90%;
     --sidebar-ring: 215 25% 27%;
+
+    /* Glass effect variables */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.4;
+    --glass-shadow: 0 8px 32px hsl(220 15% 15% / 0.06);
+    --glass-hover: 0 0% 100% / 0.5;
   }
 
   .dark {
@@ -93,6 +99,12 @@
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 220 15% 16%;
     --sidebar-ring: 215 25% 60%;
+
+    /* Glass effect variables - dark mode */
+    --glass-bg: 220 15% 10% / 0.75;
+    --glass-border: 0 0% 100% / 0.08;
+    --glass-shadow: 0 8px 32px hsl(0 0% 0% / 0.3);
+    --glass-hover: 0 0% 100% / 0.08;
   }
 }
 
@@ -132,5 +144,18 @@
   /* Value display with transition */
   .value-display {
     @apply transition-colors duration-200;
+  }
+
+  /* Glass effect utility */
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-hover {
+    background: hsl(var(--glass-hover));
   }
 }
