@@ -140,6 +140,7 @@ export async function listarParcelasDaFatura(
       valor,
       mes_referencia,
       paga,
+      created_at,
       compra:compras_cartao(
         id,
         descricao,
@@ -148,12 +149,14 @@ export async function listarParcelasDaFatura(
         tipo_lancamento,
         categoria_id,
         responsavel_id,
+        created_at,
         categoria:categories(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
       )
     `)
     .gte("mes_referencia", primeiroDia)
-    .lte("mes_referencia", ultimoDia);
+    .lte("mes_referencia", ultimoDia)
+    .order("created_at", { ascending: true });
 
   if (parcelasError) throw parcelasError;
   if (!parcelas) return [];
