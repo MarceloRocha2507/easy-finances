@@ -95,26 +95,43 @@ export function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="pl-4 mt-0.5 space-y-0.5">
-        {subItems.map((subItem) => (
-          <Link
-            key={subItem.href}
-            to={subItem.href}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors",
-              isItemActive(subItem.href)
-                ? "bg-secondary text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <subItem.icon className="h-3.5 w-3.5" />
-              {subItem.label}
+      <CollapsibleContent className="relative ml-[18px] mt-1 border-l border-border">
+        {subItems.map((subItem, index) => {
+          const isLast = index === subItems.length - 1;
+          
+          return (
+            <div key={subItem.href} className="relative">
+              {/* Linha horizontal conectora */}
+              <div 
+                className={cn(
+                  "absolute left-0 top-1/2 w-3 h-px bg-border",
+                  isLast && "rounded-bl"
+                )} 
+              />
+              {/* Esconde a linha vertical após o último item */}
+              {isLast && (
+                <div className="absolute left-[-1px] top-1/2 bottom-0 w-px bg-background" />
+              )}
+              
+              <Link
+                to={subItem.href}
+                onClick={onItemClick}
+                className={cn(
+                  "ml-3 flex items-center justify-between pl-2 pr-3 py-1.5 rounded-md text-sm transition-colors",
+                  isItemActive(subItem.href)
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <subItem.icon className="h-3.5 w-3.5" />
+                  {subItem.label}
+                </div>
+                {subItem.badge && <MenuBadge {...subItem.badge} />}
+              </Link>
             </div>
-            {subItem.badge && <MenuBadge {...subItem.badge} />}
-          </Link>
-        ))}
+          );
+        })}
       </CollapsibleContent>
     </Collapsible>
   );
