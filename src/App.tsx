@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -73,7 +74,7 @@ const App = () => (
               path="/transactions/recorrentes"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <RecorrentesPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -84,7 +85,7 @@ const App = () => (
               path="/transactions/importar"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <ImportarPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -122,7 +123,7 @@ const App = () => (
               path="/cartoes/faturas"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <FaturasPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -133,7 +134,7 @@ const App = () => (
               path="/cartoes/parcelamentos"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <ParcelamentosPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -153,7 +154,7 @@ const App = () => (
               path="/cartoes/limites"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <LimitesPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -176,7 +177,7 @@ const App = () => (
               path="/economia/metas"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <MetasPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -187,7 +188,7 @@ const App = () => (
               path="/economia/investimentos"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <InvestimentosPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -207,7 +208,7 @@ const App = () => (
               path="/reports/categorias"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <RelatorioCategorias />
                   </Suspense>
                 </ProtectedRoute>
@@ -218,7 +219,7 @@ const App = () => (
               path="/reports/exportar"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <Exportacoes />
                   </Suspense>
                 </ProtectedRoute>
@@ -238,7 +239,7 @@ const App = () => (
               path="/profile/preferencias"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <PreferenciasPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -249,7 +250,7 @@ const App = () => (
               path="/profile/seguranca"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div>Carregando...</div>}>
+                  <Suspense fallback={<LoadingScreen />}>
                     <SegurancaPage />
                   </Suspense>
                 </ProtectedRoute>
