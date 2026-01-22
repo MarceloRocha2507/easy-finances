@@ -19,8 +19,6 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown,
-  ChevronRight,
   Shield,
   Bell,
 } from "lucide-react";
@@ -213,21 +211,17 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+                    transacoesOpen
+                      ? "border-l-primary bg-secondary/50 text-foreground"
+                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
                     isTransacoesActive
-                      ? "bg-secondary/50 text-foreground"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <transacoesMenu.icon className="h-4 w-4" />
-                    {transacoesMenu.label}
-                  </div>
-                  {transacoesOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
+                  <transacoesMenu.icon className="h-4 w-4" />
+                  {transacoesMenu.label}
                 </button>
               </CollapsibleTrigger>
 
@@ -256,21 +250,17 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+                    cartoesOpen
+                      ? "border-l-primary bg-secondary/50 text-foreground"
+                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
                     isCartoesActive
-                      ? "bg-secondary/50 text-foreground"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <cartoesMenu.icon className="h-4 w-4" />
-                    {cartoesMenu.label}
-                  </div>
-                  {cartoesOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
+                  <cartoesMenu.icon className="h-4 w-4" />
+                  {cartoesMenu.label}
                 </button>
               </CollapsibleTrigger>
 
@@ -299,21 +289,17 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+                    economiaOpen
+                      ? "border-l-primary bg-secondary/50 text-foreground"
+                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
                     isEconomiaActive
-                      ? "bg-secondary/50 text-foreground"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <economiaMenu.icon className="h-4 w-4" />
-                    {economiaMenu.label}
-                  </div>
-                  {economiaOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
+                  <economiaMenu.icon className="h-4 w-4" />
+                  {economiaMenu.label}
                 </button>
               </CollapsibleTrigger>
 
@@ -342,21 +328,17 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+                    relatoriosOpen
+                      ? "border-l-primary bg-secondary/50 text-foreground"
+                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
                     isRelatoriosActive
-                      ? "bg-secondary/50 text-foreground"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <relatoriosMenu.icon className="h-4 w-4" />
-                    {relatoriosMenu.label}
-                  </div>
-                  {relatoriosOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
+                  <relatoriosMenu.icon className="h-4 w-4" />
+                  {relatoriosMenu.label}
                 </button>
               </CollapsibleTrigger>
 
@@ -458,21 +440,17 @@ export function Layout({ children }: LayoutProps) {
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    "w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all border-l-2",
+                    configOpen
+                      ? "border-l-primary bg-secondary/50 text-foreground"
+                      : "border-l-muted-foreground/30 hover:border-l-muted-foreground/50",
                     isConfigActive
-                      ? "bg-secondary/50 text-foreground"
+                      ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <configMenu.icon className="h-4 w-4" />
-                    {configMenu.label}
-                  </div>
-                  {configOpen ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
+                  <configMenu.icon className="h-4 w-4" />
+                  {configMenu.label}
                 </button>
               </CollapsibleTrigger>
 
