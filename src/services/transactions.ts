@@ -246,9 +246,12 @@ export async function criarCompraParcelada(data: {
 
   const { error: parcelasError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert(parcelasPayload);
+    .upsert(parcelasPayload, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
+    });
 
-  if (parcelasError) throw parcelasError;
+  if (parcelasError && !parcelasError.code?.includes("23505")) throw parcelasError;
 }
 
 /* ======================================================

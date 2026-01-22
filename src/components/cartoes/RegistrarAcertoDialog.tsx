@@ -120,6 +120,9 @@ export function RegistrarAcertoDialog({
   }, [quitarTotal, dadosResponsavel.valorRestante]);
 
   const handleSalvar = async () => {
+    // Proteção contra cliques duplos
+    if (loading) return;
+    
     const valor = parseFloat(valorPago.replace(",", "."));
     
     if (isNaN(valor) || valor <= 0) {

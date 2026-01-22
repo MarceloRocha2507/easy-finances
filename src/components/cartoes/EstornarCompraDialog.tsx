@@ -86,6 +86,9 @@ export function EstornarCompraDialog({
 
   async function onSubmit(data: EstornoFormData) {
     if (!parcela) return;
+    
+    // Proteção contra cliques duplos
+    if (loading) return;
 
     try {
       setLoading(true);

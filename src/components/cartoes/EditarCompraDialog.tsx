@@ -192,6 +192,9 @@ export function EditarCompraDialog({
   ====================================================== */
   async function salvar() {
     if (!parcela) return;
+    
+    // Proteção contra cliques duplos
+    if (salvando) return;
 
     setSalvando(true);
     try {

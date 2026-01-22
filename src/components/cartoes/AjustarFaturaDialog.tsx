@@ -85,6 +85,9 @@ export function AjustarFaturaDialog({
   }
 
   async function onSubmit(data: AjusteFormData) {
+    // Proteção contra cliques duplos
+    if (loading) return;
+    
     try {
       setLoading(true);
 
