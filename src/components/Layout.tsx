@@ -54,7 +54,6 @@ const cartoesMenu = {
   href: "/cartoes",
   subItems: [
     { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-    { icon: Receipt, label: "Faturas", href: "/cartoes/faturas" },
     { icon: Layers, label: "Parcelamentos", href: "/cartoes/parcelamentos" },
     { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
     { icon: Gauge, label: "Limites", href: "/cartoes/limites" },
