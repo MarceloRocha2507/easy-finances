@@ -110,7 +110,10 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
 
   const { error: parcelasError } = await (supabase as any)
     .from("parcelas_cartao")
-    .insert(parcelasData);
+    .upsert(parcelasData, {
+      onConflict: "compra_id,numero_parcela,mes_referencia",
+      ignoreDuplicates: true
+    });
 
   if (parcelasError && !parcelasError.code?.includes("23505")) throw parcelasError;
 }
