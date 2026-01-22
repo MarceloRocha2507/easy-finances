@@ -30,6 +30,7 @@ import {
 
 import {
   ArrowLeft,
+  CalendarIcon,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -44,6 +45,13 @@ import {
   Scale,
   RotateCcw,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { useCategories } from "@/hooks/useCategories";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -87,12 +95,18 @@ interface Filtros {
   busca: string;
   status: "todos" | "pendente" | "pago";
   responsavelId: string | null;
+  categoriaId: string | null;
+  dataInicio: Date | null;
+  dataFim: Date | null;
 }
 
 const filtrosIniciais: Filtros = {
   busca: "",
   status: "todos",
   responsavelId: null,
+  categoriaId: null,
+  dataInicio: null,
+  dataFim: null,
 };
 
 /* ======================================================
@@ -125,6 +139,7 @@ export default function DespesasCartao() {
 
   // Hooks
   const { data: responsaveis = [] } = useResponsaveis();
+  const { data: categories = [] } = useCategories();
 
   /* ======================================================
      Carregar cartão
@@ -209,6 +224,24 @@ export default function DespesasCartao() {
         if (p.responsavel_id !== filtros.responsavelId) return false;
       }
 
+      // Filtro de categoria
+      if (filtros.categoriaId && p.categoria_id !== filtros.categoriaId) {
+        return false;
+      }
+
+      // Filtro de data de compra
+      if (filtros.dataInicio || filtros.dataFim) {
+        const dataCompra = p.data_compra ? new Date(p.data_compra + 'T00:00:00') : null;
+        if (!dataCompra) return false;
+        
+        if (filtros.dataInicio && dataCompra < filtros.dataInicio) return false;
+        if (filtros.dataFim) {
+          const fimDoDia = new Date(filtros.dataFim);
+          fimDoDia.setHours(23, 59, 59, 999);
+          if (dataCompra > fimDoDia) return false;
+        }
+      }
+
       return true;
     });
   }, [parcelas, filtros]);
@@ -239,7 +272,10 @@ export default function DespesasCartao() {
   const temFiltrosAtivos =
     filtros.busca !== "" ||
     filtros.status !== "todos" ||
-    filtros.responsavelId !== null;
+    filtros.responsavelId !== null ||
+    filtros.categoriaId !== null ||
+    filtros.dataInicio !== null ||
+    filtros.dataFim !== null;
 
   if (!id) return null;
 
@@ -396,6 +432,71 @@ export default function DespesasCartao() {
                 <SelectItem value="pago">Pagos</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Filtro de Categoria */}
+            <Select
+              value={filtros.categoriaId || "todas"}
+              onValueChange={(v) =>
+                setFiltros((f) => ({
+                  ...f,
+                  categoriaId: v === "todas" ? null : v,
+                }))
+              }
+            >
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas categorias</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      {cat.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Filtro de Data */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {filtros.dataInicio || filtros.dataFim ? (
+                    <span className="text-xs">
+                      {filtros.dataInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'} 
+                      {' - '}
+                      {filtros.dataFim?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'}
+                    </span>
+                  ) : (
+                    <span className="text-xs">Período</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{
+                    from: filtros.dataInicio || undefined,
+                    to: filtros.dataFim || undefined,
+                  }}
+                  onSelect={(range) => {
+                    setFiltros((f) => ({
+                      ...f,
+                      dataInicio: range?.from || null,
+                      dataFim: range?.to || null,
+                    }));
+                  }}
+                  className="pointer-events-auto"
+                  numberOfMonths={1}
+                />
+              </PopoverContent>
+            </Popover>
 
             {temFiltrosAtivos && (
               <Button
