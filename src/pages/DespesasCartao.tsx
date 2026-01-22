@@ -546,11 +546,11 @@ export default function DespesasCartao() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead className="hidden lg:table-cell">
+                  <TableHead className="hidden lg:table-cell p-0">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 gap-1 -ml-3 hover:bg-accent"
+                      className="h-full w-full justify-start gap-1 px-3 font-medium hover:bg-accent"
                       onClick={() => {
                         setOrdemData((prev) => 
                           prev === null ? 'asc' : 
