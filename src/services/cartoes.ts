@@ -230,8 +230,11 @@ export async function listarCartoesComResumo(
     const proximaFaturaTitular = faturaTitularProximoMesPorCartao[cartao.id] || 0;
     const temParcelas = temParcelasNoMesPorCartao[cartao.id];
 
-    // Verificar se a fatura do mês está toda paga
-    const faturaAtualPaga = temParcelas && faturaNaoPaga === 0;
+    // Verificar se a fatura do mês está toda paga ou não tem parcelas
+    // Considera como "paga" se:
+    // 1. Não há parcelas no mês (nada a pagar) OU
+    // 2. Há parcelas e todas estão pagas
+    const faturaAtualPaga = !temParcelas || faturaNaoPaga === 0;
 
     // Determinar qual mês exibir
     const mesExibicao = faturaAtualPaga
