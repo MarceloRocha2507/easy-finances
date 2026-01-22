@@ -30,6 +30,9 @@ import {
 
 import {
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   CalendarIcon,
   ChevronLeft,
   ChevronRight,
@@ -129,6 +132,10 @@ export default function DespesasCartao() {
   // Filtros
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciais);
 
+  // Ordenação
+  type OrdemData = 'asc' | 'desc' | null;
+  const [ordemData, setOrdemData] = useState<OrdemData>(null);
+
   // Dialogs
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
@@ -199,7 +206,7 @@ export default function DespesasCartao() {
   ====================================================== */
 
   const parcelasFiltradas = useMemo(() => {
-    return parcelas.filter((p) => {
+    let resultado = parcelas.filter((p) => {
       if (filtros.busca) {
         const termoBusca = filtros.busca.toLowerCase().trim();
         
@@ -244,7 +251,18 @@ export default function DespesasCartao() {
 
       return true;
     });
-  }, [parcelas, filtros]);
+
+    // Ordenar por data se ativo
+    if (ordemData) {
+      resultado = [...resultado].sort((a, b) => {
+        const dataA = a.data_compra ? new Date(a.data_compra + 'T00:00:00').getTime() : 0;
+        const dataB = b.data_compra ? new Date(b.data_compra + 'T00:00:00').getTime() : 0;
+        return ordemData === 'asc' ? dataA - dataB : dataB - dataA;
+      });
+    }
+
+    return resultado;
+  }, [parcelas, filtros, ordemData]);
 
   /* ======================================================
      Totais
@@ -528,7 +546,24 @@ export default function DespesasCartao() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead className="hidden lg:table-cell">Data</TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 -ml-3 hover:bg-accent"
+                      onClick={() => {
+                        setOrdemData((prev) => 
+                          prev === null ? 'asc' : 
+                          prev === 'asc' ? 'desc' : null
+                        );
+                      }}
+                    >
+                      Data
+                      {ordemData === null && <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />}
+                      {ordemData === 'asc' && <ArrowUp className="h-3.5 w-3.5" />}
+                      {ordemData === 'desc' && <ArrowDown className="h-3.5 w-3.5" />}
+                    </Button>
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                   <TableHead className="hidden md:table-cell">Responsável</TableHead>
                   <TableHead className="text-center w-20">Parcela</TableHead>
