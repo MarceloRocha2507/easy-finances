@@ -1,123 +1,65 @@
 
-## Plano: Criar Compras Parceladas Completas na Importação
+Objetivo
+- Fazer com que compras parceladas importadas (ex: “Parcela 4/8”) gerem todas as parcelas futuras automaticamente (4/8, 5/8, 6/8...) e não apenas 1 parcela no mês atual.
 
-### O Problema
-Quando o usuário importa uma linha como:
-```
-2026-01-05,Nortmotos - Parcela 4/8,175.00 eu
-```
+Diagnóstico (por que “não está parcelando” mesmo com mês correto)
+- A criação de parcelas está correta no serviço `criarCompraCartao()` (ele cria do `parcelaInicial` até `parcelas`).
+- O problema está antes, no parsing do texto em `parseLinhasCompra()`:
+  - Para evitar o bug do valor “8,175.00”, foi adicionado um regex que captura `X/Y` junto com o trecho final (`4/8,175.00 eu`).
+  - Depois o código remove `matchFinal[0]` do final para extrair a descrição:
+    - Isso remove também o `4/8` da descrição.
+  - Resultado:
+    - A descrição vira algo como “Nortmotos - Parcela” (sem “4/8”).
+    - A função `detectarParcela()` não encontra mais `4/8`, então seta `tipoLancamento="unica"`, `parcelas=1`, `parcelaInicial=1`.
+    - A importação cria apenas 1 parcela.
 
-O sistema está passando:
-- `valorTotal: 175.00` (valor da parcela individual)
-- `parcelas: 8`
-- `parcelaInicial: 4`
+Evidência no banco (ambiente de teste)
+- Existem compras como “Nortmotos - Parcela” com `parcelas=1` e `parcela_inicial=1`, confirmando que o “4/8” foi removido antes da detecção.
 
-Mas a função `criarCompraCartao` espera:
-- `valorTotal: 1400.00` (valor TOTAL da compra = 175 × 8)
+Mudanças propostas (código)
+1) Ajustar o parsing do “valor + responsável” para NÃO consumir o `X/Y`
+Arquivo: `src/services/importar-compras-cartao.ts`
+Trecho: bloco do `matchFinal` dentro de `parseLinhasCompra()`
 
-Isso faz com que cada parcela criada tenha valor de `1400 / 8 = 175` ✓, mas o registro da compra fica com `valor_total: 175` (incorreto).
+- Substituir a abordagem atual (que inclui `\d+/\d+` no match) por um regex principal que:
+  - Exige delimitador antes do valor (vírgula ou ponto-e-vírgula), evitando o bug do “8,175.00”
+  - Captura o valor com `[\d.,]+` (suporta `175.00`, `102,25`, `1.234,56`)
+  - Captura responsável como “último token” com `([^\s]+)` (mais robusto que `(\w+)`, pois aceita acentos)
 
-### A Solução
-Calcular o `valorTotal` corretamente na importação:
+Exemplo de regex principal:
+- `[,;]\s*([\d.,]+)\s+([^\s]+)\s*$`
 
-```
-valorTotal = valorParcela × totalParcelas
-```
+2) Manter os fallbacks existentes
+- Continuar com fallback “se não tiver vírgula/; antes do valor”:
+  - `\s([\d.,]+)\s+([^\s]+)\s*$`
+- Isso garante que formatos sem vírgula antes do valor continuem funcionando.
 
-Para "Parcela 4/8" com valor 175:
-- `valorTotal = 175 × 8 = 1400`
+3) Extrair a descrição sem usar “length - matchFinal[0].length” quando possível
+- Em vez de remover o final por comprimento (que depende do conteúdo do match), preferir:
+  - `resto = resto.slice(0, matchFinal.index).trim()`
+- E manter fallback seguro caso `index` venha `undefined`:
+  - `const idx = matchFinal.index ?? (resto.length - matchFinal[0].length);`
+  - `resto = resto.slice(0, idx).trim();`
+- Assim, a descrição mantém “Parcela 4/8” intacto e `detectarParcela()` volta a funcionar.
 
-### Alteração no Arquivo
+Como validar (passo a passo no app)
+1) Ir em “Importar Compras” e colar uma linha como:
+   - `2026-01-05,Nortmotos - Parcela 4/8,175.00 eu`
+2) Clicar “Processar dados”
+3) Conferir no preview (coluna “Tipo”) que aparece o badge `4/8` (e não “Única”).
+4) Importar
+5) Ir em “Despesas” do cartão e navegar os meses seguintes:
+   - No mês da fatura base deve aparecer `4/8`
+   - Nos meses seguintes devem aparecer `5/8`, `6/8`, etc.
 
-**Arquivo:** `src/services/importar-compras-cartao.ts`
+Observação importante (para seus dados atuais)
+- Como algumas importações anteriores foram criadas como compra única (`parcelas=1`), elas não vão “virar parceladas” automaticamente.
+- Caminho mais simples: usar a opção já existente de “Excluir fatura do mês” (para o mês importado) e reimportar após essa correção.
 
-**Mudança na função `importarComprasEmLote` (linhas 390-401):**
+Riscos e cuidados
+- O regex novo foi desenhado para aceitar valores com vírgula/ponto e milhares, mas sempre exigindo um delimitador antes do valor (ou caindo no fallback por espaço).
+- A captura do responsável como “última palavra” continua igual, só fica mais permissiva (aceita caracteres fora de `\w`).
 
-```typescript
-// ANTES (bug):
-const input: CompraCartaoInput = {
-  cartaoId,
-  descricao: compra.descricao,
-  valorTotal: compra.valor,  // ← valor da parcela
-  parcelas: compra.parcelas,
-  parcelaInicial: compra.parcelaInicial,
-  // ...
-};
-
-// DEPOIS (corrigido):
-// Para compras parceladas, calcular o valor total
-// valorTotal = valorDaParcela × totalDeParcelas
-const valorTotal = compra.tipoLancamento === "parcelada" 
-  ? compra.valor * compra.parcelas 
-  : compra.valor;
-
-const input: CompraCartaoInput = {
-  cartaoId,
-  descricao: compra.descricao,
-  valorTotal: valorTotal,  // ← agora é o valor total correto
-  parcelas: compra.parcelas,
-  parcelaInicial: compra.parcelaInicial,
-  // ...
-};
-```
-
-### Exemplo Prático
-
-| Linha CSV | Valor no CSV | Tipo | Cálculo | valorTotal |
-|-----------|--------------|------|---------|------------|
-| `Nortmotos - Parcela 4/8,175.00 eu` | 175.00 | parcelada | 175 × 8 | 1400.00 |
-| `IOF de compra internacional,0.16 eu` | 0.16 | unica | 0.16 × 1 | 0.16 |
-| `Anthropic,10.41 eu` | 10.41 | unica | 10.41 × 1 | 10.41 |
-
-### Comportamento Após a Correção
-
-Para `Nortmotos - Parcela 4/8,175.00 eu`:
-
-1. **Compra criada:**
-   - `descricao: "Nortmotos - Parcela 4/8"`
-   - `valor_total: 1400.00`
-   - `parcelas: 8`
-   - `parcela_inicial: 4`
-
-2. **Parcelas criadas (5 parcelas, da 4 até a 8):**
-   | Parcela | Valor | Mês Referência |
-   |---------|-------|----------------|
-   | 4/8 | R$ 175 | 2026-02 (fev) |
-   | 5/8 | R$ 175 | 2026-03 (mar) |
-   | 6/8 | R$ 175 | 2026-04 (abr) |
-   | 7/8 | R$ 175 | 2026-05 (mai) |
-   | 8/8 | R$ 175 | 2026-06 (jun) |
-
-### Resumo das Alterações
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/services/importar-compras-cartao.ts` | Calcular `valorTotal` multiplicando o valor da parcela pelo total de parcelas para compras parceladas |
-
----
-
-### Seção Técnica
-
-**Código final da correção:**
-
-```typescript
-// Em importarComprasEmLote, antes de criar o input:
-
-// Para compras parceladas, o CSV mostra o valor de UMA parcela
-// Precisamos calcular o valor total da compra
-const valorTotal = compra.tipoLancamento === "parcelada" 
-  ? compra.valor * compra.parcelas 
-  : compra.valor;
-
-const input: CompraCartaoInput = {
-  cartaoId,
-  descricao: compra.descricao,
-  valorTotal,
-  parcelas: compra.parcelas,
-  parcelaInicial: compra.parcelaInicial,
-  mesFatura: new Date(compra.mesFatura + "-01T12:00:00"),
-  tipoLancamento: compra.tipoLancamento,
-  dataCompra: compra.dataCompra,
-  responsavelId: compra.responsavelId,
-};
-```
+Entrega
+- 1 alteração principal em `src/services/importar-compras-cartao.ts` no bloco de parsing final.
+- Sem mudanças de banco de dados.
