@@ -54,11 +54,11 @@ import {
   X,
   FileText,
   Wallet,
-  User,
   ExternalLink,
   Scale,
   Settings,
   RotateCcw,
+  Upload,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
@@ -301,6 +301,24 @@ export function DetalhesCartaoDialog({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Ajustar fatura</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8" 
+                        onClick={() => {
+                          onOpenChange(false);
+                          navigate(`/cartoes/${cartao.id}/importar`);
+                        }}
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Importar compras</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <Button size="sm" className="h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
