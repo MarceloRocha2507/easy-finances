@@ -58,11 +58,27 @@ export function NovaCompraCartaoDialog({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
 
-  // Gerar opções de mês da fatura (próximos 12 meses)
+  // Calcular mês da fatura baseado na data da compra e dia de fechamento
+  function calcularMesFatura(dataCompra: Date, diaFechamento: number): string {
+    const diaCompra = dataCompra.getDate();
+    const mesCompra = dataCompra.getMonth();
+    const anoCompra = dataCompra.getFullYear();
+
+    if (diaCompra >= diaFechamento) {
+      // Compra após o fechamento: vai para a fatura do mês atual
+      return format(new Date(anoCompra, mesCompra, 1), "yyyy-MM");
+    } else {
+      // Compra antes do fechamento: vai para a fatura do mês anterior
+      return format(new Date(anoCompra, mesCompra - 1, 1), "yyyy-MM");
+    }
+  }
+
+  // Gerar opções de mês da fatura (6 meses anteriores + próximos 12 meses)
   const opcoesMesFatura = useMemo(() => {
     const hoje = new Date();
     const meses = [];
-    for (let i = 0; i < 12; i++) {
+    // Incluir 6 meses anteriores para cobrir compras passadas
+    for (let i = -6; i < 12; i++) {
       const mes = addMonths(hoje, i);
       meses.push({
         value: format(mes, "yyyy-MM"),
@@ -106,22 +122,38 @@ export function NovaCompraCartaoDialog({
     }
   }, [titularData]);
 
-  // Reset form quando abrir
+  // Reset form quando abrir - calcular mês da fatura com base na data atual e dia de fechamento
   useEffect(() => {
     if (open) {
+      const hoje = new Date();
+      const mesFaturaCalculado = calcularMesFatura(hoje, cartao.dia_fechamento);
+      
       setForm({
         descricao: "",
         valor: "",
         tipoLancamento: "unica",
         parcelas: "2",
         parcelaInicial: "1",
-        mesFatura: opcoesMesFatura[0]?.value || "",
-        dataCompra: new Date().toISOString().split("T")[0],
+        mesFatura: mesFaturaCalculado,
+        dataCompra: hoje.toISOString().split("T")[0],
         categoriaId: "",
         responsavelId: titularData?.id || "",
       });
     }
-  }, [open, titularData, opcoesMesFatura]);
+  }, [open, titularData, cartao.dia_fechamento]);
+
+  // Recalcular mês da fatura automaticamente quando a data da compra mudar
+  useEffect(() => {
+    if (form.dataCompra && open) {
+      const dataCompra = new Date(form.dataCompra + "T12:00:00"); // T12:00:00 evita problemas de timezone
+      const novoMesFatura = calcularMesFatura(dataCompra, cartao.dia_fechamento);
+      
+      // Só atualizar se for diferente (evitar loop infinito)
+      if (form.mesFatura !== novoMesFatura) {
+        setForm(f => ({ ...f, mesFatura: novoMesFatura }));
+      }
+    }
+  }, [form.dataCompra, cartao.dia_fechamento, open]);
 
   // Gerar opções de parcela inicial baseado no número de parcelas
   const opcoesParcelaInicial = useMemo(() => {
