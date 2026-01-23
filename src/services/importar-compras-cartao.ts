@@ -35,18 +35,26 @@ export interface ResultadoImportacao {
 
 /**
  * Calcular o mês da fatura baseado na data da compra e dia de fechamento
+ * 
+ * Lógica: A fatura de um mês inclui compras feitas desde o dia do fechamento
+ * do mês anterior até o dia anterior ao fechamento do mês atual.
+ * 
+ * Exemplo com fechamento dia 5:
+ * - Compra em 04/jan → fatura de janeiro (paga em fevereiro)
+ * - Compra em 05/jan → fatura de fevereiro (paga em março)
+ * - Compra em 20/jan → fatura de fevereiro (paga em março)
  */
 function calcularMesFatura(dataCompra: Date, diaFechamento: number): string {
   const diaCompra = dataCompra.getDate();
   const mesCompra = dataCompra.getMonth();
   const anoCompra = dataCompra.getFullYear();
 
-  if (diaCompra >= diaFechamento) {
-    // Compra após/no fechamento: vai para a fatura do mês atual
+  if (diaCompra < diaFechamento) {
+    // Compra antes do fechamento: vai para a fatura do mês atual
     return format(new Date(anoCompra, mesCompra, 1), "yyyy-MM");
   } else {
-    // Compra antes do fechamento: vai para a fatura do mês anterior
-    return format(new Date(anoCompra, mesCompra - 1, 1), "yyyy-MM");
+    // Compra no dia ou após o fechamento: vai para a fatura do próximo mês
+    return format(new Date(anoCompra, mesCompra + 1, 1), "yyyy-MM");
   }
 }
 
