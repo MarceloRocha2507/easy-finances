@@ -73,6 +73,7 @@ import { ExcluirCompraDialog } from "@/components/cartoes/ExcluirCompraDialog";
 import { NovaCompraCartaoDialog } from "@/components/cartoes/NovaCompraCartaoDialog";
 import { AjustarFaturaDialog } from "@/components/cartoes/AjustarFaturaDialog";
 import { EstornarCompraDialog } from "@/components/cartoes/EstornarCompraDialog";
+import { ExcluirFaturaDialog } from "@/components/cartoes/ExcluirFaturaDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 /* ======================================================
@@ -142,6 +143,7 @@ export default function DespesasCartao() {
   const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
   const [estornarCompraOpen, setEstornarCompraOpen] = useState(false);
   const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
+  const [excluirFaturaOpen, setExcluirFaturaOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Hooks
@@ -315,21 +317,39 @@ export default function DespesasCartao() {
               <p className="text-xs text-muted-foreground">Despesas do mês</p>
             </div>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="outline" onClick={() => setAjustarFaturaOpen(true)} className="gap-1">
-                  <Scale className="h-4 w-4" />
-                  Ajustar
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
-            <Plus className="h-4 w-4" />
-            Nova compra
-          </Button>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setExcluirFaturaOpen(true)} 
+                    className="gap-1 text-destructive hover:text-destructive"
+                    disabled={parcelas.length === 0}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Excluir toda a fatura do mês</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={() => setAjustarFaturaOpen(true)} className="gap-1">
+                    <Scale className="h-4 w-4" />
+                    Ajustar
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
+              <Plus className="h-4 w-4" />
+              Nova compra
+            </Button>
+          </div>
         </div>
 
         {/* Resumo inline */}
@@ -817,6 +837,21 @@ export default function DespesasCartao() {
           mesReferencia={mesRef}
           open={ajustarFaturaOpen}
           onOpenChange={setAjustarFaturaOpen}
+          onSuccess={() => {
+            carregarFatura();
+          }}
+        />
+      )}
+
+      {id && cartao && (
+        <ExcluirFaturaDialog
+          open={excluirFaturaOpen}
+          onOpenChange={setExcluirFaturaOpen}
+          cartaoId={id}
+          cartaoNome={cartao.nome}
+          mesReferencia={mesRef}
+          totalParcelas={parcelas.length}
+          valorTotal={totalMes + totalPago}
           onSuccess={() => {
             carregarFatura();
           }}
