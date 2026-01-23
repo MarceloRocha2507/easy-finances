@@ -32,6 +32,7 @@ const FaturasPage = lazy(() => import("./pages/cartoes/Faturas"));
 const ParcelamentosPage = lazy(() => import("./pages/cartoes/Parcelamentos"));
 const LimitesPage = lazy(() => import("./pages/cartoes/Limites"));
 const AuditoriaPage = lazy(() => import("./pages/cartoes/Auditoria"));
+const ImportarComprasPage = lazy(() => import("./pages/cartoes/ImportarCompras"));
 const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategorias"));
 const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
@@ -168,6 +169,17 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingScreen />}>
                     <AuditoriaPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/cartoes/:id/importar"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <ImportarComprasPage />
                   </Suspense>
                 </ProtectedRoute>
               }
