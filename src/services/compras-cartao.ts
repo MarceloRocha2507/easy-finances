@@ -612,7 +612,79 @@ export async function excluirParcelas(input: ExcluirParcelasInput): Promise<numb
   return 0;
 }
 
-// Função auxiliar para atualizar metadata da compra após exclusão parcial
+/* ======================================================
+   EXCLUIR FATURA DO MÊS
+   - Exclui todas as compras que possuem parcelas no mês especificado
+   - Remove a compra inteira (incluindo parcelas em outros meses)
+====================================================== */
+
+export interface ResultadoExclusaoFatura {
+  comprasExcluidas: number;
+  parcelasExcluidas: number;
+}
+
+export async function excluirFaturaDoMes(
+  cartaoId: string,
+  mesReferencia: Date
+): Promise<ResultadoExclusaoFatura> {
+  // Buscar parcelas do mês
+  const ano = mesReferencia.getFullYear();
+  const mes = mesReferencia.getMonth();
+  const primeiroDia = new Date(ano, mes, 1).toISOString().split("T")[0];
+  const ultimoDia = new Date(ano, mes + 1, 0).toISOString().split("T")[0];
+
+  // Buscar parcelas do mês para este cartão
+  const { data: parcelas } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select(`
+      id,
+      compra_id,
+      compra:compras_cartao(id, cartao_id)
+    `)
+    .gte("mes_referencia", primeiroDia)
+    .lte("mes_referencia", ultimoDia);
+
+  if (!parcelas || parcelas.length === 0) {
+    return { comprasExcluidas: 0, parcelasExcluidas: 0 };
+  }
+
+  // Filtrar apenas parcelas do cartão especificado
+  const parcelasDoCartao = parcelas.filter(
+    (p: any) => p.compra?.cartao_id === cartaoId
+  );
+
+  if (parcelasDoCartao.length === 0) {
+    return { comprasExcluidas: 0, parcelasExcluidas: 0 };
+  }
+
+  // Obter IDs únicos das compras
+  const compraIds = [...new Set(parcelasDoCartao.map((p: any) => p.compra_id))];
+
+  // Contar total de parcelas que serão excluídas (de todas as compras, não só deste mês)
+  const { count: totalParcelas } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select("id", { count: "exact" })
+    .in("compra_id", compraIds);
+
+  // Excluir parcelas primeiro (por causa do cascade/trigger)
+  await (supabase as any)
+    .from("parcelas_cartao")
+    .delete()
+    .in("compra_id", compraIds);
+
+  // Excluir as compras
+  await (supabase as any)
+    .from("compras_cartao")
+    .delete()
+    .in("id", compraIds);
+
+  return {
+    comprasExcluidas: compraIds.length,
+    parcelasExcluidas: totalParcelas || parcelasDoCartao.length,
+  };
+}
+
+
 async function atualizarTotalParcelasCompra(compraId: string): Promise<void> {
   // Contar parcelas restantes
   const { data: parcelasRestantes, count } = await (supabase as any)
