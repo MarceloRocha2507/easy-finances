@@ -274,8 +274,20 @@ export function parseLinhasCompra(
       let resto = linha.substring(matchData[0].length).trim();
 
       // Encontrar responsável no final (última palavra)
-      // Formato: "... valor responsavel"
-      const matchFinal = resto.match(/[,;]?\s*([\d.,]+)\s+(\w+)\s*$/);
+      // Formato: "... ,valor responsavel" ou "... X/Y,valor responsavel"
+      
+      // Primeiro: tentar capturar após padrão de parcela X/Y
+      let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+      
+      // Fallback: padrão normal com vírgula/ponto-e-vírgula antes do valor
+      if (!matchFinal) {
+        matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+      }
+      
+      // Último fallback: espaço antes do valor (formato sem vírgula)
+      if (!matchFinal) {
+        matchFinal = resto.match(/\s([\d]+[.,]\d+)\s+(\w+)\s*$/);
+      }
       
       if (!matchFinal) {
         preview.erro = "Formato inválido: esperado 'valor responsável' no final";
