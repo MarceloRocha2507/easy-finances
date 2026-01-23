@@ -1,112 +1,123 @@
 
-
-## Plano: Corrigir Parsing de Valores em Compras Parceladas
+## Plano: Criar Compras Parceladas Completas na Importação
 
 ### O Problema
-Na linha:
+Quando o usuário importa uma linha como:
 ```
 2026-01-05,Nortmotos - Parcela 4/8,175.00 eu
 ```
 
-O regex atual `[,;]?\s*([\d.,]+)\s+(\w+)\s*$` pode estar capturando incorretamente porque:
-1. O padrão `[\d.,]+` captura dígitos, pontos e vírgulas
-2. Quando temos `4/8,175.00`, a barra `/` quebra a captura de forma inesperada
-3. Pode estar capturando `8,175.00` como valor (resultando em 8175.00) em vez de `175.00`
+O sistema está passando:
+- `valorTotal: 175.00` (valor da parcela individual)
+- `parcelas: 8`
+- `parcelaInicial: 4`
+
+Mas a função `criarCompraCartao` espera:
+- `valorTotal: 1400.00` (valor TOTAL da compra = 175 × 8)
+
+Isso faz com que cada parcela criada tenha valor de `1400 / 8 = 175` ✓, mas o registro da compra fica com `valor_total: 175` (incorreto).
 
 ### A Solução
-Melhorar o regex para garantir que:
-1. A barra `/` seja excluída da captura do valor
-2. O valor só seja capturado quando estiver separado do resto por vírgula ou espaço
-3. Tratar o caso onde a parcela `X/Y` está colada na vírgula do valor
+Calcular o `valorTotal` corretamente na importação:
+
+```
+valorTotal = valorParcela × totalParcelas
+```
+
+Para "Parcela 4/8" com valor 175:
+- `valorTotal = 175 × 8 = 1400`
 
 ### Alteração no Arquivo
 
 **Arquivo:** `src/services/importar-compras-cartao.ts`
 
-**Mudança no regex (linha 278):**
+**Mudança na função `importarComprasEmLote` (linhas 390-401):**
 
 ```typescript
-// ANTES (problemático):
-const matchFinal = resto.match(/[,;]?\s*([\d.,]+)\s+(\w+)\s*$/);
+// ANTES (bug):
+const input: CompraCartaoInput = {
+  cartaoId,
+  descricao: compra.descricao,
+  valorTotal: compra.valor,  // ← valor da parcela
+  parcelas: compra.parcelas,
+  parcelaInicial: compra.parcelaInicial,
+  // ...
+};
 
 // DEPOIS (corrigido):
-// Garantir que o valor começa após vírgula/ponto-e-vírgula ou espaço
-// e não faz parte de um padrão X/Y
-const matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+// Para compras parceladas, calcular o valor total
+// valorTotal = valorDaParcela × totalDeParcelas
+const valorTotal = compra.tipoLancamento === "parcelada" 
+  ? compra.valor * compra.parcelas 
+  : compra.valor;
+
+const input: CompraCartaoInput = {
+  cartaoId,
+  descricao: compra.descricao,
+  valorTotal: valorTotal,  // ← agora é o valor total correto
+  parcelas: compra.parcelas,
+  parcelaInicial: compra.parcelaInicial,
+  // ...
+};
 ```
 
-**Lógica melhorada:**
-1. `[,;]` - Exigir que haja uma vírgula ou ponto-e-vírgula antes do valor (separa da descrição)
-2. `([\d]+[.,]?\d*)` - Capturar: dígitos, opcionalmente seguidos de vírgula/ponto e mais dígitos
-3. `\s+(\w+)\s*$` - Espaço, responsável, fim da linha
+### Exemplo Prático
 
-### Exemplo de Parsing Corrigido
+| Linha CSV | Valor no CSV | Tipo | Cálculo | valorTotal |
+|-----------|--------------|------|---------|------------|
+| `Nortmotos - Parcela 4/8,175.00 eu` | 175.00 | parcelada | 175 × 8 | 1400.00 |
+| `IOF de compra internacional,0.16 eu` | 0.16 | unica | 0.16 × 1 | 0.16 |
+| `Anthropic,10.41 eu` | 10.41 | unica | 10.41 × 1 | 10.41 |
 
-| Entrada | Antes (bug) | Depois (correto) |
-|---------|-------------|------------------|
-| `Parcela 4/8,175.00 eu` | valor=8175.00 | valor=175.00 |
-| `Parcela 1/2,41.21 mae` | valor=241.21 | valor=41.21 |
-| `Anthropic,10.41 eu` | valor=10.41 ✓ | valor=10.41 ✓ |
+### Comportamento Após a Correção
 
-### Casos Especiais a Tratar
+Para `Nortmotos - Parcela 4/8,175.00 eu`:
 
-Para valores no formato brasileiro `102,25`:
-```
-2026-01-05,54.824.042 LUCAS - 2/3,102,25 eu
-```
+1. **Compra criada:**
+   - `descricao: "Nortmotos - Parcela 4/8"`
+   - `valor_total: 1400.00`
+   - `parcelas: 8`
+   - `parcela_inicial: 4`
 
-Neste caso, `102,25` deve ser parseado como `102.25`. O regex precisa identificar que:
-- `2/3` é parcela (não valor)
-- `102,25` é o valor (após a vírgula que separa da descrição)
+2. **Parcelas criadas (5 parcelas, da 4 até a 8):**
+   | Parcela | Valor | Mês Referência |
+   |---------|-------|----------------|
+   | 4/8 | R$ 175 | 2026-02 (fev) |
+   | 5/8 | R$ 175 | 2026-03 (mar) |
+   | 6/8 | R$ 175 | 2026-04 (abr) |
+   | 7/8 | R$ 175 | 2026-05 (mai) |
+   | 8/8 | R$ 175 | 2026-06 (jun) |
 
-**Solução adicional:** Verificar se há padrão `X/Y` antes do valor e garantir que a captura começa depois dele.
+### Resumo das Alterações
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/services/importar-compras-cartao.ts` | Calcular `valorTotal` multiplicando o valor da parcela pelo total de parcelas para compras parceladas |
+
+---
+
+### Seção Técnica
+
+**Código final da correção:**
 
 ```typescript
-// Regex mais robusto que ignora parcelas:
-// Primeiro tenta encontrar valor após parcela X/Y
-let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+// Em importarComprasEmLote, antes de criar o input:
 
-// Se não encontrar, tenta o padrão normal
-if (!matchFinal) {
-  matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
-}
+// Para compras parceladas, o CSV mostra o valor de UMA parcela
+// Precisamos calcular o valor total da compra
+const valorTotal = compra.tipoLancamento === "parcelada" 
+  ? compra.valor * compra.parcelas 
+  : compra.valor;
+
+const input: CompraCartaoInput = {
+  cartaoId,
+  descricao: compra.descricao,
+  valorTotal,
+  parcelas: compra.parcelas,
+  parcelaInicial: compra.parcelaInicial,
+  mesFatura: new Date(compra.mesFatura + "-01T12:00:00"),
+  tipoLancamento: compra.tipoLancamento,
+  dataCompra: compra.dataCompra,
+  responsavelId: compra.responsavelId,
+};
 ```
-
-### Código Final Proposto
-
-```typescript
-// Encontrar responsável no final (última palavra)
-// Formato: "... ,valor responsavel" ou "... X/Y,valor responsavel"
-
-// Primeiro: tentar capturar após padrão de parcela X/Y
-let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
-
-// Fallback: padrão normal com vírgula/ponto-e-vírgula antes do valor
-if (!matchFinal) {
-  matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
-}
-
-// Último fallback: espaço antes do valor (formato sem vírgula)
-if (!matchFinal) {
-  matchFinal = resto.match(/\s([\d]+[.,]\d+)\s+(\w+)\s*$/);
-}
-
-if (!matchFinal) {
-  preview.erro = "Formato inválido: esperado 'valor responsável' no final";
-  resultado.push(preview);
-  continue;
-}
-```
-
-### Testes a Validar
-
-Após a correção, as seguintes linhas devem funcionar corretamente:
-
-```
-2026-01-05,Nortmotos - Parcela 4/8,175.00 eu         → valor=175.00, parcela 4/8
-2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae → valor=41.21, parcela 1/2
-2026-01-05,54.824.042 LUCAS - 2/3,102,25 eu          → valor=102.25, parcela 2/3
-2026-01-22,IOF de compra internacional,0.16 eu       → valor=0.16, única
-2026-01-05,Mp *Growthsupplements - Parcela 2/3,49,47 eu → valor=49.47, parcela 2/3
-```
-
