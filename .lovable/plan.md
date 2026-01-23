@@ -1,60 +1,103 @@
 
-## Plano: Apagar Todas as Compras e Parcelas de Todos os Cartões
 
-### O Problema
-O trigger de auditoria `audit_parcelas_cartao` tenta buscar o `user_id` da tabela `compras_cartao` quando uma parcela é deletada. Quando você deleta a compra diretamente, o `ON DELETE CASCADE` apaga as parcelas automaticamente, mas nesse momento a compra já foi deletada e o trigger não consegue encontrar o `user_id`, causando o erro:
+## Plano: Calcular Automaticamente o Mês da Fatura Baseado na Data da Compra
 
+### O Problema Atual
+Quando você registra uma compra no cartão, o sistema sempre sugere o mês atual como mês da fatura, sem considerar o **dia de fechamento** do cartão.
+
+**Exemplo do problema:**
+- Cartão com fechamento dia 10
+- Você compra algo dia 5 de janeiro
+- O sistema sugere "janeiro" como mês da fatura
+- Mas na realidade, essa compra vai entrar na fatura de **dezembro** (pois ainda não fechou o mês de janeiro)
+
+### A Solução
+Implementar o cálculo automático do mês da fatura baseado em:
+1. **Data da compra** (não a data atual)
+2. **Dia de fechamento** do cartão
+
+**Lógica:**
 ```
-null value in column "user_id" of relation "auditoria_cartao" violates not-null constraint
-```
-
-### Solução em 2 Etapas
-
-**Etapa 1: Desabilitar temporariamente o trigger de auditoria**
-
-Executar uma migration para desabilitar os triggers de auditoria antes de apagar os dados:
-
-```sql
--- Desabilitar triggers de auditoria temporariamente
-ALTER TABLE parcelas_cartao DISABLE TRIGGER trg_audit_parcelas_cartao;
-ALTER TABLE compras_cartao DISABLE TRIGGER trg_audit_compras_cartao;
-```
-
-**Etapa 2: Apagar todos os dados**
-
-Executar a exclusão dos dados na ordem correta:
-
-```sql
--- Apagar todas as parcelas primeiro
-DELETE FROM parcelas_cartao
-WHERE compra_id IN (SELECT id FROM compras_cartao);
-
--- Apagar todas as compras
-DELETE FROM compras_cartao;
-
--- Apagar registros de acertos relacionados
-DELETE FROM acertos_fatura;
+Se (dia da compra >= dia de fechamento):
+   Mês da fatura = mês da compra
+Senão:
+   Mês da fatura = mês anterior à compra
 ```
 
-**Etapa 3: Reabilitar os triggers**
+### Alterações Técnicas
 
-Após a exclusão, reabilitar os triggers para que novas operações sejam auditadas:
+#### 1. Modificar `NovaCompraCartaoDialog.tsx`
 
-```sql
--- Reabilitar triggers de auditoria
-ALTER TABLE parcelas_cartao ENABLE TRIGGER trg_audit_parcelas_cartao;
-ALTER TABLE compras_cartao ENABLE TRIGGER trg_audit_compras_cartao;
+Adicionar uma função para calcular o mês da fatura baseado na data da compra:
+
+```typescript
+// Calcular mês da fatura baseado na data da compra e dia de fechamento
+function calcularMesFatura(dataCompra: Date, diaFechamento: number): string {
+  const diaCompra = dataCompra.getDate();
+  const mesCompra = dataCompra.getMonth();
+  const anoCompra = dataCompra.getFullYear();
+
+  if (diaCompra >= diaFechamento) {
+    // Compra após o fechamento: vai para a fatura do mês atual
+    return format(new Date(anoCompra, mesCompra, 1), "yyyy-MM");
+  } else {
+    // Compra antes do fechamento: vai para a fatura do mês anterior
+    return format(new Date(anoCompra, mesCompra - 1, 1), "yyyy-MM");
+  }
+}
 ```
 
-### Resultado Esperado
+#### 2. Inicializar o mês correto ao abrir o diálogo
 
-Após a execução:
-- Todas as 38+ compras serão apagadas
-- Todas as parcelas associadas serão apagadas
-- Todos os registros de acertos serão apagados
-- Os triggers de auditoria continuarão funcionando para novas operações
-- Você poderá cadastrar novas compras do zero
+Ao abrir o diálogo, calcular o mês da fatura baseado na data atual e no `dia_fechamento` do cartão:
 
-### Implementação
+```typescript
+useEffect(() => {
+  if (open) {
+    const hoje = new Date();
+    const mesFaturaCalculado = calcularMesFatura(hoje, cartao.dia_fechamento);
+    
+    setForm({
+      ...form,
+      mesFatura: mesFaturaCalculado,
+      dataCompra: hoje.toISOString().split("T")[0],
+      // ... outros campos
+    });
+  }
+}, [open, cartao.dia_fechamento]);
+```
 
-Vou executar essas operações usando a ferramenta de modificação de dados, respeitando a ordem correta para evitar o erro de constraint.
+#### 3. Recalcular quando a data da compra mudar
+
+Adicionar um `useEffect` que monitora mudanças na `dataCompra` e recalcula o mês da fatura automaticamente:
+
+```typescript
+// Recalcular mês da fatura quando a data da compra mudar
+useEffect(() => {
+  if (form.dataCompra) {
+    const dataCompra = new Date(form.dataCompra + "T12:00:00"); // Evitar timezone
+    const novoMesFatura = calcularMesFatura(dataCompra, cartao.dia_fechamento);
+    
+    // Só atualizar se for diferente (evitar loop infinito)
+    if (form.mesFatura !== novoMesFatura) {
+      setForm(f => ({ ...f, mesFatura: novoMesFatura }));
+    }
+  }
+}, [form.dataCompra, cartao.dia_fechamento]);
+```
+
+### Comportamento Esperado Após a Implementação
+
+| Data da Compra | Dia Fechamento | Mês da Fatura |
+|----------------|----------------|---------------|
+| 05/janeiro     | 10             | **dezembro**  |
+| 15/janeiro     | 10             | **janeiro**   |
+| 10/janeiro     | 10             | **janeiro**   |
+| 01/fevereiro   | 25             | **janeiro**   |
+| 26/fevereiro   | 25             | **fevereiro** |
+
+### Observações
+- O usuário ainda pode alterar manualmente o mês da fatura se desejar
+- A atualização automática só acontece quando a data da compra é alterada
+- Garante que as opções de mês disponíveis incluam o mês calculado (mesmo que seja um mês passado)
+
