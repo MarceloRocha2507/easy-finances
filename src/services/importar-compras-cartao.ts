@@ -388,10 +388,16 @@ export async function importarComprasEmLote(
     }
 
     try {
+      // Para compras parceladas, o CSV mostra o valor de UMA parcela
+      // Precisamos calcular o valor total da compra: valorParcela × totalParcelas
+      const valorTotal = compra.tipoLancamento === "parcelada" 
+        ? compra.valor * compra.parcelas 
+        : compra.valor;
+
       const input: CompraCartaoInput = {
         cartaoId,
         descricao: compra.descricao,
-        valorTotal: compra.valor,
+        valorTotal,
         parcelas: compra.parcelas,
         parcelaInicial: compra.parcelaInicial,
         mesFatura: new Date(compra.mesFatura + "-01T12:00:00"),
