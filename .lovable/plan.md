@@ -1,247 +1,112 @@
 
 
-## Plano: Importação em Lote de Compras de Cartão
+## Plano: Corrigir Parsing de Valores em Compras Parceladas
 
-### Visão Geral
-Desenvolver uma funcionalidade completa de importação em lote que permita cadastrar múltiplas compras de cartão de crédito de uma só vez, a partir de texto ou arquivo CSV. O sistema irá:
-- Aceitar formato CSV ou texto colado diretamente
-- Detectar automaticamente o responsável ("eu", "mae", etc.)
-- Identificar parcelas no formato "Parcela X/Y" 
-- Calcular automaticamente o mês da fatura correto baseado na data e dia de fechamento
-- Permitir selecionar o cartão de destino
-
-### Formato de Entrada Esperado
+### O Problema
+Na linha:
 ```
-Data,Descrição,Valor Responsável
-2026-01-22,IOF de compra internacional,0.16 eu
-2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae
-2026-01-05,54.824.042 LUCAS DE BRITO MARQUES - 2/3,102,25 eu
+2026-01-05,Nortmotos - Parcela 4/8,175.00 eu
 ```
 
-O sistema detectará:
-- **Data**: Formato `YYYY-MM-DD` ou `DD/MM/YYYY`
-- **Responsável**: Última palavra da linha (eu, mae, etc.)
-- **Valor**: Número antes do responsável (suporta vírgula como decimal)
-- **Parcela**: Padrão `X/Y` ou "Parcela X/Y" na descrição
+O regex atual `[,;]?\s*([\d.,]+)\s+(\w+)\s*$` pode estar capturando incorretamente porque:
+1. O padrão `[\d.,]+` captura dígitos, pontos e vírgulas
+2. Quando temos `4/8,175.00`, a barra `/` quebra a captura de forma inesperada
+3. Pode estar capturando `8,175.00` como valor (resultando em 8175.00) em vez de `175.00`
 
----
+### A Solução
+Melhorar o regex para garantir que:
+1. A barra `/` seja excluída da captura do valor
+2. O valor só seja capturado quando estiver separado do resto por vírgula ou espaço
+3. Tratar o caso onde a parcela `X/Y` está colada na vírgula do valor
 
-### Arquivos a Criar/Modificar
+### Alteração no Arquivo
 
-#### 1. Nova Página: `src/pages/cartoes/ImportarCompras.tsx`
-Página completa de importação com as seguintes funcionalidades:
+**Arquivo:** `src/services/importar-compras-cartao.ts`
+
+**Mudança no regex (linha 278):**
 
 ```typescript
-// Estados principais
-- cartaoId: string               // Cartão selecionado
-- textoInput: string             // Texto colado pelo usuário
-- previewData: PreviewCompra[]   // Dados parseados para preview
-- status: "idle" | "preview" | "importing" | "success"
+// ANTES (problemático):
+const matchFinal = resto.match(/[,;]?\s*([\d.,]+)\s+(\w+)\s*$/);
+
+// DEPOIS (corrigido):
+// Garantir que o valor começa após vírgula/ponto-e-vírgula ou espaço
+// e não faz parte de um padrão X/Y
+const matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
 ```
 
-**Interface de Preview:**
+**Lógica melhorada:**
+1. `[,;]` - Exigir que haja uma vírgula ou ponto-e-vírgula antes do valor (separa da descrição)
+2. `([\d]+[.,]?\d*)` - Capturar: dígitos, opcionalmente seguidos de vírgula/ponto e mais dígitos
+3. `\s+(\w+)\s*$` - Espaço, responsável, fim da linha
+
+### Exemplo de Parsing Corrigido
+
+| Entrada | Antes (bug) | Depois (correto) |
+|---------|-------------|------------------|
+| `Parcela 4/8,175.00 eu` | valor=8175.00 | valor=175.00 |
+| `Parcela 1/2,41.21 mae` | valor=241.21 | valor=41.21 |
+| `Anthropic,10.41 eu` | valor=10.41 ✓ | valor=10.41 ✓ |
+
+### Casos Especiais a Tratar
+
+Para valores no formato brasileiro `102,25`:
+```
+2026-01-05,54.824.042 LUCAS - 2/3,102,25 eu
+```
+
+Neste caso, `102,25` deve ser parseado como `102.25`. O regex precisa identificar que:
+- `2/3` é parcela (não valor)
+- `102,25` é o valor (após a vírgula que separa da descrição)
+
+**Solução adicional:** Verificar se há padrão `X/Y` antes do valor e garantir que a captura começa depois dele.
+
 ```typescript
-interface PreviewCompra {
-  linha: number;
-  data: string;           // Data original
-  dataCompra: Date;       // Data parseada
-  descricao: string;
-  valor: number;
-  responsavelId: string;  // ID do responsável
-  responsavelNome: string;// Nome para exibição
-  mesFatura: string;      // Calculado automaticamente
-  tipoLancamento: "unica" | "parcelada";
-  parcelas: number;
-  parcelaInicial: number;
-  valido: boolean;
-  erro?: string;
+// Regex mais robusto que ignora parcelas:
+// Primeiro tenta encontrar valor após parcela X/Y
+let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+
+// Se não encontrar, tenta o padrão normal
+if (!matchFinal) {
+  matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
 }
 ```
 
-**Funcionalidades:**
-1. Seleção de cartão (obrigatório)
-2. Área de texto para colar dados ou upload de arquivo
-3. Botão para processar/parsear
-4. Tabela de preview com validação visual
-5. Edição inline de campos incorretos
-6. Importação em lote
-
-#### 2. Serviço: `src/services/importar-compras-cartao.ts`
-Funções para parsing e importação:
+### Código Final Proposto
 
 ```typescript
-// Função de parsing inteligente
-export function parseLinhasCompra(
-  texto: string,
-  responsaveis: Responsavel[],
-  diaFechamento: number
-): PreviewCompra[]
+// Encontrar responsável no final (última palavra)
+// Formato: "... ,valor responsavel" ou "... X/Y,valor responsavel"
 
-// Detectar parcela na descrição
-function detectarParcela(descricao: string): {
-  tipoLancamento: "unica" | "parcelada";
-  parcelaAtual: number;
-  totalParcelas: number;
-  descricaoLimpa: string;
+// Primeiro: tentar capturar após padrão de parcela X/Y
+let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+
+// Fallback: padrão normal com vírgula/ponto-e-vírgula antes do valor
+if (!matchFinal) {
+  matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
 }
 
-// Mapear apelido para responsável
-function mapearResponsavel(
-  apelido: string,
-  responsaveis: Responsavel[]
-): { id: string; nome: string } | null
+// Último fallback: espaço antes do valor (formato sem vírgula)
+if (!matchFinal) {
+  matchFinal = resto.match(/\s([\d]+[.,]\d+)\s+(\w+)\s*$/);
+}
 
-// Importar em lote
-export async function importarComprasEmLote(
-  cartaoId: string,
-  compras: PreviewCompra[]
-): Promise<{ sucesso: number; erros: number }>
+if (!matchFinal) {
+  preview.erro = "Formato inválido: esperado 'valor responsável' no final";
+  resultado.push(preview);
+  continue;
+}
 ```
 
-**Lógica de Parsing:**
-```
-Linha: "2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae"
+### Testes a Validar
 
-1. Separar por vírgula: ["2026-01-20", "Comercial Peixoto - Parcela 1/2", "41.21 mae"]
-2. Último item: "41.21 mae" → valor=41.21, responsável="mae"
-3. Descrição: "Comercial Peixoto - Parcela 1/2"
-   - Detecta "Parcela 1/2" → parcelada, parcela 1 de 2
-   - Descrição limpa: "Comercial Peixoto"
-4. Data: "2026-01-20" → new Date(2026, 0, 20)
-5. Mês fatura: calcularMesFatura(dataCompra, diaFechamento)
-```
-
-#### 3. Atualizar Rota: `src/App.tsx`
-Adicionar rota para a página de importação:
-
-```tsx
-const ImportarComprasPage = lazy(() => import("./pages/cartoes/ImportarCompras"));
-
-<Route
-  path="/cartoes/:id/importar"
-  element={
-    <ProtectedRoute>
-      <Suspense fallback={<LoadingScreen />}>
-        <ImportarComprasPage />
-      </Suspense>
-    </ProtectedRoute>
-  }
-/>
-```
-
-#### 4. Atualizar DetalhesCartaoDialog
-Adicionar botão "Importar" no menu de ações do cartão:
-
-```tsx
-<DropdownMenuItem onClick={() => {
-  onOpenChange(false);
-  navigate(`/cartoes/${cartao.id}/importar`);
-}}>
-  <Upload className="h-4 w-4 mr-2" />
-  Importar compras
-</DropdownMenuItem>
-```
-
----
-
-### Interface do Usuário
+Após a correção, as seguintes linhas devem funcionar corretamente:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  ← Voltar    Importar Compras do Cartão                     │
-│              Nubank                                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Cole os dados das compras abaixo:                          │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ 2026-01-22,IOF de compra internacional,0.16 eu      │    │
-│  │ 2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae│    │
-│  │ ...                                                 │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                             │
-│  [Processar Dados]  [Limpar]   ou  [📁 Carregar CSV]        │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  PRÉVIA DA IMPORTAÇÃO                                       │
-│  ✅ 38 válidas  ⚠️ 2 inválidas                              │
-├─────────────────────────────────────────────────────────────┤
-│  Data       │ Descrição           │ Valor   │ Resp │ Fatura │
-│  ──────────────────────────────────────────────────────────│
-│  22/01/2026 │ IOF de compra int...│ R$ 0,16 │ Eu   │ Jan/26 │
-│  20/01/2026 │ Comercial Peixoto   │ R$41,21 │ Mãe  │ Jan/26 │
-│             │  └ Parcela 1/2      │         │      │        │
-│  ...                                                        │
-├─────────────────────────────────────────────────────────────┤
-│                                   [Cancelar] [Importar 38]  │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Mapeamento de Responsáveis
-O sistema tentará mapear automaticamente os apelidos para responsáveis cadastrados:
-
-| Apelido no CSV | Busca por | Match |
-|----------------|-----------|-------|
-| `eu` | apelido="Eu" OU is_titular=true | Responsável titular |
-| `mae` | apelido ILIKE "mae" ou "mãe" | Responsável "Mãe" |
-| `pai` | apelido ILIKE "pai" | Responsável "Pai" |
-
-Se não encontrar match, a linha será marcada como inválida e o usuário poderá corrigir manualmente.
-
----
-
-### Detecção de Parcelas
-Padrões reconhecidos na descrição:
-
-| Padrão | Exemplo | Resultado |
-|--------|---------|-----------|
-| `Parcela X/Y` | "Comercial - Parcela 1/2" | parcelada, 1 de 2 |
-| ` - X/Y` | "Lucas - 2/3" | parcelada, 2 de 3 |
-| `(X/Y)` | "Aliexpress (5/12)" | parcelada, 5 de 12 |
-
----
-
-### Fluxo de Importação
-
-```
-1. Usuário seleciona cartão
-2. Usuário cola texto ou carrega CSV
-3. Sistema parseia cada linha:
-   a. Extrai data, descrição, valor, responsável
-   b. Detecta parcelas na descrição
-   c. Calcula mês da fatura baseado na data e dia_fechamento
-   d. Valida todos os campos
-4. Exibe prévia com status de validação
-5. Usuário pode corrigir erros inline
-6. Ao confirmar, sistema cria compras usando criarCompraCartao()
-7. Exibe resumo de sucesso
-```
-
----
-
-### Tratamento de Valores
-O sistema suporta diferentes formatos de valor:
-
-| Entrada | Interpretação |
-|---------|---------------|
-| `0.16` | 0.16 |
-| `0,16` | 0.16 |
-| `41.21` | 41.21 |
-| `102,25` | 102.25 |
-| `1.234,56` | 1234.56 |
-
----
-
-### Estrutura de Arquivos
-
-```
-src/
-├── pages/
-│   └── cartoes/
-│       └── ImportarCompras.tsx     # Nova página (criar)
-├── services/
-│   └── importar-compras-cartao.ts  # Novo serviço (criar)
-└── App.tsx                         # Adicionar rota
+2026-01-05,Nortmotos - Parcela 4/8,175.00 eu         → valor=175.00, parcela 4/8
+2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae → valor=41.21, parcela 1/2
+2026-01-05,54.824.042 LUCAS - 2/3,102,25 eu          → valor=102.25, parcela 2/3
+2026-01-22,IOF de compra internacional,0.16 eu       → valor=0.16, única
+2026-01-05,Mp *Growthsupplements - Parcela 2/3,49,47 eu → valor=49.47, parcela 2/3
 ```
 
