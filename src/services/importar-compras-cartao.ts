@@ -282,19 +282,15 @@ export function parseLinhasCompra(
       let resto = linha.substring(matchData[0].length).trim();
 
       // Encontrar responsável no final (última palavra)
-      // Formato: "... ,valor responsavel" ou "... X/Y,valor responsavel"
+      // Formato: "... ,valor responsavel"
+      // IMPORTANTE: NÃO consumir o padrão X/Y (parcela) - ele deve ficar na descrição
       
-      // Primeiro: tentar capturar após padrão de parcela X/Y
-      let matchFinal = resto.match(/\d+\/\d+[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
+      // Regex principal: exige delimitador (,;) antes do valor para evitar capturar "8,175.00"
+      let matchFinal = resto.match(/[,;]\s*([\d.,]+)\s+([^\s]+)\s*$/);
       
-      // Fallback: padrão normal com vírgula/ponto-e-vírgula antes do valor
+      // Fallback: espaço antes do valor (formato sem vírgula)
       if (!matchFinal) {
-        matchFinal = resto.match(/[,;]\s*([\d]+[.,]?\d*)\s+(\w+)\s*$/);
-      }
-      
-      // Último fallback: espaço antes do valor (formato sem vírgula)
-      if (!matchFinal) {
-        matchFinal = resto.match(/\s([\d]+[.,]\d+)\s+(\w+)\s*$/);
+        matchFinal = resto.match(/\s([\d.,]+)\s+([^\s]+)\s*$/);
       }
       
       if (!matchFinal) {
@@ -324,12 +320,11 @@ export function parseLinhasCompra(
       }
 
       // Extrair descrição (meio da linha)
-      // Remover a parte final que já processamos
-      resto = resto.substring(0, resto.length - matchFinal[0].length).trim();
-      // Remover vírgula inicial se houver
-      resto = resto.replace(/^[,;]\s*/, "").trim();
-      // Remover vírgula final se houver
-      resto = resto.replace(/[,;]\s*$/, "").trim();
+      // Usar matchFinal.index para preservar o padrão X/Y na descrição
+      const idx = matchFinal.index ?? (resto.length - matchFinal[0].length);
+      resto = resto.slice(0, idx).trim();
+      // Remover vírgula/ponto-e-vírgula inicial ou final se houver
+      resto = resto.replace(/^[,;]\s*/, "").replace(/[,;]\s*$/, "").trim();
       
       preview.descricao = resto;
 
