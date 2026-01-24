@@ -11,11 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { CalculatorPopover } from "@/components/ui/calculator-popover";
 import { formatCurrency } from "@/lib/formatters";
 import { Cartao } from "@/services/cartoes";
-import { adiantarFatura } from "@/services/compras-cartao";
-import { Banknote, AlertCircle, Loader2 } from "lucide-react";
+import { 
+  adiantarFatura, 
+  desfazerAdiantamento, 
+  AdiantarFaturaResult 
+} from "@/services/compras-cartao";
+import { Banknote, AlertCircle, Loader2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -37,6 +42,7 @@ export function AdiantarFaturaDialog({
 }: Props) {
   const [valor, setValor] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [marcarParcelas, setMarcarParcelas] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Formatar mês
@@ -62,19 +68,43 @@ export function AdiantarFaturaDialog({
 
     setLoading(true);
     try {
-      await adiantarFatura({
+      const result = await adiantarFatura({
         cartaoId: cartao.id,
         nomeCartao: cartao.nome,
         mesReferencia,
         valorAdiantamento: valorNumerico,
         observacao: observacao.trim() || undefined,
+        marcarParcelasComoPagas: marcarParcelas,
       });
 
-      toast.success(`Adiantamento de ${formatCurrency(valorNumerico)} registrado!`);
+      // Toast com opção de desfazer
+      toast.success(
+        `Adiantamento de ${formatCurrency(valorNumerico)} registrado!`,
+        {
+          description: marcarParcelas && result.parcelasMarcardasPagas.length > 0
+            ? `${result.parcelasMarcardasPagas.length} parcela(s) marcada(s) como paga(s).`
+            : "O crédito foi aplicado na fatura.",
+          action: {
+            label: "Desfazer",
+            onClick: async () => {
+              try {
+                await desfazerAdiantamento(result);
+                toast.success("Adiantamento desfeito com sucesso!");
+                onSuccess();
+              } catch (error) {
+                console.error("Erro ao desfazer adiantamento:", error);
+                toast.error("Erro ao desfazer adiantamento");
+              }
+            },
+          },
+          duration: 8000,
+        }
+      );
       
       // Reset form
       setValor("");
       setObservacao("");
+      setMarcarParcelas(false);
       
       onSuccess();
       onOpenChange(false);
@@ -90,6 +120,7 @@ export function AdiantarFaturaDialog({
     if (!open) {
       setValor("");
       setObservacao("");
+      setMarcarParcelas(false);
     }
     onOpenChange(open);
   }
@@ -164,14 +195,34 @@ export function AdiantarFaturaDialog({
             />
           </div>
 
-          {/* Alerta */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              Isso criará uma despesa de{" "}
-              <strong>{formatCurrency(valorNumerico || 0)}</strong> no seu saldo
-              real e marcará as parcelas como pagas (da mais antiga para a mais
-              recente).
+          {/* Opção avançada: marcar parcelas como pagas */}
+          <div className="flex items-center justify-between p-3 rounded-lg border">
+            <div className="space-y-0.5">
+              <Label htmlFor="marcar-parcelas" className="cursor-pointer">
+                Marcar compras como pagas
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Marca parcelas da mais antiga para a mais recente
+              </p>
+            </div>
+            <Switch
+              id="marcar-parcelas"
+              checked={marcarParcelas}
+              onCheckedChange={setMarcarParcelas}
+            />
+          </div>
+
+          {/* Alerta informativo */}
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              O adiantamento cria uma <strong>despesa no saldo real</strong> e 
+              aplica um <strong>crédito na fatura</strong> reduzindo o valor pendente.
+              {marcarParcelas && (
+                <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                  ⚠️ Compras marcadas como pagas sairão do filtro "Pendentes".
+                </span>
+              )}
             </p>
           </div>
 
