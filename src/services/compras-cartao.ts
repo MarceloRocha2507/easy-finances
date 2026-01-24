@@ -1253,3 +1253,115 @@ export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao
 
   return resultado;
 }
+
+/* ======================================================
+   ADIANTAR FATURA (PAGAMENTO PARCIAL)
+   - Permite pagar um valor antecipado qualquer
+   - Marca parcelas como pagas até atingir o valor (mais antigas primeiro)
+   - Cria transação de despesa no saldo real
+====================================================== */
+
+export type AdiantarFaturaInput = {
+  cartaoId: string;
+  nomeCartao: string;
+  mesReferencia: Date;
+  valorAdiantamento: number;
+  observacao?: string;
+};
+
+export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // 1. Buscar parcelas pendentes ordenadas por data_compra (mais antigas primeiro)
+  const parcelas = await listarParcelasDaFatura(input.cartaoId, input.mesReferencia);
+  const parcelasPendentes = parcelas
+    .filter((p) => !p.paga && p.valor > 0)
+    .sort((a, b) => {
+      const dataA = a.data_compra ? new Date(a.data_compra).getTime() : 0;
+      const dataB = b.data_compra ? new Date(b.data_compra).getTime() : 0;
+      return dataA - dataB;
+    });
+
+  // 2. Marcar parcelas como pagas até consumir o valor do adiantamento
+  let valorRestante = input.valorAdiantamento;
+  const parcelasParaMarcar: string[] = [];
+
+  for (const parcela of parcelasPendentes) {
+    if (valorRestante <= 0) break;
+
+    const valorParcela = Math.abs(parcela.valor);
+    if (valorParcela <= valorRestante) {
+      parcelasParaMarcar.push(parcela.id);
+      valorRestante -= valorParcela;
+    }
+    // Se a parcela é maior que o restante, não marca (não faz pagamento parcial de parcela individual)
+  }
+
+  // Marcar as parcelas selecionadas como pagas
+  if (parcelasParaMarcar.length > 0) {
+    const { error: updateError } = await (supabase as any)
+      .from("parcelas_cartao")
+      .update({ paga: true })
+      .in("id", parcelasParaMarcar);
+
+    if (updateError) throw updateError;
+  }
+
+  // 3. Criar transação de despesa no saldo real
+  const mesLabel = input.mesReferencia.toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Buscar ou criar categoria "Fatura de Cartão"
+  let categoryId: string | null = null;
+
+  const { data: categoriaExistente } = await (supabase as any)
+    .from("categories")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("name", "Fatura de Cartão")
+    .eq("type", "expense")
+    .single();
+
+  if (categoriaExistente) {
+    categoryId = categoriaExistente.id;
+  } else {
+    // Criar categoria automaticamente
+    const { data: novaCategoria } = await (supabase as any)
+      .from("categories")
+      .insert({
+        user_id: user.id,
+        name: "Fatura de Cartão",
+        icon: "credit-card",
+        color: "#8B5CF6",
+        type: "expense",
+        is_default: true,
+      })
+      .select("id")
+      .single();
+
+    categoryId = novaCategoria?.id || null;
+  }
+
+  const descricaoTransacao = input.observacao
+    ? `Adiantamento ${input.nomeCartao} - ${mesLabel} (${input.observacao})`
+    : `Adiantamento ${input.nomeCartao} - ${mesLabel}`;
+
+  const { error: transactionError } = await (supabase as any)
+    .from("transactions")
+    .insert({
+      user_id: user.id,
+      description: descricaoTransacao,
+      amount: input.valorAdiantamento,
+      type: "expense",
+      status: "completed",
+      date: new Date().toISOString().split("T")[0],
+      paid_date: new Date().toISOString().split("T")[0],
+      category_id: categoryId,
+      tipo_lancamento: "unica",
+    });
+
+  if (transactionError) throw transactionError;
+}
