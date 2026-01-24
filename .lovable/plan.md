@@ -1,135 +1,194 @@
 
-## Plano: Corrigir Atribuição de Mês de Fatura na Importação
+## Plano: Transformar o Sistema em PWA (Progressive Web App)
 
-### Problema Identificado
+### O que é um PWA?
+Um PWA (Progressive Web App) permite que seu app financeiro seja **instalado diretamente no celular** a partir do navegador, funcionando como um app nativo. Os usuários podem adicionar à tela inicial, usar offline e receber atualizações automáticas.
 
-Ao importar compras para a fatura de março, as compras acabaram sendo atribuídas a fevereiro. Isso acontece porque:
+### Benefícios para o AppFinance
+- Acesso rápido pela tela inicial do celular
+- Funciona mesmo sem internet (dados em cache)
+- Carregamento mais rápido após a primeira visita
+- Experiência similar a um app nativo
+- Não precisa de App Store
 
-1. O cálculo automático do mês de fatura usa a lógica: `se data_compra < dia_fechamento → fatura do mês atual da compra`
-2. Para compras feitas no dia 4 de fevereiro (antes do fechamento dia 5), o sistema atribui à fatura de **fevereiro**, não março
-3. O usuário pode não ter percebido o mês sugerido ou não ajustou na UI
+---
 
-### Análise das Inconsistências
+## Mudanças Planejadas
 
-Encontrei **três implementações diferentes** da mesma lógica no código:
+### 1. Instalar e Configurar o Plugin PWA do Vite
 
-| Arquivo | Lógica | Resultado (compra dia 4, fechamento dia 5) |
-|---------|--------|-------------------------------------------|
-| `importar-compras-cartao.ts` | `dia < diaFechamento → mês atual` | Fevereiro |
-| `NovaCompraCartaoDialog.tsx` | `dia < diaFechamento → mês anterior` | Janeiro |
-| `transactions.ts` | `dia <= diaFechamento → mês atual` | Fevereiro |
+Instalar o pacote `vite-plugin-pwa` e configurar no `vite.config.ts` com as opções necessárias para gerar o Service Worker automaticamente.
 
-Essa inconsistência é problemática e precisa ser corrigida.
+### 2. Criar o Manifest do PWA
 
-### Mudanças Propostas
+Configurar o manifest com:
+- Nome: "AppFinance - Gestão Financeira"
+- Nome curto: "AppFinance"
+- Cor do tema: azul escuro (#3d4b5c) baseado na cor primária do sistema
+- Cor de fundo: branco (#fcfcfc)
+- Orientação: portrait
+- Display: standalone (parece app nativo)
 
-#### 1. Unificar a Lógica de Cálculo do Mês de Fatura
+### 3. Criar Ícones PWA
 
-Criar uma função centralizada em `src/lib/dateUtils.ts` que será usada por todos os arquivos:
+Criar ícones em múltiplos tamanhos (192x192 e 512x512) para diferentes dispositivos e situações (ícone do app, splash screen, etc).
+
+### 4. Adicionar Meta Tags Mobile no index.html
+
+Adicionar tags essenciais:
+- `apple-touch-icon` para iOS
+- `theme-color` para a barra de status
+- `apple-mobile-web-app-capable` para fullscreen no iOS
+- `apple-mobile-web-app-status-bar-style`
+
+### 5. Criar Página de Instalação (/instalar)
+
+Uma página dedicada com:
+- Instruções visuais de como instalar
+- Botão "Instalar App" que aciona o prompt nativo
+- Detecção automática do dispositivo (iOS/Android)
+- Instruções específicas por plataforma
+
+### 6. Registrar o Service Worker
+
+Configurar o registro do Service Worker no `main.tsx` para:
+- Atualização automática quando há nova versão
+- Estratégia de cache para assets estáticos
+- Fallback offline
+
+---
+
+## Seção Técnica
+
+### Arquivos a Criar/Modificar
+
+| Arquivo | Ação |
+|---------|------|
+| `package.json` | Adicionar dependência `vite-plugin-pwa` |
+| `vite.config.ts` | Configurar VitePWA plugin |
+| `index.html` | Adicionar meta tags mobile e PWA |
+| `public/pwa-192x192.png` | Criar ícone 192x192 |
+| `public/pwa-512x512.png` | Criar ícone 512x512 |
+| `public/apple-touch-icon.png` | Criar ícone para iOS |
+| `src/pages/Instalar.tsx` | Nova página de instalação |
+| `src/App.tsx` | Adicionar rota /instalar |
+
+### Configuração do vite.config.ts
 
 ```typescript
-/**
- * Calcular o mês da fatura baseado na data da compra e dia de fechamento.
- * 
- * Regra: Compras feitas ANTES do dia de fechamento entram na fatura 
- * que VENCE naquele mês. Compras NO DIA ou APÓS o fechamento vão 
- * para a fatura do mês seguinte.
- * 
- * Exemplo com fechamento dia 5:
- * - Compra em 04/fev → fatura de fevereiro (fecha dia 5/fev, vence em março)
- * - Compra em 05/fev → fatura de março (fecha dia 5/mar, vence em abril)
- */
-export function calcularMesFaturaCartao(
-  dataCompra: Date, 
-  diaFechamento: number
-): Date {
-  const diaCompra = dataCompra.getDate();
-  const mesCompra = dataCompra.getMonth();
-  const anoCompra = dataCompra.getFullYear();
+import { VitePWA } from 'vite-plugin-pwa';
 
-  if (diaCompra < diaFechamento) {
-    // Compra antes do fechamento: vai para a fatura do mês atual
-    return new Date(anoCompra, mesCompra, 1);
-  } else {
-    // Compra no dia ou após o fechamento: vai para a fatura do próximo mês
-    return new Date(anoCompra, mesCompra + 1, 1);
-  }
-}
+plugins: [
+  react(),
+  VitePWA({
+    registerType: 'autoUpdate',
+    includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+    manifest: {
+      name: 'AppFinance - Gestão Financeira',
+      short_name: 'AppFinance',
+      description: 'Gerencie suas finanças pessoais de forma simples e eficiente.',
+      theme_color: '#3d4b5c',
+      background_color: '#fcfcfc',
+      display: 'standalone',
+      orientation: 'portrait',
+      scope: '/',
+      start_url: '/',
+      icons: [
+        {
+          src: 'pwa-192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: 'pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable'
+        }
+      ]
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'supabase-api-cache',
+            expiration: { maxEntries: 50, maxAgeSeconds: 300 }
+          }
+        }
+      ]
+    }
+  })
+]
 ```
 
-#### 2. Melhorar a Visibilidade do Mês de Fatura na Importação
+### Meta Tags no index.html
 
-- Adicionar um **alerta/destaque visual** quando o mês sugerido for diferente do mês atual
-- Mostrar um **resumo** antes de importar: "Compras serão importadas para fevereiro/2026 (X itens), março/2026 (Y itens)"
-- Permitir **alteração em lote** do mês de fatura (não apenas linha a linha)
-
-#### 3. Adicionar Seletor Global de Mês de Fatura
-
-Adicionar um dropdown no topo da página de importação para definir o mês de fatura **padrão** para todas as linhas, com opção de sobrescrever o cálculo automático:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Mês da fatura para importação:                              │
-│ ○ Automático (baseado na data da compra)                    │
-│ ● Fixar em: [Março/2026 ▼]                                  │
-│                                                             │
-│ ⚠️ 5 compras têm data anterior ao fechamento de março.       │
-│    Considere usar o mês de fevereiro para essas compras.    │
-└─────────────────────────────────────────────────────────────┘
+```html
+<meta name="theme-color" content="#3d4b5c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="AppFinance" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
 ```
 
----
+### Página de Instalação (src/pages/Instalar.tsx)
 
-### Seção Técnica
+A página incluirá:
+- Hook `useEffect` para capturar o evento `beforeinstallprompt`
+- Detecção de iOS vs Android
+- Botão que chama `prompt()` no evento capturado
+- Instruções visuais (com ícones) para instalação manual no iOS
+- Verificação se já está instalado (`navigator.standalone` ou `display-mode: standalone`)
 
-#### Arquivos a Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/lib/dateUtils.ts` | Adicionar função centralizada `calcularMesFaturaCartao()` |
-| `src/services/importar-compras-cartao.ts` | Usar função centralizada; remover duplicata local |
-| `src/components/cartoes/NovaCompraCartaoDialog.tsx` | Usar função centralizada; corrigir lógica |
-| `src/services/transactions.ts` | Usar função centralizada |
-| `src/pages/cartoes/ImportarCompras.tsx` | Adicionar seletor de mês de fatura global e resumo por mês |
-
-#### Nova UI na Importação
+### Estrutura da Página de Instalação
 
 ```tsx
-// Estado
-const [mesFaturaGlobal, setMesFaturaGlobal] = useState<string | null>(null);
-const [modoMesFatura, setModoMesFatura] = useState<"automatico" | "fixo">("automatico");
+// Estados
+const [deferredPrompt, setDeferredPrompt] = useState(null);
+const [isIOS, setIsIOS] = useState(false);
+const [isInstalled, setIsInstalled] = useState(false);
 
-// Resumo por mês (para mostrar ao usuário)
-const resumoPorMes = useMemo(() => {
-  const grupos = new Map<string, number>();
-  previewData.filter(p => p.valido).forEach(p => {
-    const mes = p.mesFatura;
-    grupos.set(mes, (grupos.get(mes) || 0) + 1);
-  });
-  return grupos;
-}, [previewData]);
-```
-
-#### Aplicar Mês Global
-
-```tsx
-// Ao mudar para "fixo", aplicar a todas as linhas
+// Capturar evento de instalação
 useEffect(() => {
-  if (modoMesFatura === "fixo" && mesFaturaGlobal) {
-    setPreviewData(prev => prev.map(p => ({
-      ...p,
-      mesFatura: mesFaturaGlobal
-    })));
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+  });
+}, []);
+
+// Instalar
+const handleInstall = async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      toast.success('App instalado com sucesso!');
+    }
   }
-}, [modoMesFatura, mesFaturaGlobal]);
+};
 ```
 
 ---
 
-### Critérios de Aceite
+## Critérios de Aceite
 
-1. A lógica de cálculo de mês de fatura é **idêntica** em todos os pontos do código
-2. O usuário pode **forçar** um mês de fatura específico para todas as compras do lote
-3. Antes de importar, o usuário vê claramente **para qual(is) mês(es)** as compras serão importadas
-4. Se houver compras com datas inconsistentes com o mês escolhido, aparece um **alerta** informativo
-5. A documentação inline explica claramente a regra de atribuição de mês
+1. O app pode ser instalado no celular (Android e iOS)
+2. Ao abrir instalado, abre em tela cheia (sem barra do navegador)
+3. Ícone do app aparece corretamente na tela inicial
+4. Existe uma página `/instalar` com instruções claras
+5. O app funciona offline para páginas já visitadas
+6. Atualizações são aplicadas automaticamente
+
+---
+
+## Teste Manual
+
+1. Acessar o app pelo celular
+2. Android: Ver banner de instalação ou ir em menu → "Adicionar à tela inicial"
+3. iOS: Ir em Compartilhar → "Adicionar à Tela de Início"
+4. Abrir o app instalado e verificar que abre em fullscreen
+5. Desligar internet e verificar que páginas em cache ainda funcionam
