@@ -1,154 +1,167 @@
 
-
-## Plano: Calculadora Básica para Campo de Valor
+## Plano: Adiantamento de Fatura (Pagamento Parcial)
 
 ### Objetivo
-Adicionar uma calculadora básica ao lado do campo "Valor total (R$)" no diálogo de Nova Compra, permitindo calcular rapidamente valores como "175 × 8" para obter o total de parcelas.
+Adicionar a funcionalidade de **adiantamento/pagamento parcial** da fatura do cartão de crédito, permitindo que o usuário faça um pagamento antecipado de qualquer valor antes do vencimento, reduzindo o saldo devedor.
 
-### Solução Proposta
+### Interface Proposta
 
-#### 1. Interface Visual
-Um ícone de calculadora ao lado do campo de valor que, ao clicar, abre um popover com a calculadora:
+Um novo botão "Adiantar" na página de Despesas do Cartão, que abre um diálogo para registrar o pagamento parcial:
 
 ```text
-Valor total (R$)
-┌────────────────────────────┬───┐
-│ 0,00                       │ 🧮│
-└────────────────────────────┴───┘
-                    │
-                    ▼ (ao clicar)
-         ┌───────────────────────┐
-         │ Calculadora           │
-         ├───────────────────────┤
-         │ ┌─────────────────┐   │
-         │ │ 175 × 8 = 1400  │   │
-         │ └─────────────────┘   │
-         │                       │
-         │ 7  8  9  ÷  ⌫        │
-         │ 4  5  6  ×           │
-         │ 1  2  3  −           │
-         │ 0  ,  C  +  =        │
-         │                       │
-         │      [Usar valor]     │
-         └───────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ 💳 Nubank                  Despesas do mês             │
+├─────────────────────────────────────────────────────────┤
+│  [Excluir] [Ajustar] [Adiantar] [Nova compra]          │  ← Novo botão "Adiantar"
+├─────────────────────────────────────────────────────────┤
+│  ● Pendente: R$ 1.200   ● Pago: R$ 500   Total: R$ 1.700│
+└─────────────────────────────────────────────────────────┘
+
+     Ao clicar em "Adiantar":
+         ┌───────────────────────────────────┐
+         │ 💵 Adiantar Fatura                │
+         │                                   │
+         │ Nubank - Janeiro 2026             │
+         │                                   │
+         │ Valor pendente: R$ 1.200,00       │
+         │ ───────────────────────────────   │
+         │                                   │
+         │ Valor do adiantamento (R$)        │
+         │ ┌───────────────────────────┬──┐  │
+         │ │ 500,00                    │🧮│  │  ← Com calculadora
+         │ └───────────────────────────┴──┘  │
+         │                                   │
+         │ Observação (opcional)             │
+         │ ┌───────────────────────────────┐ │
+         │ │ Ex: Adiantamento parcial      │ │
+         │ └───────────────────────────────┘ │
+         │                                   │
+         │ ⚠️ Isso criará uma despesa de     │
+         │    R$ 500 no seu saldo real.      │
+         │                                   │
+         │      [Confirmar Adiantamento]     │
+         └───────────────────────────────────┘
 ```
 
-#### 2. Funcionalidades da Calculadora
-- Operações básicas: soma (+), subtração (−), multiplicação (×), divisão (÷)
-- Suporte a decimais (vírgula brasileira)
-- Botão limpar (C) e backspace (⌫)
-- Exibir expressão e resultado em tempo real
-- Botão "Usar valor" que transfere o resultado para o campo de valor
+### Comportamento
 
-#### 3. Casos de Uso Principais
-- **Calcular valor total de parcelas**: "175 × 8" → R$ 1.400,00
-- **Somar múltiplos itens**: "50 + 30 + 25" → R$ 105,00
-- **Calcular desconto**: "200 − 20" → R$ 180,00
+1. **O que acontece ao confirmar:**
+   - Cria uma transação de despesa no saldo real (tipo "Adiantamento Fatura Nubank")
+   - Marca parcelas como pagas até atingir o valor adiantado (da mais antiga para a mais recente)
+   - Ou: registra o valor como crédito na fatura (abordagem alternativa)
 
----
-
-### Arquivos a Criar/Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/ui/calculator-popover.tsx` | **NOVO** - Componente reutilizável da calculadora |
-| `src/components/cartoes/NovaCompraCartaoDialog.tsx` | Integrar calculadora ao campo de valor |
+2. **Validações:**
+   - Valor deve ser > 0
+   - Valor não pode ser maior que o total pendente
+   - Confirmação visual do impacto no saldo
 
 ---
 
 ### Seção Técnica
 
-#### Novo Componente: `CalculatorPopover`
+#### Arquivos a Criar
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/components/cartoes/AdiantarFaturaDialog.tsx` | Novo diálogo para registrar adiantamento |
+
+#### Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/DespesasCartao.tsx` | Adicionar botão "Adiantar" e estado do dialog |
+| `src/services/compras-cartao.ts` | Nova função `adiantarFatura()` |
+
+---
+
+#### Nova Função: `adiantarFatura`
 
 ```typescript
-interface CalculatorPopoverProps {
-  onResult: (value: number) => void;
-  trigger?: React.ReactNode;
+export type AdiantarFaturaInput = {
+  cartaoId: string;
+  nomeCartao: string;
+  mesReferencia: Date;
+  valorAdiantamento: number;
+  observacao?: string;
+};
+
+export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> {
+  // 1. Buscar parcelas pendentes ordenadas por data
+  // 2. Marcar como pagas até atingir o valor (prioriza parcelas menores/mais antigas)
+  // 3. Criar transação de despesa no saldo real
 }
 ```
 
-**Estado interno:**
-- `expressao: string` - Expressão atual (ex: "175×8")
-- `resultado: number | null` - Resultado calculado
-- `open: boolean` - Estado do popover
+**Lógica de marcação de parcelas:**
+- Ordenar parcelas pendentes por `data_compra` (mais antigas primeiro)
+- Iterar marcando como `paga = true` até consumir o valor adiantado
+- Se sobrar valor (parcela maior que restante), deixar pendente (não faz pagamento parcial de parcela individual)
 
-**Lógica de cálculo:**
-- Usar `Function` ou parser manual para avaliar expressões simples
-- Substituir × por *, ÷ por /, vírgula por ponto antes de calcular
-- Validar entrada para evitar injeção de código
+**Alternativa (mais simples):**
+- Criar apenas a transação de despesa
+- Não marcar parcelas automaticamente (usuário marca manualmente depois)
+- Essa opção é mais flexível mas menos automatizada
 
-**Layout dos botões (grid 4×5):**
-```
-7  8  9  ÷  ⌫
-4  5  6  ×  
-1  2  3  −  
-0  ,  C  +  =
-```
-
-#### Integração no NovaCompraCartaoDialog
-
-Substituir o Input de valor atual por uma estrutura com o botão da calculadora:
+#### Novo Componente: `AdiantarFaturaDialog`
 
 ```tsx
-<div className="space-y-2">
-  <Label htmlFor="valor">Valor total (R$)</Label>
-  <div className="flex gap-2">
-    <Input
-      id="valor"
-      type="text"
-      inputMode="decimal"
-      placeholder="0,00"
-      value={form.valor}
-      onChange={(e) => setForm({ ...form, valor: e.target.value })}
-      className="flex-1"
-    />
-    <CalculatorPopover
-      onResult={(value) => {
-        setForm({ ...form, valor: value.toFixed(2).replace(".", ",") });
-      }}
-    />
-  </div>
-</div>
+interface Props {
+  cartao: Cartao;
+  mesReferencia: Date;
+  totalPendente: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
 ```
 
-#### Segurança na Avaliação de Expressões
+**Campos do formulário:**
+- `valor`: Input numérico com calculadora integrada
+- `observacao`: Textarea opcional
+- Exibir valor pendente e alerta sobre impacto no saldo
 
-Para evitar problemas de segurança, usar um parser simples em vez de `eval`:
+#### Integração na Página
 
-```typescript
-function calcularExpressao(expr: string): number | null {
-  // Remover espaços e normalizar
-  const normalized = expr
-    .replace(/,/g, ".")
-    .replace(/×/g, "*")
-    .replace(/÷/g, "/")
-    .replace(/−/g, "-");
-  
-  // Validar que só contém números e operadores permitidos
-  if (!/^[\d+\-*/.()\s]+$/.test(normalized)) {
-    return null;
-  }
-  
-  try {
-    // Usar Function para avaliar de forma mais segura que eval
-    const result = new Function(`return (${normalized})`)();
-    return typeof result === "number" && isFinite(result) ? result : null;
-  } catch {
-    return null;
-  }
-}
+```tsx
+// Estado
+const [adiantarFaturaOpen, setAdiantarFaturaOpen] = useState(false);
+
+// Novo botão no header (junto com Ajustar e Nova compra)
+<Button 
+  size="sm" 
+  variant="outline" 
+  onClick={() => setAdiantarFaturaOpen(true)}
+  disabled={totalMes === 0}
+>
+  <Banknote className="h-4 w-4" />
+  Adiantar
+</Button>
+
+// Dialog
+<AdiantarFaturaDialog
+  cartao={cartao}
+  mesReferencia={mesRef}
+  totalPendente={totalMes}
+  open={adiantarFaturaOpen}
+  onOpenChange={setAdiantarFaturaOpen}
+  onSuccess={carregarFatura}
+/>
 ```
 
 ---
 
 ### Resumo das Mudanças
 
-1. **Novo componente** `CalculatorPopover`:
-   - Popover com grid de botões numéricos e operadores
-   - Display mostrando expressão e resultado
-   - Botão "Usar valor" para aplicar resultado
+1. **Novo componente** `AdiantarFaturaDialog`:
+   - Input de valor com calculadora
+   - Observação opcional
+   - Confirmação do impacto no saldo
 
-2. **NovaCompraCartaoDialog**:
-   - Adicionar ícone/botão de calculadora ao lado do campo valor
-   - Callback para receber resultado e atualizar o form
+2. **Novo serviço** `adiantarFatura`:
+   - Cria transação de despesa "Adiantamento Fatura X"
+   - Marca parcelas como pagas até atingir o valor
+   - Usa categoria "Fatura de Cartão" (mesma do pagamento normal)
 
+3. **Página DespesasCartao**:
+   - Novo botão "Adiantar" no header
+   - Estado e lógica para abrir o dialog
