@@ -273,21 +273,45 @@ export default function DespesasCartao() {
      Totais
   ====================================================== */
 
-  const totalMes = useMemo(() => {
-    return parcelas
-      .filter((p) => !p.paga)
-      .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
+  // Totais corrigidos: considera valores negativos (créditos/adiantamentos)
+  const totaisFatura = useMemo(() => {
+    let saldoPendente = 0;
+    let saldoPago = 0;
+
+    for (const p of parcelas) {
+      const valor = Number(p.valor) || 0;
+      if (p.paga) {
+        saldoPago += valor; // Inclui negativos (créditos já aplicados)
+      } else {
+        saldoPendente += valor;
+      }
+    }
+
+    // Se o saldo pendente for negativo, temos crédito a favor
+    const creditoAFavor = saldoPendente < 0 ? Math.abs(saldoPendente) : 0;
+    const pendenteFinal = Math.max(0, saldoPendente);
+
+    return {
+      pendente: pendenteFinal,
+      pago: saldoPago,
+      total: saldoPendente + saldoPago,
+      creditoAFavor,
+    };
   }, [parcelas]);
 
-  const totalPago = useMemo(() => {
-    return parcelas
-      .filter((p) => p.paga)
-      .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
-  }, [parcelas]);
+  // Compatibilidade com código existente
+  const totalMes = totaisFatura.pendente;
+  const totalPago = totaisFatura.pago;
+
+  // Verificar se há itens pagos escondidos pelo filtro
+  const temItensPagosEscondidos = useMemo(() => {
+    if (filtros.status !== "pendente") return false;
+    return parcelas.some((p) => p.paga);
+  }, [parcelas, filtros.status]);
 
   const totalFiltrado = useMemo(() => {
     return parcelasFiltradas.reduce(
-      (sum, p) => sum + Math.abs(Number(p.valor) || 0),
+      (sum, p) => sum + Number(p.valor || 0),
       0
     );
   }, [parcelasFiltradas]);
@@ -382,13 +406,37 @@ export default function DespesasCartao() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>Pago:</span>
-            <span className="font-semibold text-emerald-500">{formatCurrency(totalPago)}</span>
+            <span className="font-semibold text-emerald-500">{formatCurrency(Math.abs(totalPago))}</span>
           </div>
           <div className="flex items-center gap-2">
             <span>Total:</span>
-            <span className="font-semibold">{formatCurrency(totalMes + totalPago)}</span>
+            <span className="font-semibold">{formatCurrency(totaisFatura.total)}</span>
           </div>
+          {totaisFatura.creditoAFavor > 0 && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50">
+                Crédito a favor: {formatCurrency(totaisFatura.creditoAFavor)}
+              </Badge>
+            </div>
+          )}
         </div>
+
+        {/* Alerta: itens pagos escondidos pelo filtro */}
+        {temItensPagosEscondidos && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <span>⚠️</span>
+              <span>Você está filtrando apenas pendentes. Itens pagos/adiantados não aparecem.</span>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setFiltros((f) => ({ ...f, status: "todos" }))}
+            >
+              Mostrar todos
+            </Button>
+          </div>
+        )}
 
         {/* Resumo por responsável */}
         {resumoResponsaveis.length > 0 && (

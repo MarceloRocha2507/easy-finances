@@ -1256,9 +1256,10 @@ export async function regenerarParcelasFaltantes(): Promise<ResultadoRegeneracao
 
 /* ======================================================
    ADIANTAR FATURA (PAGAMENTO PARCIAL)
-   - Permite pagar um valor antecipado qualquer
-   - Marca parcelas como pagas até atingir o valor (mais antigas primeiro)
+   - Cria um crédito na fatura (linha negativa) para reduzir o saldo
+   - NÃO marca parcelas como pagas automaticamente (por padrão)
    - Cria transação de despesa no saldo real
+   - Retorna IDs criados para permitir desfazer
 ====================================================== */
 
 export type AdiantarFaturaInput = {
@@ -1267,54 +1268,75 @@ export type AdiantarFaturaInput = {
   mesReferencia: Date;
   valorAdiantamento: number;
   observacao?: string;
+  marcarParcelasComoPagas?: boolean; // Opção avançada (desligado por padrão)
 };
 
-export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> {
+export type AdiantarFaturaResult = {
+  compraId: string;
+  parcelaId: string;
+  transactionId: string;
+  parcelasMarcardasPagas: string[];
+};
+
+export async function adiantarFatura(input: AdiantarFaturaInput): Promise<AdiantarFaturaResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
 
-  // 1. Buscar parcelas pendentes ordenadas por data_compra (mais antigas primeiro)
-  const parcelas = await listarParcelasDaFatura(input.cartaoId, input.mesReferencia);
-  const parcelasPendentes = parcelas
-    .filter((p) => !p.paga && p.valor > 0)
-    .sort((a, b) => {
-      const dataA = a.data_compra ? new Date(a.data_compra).getTime() : 0;
-      const dataB = b.data_compra ? new Date(b.data_compra).getTime() : 0;
-      return dataA - dataB;
-    });
+  const mesRef = new Date(
+    input.mesReferencia.getFullYear(),
+    input.mesReferencia.getMonth(),
+    1
+  );
 
-  // 2. Marcar parcelas como pagas até consumir o valor do adiantamento
-  let valorRestante = input.valorAdiantamento;
-  const parcelasParaMarcar: string[] = [];
-
-  for (const parcela of parcelasPendentes) {
-    if (valorRestante <= 0) break;
-
-    const valorParcela = Math.abs(parcela.valor);
-    if (valorParcela <= valorRestante) {
-      parcelasParaMarcar.push(parcela.id);
-      valorRestante -= valorParcela;
-    }
-    // Se a parcela é maior que o restante, não marca (não faz pagamento parcial de parcela individual)
-  }
-
-  // Marcar as parcelas selecionadas como pagas
-  if (parcelasParaMarcar.length > 0) {
-    const { error: updateError } = await (supabase as any)
-      .from("parcelas_cartao")
-      .update({ paga: true })
-      .in("id", parcelasParaMarcar);
-
-    if (updateError) throw updateError;
-  }
-
-  // 3. Criar transação de despesa no saldo real
   const mesLabel = input.mesReferencia.toLocaleDateString("pt-BR", {
     month: "long",
     year: "numeric",
   });
 
-  // Buscar ou criar categoria "Fatura de Cartão"
+  const descricaoAdiantamento = input.observacao
+    ? `Adiantamento ${input.nomeCartao} - ${mesLabel} (${input.observacao})`
+    : `Adiantamento ${input.nomeCartao} - ${mesLabel}`;
+
+  // 1. Criar a compra de adiantamento como ajuste/crédito
+  const { data: compra, error: compraError } = await (supabase as any)
+    .from("compras_cartao")
+    .insert({
+      user_id: user.id,
+      cartao_id: input.cartaoId,
+      descricao: descricaoAdiantamento,
+      valor_total: input.valorAdiantamento,
+      parcelas: 1,
+      parcela_inicial: 1,
+      tipo_lancamento: "ajuste",
+      mes_inicio: mesRef.toISOString().split("T")[0],
+      data_compra: new Date().toISOString().split("T")[0],
+      categoria_id: null,
+      responsavel_id: null,
+    })
+    .select()
+    .single();
+
+  if (compraError) throw compraError;
+
+  // 2. Criar a parcela com valor NEGATIVO (reduz o saldo da fatura)
+  const { data: parcela, error: parcelaError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .insert({
+      compra_id: compra.id,
+      numero_parcela: 1,
+      total_parcelas: 1,
+      valor: -input.valorAdiantamento, // NEGATIVO para reduzir a fatura
+      mes_referencia: mesRef.toISOString().split("T")[0],
+      paga: true, // Já está "pago" pois é um crédito aplicado
+      tipo_recorrencia: "normal",
+      ativo: true,
+    })
+    .select()
+    .single();
+
+  if (parcelaError) throw parcelaError;
+
+  // 3. Buscar ou criar categoria "Fatura de Cartão"
   let categoryId: string | null = null;
 
   const { data: categoriaExistente } = await (supabase as any)
@@ -1328,7 +1350,6 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> 
   if (categoriaExistente) {
     categoryId = categoriaExistente.id;
   } else {
-    // Criar categoria automaticamente
     const { data: novaCategoria } = await (supabase as any)
       .from("categories")
       .insert({
@@ -1345,15 +1366,12 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> 
     categoryId = novaCategoria?.id || null;
   }
 
-  const descricaoTransacao = input.observacao
-    ? `Adiantamento ${input.nomeCartao} - ${mesLabel} (${input.observacao})`
-    : `Adiantamento ${input.nomeCartao} - ${mesLabel}`;
-
-  const { error: transactionError } = await (supabase as any)
+  // 4. Criar transação de despesa no saldo real
+  const { data: transaction, error: transactionError } = await (supabase as any)
     .from("transactions")
     .insert({
       user_id: user.id,
-      description: descricaoTransacao,
+      description: descricaoAdiantamento,
       amount: input.valorAdiantamento,
       type: "expense",
       status: "completed",
@@ -1361,7 +1379,84 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<void> 
       paid_date: new Date().toISOString().split("T")[0],
       category_id: categoryId,
       tipo_lancamento: "unica",
-    });
+    })
+    .select()
+    .single();
 
   if (transactionError) throw transactionError;
+
+  // 5. Opcionalmente, marcar parcelas como pagas (modo avançado)
+  let parcelasMarcardasPagas: string[] = [];
+
+  if (input.marcarParcelasComoPagas) {
+    const parcelas = await listarParcelasDaFatura(input.cartaoId, input.mesReferencia);
+    const parcelasPendentes = parcelas
+      .filter((p) => !p.paga && p.valor > 0)
+      .sort((a, b) => {
+        const dataA = a.data_compra ? new Date(a.data_compra).getTime() : 0;
+        const dataB = b.data_compra ? new Date(b.data_compra).getTime() : 0;
+        return dataA - dataB;
+      });
+
+    let valorRestante = input.valorAdiantamento;
+
+    for (const parcela of parcelasPendentes) {
+      if (valorRestante <= 0) break;
+      const valorParcela = Math.abs(parcela.valor);
+      if (valorParcela <= valorRestante) {
+        parcelasMarcardasPagas.push(parcela.id);
+        valorRestante -= valorParcela;
+      }
+    }
+
+    if (parcelasMarcardasPagas.length > 0) {
+      await (supabase as any)
+        .from("parcelas_cartao")
+        .update({ paga: true })
+        .in("id", parcelasMarcardasPagas);
+    }
+  }
+
+  return {
+    compraId: compra.id,
+    parcelaId: parcela.id,
+    transactionId: transaction.id,
+    parcelasMarcardasPagas,
+  };
+}
+
+/* ======================================================
+   DESFAZER ADIANTAMENTO
+   - Remove a compra/parcela de ajuste e a transação correspondente
+====================================================== */
+
+export async function desfazerAdiantamento(result: AdiantarFaturaResult): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // 1. Desmarcar parcelas que foram marcadas como pagas
+  if (result.parcelasMarcardasPagas.length > 0) {
+    await (supabase as any)
+      .from("parcelas_cartao")
+      .update({ paga: false })
+      .in("id", result.parcelasMarcardasPagas);
+  }
+
+  // 2. Deletar a parcela de ajuste
+  await (supabase as any)
+    .from("parcelas_cartao")
+    .delete()
+    .eq("id", result.parcelaId);
+
+  // 3. Deletar a compra de ajuste
+  await (supabase as any)
+    .from("compras_cartao")
+    .delete()
+    .eq("id", result.compraId);
+
+  // 4. Deletar a transação de despesa
+  await (supabase as any)
+    .from("transactions")
+    .delete()
+    .eq("id", result.transactionId);
 }
