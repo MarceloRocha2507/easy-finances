@@ -170,7 +170,7 @@ export default function ImportarCompras() {
 
   // Importar
   async function handleImportar() {
-    if (!cartaoId || stats.aImportar === 0) return;
+    if (!cartaoId) return;
 
     setImportando(true);
     try {
@@ -178,33 +178,41 @@ export default function ImportarCompras() {
       const verificacaoFinal = await verificarDuplicatas(cartaoId, previewData);
       setPreviewData(verificacaoFinal);
       
-      // Verificar se há duplicatas não forçadas
-      const duplicatasNaoForcadas = verificacaoFinal.filter(
-        (p) => p.valido && p.possivelDuplicata && !p.forcarImportacao
+      // Separar compras para importar (válidas E não-duplicata OU forçada)
+      const comprasParaImportar = verificacaoFinal.filter(
+        (p) => p.valido && (!p.possivelDuplicata || p.forcarImportacao)
       );
       
-      if (duplicatasNaoForcadas.length > 0) {
+      // Contar duplicatas ignoradas (válidas E duplicata E não-forçada)
+      const duplicatasIgnoradas = verificacaoFinal.filter(
+        (p) => p.valido && p.possivelDuplicata && !p.forcarImportacao
+      );
+
+      // Se não há nada para importar, apenas avisar
+      if (comprasParaImportar.length === 0) {
         toast({
-          title: "Duplicatas encontradas",
-          description: `${duplicatasNaoForcadas.length} compra(s) duplicada(s) detectada(s). Revise ou marque "Importar" para forçar.`,
-          variant: "destructive",
+          title: "Nada para importar",
+          description: "Todas as compras são duplicatas ou inválidas.",
         });
         setImportando(false);
         return;
       }
 
-      // Filtrar apenas compras válidas e não duplicatas (ou forçadas)
-      const comprasParaImportar = verificacaoFinal.filter(
-        (p) => p.valido && (!p.possivelDuplicata || p.forcarImportacao)
-      );
+      // Importar as compras válidas (ignorando duplicatas não-forçadas)
       const result = await importarComprasEmLote(cartaoId, comprasParaImportar);
 
       setResultado({ sucesso: result.sucesso, erros: result.erros });
       setStatus("success");
 
+      // Toast de sucesso com info sobre duplicatas ignoradas
+      const descParts = [`${result.sucesso} compras importadas com sucesso.`];
+      if (duplicatasIgnoradas.length > 0) {
+        descParts.push(`${duplicatasIgnoradas.length} duplicata(s) ignorada(s).`);
+      }
+      
       toast({
         title: "Importação concluída",
-        description: `${result.sucesso} compras importadas com sucesso.`,
+        description: descParts.join(" "),
       });
     } catch (e) {
       console.error(e);
@@ -475,10 +483,10 @@ Exemplo:
                   <div className="px-6 pb-3">
                     <Alert variant="default" className="border-amber-500/50 bg-amber-500/5">
                       <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      <AlertTitle className="text-amber-600">Atenção: Duplicatas detectadas</AlertTitle>
+                      <AlertTitle className="text-amber-600">Duplicatas detectadas</AlertTitle>
                       <AlertDescription className="text-sm">
-                        {stats.duplicatas} compra(s) podem estar duplicadas. Isso pode gerar parcelas repetidas 
-                        em meses futuros e inflar a fatura. Revise antes de importar ou marque "Importar" para forçar.
+                        {stats.duplicatas} compra(s) serão <strong>ignoradas</strong> por padrão para evitar parcelas repetidas. 
+                        Se for um falso positivo, marque "Forçar" na linha para importar mesmo assim.
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -657,7 +665,7 @@ Exemplo:
                                     htmlFor={`forcar-${p.linha}`}
                                     className="text-xs cursor-pointer"
                                   >
-                                    Importar
+                                    Forçar
                                   </label>
                                 </div>
                               )}
