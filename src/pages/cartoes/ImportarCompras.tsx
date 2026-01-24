@@ -116,9 +116,10 @@ export default function ImportarCompras() {
   const stats = useMemo(() => {
     const validas = previewData.filter((p) => p.valido);
     const invalidas = previewData.filter((p) => !p.valido);
-    const total = validas.reduce((sum, p) => sum + p.valor, 0);
+    const totalParcelas = validas.reduce((sum, p) => sum + p.valor, 0);
+    const totalCompras = validas.reduce((sum, p) => sum + p.valorTotal, 0);
 
-    return { validas: validas.length, invalidas: invalidas.length, total };
+    return { validas: validas.length, invalidas: invalidas.length, totalParcelas, totalCompras };
   }, [previewData]);
 
   // Processar texto
@@ -365,7 +366,12 @@ Exemplo:
                     </div>
                   </div>
                   <CardDescription>
-                    Total a importar: {formatCurrency(stats.total)}
+                    Total a importar: {formatCurrency(stats.totalCompras)}
+                    {stats.totalParcelas !== stats.totalCompras && (
+                      <span className="text-muted-foreground ml-2">
+                        (parcelas deste mês: {formatCurrency(stats.totalParcelas)})
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -377,7 +383,8 @@ Exemplo:
                           <TableHead className="w-10">Status</TableHead>
                           <TableHead>Data</TableHead>
                           <TableHead>Descrição</TableHead>
-                          <TableHead className="text-right">Valor</TableHead>
+                          <TableHead className="text-right">Parcela</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
                           <TableHead>Responsável</TableHead>
                           <TableHead>Fatura</TableHead>
                           <TableHead>Tipo</TableHead>
@@ -416,6 +423,13 @@ Exemplo:
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(p.valor)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {p.tipoLancamento === "parcelada" ? (
+                                <span className="text-muted-foreground">{formatCurrency(p.valorTotal)}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {!p.valido && p.responsavelInput ? (
