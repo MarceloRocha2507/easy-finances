@@ -9,6 +9,8 @@ import { useResponsaveis } from "@/services/responsaveis";
 import {
   parseLinhasCompra,
   importarComprasEmLote,
+  verificarDuplicatas,
+  gerarOpcoesAnoMes,
   PreviewCompra,
 } from "@/services/importar-compras-cartao";
 import { Cartao } from "@/services/cartoes";
@@ -18,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -58,9 +61,10 @@ import {
   Loader2,
   CheckCircle2,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 
-type Status = "idle" | "preview" | "importing" | "success";
+type Status = "idle" | "preview" | "checking" | "importing" | "success";
 
 export default function ImportarCompras() {
   const { id: cartaoId } = useParams<{ id: string }>();
@@ -116,15 +120,26 @@ export default function ImportarCompras() {
   const stats = useMemo(() => {
     const validas = previewData.filter((p) => p.valido);
     const invalidas = previewData.filter((p) => !p.valido);
-    const totalParcelas = validas.reduce((sum, p) => sum + p.valor, 0);
-    const totalCompras = validas.reduce((sum, p) => sum + p.valorTotal, 0);
+    const duplicatas = previewData.filter((p) => p.possivelDuplicata && !p.forcarImportacao);
+    const aImportar = validas.filter((p) => !p.possivelDuplicata || p.forcarImportacao);
+    const totalParcelas = aImportar.reduce((sum, p) => sum + p.valor, 0);
+    const totalCompras = aImportar.reduce((sum, p) => sum + p.valorTotal, 0);
 
-    return { validas: validas.length, invalidas: invalidas.length, totalParcelas, totalCompras };
+    return { 
+      validas: validas.length, 
+      invalidas: invalidas.length, 
+      duplicatas: duplicatas.length,
+      aImportar: aImportar.length,
+      totalParcelas, 
+      totalCompras 
+    };
   }, [previewData]);
 
   // Processar texto
-  function handleProcessar() {
-    if (!textoInput.trim() || !cartao) return;
+  async function handleProcessar() {
+    if (!textoInput.trim() || !cartao || !cartaoId) return;
+
+    setStatus("checking");
 
     const parsed = parseLinhasCompra(
       textoInput,
@@ -132,7 +147,10 @@ export default function ImportarCompras() {
       cartao.dia_fechamento
     );
 
-    setPreviewData(parsed);
+    // Verificar duplicatas
+    const comDuplicatas = await verificarDuplicatas(cartaoId, parsed);
+
+    setPreviewData(comDuplicatas);
     setStatus("preview");
   }
 
@@ -146,12 +164,15 @@ export default function ImportarCompras() {
 
   // Importar
   async function handleImportar() {
-    if (!cartaoId || stats.validas === 0) return;
+    if (!cartaoId || stats.aImportar === 0) return;
 
     setImportando(true);
     try {
-      const comprasValidas = previewData.filter((p) => p.valido);
-      const result = await importarComprasEmLote(cartaoId, comprasValidas);
+      // Filtrar apenas compras válidas e não duplicatas (ou forçadas)
+      const comprasParaImportar = previewData.filter(
+        (p) => p.valido && (!p.possivelDuplicata || p.forcarImportacao)
+      );
+      const result = await importarComprasEmLote(cartaoId, comprasParaImportar);
 
       setResultado({ sucesso: result.sucesso, erros: result.erros });
       setStatus("success");
@@ -197,6 +218,39 @@ export default function ImportarCompras() {
             responsavelNome: resp?.apelido || resp?.nome || "",
             valido: true,
             erro: undefined,
+          };
+        }
+        return p;
+      })
+    );
+  }
+
+  // Atualizar mês da fatura de uma linha
+  function handleAtualizarMesFatura(linha: number, mesFatura: string) {
+    setPreviewData((prev) =>
+      prev.map((p) => {
+        if (p.linha === linha) {
+          return {
+            ...p,
+            mesFatura,
+            // Resetar status de duplicata quando muda o mês (vai precisar verificar de novo)
+            possivelDuplicata: false,
+            duplicataInfo: undefined,
+          };
+        }
+        return p;
+      })
+    );
+  }
+
+  // Marcar/desmarcar para forçar importação de duplicata
+  function handleToggleForcarImportacao(linha: number, checked: boolean) {
+    setPreviewData((prev) =>
+      prev.map((p) => {
+        if (p.linha === linha) {
+          return {
+            ...p,
+            forcarImportacao: checked,
           };
         }
         return p;
@@ -300,9 +354,18 @@ Exemplo:
                 />
 
                 <div className="flex items-center gap-2">
-                  <Button onClick={handleProcessar} disabled={!textoInput.trim()}>
-                    <Check className="h-4 w-4 mr-2" />
-                    Processar dados
+                  <Button onClick={handleProcessar} disabled={!textoInput.trim() || status === "checking"}>
+                    {status === "checking" ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Processar dados
+                      </>
+                    )}
                   </Button>
                   <Button variant="outline" onClick={handleLimpar}>
                     Limpar
@@ -351,10 +414,16 @@ Exemplo:
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Prévia da importação</CardTitle>
                     <div className="flex items-center gap-3">
-                      {stats.validas > 0 && (
+                      {stats.aImportar > 0 && (
                         <Badge variant="default" className="gap-1">
                           <Check className="h-3 w-3" />
-                          {stats.validas} válidas
+                          {stats.aImportar} a importar
+                        </Badge>
+                      )}
+                      {stats.duplicatas > 0 && (
+                        <Badge variant="secondary" className="gap-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
+                          <AlertTriangle className="h-3 w-3" />
+                          {stats.duplicatas} duplicatas
                         </Badge>
                       )}
                       {stats.invalidas > 0 && (
@@ -388,22 +457,31 @@ Exemplo:
                           <TableHead>Responsável</TableHead>
                           <TableHead>Fatura</TableHead>
                           <TableHead>Tipo</TableHead>
+                          <TableHead className="w-24">Duplicata</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {previewData.map((p) => (
                           <TableRow
                             key={p.linha}
-                            className={!p.valido ? "bg-destructive/5" : undefined}
+                            className={
+                              !p.valido 
+                                ? "bg-destructive/5" 
+                                : p.possivelDuplicata && !p.forcarImportacao
+                                  ? "bg-amber-500/5"
+                                  : undefined
+                            }
                           >
                             <TableCell className="text-muted-foreground text-xs">
                               {p.linha}
                             </TableCell>
                             <TableCell>
-                              {p.valido ? (
-                                <Check className="h-4 w-4 text-emerald-500" />
-                              ) : (
+                              {!p.valido ? (
                                 <X className="h-4 w-4 text-destructive" />
+                              ) : p.possivelDuplicata && !p.forcarImportacao ? (
+                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                              ) : (
+                                <Check className="h-4 w-4 text-emerald-500" />
                               )}
                             </TableCell>
                             <TableCell className="whitespace-nowrap">
@@ -418,6 +496,11 @@ Exemplo:
                               {p.erro && (
                                 <p className="text-xs text-destructive mt-0.5 truncate">
                                   {p.erro}
+                                </p>
+                              )}
+                              {p.possivelDuplicata && (
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                  Já existe compra similar
                                 </p>
                               )}
                             </TableCell>
@@ -454,14 +537,27 @@ Exemplo:
                                 <span>{p.responsavelNome}</span>
                               )}
                             </TableCell>
-                            <TableCell className="whitespace-nowrap text-sm">
-                              {p.mesFatura
-                                ? format(
-                                    new Date(p.mesFatura + "-01"),
-                                    "MMM/yy",
-                                    { locale: ptBR }
-                                  )
-                                : "-"}
+                            <TableCell>
+                              {p.mesFatura && (
+                                <Select
+                                  value={p.mesFatura}
+                                  onValueChange={(value) =>
+                                    handleAtualizarMesFatura(p.linha, value)
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 w-[100px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {gerarOpcoesAnoMes(p.mesFatura).map((opcao) => (
+                                      <SelectItem key={opcao.valor} value={opcao.valor}>
+                                        {opcao.label}
+                                        {opcao.sugerido && " ✓"}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </TableCell>
                             <TableCell>
                               {p.tipoLancamento === "parcelada" ? (
@@ -472,6 +568,25 @@ Exemplo:
                                 <span className="text-xs text-muted-foreground">
                                   Única
                                 </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {p.possivelDuplicata && (
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`forcar-${p.linha}`}
+                                    checked={p.forcarImportacao}
+                                    onCheckedChange={(checked) =>
+                                      handleToggleForcarImportacao(p.linha, checked === true)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`forcar-${p.linha}`}
+                                    className="text-xs cursor-pointer"
+                                  >
+                                    Importar
+                                  </label>
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -488,7 +603,7 @@ Exemplo:
                   </Button>
                   <Button
                     onClick={handleImportar}
-                    disabled={stats.validas === 0 || importando}
+                    disabled={stats.aImportar === 0 || importando}
                   >
                     {importando ? (
                       <>
@@ -498,7 +613,7 @@ Exemplo:
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        Importar {stats.validas} compras
+                        Importar {stats.aImportar} compras
                       </>
                     )}
                   </Button>

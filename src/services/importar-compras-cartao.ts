@@ -1,10 +1,17 @@
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { criarCompraCartao, CompraCartaoInput } from "./compras-cartao";
+import { supabase } from "@/integrations/supabase/client";
 import type { Responsavel } from "./responsaveis";
 
 /* ======================================================
    Types
 ====================================================== */
+
+export interface DuplicataInfo {
+  compraId: string;
+  descricao: string;
+}
 
 export interface PreviewCompra {
   linha: number;
@@ -22,12 +29,22 @@ export interface PreviewCompra {
   parcelaInicial: number;
   valido: boolean;
   erro?: string;
+  // Campos para verificação de duplicatas
+  possivelDuplicata: boolean;
+  duplicataInfo?: DuplicataInfo;
+  forcarImportacao: boolean;
 }
 
 export interface ResultadoImportacao {
   sucesso: number;
   erros: number;
   detalhes: { linha: number; erro?: string }[];
+}
+
+export interface OpcaoMesFatura {
+  valor: string;
+  label: string;
+  sugerido: boolean;
 }
 
 /* ======================================================
@@ -252,6 +269,8 @@ export function parseLinhasCompra(
       parcelas: 1,
       parcelaInicial: 1,
       valido: false,
+      possivelDuplicata: false,
+      forcarImportacao: false,
     };
 
     try {
@@ -424,7 +443,84 @@ export async function importarComprasEmLote(
 }
 
 /* ======================================================
+   Verificação de Duplicatas
+====================================================== */
+
+/**
+ * Normalizar texto para comparação (remove acentos, lowercase, espaços extras)
+ */
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")  // Remove acentos
+    .replace(/\s+/g, " ")              // Múltiplos espaços → um
+    .trim();
+}
+
+/**
+ * Gerar opções de mês/ano para o seletor (6 meses antes e depois do sugerido)
+ */
+export function gerarOpcoesAnoMes(mesSugerido: string): OpcaoMesFatura[] {
+  const [ano, mes] = mesSugerido.split("-").map(Number);
+  const base = new Date(ano, mes - 1, 1);
+  const opcoes: OpcaoMesFatura[] = [];
+
+  for (let i = -6; i <= 6; i++) {
+    const data = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    const valor = format(data, "yyyy-MM");
+    const label = format(data, "MMM/yy", { locale: ptBR });
+    opcoes.push({ valor, label, sugerido: i === 0 });
+  }
+
+  return opcoes;
+}
+
+/**
+ * Verificar se existem compras duplicadas no cartão
+ */
+export async function verificarDuplicatas(
+  cartaoId: string,
+  compras: PreviewCompra[]
+): Promise<PreviewCompra[]> {
+  // Buscar todas as compras ativas do cartão
+  const { data: existentes, error } = await supabase
+    .from("compras_cartao")
+    .select("id, descricao, valor_total, parcela_inicial, mes_inicio")
+    .eq("cartao_id", cartaoId)
+    .eq("ativo", true);
+
+  if (error) {
+    console.error("Erro ao verificar duplicatas:", error);
+    return compras; // Retorna sem modificar em caso de erro
+  }
+
+  // Para cada compra do preview, verificar se existe similar
+  return compras.map(compra => {
+    if (!compra.valido || !existentes || existentes.length === 0) {
+      return compra;
+    }
+
+    const similar = existentes.find(e => {
+      const descNorm = normalizar(e.descricao);
+      const compraDescNorm = normalizar(compra.descricao);
+      const valorSimilar = Math.abs(e.valor_total - compra.valorTotal) < 0.10;
+      const mesmoMes = e.mes_inicio === compra.mesFatura + "-01";
+      const mesmaParcela = e.parcela_inicial === compra.parcelaInicial;
+      
+      return descNorm === compraDescNorm && valorSimilar && mesmoMes && mesmaParcela;
+    });
+
+    return {
+      ...compra,
+      possivelDuplicata: !!similar,
+      duplicataInfo: similar ? { compraId: similar.id, descricao: similar.descricao } : undefined,
+    };
+  });
+}
+
+/* ======================================================
    Exports auxiliares
 ====================================================== */
 
-export { calcularMesFatura, detectarParcela, mapearResponsavel, parsearValor, parsearData };
+export { calcularMesFatura, detectarParcela, mapearResponsavel, parsearValor, parsearData, normalizar };
