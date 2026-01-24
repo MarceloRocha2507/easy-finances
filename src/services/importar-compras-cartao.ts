@@ -11,7 +11,8 @@ export interface PreviewCompra {
   dataOriginal: string;
   dataCompra: Date | null;
   descricao: string;
-  valor: number;
+  valor: number;           // Valor da parcela individual
+  valorTotal: number;      // Valor total da compra (valor × parcelas)
   responsavelId: string | null;
   responsavelNome: string;
   responsavelInput: string;
@@ -242,6 +243,7 @@ export function parseLinhasCompra(
       dataCompra: null,
       descricao: "",
       valor: 0,
+      valorTotal: 0,
       responsavelId: null,
       responsavelNome: "",
       responsavelInput: "",
@@ -341,6 +343,11 @@ export function parseLinhasCompra(
       preview.parcelaInicial = parcela.parcelaAtual;
       // Mantemos a descrição original para preservar informação
       // preview.descricao = parcela.descricaoLimpa;
+
+      // Calcular valor total (valor da parcela × total de parcelas)
+      preview.valorTotal = preview.tipoLancamento === "parcelada"
+        ? preview.valor * preview.parcelas
+        : preview.valor;
 
       // Calcular mês da fatura
       preview.mesFatura = calcularMesFatura(preview.dataCompra, diaFechamento);
