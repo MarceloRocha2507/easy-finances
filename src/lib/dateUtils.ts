@@ -1,6 +1,58 @@
 import { format, addMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+/* ======================================================
+   CÁLCULO DE MÊS DE FATURA DE CARTÃO DE CRÉDITO
+====================================================== */
+
+/**
+ * Calcular o mês da fatura baseado na data da compra e dia de fechamento.
+ * 
+ * Regra unificada (usada em toda a aplicação):
+ * - Compras feitas ANTES do dia de fechamento entram na fatura do MÊS ATUAL
+ * - Compras feitas NO DIA ou APÓS o fechamento vão para a fatura do MÊS SEGUINTE
+ * 
+ * Exemplo com fechamento dia 5:
+ * - Compra em 04/fev → fatura de fevereiro (fecha dia 5/fev, vence em março)
+ * - Compra em 05/fev → fatura de março (fecha dia 5/mar, vence em abril)
+ * - Compra em 20/jan → fatura de fevereiro (fecha dia 5/fev, vence em março)
+ * 
+ * @param dataCompra - Data em que a compra foi realizada
+ * @param diaFechamento - Dia do mês em que o cartão fecha a fatura
+ * @returns Date representando o primeiro dia do mês da fatura
+ */
+export function calcularMesFaturaCartao(
+  dataCompra: Date,
+  diaFechamento: number
+): Date {
+  const diaCompra = dataCompra.getDate();
+  const mesCompra = dataCompra.getMonth();
+  const anoCompra = dataCompra.getFullYear();
+
+  if (diaCompra < diaFechamento) {
+    // Compra antes do fechamento: vai para a fatura do mês atual
+    return new Date(anoCompra, mesCompra, 1);
+  } else {
+    // Compra no dia ou após o fechamento: vai para a fatura do próximo mês
+    return new Date(anoCompra, mesCompra + 1, 1);
+  }
+}
+
+/**
+ * Versão que retorna string no formato "yyyy-MM" para uso em selects e comparações
+ */
+export function calcularMesFaturaCartaoStr(
+  dataCompra: Date,
+  diaFechamento: number
+): string {
+  const mesFatura = calcularMesFaturaCartao(dataCompra, diaFechamento);
+  return format(mesFatura, "yyyy-MM");
+}
+
+/* ======================================================
+   UTILITÁRIOS GERAIS DE DATA
+====================================================== */
+
 /**
  * Gera lista de meses disponíveis para seleção de fatura
  * @param quantidade - Número de meses futuros a gerar (default: 12)

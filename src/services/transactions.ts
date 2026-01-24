@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { AtualizarValorCompraSchema } from "@/lib/validations";
+import { calcularMesFaturaCartao } from "@/lib/dateUtils";
 
 /* ======================================================
    TIPOS
@@ -53,18 +54,6 @@ function toDateOnly(d: Date) {
 
 function firstDayOfMonth(date: Date) {
   return toDateOnly(new Date(date.getFullYear(), date.getMonth(), 1));
-}
-
-function calcularMesReferencia(
-  diaFechamento: number,
-  dataCompra = new Date()
-) {
-  const ano = dataCompra.getFullYear();
-  const mes = dataCompra.getMonth();
-  const dia = dataCompra.getDate();
-
-  if (dia <= diaFechamento) return new Date(ano, mes, 1);
-  return new Date(ano, mes + 1, 1);
 }
 
 /* ======================================================
@@ -224,7 +213,8 @@ export async function criarCompraParcelada(data: {
   if (compraError) throw compraError;
   if (!compraRaw?.id) throw new Error("Compra não retornou ID");
 
-  const primeiraFatura = calcularMesReferencia(diaFechamento);
+  // Usar função centralizada para calcular mês da fatura
+  const primeiraFatura = calcularMesFaturaCartao(new Date(), diaFechamento);
   const valorParcela = Number((valorTotal / parcelas).toFixed(2));
 
   const parcelasPayload = Array.from({ length: parcelas }, (_, index) => {

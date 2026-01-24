@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -62,6 +64,7 @@ import {
   CheckCircle2,
   Info,
   AlertTriangle,
+  Calendar,
 } from "lucide-react";
 import {
   Tooltip,
@@ -71,6 +74,7 @@ import {
 } from "@/components/ui/tooltip";
 
 type Status = "idle" | "preview" | "checking" | "importing" | "success";
+type ModoMesFatura = "automatico" | "fixo";
 
 export default function ImportarCompras() {
   const { id: cartaoId } = useParams<{ id: string }>();
@@ -86,6 +90,10 @@ export default function ImportarCompras() {
   const [status, setStatus] = useState<Status>("idle");
   const [importando, setImportando] = useState(false);
   const [resultado, setResultado] = useState<{ sucesso: number; erros: number } | null>(null);
+  
+  // Seletor global de mês
+  const [modoMesFatura, setModoMesFatura] = useState<ModoMesFatura>("automatico");
+  const [mesFaturaGlobal, setMesFaturaGlobal] = useState<string>("");
 
   // Responsáveis
   const { data: responsaveis = [] } = useResponsaveis();
@@ -122,6 +130,38 @@ export default function ImportarCompras() {
     carregarCartao();
   }, [cartaoId, user]);
 
+  // Gerar opções de mês (6 meses anteriores + próximos 12 meses)
+  const opcoesMesFaturaGlobal = useMemo(() => {
+    const hoje = new Date();
+    const meses = [];
+    for (let i = -6; i < 12; i++) {
+      const mes = addMonths(hoje, i);
+      meses.push({
+        value: format(mes, "yyyy-MM"),
+        label: format(mes, "MMMM/yyyy", { locale: ptBR }),
+      });
+    }
+    return meses;
+  }, []);
+
+  // Inicializar mês global quando mudar para modo fixo
+  useEffect(() => {
+    if (modoMesFatura === "fixo" && !mesFaturaGlobal) {
+      const mesAtual = format(new Date(), "yyyy-MM");
+      setMesFaturaGlobal(mesAtual);
+    }
+  }, [modoMesFatura]);
+
+  // Aplicar mês global a todas as linhas quando mudar
+  useEffect(() => {
+    if (modoMesFatura === "fixo" && mesFaturaGlobal && previewData.length > 0) {
+      setPreviewData(prev => prev.map(p => ({
+        ...p,
+        mesFatura: mesFaturaGlobal
+      })));
+    }
+  }, [modoMesFatura, mesFaturaGlobal]);
+
   // Estatísticas do preview
   const stats = useMemo(() => {
     const validas = previewData.filter((p) => p.valido);
@@ -139,6 +179,27 @@ export default function ImportarCompras() {
       totalParcelas, 
       totalCompras 
     };
+  }, [previewData]);
+
+  // Resumo por mês
+  const resumoPorMes = useMemo(() => {
+    const grupos = new Map<string, { qtd: number; total: number }>();
+    previewData.filter(p => p.valido && (!p.possivelDuplicata || p.forcarImportacao)).forEach(p => {
+      const mes = p.mesFatura;
+      const atual = grupos.get(mes) || { qtd: 0, total: 0 };
+      grupos.set(mes, { 
+        qtd: atual.qtd + 1, 
+        total: atual.total + p.valorTotal 
+      });
+    });
+    // Ordenar por mês
+    return Array.from(grupos.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([mes, dados]) => ({
+        mes,
+        label: format(new Date(mes + "-01"), "MMM/yy", { locale: ptBR }),
+        ...dados
+      }));
   }, [previewData]);
 
   // Processar texto
@@ -477,6 +538,69 @@ Exemplo:
                     )}
                   </CardDescription>
                 </CardHeader>
+                
+                {/* Seletor global de mês de fatura */}
+                <div className="px-6 pb-3">
+                  <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Mês da fatura para importação</span>
+                    </div>
+                    
+                    <RadioGroup
+                      value={modoMesFatura}
+                      onValueChange={(v) => setModoMesFatura(v as ModoMesFatura)}
+                      className="flex flex-col gap-3"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="automatico" id="modo-auto" />
+                        <Label htmlFor="modo-auto" className="text-sm cursor-pointer">
+                          Automático (baseado na data da compra e fechamento dia {cartao.dia_fechamento})
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="fixo" id="modo-fixo" />
+                        <Label htmlFor="modo-fixo" className="text-sm cursor-pointer">
+                          Fixar todas as compras em:
+                        </Label>
+                        {modoMesFatura === "fixo" && (
+                          <Select
+                            value={mesFaturaGlobal}
+                            onValueChange={setMesFaturaGlobal}
+                          >
+                            <SelectTrigger className="w-[160px] h-8">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {opcoesMesFaturaGlobal.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    </RadioGroup>
+
+                    {/* Resumo por mês */}
+                    {resumoPorMes.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-2">Distribuição por fatura:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {resumoPorMes.map(({ mes, label, qtd, total }) => (
+                            <Badge key={mes} variant="outline" className="gap-1">
+                              <span className="font-medium">{label}</span>
+                              <span className="text-muted-foreground">
+                                {qtd} · {formatCurrency(total)}
+                              </span>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Alerta de duplicatas */}
                 {stats.duplicatas > 0 && (
