@@ -1,215 +1,92 @@
 
-## Plano: Seletor de Mês da Fatura + Verificação de Duplicatas
+## Plano: Melhorar Exibição de Duplicatas na Importação
+
+### Situação Atual
+
+A funcionalidade de verificação de duplicatas **já está implementada**:
+- Ao clicar em "Processar dados", o sistema verifica duplicatas automaticamente
+- Linhas duplicadas aparecem com fundo amarelo e ícone de alerta
+- Texto "Já existe compra similar" aparece na coluna descrição
+- Checkbox "Importar" permite forçar a importação mesmo com duplicata
 
 ### Problema Identificado
-1. **Compras de meses futuros sem mês atual**: Quando você importa uma compra que começa no mês 2 de 3 (por exemplo), ela existe nos meses futuros mas não no mês atual
-2. **Duplicação**: Ao reimportar, compras idênticas são criadas novamente (veja no banco: "54.824.042 LUCAS DE BRITO MARQUES - 2/3" aparece duplicado)
 
-### Solução Proposta
+Quando o usuário **altera o mês da fatura** de uma compra no seletor, o sistema:
+1. Reseta o status de duplicata para `false`
+2. **NÃO re-verifica** se existe duplicata no novo mês
 
-#### 1. Seletor de Mês da Fatura no Preview
-Adicionar um componente na tabela de preview que permita escolher/alterar o mês da fatura de cada compra importada:
+Isso pode causar confusão pois uma compra que era duplicata pode deixar de aparecer como tal (ou vice-versa) sem que o usuário perceba.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│ # │ Status │ Data │ Descrição │ Parcela │ Total │ Responsável │ Fatura │ Tipo  │
-├───┼────────┼──────┼───────────┼─────────┼───────┼─────────────┼────────┼───────┤
-│ 1 │   ✓    │ 05/01│ Nortmotos │ R$ 175  │R$1400 │     eu      │[Fev/26▾]│ 4/8  │
-│ 2 │   ✓    │ 22/01│ IOF       │ R$ 0,16 │   -   │     eu      │[Fev/26▾]│Única │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+### Melhoria Proposta
 
-O seletor de "Fatura" será um dropdown com:
-- 6 meses anteriores ao calculado
-- 6 meses posteriores ao calculado
-- Mês calculado automaticamente (marcado como sugerido)
+**Re-verificar duplicatas automaticamente** ao alterar o mês da fatura.
 
-#### 2. Verificação de Duplicatas no Preview
-Antes de importar, verificar se já existem compras similares na fatura. A lógica:
+---
 
-```text
-Buscar compras existentes onde:
-- cartao_id = cartão selecionado
-- descricao SIMILAR à descrição importada (normalizada, sem acentos)
-- valor_total SIMILAR ao calculado (margem de R$ 0,10 para arredondamentos)
-- parcela_inicial = parcela inicial importada
-- mes_inicio = mês da fatura selecionado
-```
+### Mudanças no Código
 
-Se encontrar duplicata:
-- Marcar a linha com status "⚠️ Possível duplicata"
-- Mostrar mensagem: "Já existe compra similar nesta fatura"
-- Permitir que o usuário force a importação via checkbox
+#### Arquivo: `src/pages/cartoes/ImportarCompras.tsx`
 
-#### 3. Fluxo Visual
+**1. Modificar `handleAtualizarMesFatura` para re-verificar duplicatas:**
 
-```text
-┌────────────────────────────────────────────────────────────┐
-│ Prévia da importação                                       │
-│ Total a importar: R$ 1.575,16                              │
-│ ⚠️ 2 possíveis duplicatas encontradas                      │
-├────────────────────────────────────────────────────────────┤
-│ # │ Status │ Descrição           │ Fatura  │ Duplicata    │
-├───┼────────┼─────────────────────┼─────────┼──────────────┤
-│ 1 │   ⚠️   │ LUCAS DE BRITO...   │[Fev/26▾]│ ☐ Importar   │
-│ 2 │   ✓    │ Nortmotos - 4/8     │[Fev/26▾]│              │
-│ 3 │   ✓    │ IOF compra inter... │[Fev/26▾]│              │
-└────────────────────────────────────────────────────────────┘
-```
-
-### Arquivos a Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/services/importar-compras-cartao.ts` | Adicionar função `verificarDuplicatas()` |
-| `src/pages/cartoes/ImportarCompras.tsx` | Adicionar seletor de mês e exibição de duplicatas |
-
-### Detalhes da Implementação
-
-#### Interface `PreviewCompra` - Novos Campos
 ```typescript
-export interface PreviewCompra {
-  // ... campos existentes ...
-  
-  // Novos campos para duplicata
-  possivelDuplicata: boolean;
-  duplicataInfo?: {
-    compraId: string;
-    descricao: string;
-  };
-  forcarImportacao: boolean;  // Checkbox para ignorar duplicata
-}
-```
-
-#### Função `verificarDuplicatas()`
-```typescript
-export async function verificarDuplicatas(
-  cartaoId: string,
-  compras: PreviewCompra[]
-): Promise<PreviewCompra[]> {
-  // Buscar todas as compras ativas do cartão
-  const { data: existentes } = await supabase
-    .from("compras_cartao")
-    .select("id, descricao, valor_total, parcela_inicial, mes_inicio")
-    .eq("cartao_id", cartaoId)
-    .eq("ativo", true);
-
-  // Para cada compra do preview, verificar se existe similar
-  return compras.map(compra => {
-    const similar = existentes?.find(e => {
-      const descNorm = normalizar(e.descricao);
-      const compraDescNorm = normalizar(compra.descricao);
-      const valorSimilar = Math.abs(e.valor_total - compra.valorTotal) < 0.10;
-      const mesmoMes = e.mes_inicio === compra.mesFatura + "-01";
-      const mesmaParcela = e.parcela_inicial === compra.parcelaInicial;
-      
-      return descNorm === compraDescNorm && valorSimilar && mesmoMes && mesmaParcela;
-    });
-
-    return {
-      ...compra,
-      possivelDuplicata: !!similar,
-      duplicataInfo: similar ? { compraId: similar.id, descricao: similar.descricao } : undefined,
-      forcarImportacao: false,
-    };
+async function handleAtualizarMesFatura(linha: number, mesFatura: string) {
+  // Primeiro atualiza o mês
+  const updatedPreview = previewData.map((p) => {
+    if (p.linha === linha) {
+      return { ...p, mesFatura };
+    }
+    return p;
   });
+
+  // Depois re-verifica duplicatas para todas as compras
+  if (cartaoId) {
+    const comDuplicatas = await verificarDuplicatas(cartaoId, updatedPreview);
+    setPreviewData(comDuplicatas);
+  } else {
+    setPreviewData(updatedPreview);
+  }
 }
 ```
 
-#### Seletor de Mês da Fatura (Componente)
+**2. Adicionar indicador visual mais claro (opcional)**
+
+Trocar a mensagem atual por um componente mais visível:
+
+Na coluna "Duplicata", além do checkbox, mostrar um tooltip com detalhes da compra existente:
+
 ```tsx
-<Select
-  value={p.mesFatura}
-  onValueChange={(value) => handleAtualizarMesFatura(p.linha, value)}
->
-  <SelectTrigger className="h-8 w-[100px]">
-    <SelectValue />
-  </SelectTrigger>
-  <SelectContent>
-    {gerarOpcoesAnoMes(p.mesFatura).map((opcao) => (
-      <SelectItem key={opcao.valor} value={opcao.valor}>
-        {opcao.label}
-        {opcao.sugerido && " ✓"}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-```
-
-### Fluxo de Importação Atualizado
-
-```text
-1. Usuário cola texto
-2. Clica "Processar dados"
-3. Sistema faz parsing → preview inicial
-4. Sistema verifica duplicatas → marca linhas suspeitas
-5. Usuário pode:
-   - Alterar mês da fatura de qualquer linha
-   - Marcar "Importar mesmo assim" para duplicatas
-6. Clica "Importar"
-7. Sistema importa apenas:
-   - Linhas válidas E
-   - (Não duplicata OU forcarImportacao = true)
+{p.possivelDuplicata && (
+  <div className="flex items-center gap-2">
+    <Tooltip>
+      <TooltipTrigger>
+        <AlertTriangle className="h-4 w-4 text-amber-500" />
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Compra similar já existe:</p>
+        <p className="text-xs">{p.duplicataInfo?.descricao}</p>
+      </TooltipContent>
+    </Tooltip>
+    <Checkbox ... />
+    <label>Importar</label>
+  </div>
+)}
 ```
 
 ---
 
-### Seção Técnica
+### Resumo das Alterações
 
-#### Normalização de Descrição
-```typescript
-function normalizar(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")  // Remove acentos
-    .replace(/\s+/g, " ")              // Múltiplos espaços → um
-    .trim();
-}
-```
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/cartoes/ImportarCompras.tsx` | Modificar `handleAtualizarMesFatura` para ser `async` e chamar `verificarDuplicatas()` após atualizar o mês |
 
-#### Gerar Opções de Ano/Mês
-```typescript
-function gerarOpcoesAnoMes(mesSugerido: string): { valor: string; label: string; sugerido: boolean }[] {
-  const [ano, mes] = mesSugerido.split("-").map(Number);
-  const base = new Date(ano, mes - 1, 1);
-  const opcoes = [];
+### Comportamento Esperado
 
-  for (let i = -6; i <= 6; i++) {
-    const data = new Date(base.getFullYear(), base.getMonth() + i, 1);
-    const valor = format(data, "yyyy-MM");
-    const label = format(data, "MMM/yy", { locale: ptBR });
-    opcoes.push({ valor, label, sugerido: i === 0 });
-  }
-
-  return opcoes;
-}
-```
-
-#### Atualização do Stats
-```typescript
-const stats = useMemo(() => {
-  const validas = previewData.filter((p) => p.valido);
-  const invalidas = previewData.filter((p) => !p.valido);
-  const duplicatas = previewData.filter((p) => p.possivelDuplicata && !p.forcarImportacao);
-  const aImportar = validas.filter((p) => !p.possivelDuplicata || p.forcarImportacao);
-  
-  return { 
-    validas: validas.length, 
-    invalidas: invalidas.length, 
-    duplicatas: duplicatas.length,
-    aImportar: aImportar.length,
-    totalCompras: aImportar.reduce((sum, p) => sum + p.valorTotal, 0),
-  };
-}, [previewData]);
-```
-
-### Resumo das Mudanças
-
-1. **Interface PreviewCompra**: +3 campos (possivelDuplicata, duplicataInfo, forcarImportacao)
-2. **Função verificarDuplicatas()**: Nova função que consulta o banco
-3. **Tabela de Preview**: 
-   - Coluna "Fatura" vira seletor editável
-   - Nova coluna/indicador de duplicata com checkbox
-4. **Fluxo handleProcessar**: Após parsing, chamar verificarDuplicatas()
-5. **Fluxo handleImportar**: Filtrar duplicatas não forçadas
+1. Usuário cola texto e clica "Processar dados"
+2. Sistema mostra preview com duplicatas marcadas em amarelo
+3. Se usuário alterar o mês de uma compra:
+   - Sistema re-verifica duplicatas automaticamente
+   - Linha pode ficar amarela (se virar duplicata) ou normal (se deixar de ser)
+4. Usuário pode marcar checkbox "Importar" para forçar importação de duplicatas
+5. Ao clicar "Importar", apenas compras válidas e não-duplicatas (ou forçadas) são importadas
