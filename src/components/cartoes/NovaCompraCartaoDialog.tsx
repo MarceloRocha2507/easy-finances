@@ -23,6 +23,7 @@ import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Calendar, Tag, Repeat, Hash } from "lucide-react";
+import { CalculatorPopover } from "@/components/ui/calculator-popover";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -302,14 +303,22 @@ export function NovaCompraCartaoDialog({
           {/* Valor */}
           <div className="space-y-2">
             <Label htmlFor="valor">Valor total (R$)</Label>
-            <Input
-              id="valor"
-              type="text"
-              inputMode="decimal"
-              placeholder="0,00"
-              value={form.valor}
-              onChange={(e) => setForm({ ...form, valor: e.target.value })}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="valor"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={form.valor}
+                onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                className="flex-1"
+              />
+              <CalculatorPopover
+                onResult={(value) => {
+                  setForm({ ...form, valor: value.toFixed(2).replace(".", ",") });
+                }}
+              />
+            </div>
           </div>
 
           {/* Tipo de Lançamento */}
