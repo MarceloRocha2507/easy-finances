@@ -63,6 +63,12 @@ import {
   Info,
   AlertTriangle,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Status = "idle" | "preview" | "checking" | "importing" | "success";
 
@@ -225,22 +231,23 @@ export default function ImportarCompras() {
     );
   }
 
-  // Atualizar mês da fatura de uma linha
-  function handleAtualizarMesFatura(linha: number, mesFatura: string) {
-    setPreviewData((prev) =>
-      prev.map((p) => {
-        if (p.linha === linha) {
-          return {
-            ...p,
-            mesFatura,
-            // Resetar status de duplicata quando muda o mês (vai precisar verificar de novo)
-            possivelDuplicata: false,
-            duplicataInfo: undefined,
-          };
-        }
-        return p;
-      })
-    );
+  // Atualizar mês da fatura de uma linha e re-verificar duplicatas
+  async function handleAtualizarMesFatura(linha: number, mesFatura: string) {
+    // Primeiro atualiza o mês
+    const updatedPreview = previewData.map((p) => {
+      if (p.linha === linha) {
+        return { ...p, mesFatura };
+      }
+      return p;
+    });
+
+    // Depois re-verifica duplicatas para todas as compras
+    if (cartaoId) {
+      const comDuplicatas = await verificarDuplicatas(cartaoId, updatedPreview);
+      setPreviewData(comDuplicatas);
+    } else {
+      setPreviewData(updatedPreview);
+    }
   }
 
   // Marcar/desmarcar para forçar importação de duplicata
@@ -573,6 +580,19 @@ Exemplo:
                             <TableCell>
                               {p.possivelDuplicata && (
                                 <div className="flex items-center gap-2">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="max-w-[300px]">
+                                        <p className="font-medium">Compra similar já existe:</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {p.duplicataInfo?.descricao || "Descrição similar encontrada"}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                   <Checkbox
                                     id={`forcar-${p.linha}`}
                                     checked={p.forcarImportacao}
