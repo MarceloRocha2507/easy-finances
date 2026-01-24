@@ -39,6 +39,7 @@ const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 const RecorrentesPage = lazy(() => import("./pages/transactions/Recorrentes"));
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
+const InstalarPage = lazy(() => import("./pages/Instalar"));
 
 const queryClient = new QueryClient();
 
@@ -305,6 +306,15 @@ const App = () => (
                 <AdminRoute>
                   <Admin />
                 </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/instalar"
+              element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <InstalarPage />
+                </Suspense>
               }
             />
 
