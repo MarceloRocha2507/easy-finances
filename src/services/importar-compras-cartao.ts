@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, subMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { criarCompraCartao, CompraCartaoInput } from "./compras-cartao";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,9 @@ import type { Responsavel } from "./responsaveis";
 export interface DuplicataInfo {
   compraId: string;
   descricao: string;
+  origemDuplicata: "banco" | "lote";
+  parcelaEncontrada?: number;
+  mesInicio?: string;
 }
 
 export interface PreviewCompra {
@@ -33,6 +36,8 @@ export interface PreviewCompra {
   possivelDuplicata: boolean;
   duplicataInfo?: DuplicataInfo;
   forcarImportacao: boolean;
+  // Fingerprint para identificar compra base
+  fingerprint?: string;
 }
 
 export interface ResultadoImportacao {
@@ -443,7 +448,7 @@ export async function importarComprasEmLote(
 }
 
 /* ======================================================
-   Verificação de Duplicatas
+   Verificação de Duplicatas - Sistema de Fingerprint
 ====================================================== */
 
 /**
@@ -456,6 +461,60 @@ function normalizar(texto: string): string {
     .replace(/[\u0300-\u036f]/g, "")  // Remove acentos
     .replace(/\s+/g, " ")              // Múltiplos espaços → um
     .trim();
+}
+
+/**
+ * Extrair descrição base sem sufixo de parcela
+ * Ex: "Mp *Aliexpress - Parcela 5/12" → "Mp *Aliexpress"
+ */
+function extrairDescricaoBase(descricao: string): string {
+  // Remove padrões de parcela conhecidos
+  const padroes = [
+    /[-–]\s*[Pp]arcela\s+\d+\/\d+/i,  // - Parcela 1/2
+    /[Pp]arcela\s+\d+\/\d+/i,          // Parcela 1/2
+    /[-–]\s*\d+\/\d+/,                 // - 1/2
+    /\(\d+\/\d+\)/,                    // (1/2)
+    /\s\d+\/\d+$/,                     // espaço 1/2 no final
+  ];
+
+  let resultado = descricao;
+  for (const padrao of padroes) {
+    resultado = resultado.replace(padrao, "");
+  }
+  
+  // Limpar traços ou espaços extras no final
+  resultado = resultado.replace(/[-–]\s*$/, "").trim();
+  
+  return normalizar(resultado);
+}
+
+/**
+ * Calcular mês base (mês da primeira parcela) a partir do mês atual e número da parcela
+ * Ex: parcela 6 em 2026-03 → mes_base = 2025-10
+ */
+function calcularMesBase(mesFatura: string, parcelaInicial: number): string {
+  const data = parseISO(mesFatura + "-01");
+  const mesBase = subMonths(data, parcelaInicial - 1);
+  return format(mesBase, "yyyy-MM");
+}
+
+/**
+ * Gerar fingerprint único para uma compra parcelada
+ * Componentes: descrição_base | total_parcelas | valor_total_arredondado | mes_base
+ */
+function gerarFingerprint(
+  descricao: string,
+  parcelas: number,
+  valorTotal: number,
+  mesFatura: string,
+  parcelaInicial: number
+): string {
+  const descBase = extrairDescricaoBase(descricao);
+  const mesBase = calcularMesBase(mesFatura, parcelaInicial);
+  // Arredondar valor para evitar problemas com centavos
+  const valorArredondado = Math.round(valorTotal * 100) / 100;
+  
+  return `${descBase}|${parcelas}|${valorArredondado}|${mesBase}`;
 }
 
 /**
@@ -477,46 +536,180 @@ export function gerarOpcoesAnoMes(mesSugerido: string): OpcaoMesFatura[] {
 }
 
 /**
- * Verificar se existem compras duplicadas no cartão
+ * Detectar duplicatas dentro do próprio lote de importação
+ * Marca como duplicata todas as linhas com mesmo fingerprint, exceto a primeira (menor parcelaInicial)
+ */
+function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
+  // Agrupar por fingerprint
+  const grupos = new Map<string, PreviewCompra[]>();
+  
+  for (const compra of compras) {
+    if (!compra.valido || !compra.mesFatura) continue;
+    
+    const fingerprint = gerarFingerprint(
+      compra.descricao,
+      compra.parcelas,
+      compra.valorTotal,
+      compra.mesFatura,
+      compra.parcelaInicial
+    );
+    
+    compra.fingerprint = fingerprint;
+    
+    const grupo = grupos.get(fingerprint) || [];
+    grupo.push(compra);
+    grupos.set(fingerprint, grupo);
+  }
+  
+  // Para cada grupo com mais de um item, marcar duplicatas
+  const duplicatasNoLote = new Set<number>();
+  const principaisPorFingerprint = new Map<string, PreviewCompra>();
+  
+  for (const [fingerprint, grupo] of grupos) {
+    if (grupo.length > 1) {
+      // Ordenar por parcelaInicial (menor primeiro) para manter a "principal"
+      grupo.sort((a, b) => a.parcelaInicial - b.parcelaInicial);
+      const principal = grupo[0];
+      principaisPorFingerprint.set(fingerprint, principal);
+      
+      // Marcar os demais como duplicata
+      for (let i = 1; i < grupo.length; i++) {
+        duplicatasNoLote.add(grupo[i].linha);
+      }
+    }
+  }
+  
+  // Atualizar compras com informação de duplicata no lote
+  return compras.map(compra => {
+    if (duplicatasNoLote.has(compra.linha)) {
+      const principal = principaisPorFingerprint.get(compra.fingerprint || "");
+      return {
+        ...compra,
+        possivelDuplicata: true,
+        duplicataInfo: {
+          compraId: `linha-${principal?.linha}`,
+          descricao: principal?.descricao || compra.descricao,
+          origemDuplicata: "lote" as const,
+          parcelaEncontrada: principal?.parcelaInicial,
+          mesInicio: principal?.mesFatura,
+        },
+      };
+    }
+    return compra;
+  });
+}
+
+/**
+ * Verificar se existem compras duplicadas no cartão (banco de dados)
+ * Usa sistema de fingerprint para detectar mesma "compra base" mesmo com parcelas diferentes
  */
 export async function verificarDuplicatas(
   cartaoId: string,
   compras: PreviewCompra[]
 ): Promise<PreviewCompra[]> {
-  // Buscar todas as compras ativas do cartão
+  // Primeiro, detectar duplicatas dentro do próprio lote
+  let resultado = detectarDuplicatasNoLote(compras);
+  
+  // Buscar todas as compras ativas do cartão (incluir parcelas para fingerprint)
   const { data: existentes, error } = await supabase
     .from("compras_cartao")
-    .select("id, descricao, valor_total, parcela_inicial, mes_inicio")
+    .select("id, descricao, valor_total, parcela_inicial, mes_inicio, parcelas")
     .eq("cartao_id", cartaoId)
     .eq("ativo", true);
 
   if (error) {
     console.error("Erro ao verificar duplicatas:", error);
-    return compras; // Retorna sem modificar em caso de erro
+    return resultado; // Retorna com duplicatas do lote apenas
   }
 
-  // Para cada compra do preview, verificar se existe similar
-  return compras.map(compra => {
-    if (!compra.valido || !existentes || existentes.length === 0) {
+  if (!existentes || existentes.length === 0) {
+    return resultado;
+  }
+
+  // Gerar fingerprints das compras existentes no banco
+  const fingerprintsBanco = new Map<string, typeof existentes[0]>();
+  
+  for (const existente of existentes) {
+    const mesInicio = existente.mes_inicio; // formato "YYYY-MM-DD"
+    const mesFatura = mesInicio.substring(0, 7); // "YYYY-MM"
+    
+    const fingerprint = gerarFingerprint(
+      existente.descricao,
+      existente.parcelas,
+      existente.valor_total,
+      mesFatura,
+      existente.parcela_inicial
+    );
+    
+    fingerprintsBanco.set(fingerprint, existente);
+  }
+
+  // Verificar cada compra do preview contra o banco
+  resultado = resultado.map(compra => {
+    // Se já marcada como duplicata do lote, não sobrescrever
+    if (compra.possivelDuplicata) {
+      return compra;
+    }
+    
+    if (!compra.valido || !compra.mesFatura) {
       return compra;
     }
 
-    const similar = existentes.find(e => {
-      const descNorm = normalizar(e.descricao);
-      const compraDescNorm = normalizar(compra.descricao);
-      const valorSimilar = Math.abs(e.valor_total - compra.valorTotal) < 0.10;
-      const mesmoMes = e.mes_inicio === compra.mesFatura + "-01";
-      const mesmaParcela = e.parcela_inicial === compra.parcelaInicial;
+    const fingerprint = gerarFingerprint(
+      compra.descricao,
+      compra.parcelas,
+      compra.valorTotal,
+      compra.mesFatura,
+      compra.parcelaInicial
+    );
+    
+    // Verificar match exato
+    const matchExato = fingerprintsBanco.get(fingerprint);
+    if (matchExato) {
+      return {
+        ...compra,
+        fingerprint,
+        possivelDuplicata: true,
+        duplicataInfo: {
+          compraId: matchExato.id,
+          descricao: matchExato.descricao,
+          origemDuplicata: "banco" as const,
+          parcelaEncontrada: matchExato.parcela_inicial,
+          mesInicio: matchExato.mes_inicio.substring(0, 7),
+        },
+      };
+    }
+    
+    // Verificar match por descrição base + parcelas (tolerância de valor)
+    for (const [fpBanco, existente] of fingerprintsBanco) {
+      const [descBase, parcelas, , mesBase] = fingerprint.split("|");
+      const [descBaseBanco, parcelasBanco, valorBanco, mesBaseBanco] = fpBanco.split("|");
       
-      return descNorm === compraDescNorm && valorSimilar && mesmoMes && mesmaParcela;
-    });
-
-    return {
-      ...compra,
-      possivelDuplicata: !!similar,
-      duplicataInfo: similar ? { compraId: similar.id, descricao: similar.descricao } : undefined,
-    };
+      const mesmaDescBase = descBase === descBaseBanco;
+      const mesmasParcelas = parcelas === parcelasBanco;
+      const mesmoMesBase = mesBase === mesBaseBanco;
+      const valorSimilar = Math.abs(compra.valorTotal - existente.valor_total) < 0.10;
+      
+      if (mesmaDescBase && mesmasParcelas && mesmoMesBase && valorSimilar) {
+        return {
+          ...compra,
+          fingerprint,
+          possivelDuplicata: true,
+          duplicataInfo: {
+            compraId: existente.id,
+            descricao: existente.descricao,
+            origemDuplicata: "banco" as const,
+            parcelaEncontrada: existente.parcela_inicial,
+            mesInicio: existente.mes_inicio.substring(0, 7),
+          },
+        };
+      }
+    }
+    
+    return { ...compra, fingerprint };
   });
+
+  return resultado;
 }
 
 /* ======================================================

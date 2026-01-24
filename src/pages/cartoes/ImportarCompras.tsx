@@ -174,8 +174,27 @@ export default function ImportarCompras() {
 
     setImportando(true);
     try {
+      // CHECKPOINT FINAL: Re-verificar duplicatas antes de importar
+      const verificacaoFinal = await verificarDuplicatas(cartaoId, previewData);
+      setPreviewData(verificacaoFinal);
+      
+      // Verificar se há duplicatas não forçadas
+      const duplicatasNaoForcadas = verificacaoFinal.filter(
+        (p) => p.valido && p.possivelDuplicata && !p.forcarImportacao
+      );
+      
+      if (duplicatasNaoForcadas.length > 0) {
+        toast({
+          title: "Duplicatas encontradas",
+          description: `${duplicatasNaoForcadas.length} compra(s) duplicada(s) detectada(s). Revise ou marque "Importar" para forçar.`,
+          variant: "destructive",
+        });
+        setImportando(false);
+        return;
+      }
+
       // Filtrar apenas compras válidas e não duplicatas (ou forçadas)
-      const comprasParaImportar = previewData.filter(
+      const comprasParaImportar = verificacaoFinal.filter(
         (p) => p.valido && (!p.possivelDuplicata || p.forcarImportacao)
       );
       const result = await importarComprasEmLote(cartaoId, comprasParaImportar);
@@ -450,6 +469,21 @@ Exemplo:
                     )}
                   </CardDescription>
                 </CardHeader>
+                
+                {/* Alerta de duplicatas */}
+                {stats.duplicatas > 0 && (
+                  <div className="px-6 pb-3">
+                    <Alert variant="default" className="border-amber-500/50 bg-amber-500/5">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      <AlertTitle className="text-amber-600">Atenção: Duplicatas detectadas</AlertTitle>
+                      <AlertDescription className="text-sm">
+                        {stats.duplicatas} compra(s) podem estar duplicadas. Isso pode gerar parcelas repetidas 
+                        em meses futuros e inflar a fatura. Revise antes de importar ou marque "Importar" para forçar.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+                
                 <CardContent className="p-0">
                   <ScrollArea className="h-[400px]">
                     <Table>
@@ -507,7 +541,10 @@ Exemplo:
                               )}
                               {p.possivelDuplicata && (
                                 <p className="text-xs text-amber-600 mt-0.5">
-                                  Já existe compra similar
+                                  {p.duplicataInfo?.origemDuplicata === "lote" 
+                                    ? `Duplicata no lote (linha ${p.duplicataInfo.compraId.replace("linha-", "")})`
+                                    : `Duplicata no banco (${p.duplicataInfo?.parcelaEncontrada}/${p.parcelas})`
+                                  }
                                 </p>
                               )}
                             </TableCell>
@@ -586,10 +623,26 @@ Exemplo:
                                         <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
                                       </TooltipTrigger>
                                       <TooltipContent side="left" className="max-w-[300px]">
-                                        <p className="font-medium">Compra similar já existe:</p>
+                                        <p className="font-medium">
+                                          {p.duplicataInfo?.origemDuplicata === "lote" 
+                                            ? "Duplicata no lote de importação"
+                                            : "Compra similar já existe no banco"
+                                          }
+                                        </p>
                                         <p className="text-xs text-muted-foreground mt-1">
                                           {p.duplicataInfo?.descricao || "Descrição similar encontrada"}
                                         </p>
+                                        {p.duplicataInfo?.origemDuplicata === "banco" && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Parcela {p.duplicataInfo.parcelaEncontrada}/{p.parcelas} · 
+                                            Fatura {p.duplicataInfo.mesInicio}
+                                          </p>
+                                        )}
+                                        {p.duplicataInfo?.origemDuplicata === "lote" && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Mesma compra base encontrada na linha {p.duplicataInfo.compraId.replace("linha-", "")}
+                                          </p>
+                                        )}
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
