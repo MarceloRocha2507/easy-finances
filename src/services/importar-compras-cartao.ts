@@ -3,6 +3,7 @@ import { ptBR } from "date-fns/locale";
 import { criarCompraCartao, CompraCartaoInput } from "./compras-cartao";
 import { supabase } from "@/integrations/supabase/client";
 import type { Responsavel } from "./responsaveis";
+import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
 
 /* ======================================================
    Types
@@ -55,31 +56,6 @@ export interface OpcaoMesFatura {
 /* ======================================================
    Helpers
 ====================================================== */
-
-/**
- * Calcular o mês da fatura baseado na data da compra e dia de fechamento
- * 
- * Lógica: A fatura de um mês inclui compras feitas desde o dia do fechamento
- * do mês anterior até o dia anterior ao fechamento do mês atual.
- * 
- * Exemplo com fechamento dia 5:
- * - Compra em 04/jan → fatura de janeiro (paga em fevereiro)
- * - Compra em 05/jan → fatura de fevereiro (paga em março)
- * - Compra em 20/jan → fatura de fevereiro (paga em março)
- */
-function calcularMesFatura(dataCompra: Date, diaFechamento: number): string {
-  const diaCompra = dataCompra.getDate();
-  const mesCompra = dataCompra.getMonth();
-  const anoCompra = dataCompra.getFullYear();
-
-  if (diaCompra < diaFechamento) {
-    // Compra antes do fechamento: vai para a fatura do mês atual
-    return format(new Date(anoCompra, mesCompra, 1), "yyyy-MM");
-  } else {
-    // Compra no dia ou após o fechamento: vai para a fatura do próximo mês
-    return format(new Date(anoCompra, mesCompra + 1, 1), "yyyy-MM");
-  }
-}
 
 /**
  * Detectar padrão de parcela na descrição
@@ -373,8 +349,8 @@ export function parseLinhasCompra(
         ? preview.valor * preview.parcelas
         : preview.valor;
 
-      // Calcular mês da fatura
-      preview.mesFatura = calcularMesFatura(preview.dataCompra, diaFechamento);
+      // Calcular mês da fatura usando função centralizada
+      preview.mesFatura = calcularMesFaturaCartaoStr(preview.dataCompra, diaFechamento);
 
       // Marcar como válido se tiver responsável
       preview.valido = !!preview.responsavelId;
@@ -716,4 +692,4 @@ export async function verificarDuplicatas(
    Exports auxiliares
 ====================================================== */
 
-export { calcularMesFatura, detectarParcela, mapearResponsavel, parsearValor, parsearData, normalizar };
+export { calcularMesFaturaCartaoStr as calcularMesFatura, detectarParcela, mapearResponsavel, parsearValor, parsearData, normalizar };

@@ -29,6 +29,7 @@ import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NovoResponsavelDialog } from "./NovoResponsavelDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
 
 type Categoria = {
   id: string;
@@ -59,20 +60,8 @@ export function NovaCompraCartaoDialog({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
 
-  // Calcular mês da fatura baseado na data da compra e dia de fechamento
-  function calcularMesFatura(dataCompra: Date, diaFechamento: number): string {
-    const diaCompra = dataCompra.getDate();
-    const mesCompra = dataCompra.getMonth();
-    const anoCompra = dataCompra.getFullYear();
-
-    if (diaCompra >= diaFechamento) {
-      // Compra após o fechamento: vai para a fatura do mês atual
-      return format(new Date(anoCompra, mesCompra, 1), "yyyy-MM");
-    } else {
-      // Compra antes do fechamento: vai para a fatura do mês anterior
-      return format(new Date(anoCompra, mesCompra - 1, 1), "yyyy-MM");
-    }
-  }
+  // Usar função centralizada para calcular mês da fatura
+  // (lógica unificada em src/lib/dateUtils.ts)
 
   // Gerar opções de mês da fatura (6 meses anteriores + próximos 12 meses)
   const opcoesMesFatura = useMemo(() => {
@@ -127,7 +116,7 @@ export function NovaCompraCartaoDialog({
   useEffect(() => {
     if (open) {
       const hoje = new Date();
-      const mesFaturaCalculado = calcularMesFatura(hoje, cartao.dia_fechamento);
+      const mesFaturaCalculado = calcularMesFaturaCartaoStr(hoje, cartao.dia_fechamento);
       
       setForm({
         descricao: "",
@@ -147,7 +136,7 @@ export function NovaCompraCartaoDialog({
   useEffect(() => {
     if (form.dataCompra && open) {
       const dataCompra = new Date(form.dataCompra + "T12:00:00"); // T12:00:00 evita problemas de timezone
-      const novoMesFatura = calcularMesFatura(dataCompra, cartao.dia_fechamento);
+      const novoMesFatura = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
       
       // Só atualizar se for diferente (evitar loop infinito)
       if (form.mesFatura !== novoMesFatura) {
