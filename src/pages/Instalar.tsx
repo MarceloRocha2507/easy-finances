@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Smartphone, Monitor, Check, Share, MoreVertical, Plus, ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Download, Smartphone, Monitor, Check, Share, MoreVertical, Plus, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -16,12 +17,18 @@ export default function Instalar() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
     // Detectar plataforma
     const userAgent = window.navigator.userAgent.toLowerCase();
-    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIOSDevice);
     setIsAndroid(/android/.test(userAgent));
+
+    // Detectar Safari no iOS
+    const isSafariBrowser = isIOSDevice && /safari/.test(userAgent) && !/crios|fxios|opios|mercury/.test(userAgent);
+    setIsSafari(isSafariBrowser);
 
     // Verificar se já está instalado (modo standalone)
     const standalone = window.matchMedia("(display-mode: standalone)").matches || 
@@ -108,6 +115,17 @@ export default function Instalar() {
       </div>
 
       <div className="container max-w-2xl mx-auto p-4 py-8 space-y-6">
+        {/* Alerta para iOS fora do Safari */}
+        {isIOS && !isSafari && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Atenção:</strong> No iPhone/iPad, a instalação só funciona pelo <strong>Safari</strong>. 
+              Abra este link no Safari para instalar o app.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Hero */}
         <div className="text-center space-y-4">
           <div className="mx-auto w-20 h-20 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
@@ -171,52 +189,85 @@ export default function Instalar() {
           </Card>
         )}
 
-        {/* Instruções para iOS */}
-        {isIOS && !deferredPrompt && (
-          <Card>
+        {/* Instruções para iOS no Safari */}
+        {isIOS && isSafari && !deferredPrompt && (
+          <Card className="border-primary bg-primary/5">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Smartphone className="w-5 h-5" />
+                <Smartphone className="w-5 h-5 text-primary" />
                 Instruções para iPhone/iPad
               </CardTitle>
               <CardDescription>
-                No iOS, a instalação é feita manualmente pelo Safari
+                Siga os passos abaixo para instalar o app
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   1
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">Toque no botão Compartilhar</p>
-                  <p className="text-sm text-muted-foreground">
-                    O ícone <Share className="w-4 h-4 inline" /> na barra inferior do Safari
-                  </p>
+                <div className="flex-1 pt-1">
+                  <p className="font-medium text-lg">Toque no botão Compartilhar</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Share className="w-6 h-6 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      O ícone fica na barra inferior do Safari
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   2
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">Role e toque em "Adicionar à Tela de Início"</p>
-                  <p className="text-sm text-muted-foreground">
-                    O ícone <Plus className="w-4 h-4 inline" /> com o texto ao lado
-                  </p>
+                <div className="flex-1 pt-1">
+                  <p className="font-medium text-lg">Toque em "Adicionar à Tela de Início"</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Plus className="w-6 h-6 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Role para baixo se necessário
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   3
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">Confirme tocando em "Adicionar"</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex-1 pt-1">
+                  <p className="font-medium text-lg">Confirme tocando em "Adicionar"</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     O ícone do AppFinance aparecerá na sua tela inicial
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Instruções para iOS fora do Safari */}
+        {isIOS && !isSafari && !deferredPrompt && !isInstalled && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Como instalar no iPhone/iPad
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Para instalar o AppFinance no seu dispositivo Apple:
+              </p>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>Copie o link desta página</li>
+                <li>Abra o <strong>Safari</strong></li>
+                <li>Cole o link e acesse</li>
+                <li>Siga as instruções de instalação</li>
+              </ol>
             </CardContent>
           </Card>
         )}
@@ -235,35 +286,40 @@ export default function Instalar() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   1
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pt-1">
                   <p className="font-medium">Toque no menu do navegador</p>
-                  <p className="text-sm text-muted-foreground">
-                    O ícone <MoreVertical className="w-4 h-4 inline" /> no canto superior direito
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <MoreVertical className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      No canto superior direito
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   2
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">Toque em "Instalar app" ou "Adicionar à tela inicial"</p>
+                <div className="flex-1 pt-1">
+                  <p className="font-medium">Toque em "Instalar app"</p>
                   <p className="text-sm text-muted-foreground">
-                    O texto pode variar dependendo do navegador
+                    Ou "Adicionar à tela inicial"
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   3
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pt-1">
                   <p className="font-medium">Confirme a instalação</p>
                   <p className="text-sm text-muted-foreground">
-                    O ícone do AppFinance aparecerá na sua tela inicial
+                    O ícone aparecerá na sua tela inicial
                   </p>
                 </div>
               </div>
@@ -285,10 +341,10 @@ export default function Instalar() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   1
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pt-1">
                   <p className="font-medium">Procure o ícone de instalação</p>
                   <p className="text-sm text-muted-foreground">
                     Na barra de endereço, procure o ícone <Download className="w-4 h-4 inline" /> ou <Plus className="w-4 h-4 inline" />
@@ -296,10 +352,10 @@ export default function Instalar() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
                   2
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pt-1">
                   <p className="font-medium">Clique em "Instalar"</p>
                   <p className="text-sm text-muted-foreground">
                     O app será adicionado aos seus aplicativos
