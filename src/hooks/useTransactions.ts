@@ -580,6 +580,7 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
       const { data: allCompleted, error: allError } = await supabase
         .from('transactions')
         .select('id, type, amount, status, created_at')
+        .eq('user_id', user!.id)
         .eq('status', 'completed')
         .order('created_at', { ascending: true });
 
