@@ -551,6 +551,31 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
 
       const saldoInicial = Number(profile?.saldo_inicial) || 0;
 
+      // Buscar total de metas não concluídas
+      const { data: metas } = await supabase
+        .from('metas')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('concluida', false);
+
+      const totalMetas = (metas || []).reduce(
+        (sum, meta) => sum + Number(meta.valor_atual), 0
+      );
+
+      // Buscar total de investimentos ativos
+      const { data: investimentos } = await supabase
+        .from('investimentos')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('ativo', true);
+
+      const totalInvestido = (investimentos || []).reduce(
+        (sum, inv) => sum + Number(inv.valor_atual), 0
+      );
+
+      // Total guardado = Metas + Investimentos
+      const totalGuardado = totalMetas + totalInvestido;
+
       // Buscar TODAS as transações completed para calcular saldo progressivo
       const { data: allCompleted, error: allError } = await supabase
         .from('transactions')
@@ -560,13 +585,14 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
 
       if (allError) throw allError;
 
-      // Calcular saldo progressivo
+      // Calcular saldo progressivo (descontando metas e investimentos)
       let saldo = saldoInicial;
       const saldoMap = new Map<string, number>();
       
       for (const t of allCompleted || []) {
         saldo += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
-        saldoMap.set(t.id, saldo);
+        // Saldo disponível = saldo total - total guardado
+        saldoMap.set(t.id, saldo - totalGuardado);
       }
 
       // Buscar transações filtradas para exibição
