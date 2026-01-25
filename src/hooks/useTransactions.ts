@@ -535,6 +535,77 @@ export function usePendingStats() {
   });
 }
 
+// Hook para transações com saldo progressivo
+export function useTransactionsWithBalance(filters?: TransactionFilters) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['transactions-with-balance', user?.id, filters],
+    queryFn: async () => {
+      // Buscar saldo inicial do profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('saldo_inicial')
+        .eq('user_id', user!.id)
+        .single();
+
+      const saldoInicial = Number(profile?.saldo_inicial) || 0;
+
+      // Buscar TODAS as transações completed para calcular saldo progressivo
+      const { data: allCompleted, error: allError } = await supabase
+        .from('transactions')
+        .select('id, type, amount, status, created_at')
+        .eq('status', 'completed')
+        .order('created_at', { ascending: true });
+
+      if (allError) throw allError;
+
+      // Calcular saldo progressivo
+      let saldo = saldoInicial;
+      const saldoMap = new Map<string, number>();
+      
+      for (const t of allCompleted || []) {
+        saldo += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+        saldoMap.set(t.id, saldo);
+      }
+
+      // Buscar transações filtradas para exibição
+      let query = supabase
+        .from('transactions')
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (filters?.startDate) {
+        query = query.gte('date', filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte('date', filters.endDate);
+      }
+      if (filters?.type) {
+        query = query.eq('type', filters.type);
+      }
+      if (filters?.categoryId) {
+        query = query.eq('category_id', filters.categoryId);
+      }
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return {
+        transactions: data as Transaction[],
+        saldoMap,
+      };
+    },
+    enabled: !!user,
+  });
+}
+
 export function useCompleteStats(mesReferencia?: Date) {
   const { user } = useAuth();
   const mesRef = mesReferencia || new Date();

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
@@ -125,10 +125,13 @@ export default function Transactions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: transactions, isLoading, isFetching } = useTransactions({
+  const { data: transactionsData, isLoading, isFetching } = useTransactionsWithBalance({
     startDate,
     endDate,
   });
+  
+  const transactions = transactionsData?.transactions;
+  const saldoMap = transactionsData?.saldoMap;
   const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   const handleRefresh = async () => {
@@ -858,6 +861,7 @@ export default function Transactions() {
                 onDelete={handleDelete}
                 onMarkAsPaid={handleMarkAsPaid}
                 onDuplicate={handleDuplicate}
+                saldoApos={saldoMap?.get(transaction.id)}
               />
             ))
           )}
@@ -902,9 +906,10 @@ interface TransactionRowProps {
   onDelete: (id: string) => void;
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
+  saldoApos?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, saldoApos }: TransactionRowProps) {
   const IconComponent = getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
@@ -974,6 +979,18 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             <span className="text-xs text-muted-foreground">
               • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
             </span>
+          )}
+          {/* Saldo após a transação */}
+          {saldoApos !== undefined && transaction.status === 'completed' && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <span className={cn(
+                "text-xs font-medium",
+                saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
+              )}>
+                Saldo: {formatCurrency(saldoApos)}
+              </span>
+            </>
           )}
         </div>
       </div>
