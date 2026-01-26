@@ -14,8 +14,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, isToday, isYesterday, parseISO, isBefore, isEqual, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -132,6 +133,8 @@ export default function Transactions() {
   
   const transactions = transactionsData?.transactions;
   const saldoMap = transactionsData?.saldoMap;
+  const totalGuardado = transactionsData?.totalGuardado || 0;
+  const ultimaTransacaoId = transactionsData?.ultimaTransacaoId;
   const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   const handleRefresh = async () => {
@@ -862,6 +865,8 @@ export default function Transactions() {
                 onMarkAsPaid={handleMarkAsPaid}
                 onDuplicate={handleDuplicate}
                 saldoApos={saldoMap?.get(transaction.id)}
+                isUltimaTransacao={transaction.id === ultimaTransacaoId}
+                totalGuardado={totalGuardado}
               />
             ))
           )}
@@ -907,9 +912,11 @@ interface TransactionRowProps {
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
   saldoApos?: number;
+  isUltimaTransacao?: boolean;
+  totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, saldoApos }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const IconComponent = getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
@@ -984,12 +991,35 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           {saldoApos !== undefined && transaction.status === 'completed' && (
             <>
               <span className="text-muted-foreground/50">•</span>
-              <span className={cn(
-                "text-xs font-medium",
-                saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
-              )}>
-                Saldo: {formatCurrency(saldoApos)}
-              </span>
+              {isUltimaTransacao && totalGuardado > 0 ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={cn(
+                        "text-xs font-medium flex items-center gap-1 cursor-help",
+                        saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
+                      )}>
+                        Saldo: {formatCurrency(saldoApos)}
+                        <Info className="w-3 h-3" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="p-3">
+                      <div className="space-y-1 text-xs">
+                        <p className="font-medium">Patrimônio: {formatCurrency(saldoApos + totalGuardado)}</p>
+                        <p className="text-muted-foreground">Guardado: {formatCurrency(totalGuardado)}</p>
+                        <p className="font-semibold">Disponível: {formatCurrency(saldoApos)}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <span className={cn(
+                  "text-xs font-medium",
+                  saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
+                )}>
+                  Saldo: {formatCurrency(saldoApos)}
+                </span>
+              )}
             </>
           )}
         </div>
