@@ -42,6 +42,7 @@ export interface PreviewCompra {
   possivelDuplicata: boolean;
   duplicataInfo?: DuplicataInfo;
   forcarImportacao: boolean;
+  marcadaDuplicataManual: boolean;  // Marcação manual pelo usuário
   // Fingerprint para identificar compra base
   fingerprint?: string;
 }
@@ -257,6 +258,7 @@ export function parseLinhasCompra(
       valido: false,
       possivelDuplicata: false,
       forcarImportacao: false,
+      marcadaDuplicataManual: false,
     };
 
     try {
