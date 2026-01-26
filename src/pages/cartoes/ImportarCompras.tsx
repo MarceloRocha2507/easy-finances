@@ -4,6 +4,7 @@ import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { useAuth } from "@/hooks/useAuth";
+import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useResponsaveis } from "@/services/responsaveis";
 import {
@@ -152,15 +153,48 @@ export default function ImportarCompras() {
     }
   }, [modoMesFatura]);
 
-  // Aplicar mês global a todas as linhas quando mudar
-  useEffect(() => {
-    if (modoMesFatura === "fixo" && mesFaturaGlobal && previewData.length > 0) {
-      setPreviewData(prev => prev.map(p => ({
+  // Handler para mudança de mês global com re-verificação de duplicatas
+  async function handleMesFaturaGlobalChange(novoMes: string) {
+    setMesFaturaGlobal(novoMes);
+    
+    if (previewData.length > 0 && cartaoId) {
+      // Atualiza o mês de todas as compras
+      const dadosAtualizados = previewData.map(p => ({
         ...p,
-        mesFatura: mesFaturaGlobal
-      })));
+        mesFatura: novoMes
+      }));
+      
+      // Re-verifica duplicatas com os novos meses
+      const comDuplicatas = await verificarDuplicatas(cartaoId, dadosAtualizados);
+      setPreviewData(comDuplicatas);
     }
-  }, [modoMesFatura, mesFaturaGlobal]);
+  }
+
+  // Handler para mudança de modo (automático/fixo)
+  async function handleModoMesFaturaChange(novoModo: ModoMesFatura) {
+    setModoMesFatura(novoModo);
+    
+    if (novoModo === "automatico" && previewData.length > 0 && cartaoId && cartao) {
+      // Recalcula mês automático para cada compra
+      const dadosAtualizados = previewData.map(p => {
+        if (p.dataCompra) {
+          const mesFaturaCalculado = calcularMesFaturaCartaoStr(p.dataCompra, cartao.dia_fechamento);
+          return { ...p, mesFatura: mesFaturaCalculado };
+        }
+        return p;
+      });
+      
+      const comDuplicatas = await verificarDuplicatas(cartaoId, dadosAtualizados);
+      setPreviewData(comDuplicatas);
+    } else if (novoModo === "fixo") {
+      // Inicializa com mês atual se não houver seleção
+      const mesInicial = mesFaturaGlobal || format(new Date(), "yyyy-MM");
+      if (!mesFaturaGlobal) {
+        setMesFaturaGlobal(mesInicial);
+      }
+      await handleMesFaturaGlobalChange(mesInicial);
+    }
+  }
 
   // Estatísticas do preview
   const stats = useMemo(() => {
@@ -549,7 +583,7 @@ Exemplo:
                     
                     <RadioGroup
                       value={modoMesFatura}
-                      onValueChange={(v) => setModoMesFatura(v as ModoMesFatura)}
+                      onValueChange={(v) => handleModoMesFaturaChange(v as ModoMesFatura)}
                       className="flex flex-col gap-3"
                     >
                       <div className="flex items-center space-x-2">
@@ -566,7 +600,7 @@ Exemplo:
                         {modoMesFatura === "fixo" && (
                           <Select
                             value={mesFaturaGlobal}
-                            onValueChange={setMesFaturaGlobal}
+                            onValueChange={handleMesFaturaGlobalChange}
                           >
                             <SelectTrigger className="w-[160px] h-8">
                               <SelectValue placeholder="Selecione" />
