@@ -317,7 +317,7 @@ export default function DespesasFuturas() {
                   variant="ghost"
                   size="sm"
                   onClick={handleProximos6Meses}
-                  className="text-xs px-2 hidden sm:inline-flex"
+                  className="text-xs px-2"
                 >
                   6 meses
                 </Button>
@@ -325,7 +325,7 @@ export default function DespesasFuturas() {
                   variant="ghost"
                   size="sm"
                   onClick={handleProximo12Meses}
-                  className="text-xs px-2 hidden sm:inline-flex"
+                  className="text-xs px-2"
                 >
                   12 meses
                 </Button>
