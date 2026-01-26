@@ -190,6 +190,11 @@ export default function DespesasFuturas() {
                 <Wallet className="h-4 w-4" />
                 Total no Período
               </CardTitle>
+              {startDate && endDate && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {format(startDate, "MMM/yy", { locale: ptBR })} até {format(endDate, "MMM/yy", { locale: ptBR })}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-expense">
