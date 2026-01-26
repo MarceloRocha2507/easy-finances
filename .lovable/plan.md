@@ -1,67 +1,86 @@
 
-# Plano: Corrigir Mês de Início das Compras Restauradas
+# Plano: Verificar Duplicatas Apenas no Mês Selecionado
 
-## Diagnóstico
+## Problema Atual
 
-As compras foram restauradas corretamente da auditoria, mas o campo `mes_inicio` estava salvo incorretamente no backup original. Para compras parceladas importadas com parcela intermediária (ex: "Parcela 4/8"), o `mes_inicio` deveria refletir o mês em que aquela parcela específica aparece na fatura.
+O sistema de detecção de duplicatas usa um "fingerprint" que identifica todo o **contrato de parcelamento** (mesmo valor total, mesma descrição base, mesmo número de parcelas). Isso faz com que:
 
-| Compra | parcela_inicial | mes_inicio atual | mes_inicio correto |
-|--------|-----------------|------------------|-------------------|
-| Nortmotos - Parcela 4/8 | 4 | 2026-01-01 | 2026-04-01 |
-| Mp *Aliexpress - Parcela 5/12 | 5 | 2026-01-01 | 2026-05-01 |
-| Jim.Com* 59117744 Aur - 3/3 | 3 | 2026-01-01 | 2026-03-01 |
-| Marcelo Rocha - 2/2 | 2 | 2026-01-01 | 2026-02-01 |
-| ... (9 compras afetadas) | | | |
+- "Nortmotos - Parcela 4/4" para Março/2026 seja marcada como duplicata
+- Porque já existe "Nortmotos - Parcela 3/4" em Fevereiro/2026 no banco
+- O sistema considera que são "a mesma compra" (mesmo parcelamento)
 
-O erro está na fórmula: o `mes_inicio` correto é `2026-01-01 + (parcela_inicial - 1) meses`.
+Isso não é o comportamento desejado. Você quer importar a parcela 4/4 para Março sem que ela seja bloqueada pela parcela 3/4 de Fevereiro.
 
-## Solução em 2 Etapas
+## Solução
 
-### Etapa 1: Corrigir `mes_inicio` das compras
+Alterar a lógica de verificação de duplicatas para comparar **apenas no mesmo mês de fatura**, verificando:
 
-Atualizar o campo `mes_inicio` das 9 compras com `parcela_inicial > 1`:
+1. Mesma descrição (normalizada)
+2. Mesmo mês de fatura (`mesFatura`)
+3. Valor similar (±R$0.10)
 
-```sql
-UPDATE compras_cartao
-SET mes_inicio = (mes_inicio::date + ((parcela_inicial - 1) || ' months')::interval)::date
-WHERE cartao_id = '8607c9f1-ccdc-42df-ad2a-d2669c7b347c'
-  AND parcela_inicial > 1;
+Isso permite importar parcelas diferentes de um mesmo parcelamento em meses diferentes sem conflito.
+
+## Mudanças Técnicas
+
+### Arquivo: `src/services/importar-compras-cartao.ts`
+
+#### 1. Simplificar o Fingerprint
+
+Remover o cálculo de `mes_base` e usar apenas:
+- Descrição normalizada
+- Mês da fatura (não o mês base teórico)
+- Valor da parcela
+
+```text
+Antes:  "mp *aliexpress|12|449.64|2025-10" (mês base da 1ª parcela)
+Depois: "mp *aliexpress|37.47|2026-03"     (mês da fatura selecionado)
 ```
 
-### Etapa 2: Regenerar parcelas
+#### 2. Ajustar Query do Banco
 
-Após corrigir o `mes_inicio`, as parcelas existentes estarão com `mes_referencia` errado. Será necessário:
-
-1. **Deletar parcelas atuais** dessas compras
-2. **Regenerar via "Verificar Parcelas"** com os valores corretos
+Filtrar apenas compras cujo `mes_inicio` corresponda ao mês que está sendo importado:
 
 ```sql
--- Deletar parcelas das compras afetadas
-DELETE FROM parcelas_cartao
-WHERE compra_id IN (
-  SELECT id FROM compras_cartao 
-  WHERE cartao_id = '8607c9f1-ccdc-42df-ad2a-d2669c7b347c'
-    AND parcela_inicial > 1
-);
+-- Antes: busca TODAS as compras do cartão
+SELECT * FROM compras_cartao WHERE cartao_id = ? AND ativo = true
+
+-- Depois: busca apenas compras do mês específico
+SELECT * FROM compras_cartao 
+WHERE cartao_id = ? 
+  AND ativo = true
+  AND mes_inicio LIKE '2026-03%'  -- Mês da fatura sendo importada
 ```
 
-## Resultado Esperado
+#### 3. Detectar Duplicatas por Mês
 
-Após a correção:
+Para cada compra no lote, verificar se já existe no banco:
+- Uma compra com descrição similar
+- No mesmo mês de fatura
+- Com valor próximo (±R$0.10)
 
-| Compra | Parcela | Mês Referência |
-|--------|---------|----------------|
-| Nortmotos - 4/8 | 4 | Abril/2026 |
-| Nortmotos - 4/8 | 5 | Maio/2026 |
-| Mp *Aliexpress - 5/12 | 5 | Maio/2026 |
-| Marcelo Rocha - 2/2 | 2 | Fevereiro/2026 |
+### Comportamento Esperado Após a Mudança
 
-## Sequência de Execução
+| Importando | Já existe no banco | Resultado |
+|------------|-------------------|-----------|
+| Nortmotos 4/4 (Mar/26) | Nortmotos 3/4 (Fev/26) | **OK - Não é duplicata** |
+| Nortmotos 4/4 (Mar/26) | Nortmotos 4/4 (Mar/26) | Duplicata |
+| Aliexpress 6/12 (Mar/26) | Aliexpress 5/12 (Fev/26) | **OK - Não é duplicata** |
+| Aliexpress 6/12 (Mar/26) | Aliexpress 6/12 (Mar/26) | Duplicata |
 
-1. Executar UPDATE no `mes_inicio` das compras
-2. Deletar parcelas incorretas
-3. Clicar em "Verificar Parcelas" para regenerar
+## Impacto
+
+- Compras parceladas poderão ser importadas mês a mês sem falsos positivos
+- A detecção de duplicata real (mesma linha reimportada) continua funcionando
+- Comportamento mais intuitivo e alinhado com a expectativa do usuário
+
+## Arquivos a Modificar
+
+1. `src/services/importar-compras-cartao.ts`
+   - Função `gerarFingerprint`: simplificar para usar mês da fatura diretamente
+   - Função `verificarDuplicatas`: filtrar por mês e comparar descrição + valor
+   - Função `detectarDuplicatasNoLote`: ajustar fingerprint
 
 ## Tempo Estimado
 
-Menos de 1 minuto para executar as correções SQL.
+Menos de 5 minutos para implementar as alterações.
