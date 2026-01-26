@@ -630,9 +630,9 @@ Exemplo:
                           <TableHead>Responsável</TableHead>
                           <TableHead>Fatura</TableHead>
                           <TableHead>Tipo</TableHead>
-                          <TableHead className="w-28">
-                            {stats.duplicatas > 0 && (
-                              <div className="flex items-center gap-2">
+                          <TableHead className="w-32">
+                            {stats.duplicatas > 0 ? (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap">
                                 <Checkbox
                                   id="forcar-todos"
                                   checked={previewData.filter(p => p.possivelDuplicata).every(p => p.forcarImportacao)}
@@ -641,11 +641,14 @@ Exemplo:
                                       p.possivelDuplicata ? { ...p, forcarImportacao: checked === true } : p
                                     ));
                                   }}
+                                  className="h-3.5 w-3.5"
                                 />
                                 <label htmlFor="forcar-todos" className="text-xs cursor-pointer font-normal">
-                                  Forçar todos
+                                  Forçar
                                 </label>
                               </div>
+                            ) : (
+                              <span className="text-xs">Duplicata</span>
                             )}
                           </TableHead>
                         </TableRow>
