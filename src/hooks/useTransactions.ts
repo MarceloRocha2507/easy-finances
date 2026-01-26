@@ -654,14 +654,27 @@ export function useCompleteStats(mesReferencia?: Date) {
   return useQuery({
     queryKey: ['complete-stats', user?.id, inicioMes],
     queryFn: async () => {
-      // Buscar saldo inicial do profile
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Buscar soma de saldo_inicial de todos os bancos ativos
+      const { data: bancos } = await supabase
+        .from('bancos')
         .select('saldo_inicial')
         .eq('user_id', user!.id)
-        .single();
+        .eq('ativo', true);
 
-      const saldoInicial = Number(profile?.saldo_inicial) || 0;
+      const saldoInicialBancos = (bancos || []).reduce(
+        (acc, b) => acc + Number(b.saldo_inicial || 0), 0
+      );
+
+      // Fallback: se não tem bancos, buscar do profile (compatibilidade)
+      let saldoInicial = saldoInicialBancos;
+      if (saldoInicialBancos === 0) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('saldo_inicial')
+          .eq('user_id', user!.id)
+          .single();
+        saldoInicial = Number(profile?.saldo_inicial) || 0;
+      }
 
       // Buscar total de investimentos ativos
       const { data: investimentos } = await supabase

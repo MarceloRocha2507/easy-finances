@@ -106,35 +106,47 @@ export type Database = {
       }
       bancos: {
         Row: {
+          agencia: string | null
           ativo: boolean
           codigo: string | null
+          conta: string | null
           cor: string
           created_at: string
           id: string
           logo_url: string | null
           nome: string
+          saldo_inicial: number
+          tipo_conta: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          agencia?: string | null
           ativo?: boolean
           codigo?: string | null
+          conta?: string | null
           cor?: string
           created_at?: string
           id?: string
           logo_url?: string | null
           nome: string
+          saldo_inicial?: number
+          tipo_conta?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          agencia?: string | null
           ativo?: boolean
           codigo?: string | null
+          conta?: string | null
           cor?: string
           created_at?: string
           id?: string
           logo_url?: string | null
           nome?: string
+          saldo_inicial?: number
+          tipo_conta?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -732,6 +744,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          banco_id: string | null
           category_id: string | null
           created_at: string
           date: string
@@ -752,6 +765,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          banco_id?: string | null
           category_id?: string | null
           created_at?: string
           date?: string
@@ -772,6 +786,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          banco_id?: string | null
           category_id?: string | null
           created_at?: string
           date?: string
@@ -791,6 +806,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_banco_id_fkey"
+            columns: ["banco_id"]
+            isOneToOne: false
+            referencedRelation: "bancos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]

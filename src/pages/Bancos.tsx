@@ -16,12 +16,14 @@ import {
   NovoBancoDialog,
   EditarBancoDialog,
   ExcluirBancoDialog,
+  AjustarSaldoBancoDialog,
 } from "@/components/bancos";
 import {
   Building2,
   Plus,
   CreditCard,
   RefreshCw,
+  Wallet,
 } from "lucide-react";
 import {
   Collapsible,
@@ -59,6 +61,7 @@ export default function Bancos() {
   const [novoOpen, setNovoOpen] = useState(false);
   const [editarOpen, setEditarOpen] = useState(false);
   const [excluirOpen, setExcluirOpen] = useState(false);
+  const [ajustarOpen, setAjustarOpen] = useState(false);
   const [bancoSelecionado, setBancoSelecionado] = useState<Banco | BancoComResumo | null>(null);
   const [inativosOpen, setInativosOpen] = useState(false);
 
@@ -69,6 +72,7 @@ export default function Bancos() {
   const totalLimite = bancosResumo.reduce((acc, b) => acc + b.limiteTotal, 0);
   const totalFatura = bancosResumo.reduce((acc, b) => acc + b.faturaTotal, 0);
   const totalDisponivel = bancosResumo.reduce((acc, b) => acc + b.disponivelTotal, 0);
+  const totalSaldo = bancosResumo.reduce((acc, b) => acc + b.saldoCalculado, 0);
 
   const handleEdit = (banco: BancoComResumo) => {
     setBancoSelecionado(banco);
@@ -78,6 +82,11 @@ export default function Bancos() {
   const handleDelete = (banco: BancoComResumo) => {
     setBancoSelecionado(banco);
     setExcluirOpen(true);
+  };
+
+  const handleAjustarSaldo = (banco: BancoComResumo) => {
+    setBancoSelecionado(banco);
+    setAjustarOpen(true);
   };
 
   const handleReativar = async (banco: Banco) => {
@@ -90,15 +99,15 @@ export default function Bancos() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Bancos</h1>
+          <h1 className="text-xl font-semibold text-foreground">Contas Bancárias</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie suas instituições financeiras
+            Gerencie suas contas e instituições financeiras
           </p>
         </div>
 
         <Button onClick={() => setNovoOpen(true)}>
           <Plus className="h-4 w-4 mr-1.5" />
-          Novo Banco
+          Nova Conta
         </Button>
       </div>
 
@@ -106,11 +115,17 @@ export default function Bancos() {
       {bancosResumo.length > 0 && (
         <Card className="border mb-6">
           <CardContent className="p-5">
+            {/* Saldo Total em Destaque */}
+            <div className="text-center mb-4 pb-4 border-b">
+              <p className="text-sm text-muted-foreground mb-1">Saldo Total em Contas</p>
+              <p className="text-3xl font-bold text-income">{formatCurrency(totalSaldo)}</p>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Bancos Ativos</p>
+                <p className="text-xs text-muted-foreground mb-1">Contas Ativas</p>
                 <div className="flex items-center justify-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" />
+                  <Wallet className="h-4 w-4 text-primary" />
                   <span className="text-xl font-semibold">{bancosResumo.length}</span>
                 </div>
               </div>
@@ -122,31 +137,16 @@ export default function Bancos() {
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Limite Total</p>
+                <p className="text-xs text-muted-foreground mb-1">Limite Cartões</p>
                 <p className="text-xl font-semibold">{formatCurrency(totalLimite)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Disponível</p>
+                <p className="text-xs text-muted-foreground mb-1">Crédito Disponível</p>
                 <p className="text-xl font-semibold text-income">
                   {formatCurrency(totalDisponivel)}
                 </p>
               </div>
             </div>
-
-            {totalLimite > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Uso total</span>
-                  <span>{((totalFatura / totalLimite) * 100).toFixed(0)}%</span>
-                </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${Math.min((totalFatura / totalLimite) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
@@ -162,13 +162,13 @@ export default function Bancos() {
         <Card className="border">
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
-            <h3 className="text-lg font-medium mb-2">Nenhum banco cadastrado</h3>
+            <h3 className="text-lg font-medium mb-2">Nenhuma conta cadastrada</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Cadastre seus bancos para organizar seus cartões por instituição
+              Cadastre suas contas bancárias para controlar seu saldo real
             </p>
             <Button onClick={() => setNovoOpen(true)}>
               <Plus className="h-4 w-4 mr-1.5" />
-              Cadastrar Primeiro Banco
+              Cadastrar Primeira Conta
             </Button>
           </CardContent>
         </Card>
@@ -180,6 +180,7 @@ export default function Bancos() {
               banco={banco}
               onEdit={() => handleEdit(banco)}
               onDelete={() => handleDelete(banco)}
+              onAjustarSaldo={() => handleAjustarSaldo(banco)}
             />
           ))}
         </div>
@@ -192,7 +193,7 @@ export default function Bancos() {
             <Button variant="ghost" className="w-full justify-between">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                Bancos inativos ({bancosInativos.length})
+                Contas inativas ({bancosInativos.length})
               </span>
             </Button>
           </CollapsibleTrigger>
@@ -254,6 +255,13 @@ export default function Bancos() {
         open={excluirOpen}
         onOpenChange={setExcluirOpen}
         onConfirm={() => refetch()}
+      />
+
+      <AjustarSaldoBancoDialog
+        banco={bancoSelecionado as BancoComResumo}
+        open={ajustarOpen}
+        onOpenChange={setAjustarOpen}
+        onSaved={() => refetch()}
       />
     </Layout>
   );
