@@ -1,100 +1,111 @@
 
-# Plano: Corrigir Verificação de Duplicatas - Tipo de Dado `DATE`
+# Plano: Adicionar Opção para Marcar como Duplicada
 
-## Problema Identificado
+## Objetivo
 
-O erro no console é claro:
-```
-"operator does not exist: date ~~ unknown"
-```
-
-A query atual usa `.like()` para comparar o campo `mes_inicio`:
-```typescript
-.or(mesesArray.map(m => `mes_inicio.like.${m}%`).join(","))
-```
-
-Porém, `mes_inicio` é do tipo `DATE` (não `TEXT`), e o operador `LIKE` (que no SQL é `~~`) não funciona com datas.
+Permitir que o usuário marque manualmente uma compra como duplicata, mesmo que o sistema não tenha detectado automaticamente. Isso é útil quando:
+- O usuário sabe que a compra já existe mas com descrição diferente
+- O sistema não detectou uma variação de escrita
+- O usuário quer excluir determinada linha da importação
 
 ## Solução
 
-Alterar a lógica para usar comparação de range de datas:
-
-| Antes | Depois |
-|-------|--------|
-| `mes_inicio LIKE '2026-02%'` | `mes_inicio >= '2026-02-01' AND mes_inicio < '2026-03-01'` |
-
-Para múltiplos meses, construir uma query com `OR`:
-```sql
-(mes_inicio >= '2026-02-01' AND mes_inicio < '2026-03-01')
-OR (mes_inicio >= '2026-03-01' AND mes_inicio < '2026-04-01')
-```
+Adicionar um novo campo `marcadaDuplicataManual` ao `PreviewCompra` e uma opção visual na tabela para marcar/desmarcar linhas como duplicatas.
 
 ## Mudanças Técnicas
 
-### Arquivo: `src/services/importar-compras-cartao.ts`
+### 1. Arquivo: `src/services/importar-compras-cartao.ts`
 
-#### 1. Criar função auxiliar para calcular range
+Adicionar novo campo no tipo `PreviewCompra`:
 
 ```typescript
-function calcularRangeMes(mesFatura: string): { inicio: string; fim: string } {
-  const [ano, mes] = mesFatura.split("-").map(Number);
-  const inicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
-  
-  // Próximo mês
-  const proxMes = mes === 12 ? 1 : mes + 1;
-  const proxAno = mes === 12 ? ano + 1 : ano;
-  const fim = `${proxAno}-${String(proxMes).padStart(2, '0')}-01`;
-  
-  return { inicio, fim };
+export interface PreviewCompra {
+  // ... campos existentes ...
+  possivelDuplicata: boolean;
+  duplicataInfo?: DuplicataInfo;
+  forcarImportacao: boolean;
+  marcadaDuplicataManual: boolean;  // NOVO
+  fingerprint?: string;
 }
 ```
 
-#### 2. Alterar query na função `verificarDuplicatas`
+Inicializar o campo como `false` na função `parseLinhasCompra`.
 
-Substituir a query com `.or()` e `.like()` por uma query com range de datas:
+### 2. Arquivo: `src/pages/cartoes/ImportarCompras.tsx`
 
-```typescript
-// Antes:
-.or(mesesArray.map(m => `mes_inicio.like.${m}%`).join(","))
-
-// Depois: Construir filtros OR para cada mês
-const filtros = mesesArray
-  .map(m => {
-    const { inicio, fim } = calcularRangeMes(m);
-    return `and(mes_inicio.gte.${inicio},mes_inicio.lt.${fim})`;
-  })
-  .join(",");
-
-// Query com OR entre os meses
-.or(filtros)
-```
-
-#### 3. Ajustar extração do mês para indexação
+#### a) Atualizar estatísticas para considerar duplicatas manuais
 
 ```typescript
-// Antes:
-const mesFatura = existente.mes_inicio.substring(0, 7);
-
-// Depois: O campo é DATE, então precisa ser formatado
-const mesDate = new Date(existente.mes_inicio);
-const mesFatura = format(mesDate, "yyyy-MM");
+const duplicatas = previewData.filter(
+  (p) => (p.possivelDuplicata || p.marcadaDuplicataManual) && !p.forcarImportacao
+);
+const aImportar = validas.filter(
+  (p) => (!p.possivelDuplicata && !p.marcadaDuplicataManual) || p.forcarImportacao
+);
 ```
 
-## Arquivo Modificado
+#### b) Adicionar handler para marcar duplicata manual
 
-- `src/services/importar-compras-cartao.ts`
-  - Adicionar função `calcularRangeMes`
-  - Atualizar query em `verificarDuplicatas` para usar `gte/lt` em vez de `like`
-  - Formatar `mes_inicio` corretamente ao indexar por mês
+```typescript
+function handleToggleDuplicataManual(linha: number, checked: boolean) {
+  setPreviewData((prev) =>
+    prev.map((p) => {
+      if (p.linha === linha) {
+        return {
+          ...p,
+          marcadaDuplicataManual: checked,
+          forcarImportacao: checked ? false : p.forcarImportacao, // Desmarcar forçar se marcar duplicata
+        };
+      }
+      return p;
+    })
+  );
+}
+```
 
-## Resultado Esperado
+#### c) Atualizar UI da tabela
 
-| Cenário | Resultado |
+Na coluna de "Duplicata", mostrar opção para marcar/desmarcar:
+
+| Cenário | UI Exibida |
 |---------|-----------|
-| Importar compras de Fevereiro/2026 | Query busca `mes_inicio >= 2026-02-01 AND < 2026-03-01` |
-| Verificar duplicatas em múltiplos meses | Query com OR entre os ranges |
-| Comparar mês existente | Formata DATE para "yyyy-MM" corretamente |
+| Não é duplicata (sistema ou manual) | Checkbox "Ignorar" |
+| Marcada manualmente como duplicata | Badge amarelo + checkbox "Forçar" |
+| Detectada automaticamente como duplicata | Ícone warning + checkbox "Forçar" |
+
+#### d) Lógica visual
+
+```
+Se p.possivelDuplicata:
+  → Mostra ícone warning + tooltip + "Forçar"
+
+Senão se p.marcadaDuplicataManual:
+  → Mostra badge "Manual" + "Forçar"
+  
+Senão (não é duplicata):
+  → Mostra checkbox "Ignorar" para marcar manualmente
+```
+
+## Comportamento Esperado
+
+| Ação do Usuário | Resultado |
+|-----------------|-----------|
+| Marca linha como duplicata | Linha não será importada (conta em "ignoradas") |
+| Desmarca "Ignorar" | Linha volta ao normal |
+| Marca "Forçar" em duplicata manual | Importa mesmo sendo marcada |
+
+## Arquivos a Modificar
+
+1. `src/services/importar-compras-cartao.ts`
+   - Adicionar campo `marcadaDuplicataManual` ao tipo
+   - Inicializar como `false` no parsing
+
+2. `src/pages/cartoes/ImportarCompras.tsx`
+   - Atualizar cálculo de estatísticas
+   - Adicionar handler `handleToggleDuplicataManual`
+   - Atualizar UI da coluna "Duplicata"
+   - Atualizar lógica de importação para considerar duplicatas manuais
 
 ## Tempo Estimado
 
-2-3 minutos para implementar a correção.
+5-8 minutos para implementar.
