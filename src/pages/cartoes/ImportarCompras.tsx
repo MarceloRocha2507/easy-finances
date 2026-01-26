@@ -200,8 +200,14 @@ export default function ImportarCompras() {
   const stats = useMemo(() => {
     const validas = previewData.filter((p) => p.valido);
     const invalidas = previewData.filter((p) => !p.valido);
-    const duplicatas = previewData.filter((p) => p.possivelDuplicata && !p.forcarImportacao);
-    const aImportar = validas.filter((p) => !p.possivelDuplicata || p.forcarImportacao);
+    // Duplicatas: detectadas automaticamente OU marcadas manualmente (e não forçadas)
+    const duplicatas = previewData.filter(
+      (p) => (p.possivelDuplicata || p.marcadaDuplicataManual) && !p.forcarImportacao
+    );
+    // A importar: válidas E (não duplicata OU forçada)
+    const aImportar = validas.filter(
+      (p) => ((!p.possivelDuplicata && !p.marcadaDuplicataManual) || p.forcarImportacao)
+    );
     const totalParcelas = aImportar.reduce((sum, p) => sum + p.valor, 0);
     const totalCompras = aImportar.reduce((sum, p) => sum + p.valorTotal, 0);
 
@@ -218,7 +224,9 @@ export default function ImportarCompras() {
   // Resumo por mês
   const resumoPorMes = useMemo(() => {
     const grupos = new Map<string, { qtd: number; total: number }>();
-    previewData.filter(p => p.valido && (!p.possivelDuplicata || p.forcarImportacao)).forEach(p => {
+    previewData.filter(p => 
+      p.valido && ((!p.possivelDuplicata && !p.marcadaDuplicataManual) || p.forcarImportacao)
+    ).forEach(p => {
       const mes = p.mesFatura;
       const atual = grupos.get(mes) || { qtd: 0, total: 0 };
       grupos.set(mes, { 
@@ -275,12 +283,12 @@ export default function ImportarCompras() {
       
       // Separar compras para importar (válidas E não-duplicata OU forçada)
       const comprasParaImportar = verificacaoFinal.filter(
-        (p) => p.valido && (!p.possivelDuplicata || p.forcarImportacao)
+        (p) => p.valido && ((!p.possivelDuplicata && !p.marcadaDuplicataManual) || p.forcarImportacao)
       );
       
       // Contar duplicatas ignoradas (válidas E duplicata E não-forçada)
       const duplicatasIgnoradas = verificacaoFinal.filter(
-        (p) => p.valido && p.possivelDuplicata && !p.forcarImportacao
+        (p) => p.valido && (p.possivelDuplicata || p.marcadaDuplicataManual) && !p.forcarImportacao
       );
 
       // Se não há nada para importar, apenas avisar
@@ -380,6 +388,22 @@ export default function ImportarCompras() {
           return {
             ...p,
             forcarImportacao: checked,
+          };
+        }
+        return p;
+      })
+    );
+  }
+
+  // Marcar/desmarcar duplicata manual
+  function handleToggleDuplicataManual(linha: number, checked: boolean) {
+    setPreviewData((prev) =>
+      prev.map((p) => {
+        if (p.linha === linha) {
+          return {
+            ...p,
+            marcadaDuplicataManual: checked,
+            forcarImportacao: checked ? false : p.forcarImportacao, // Desmarcar forçar se marcar duplicata
           };
         }
         return p;
@@ -694,7 +718,7 @@ Exemplo:
                             className={
                               !p.valido 
                                 ? "bg-destructive/5" 
-                                : p.possivelDuplicata && !p.forcarImportacao
+                                : (p.possivelDuplicata || p.marcadaDuplicataManual) && !p.forcarImportacao
                                   ? "bg-amber-500/5"
                                   : undefined
                             }
@@ -705,7 +729,7 @@ Exemplo:
                             <TableCell>
                               {!p.valido ? (
                                 <X className="h-4 w-4 text-destructive" />
-                              ) : p.possivelDuplicata && !p.forcarImportacao ? (
+                              ) : (p.possivelDuplicata || p.marcadaDuplicataManual) && !p.forcarImportacao ? (
                                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                               ) : (
                                 <Check className="h-4 w-4 text-emerald-500" />
@@ -801,6 +825,7 @@ Exemplo:
                               )}
                             </TableCell>
                             <TableCell>
+                              {/* Duplicata detectada automaticamente */}
                               {p.possivelDuplicata && (
                                 <div className="flex items-center gap-2">
                                   <TooltipProvider>
@@ -858,6 +883,48 @@ Exemplo:
                                     className="text-xs cursor-pointer"
                                   >
                                     Forçar
+                                  </label>
+                                </div>
+                              )}
+                              
+                              {/* Duplicata marcada manualmente */}
+                              {!p.possivelDuplicata && p.marcadaDuplicataManual && (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5">
+                                    Manual
+                                  </Badge>
+                                  <Checkbox
+                                    id={`forcar-manual-${p.linha}`}
+                                    checked={p.forcarImportacao}
+                                    onCheckedChange={(checked) =>
+                                      handleToggleForcarImportacao(p.linha, checked === true)
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`forcar-manual-${p.linha}`}
+                                    className="text-xs cursor-pointer"
+                                  >
+                                    Forçar
+                                  </label>
+                                </div>
+                              )}
+                              
+                              {/* Não é duplicata - mostrar opção de marcar */}
+                              {!p.possivelDuplicata && !p.marcadaDuplicataManual && p.valido && (
+                                <div className="flex items-center gap-1.5">
+                                  <Checkbox
+                                    id={`ignorar-${p.linha}`}
+                                    checked={false}
+                                    onCheckedChange={(checked) =>
+                                      handleToggleDuplicataManual(p.linha, checked === true)
+                                    }
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <label
+                                    htmlFor={`ignorar-${p.linha}`}
+                                    className="text-xs text-muted-foreground cursor-pointer"
+                                  >
+                                    Ignorar
                                   </label>
                                 </div>
                               )}
