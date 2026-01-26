@@ -149,8 +149,13 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
       setOpen(false);
       resetForm();
       onSaved();
-    } catch {
-      toast({ title: "Erro ao salvar cartão", variant: "destructive" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao salvar cartão";
+      toast({ 
+        title: message.includes("mesmo nome") ? "Cartão já existe" : "Erro ao salvar",
+        description: message.includes("mesmo nome") ? "Já existe um cartão com este nome. Edite o existente ou escolha outro nome." : message,
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
