@@ -13,6 +13,7 @@ export type Cartao = {
   dia_fechamento: number;
   dia_vencimento: number;
   cor: string;
+  banco_id: string | null;
   user_id?: string;
   created_at?: string;
 };

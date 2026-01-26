@@ -104,8 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bancos: {
+        Row: {
+          ativo: boolean
+          codigo: string | null
+          cor: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo?: string | null
+          cor?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string | null
+          cor?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cartoes: {
         Row: {
+          banco_id: string | null
           bandeira: string | null
           cor: string
           created_at: string
@@ -118,6 +155,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          banco_id?: string | null
           bandeira?: string | null
           cor?: string
           created_at?: string
@@ -130,6 +168,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          banco_id?: string | null
           bandeira?: string | null
           cor?: string
           created_at?: string
@@ -141,7 +180,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cartoes_banco_id_fkey"
+            columns: ["banco_id"]
+            isOneToOne: false
+            referencedRelation: "bancos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {

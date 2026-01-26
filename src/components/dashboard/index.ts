@@ -6,6 +6,7 @@ export { ComparativoMensal } from "./ComparativoMensal";
 export { MetasEconomia } from "./MetasEconomia";
 export { FiltroPeriodo } from "./FiltroPeriodo";
 export { CartoesCredito } from "./CartoesCredito";
+export { SaldoPorBanco } from "./SaldoPorBanco";
 export { NovaMetaDialog } from "./NovaMetaDialog";
 export { GerenciarMetaDialog } from "./GerenciarMetaDialog";
 export { DetalhesDespesasDialog } from "./DetalhesDespesasDialog";
