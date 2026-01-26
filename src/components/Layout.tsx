@@ -9,16 +9,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { DemoBanner } from "@/components/DemoBanner";
 import { MenuCollapsible } from "@/components/sidebar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
-import {
   LayoutDashboard,
   ArrowLeftRight,
   Tags,
@@ -30,9 +20,6 @@ import {
   X,
   Shield,
   Bell,
-  ChevronDown,
-  User,
-  Sliders,
   Layers,
   Users,
   Gauge,
@@ -294,98 +281,56 @@ export function Layout({ children }: LayoutProps) {
             )}
           </nav>
 
-          {/* User section - Compacta com Dropdown */}
+          {/* User section - Inline simples */}
           <div className="p-3 border-t border-border/50">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:glass-hover transition-all duration-200 outline-none">
-                  <div className="flex items-center gap-2.5">
-                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                      <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">{userName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {alertasCount > 0 && (
-                      <span 
-                        className={cn(
-                          "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
-                          hasDanger ? "bg-expense animate-pulse" : "bg-warning"
-                        )}
-                      >
-                        {alertasCount > 9 ? "9+" : alertasCount}
-                      </span>
-                    )}
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center justify-between px-2">
+              {/* Avatar + Nome clicável para /profile */}
+              <Link 
+                to="/profile" 
+                onClick={closeSidebar}
+                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+              >
+                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground truncate max-w-[90px]">
+                  {userName}
+                </span>
+              </Link>
               
-              <DropdownMenuContent align="end" side="top" className="w-56 mb-1">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" onClick={closeSidebar} className="flex items-center gap-2 cursor-pointer">
-                    <User className="h-4 w-4" />
-                    Meu Perfil
-                  </Link>
-                </DropdownMenuItem>
+              {/* Ícones de ação */}
+              <div className="flex items-center gap-1">
+                {/* Notificações */}
+                <Link 
+                  to="/notificacoes" 
+                  onClick={closeSidebar}
+                  className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  {alertasCount > 0 && (
+                    <span 
+                      className={cn(
+                        "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full text-[9px] font-bold text-white px-1",
+                        hasDanger ? "bg-expense animate-pulse" : "bg-warning"
+                      )}
+                    >
+                      {alertasCount > 9 ? "9+" : alertasCount}
+                    </span>
+                  )}
+                </Link>
                 
-                <DropdownMenuItem asChild>
-                  <Link to="/notificacoes" onClick={closeSidebar} className="flex items-center justify-between cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4" />
-                      Notificações
-                    </div>
-                    {alertasCount > 0 && (
-                      <span 
-                        className={cn(
-                          "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
-                          hasDanger ? "bg-expense" : "bg-warning"
-                        )}
-                      >
-                        {alertasCount > 9 ? "9+" : alertasCount}
-                      </span>
-                    )}
-                  </Link>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="flex items-center gap-2">
-                    <Sliders className="h-4 w-4" />
-                    Configurações
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile/preferencias" onClick={closeSidebar} className="cursor-pointer">
-                        Preferências
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile/seguranca" onClick={closeSidebar} className="cursor-pointer">
-                        Segurança
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/configuracoes/notificacoes" onClick={closeSidebar} className="cursor-pointer">
-                        Notificações
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem 
-                  onClick={() => signOut()} 
-                  className="flex items-center gap-2 cursor-pointer text-expense focus:text-expense"
+                {/* Sair */}
+                <button 
+                  onClick={() => signOut()}
+                  className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-expense"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
