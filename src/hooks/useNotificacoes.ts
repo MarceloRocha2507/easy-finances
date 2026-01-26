@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAlertasCompletos, AlertaCompleto, CategoriaAlerta } from "./useAlertasCompletos";
@@ -10,12 +11,15 @@ export type NotificacaoComStatus = AlertaCompleto & {
 
 type PreferenciasMap = Record<string, boolean>;
 
+// Cache de 5 minutos para evitar re-fetches desnecessários
+const STALE_TIME = 1000 * 60 * 5;
+
 export function useNotificacoes() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: alertas, isLoading: loadingAlertas, categorias } = useAlertasCompletos();
 
-  // Buscar preferências de notificação
+  // Buscar preferências de notificação com staleTime aumentado
   const { data: preferencias = {}, isLoading: loadingPreferencias } = useQuery({
     queryKey: ["preferencias-notificacao", user?.id],
     queryFn: async (): Promise<PreferenciasMap> => {
@@ -38,10 +42,10 @@ export function useNotificacoes() {
       return map;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    staleTime: STALE_TIME,
   });
 
-  // Buscar IDs dos alertas já lidos
+  // Buscar IDs dos alertas já lidos com staleTime aumentado
   const { data: alertasLidos = [], isLoading: loadingLidos } = useQuery({
     queryKey: ["notificacoes-lidas", user?.id],
     queryFn: async () => {
@@ -59,37 +63,49 @@ export function useNotificacoes() {
       return (data || []).map((n: any) => n.alerta_id);
     },
     enabled: !!user,
+    staleTime: STALE_TIME,
   });
 
-  // Função para verificar se um alerta está ativo nas preferências
-  const isAlertaAtivo = (alertaId: string): boolean => {
-    const tipoAlerta = mapearAlertaParaTipo(alertaId);
-    if (!tipoAlerta) return true;
+  // Memoizar função de verificação de alerta ativo
+  const isAlertaAtivo = useMemo(() => {
+    return (alertaId: string): boolean => {
+      const tipoAlerta = mapearAlertaParaTipo(alertaId);
+      if (!tipoAlerta) return true;
 
-    if (tipoAlerta in preferencias) {
-      return preferencias[tipoAlerta];
-    }
-    return getValorPadrao(tipoAlerta);
-  };
+      if (tipoAlerta in preferencias) {
+        return preferencias[tipoAlerta];
+      }
+      return getValorPadrao(tipoAlerta);
+    };
+  }, [preferencias]);
 
-  // Filtrar alertas por preferências
-  const alertasFiltrados = (alertas || []).filter((alerta) => isAlertaAtivo(alerta.id));
+  // Memoizar alertas filtrados
+  const alertasFiltrados = useMemo(() => {
+    return (alertas || []).filter((alerta) => isAlertaAtivo(alerta.id));
+  }, [alertas, isAlertaAtivo]);
 
-  // Combinar alertas com status de leitura
-  const notificacoes: NotificacaoComStatus[] = alertasFiltrados.map((alerta) => ({
-    ...alerta,
-    lido: alertasLidos.includes(alerta.id),
-  }));
+  // Memoizar notificações com status de leitura
+  const notificacoes = useMemo<NotificacaoComStatus[]>(() => {
+    return alertasFiltrados.map((alerta) => ({
+      ...alerta,
+      lido: alertasLidos.includes(alerta.id),
+    }));
+  }, [alertasFiltrados, alertasLidos]);
 
-  // Contar categorias após filtro
-  const categoriasFiltradas = {
+  // Memoizar categorias filtradas
+  const categoriasFiltradas = useMemo(() => ({
     cartao: alertasFiltrados.filter(a => a.categoria === "cartao").length,
     transacao: alertasFiltrados.filter(a => a.categoria === "transacao").length,
     meta: alertasFiltrados.filter(a => a.categoria === "meta").length,
     orcamento: alertasFiltrados.filter(a => a.categoria === "orcamento").length,
     acerto: alertasFiltrados.filter(a => a.categoria === "acerto").length,
     economia: alertasFiltrados.filter(a => a.categoria === "economia").length,
-  };
+  }), [alertasFiltrados]);
+
+  // Memoizar contagem de não lidas
+  const naoLidas = useMemo(() => {
+    return notificacoes.filter((n) => !n.lido).length;
+  }, [notificacoes]);
 
   // Marcar como lido
   const marcarComoLido = useMutation({
@@ -156,7 +172,7 @@ export function useNotificacoes() {
     marcarComoLido,
     marcarComoNaoLido,
     marcarTodosComoLidos,
-    naoLidas: notificacoes.filter((n) => !n.lido).length,
+    naoLidas,
     total: notificacoes.length,
     categorias: categoriasFiltradas,
   };

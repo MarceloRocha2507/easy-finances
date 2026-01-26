@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useDashboardCompleto } from "./useDashboardCompleto";
 import { useAlertasTransacoes } from "./useAlertasTransacoes";
 import { useAlertasOrcamento } from "./useAlertasOrcamento";
@@ -32,22 +33,26 @@ export function useAlertasCompletos() {
 
   const isLoading = loadingDashboard || loadingTransacoes || loadingOrcamento || loadingAcertos;
 
-  // Combinar todos os alertas
-  const alertasCartoes: AlertaCompleto[] = (dashboard?.alertas || []).map((a) => ({
-    ...a,
-    categoria: "cartao" as CategoriaAlerta,
-  }));
+  // Memoizar alertas de cartões
+  const alertasCartoes = useMemo<AlertaCompleto[]>(() => {
+    return (dashboard?.alertas || []).map((a) => ({
+      ...a,
+      categoria: "cartao" as CategoriaAlerta,
+    }));
+  }, [dashboard?.alertas]);
 
-  // Alertas de metas (já vêm do dashboard)
-  const alertasMetas: AlertaCompleto[] = [];
-  
-  if (dashboard?.metas) {
+  // Memoizar alertas de metas
+  const alertasMetas = useMemo<AlertaCompleto[]>(() => {
+    const metas: AlertaCompleto[] = [];
+    
+    if (!dashboard?.metas) return metas;
+
     const hoje = new Date();
     
     dashboard.metas.forEach((meta) => {
       // Meta atingida (≥100%) mas não marcada como concluída
       if (meta.progresso >= 100 && !meta.concluida) {
-        alertasMetas.push({
+        metas.push({
           id: `meta-atingida-${meta.id}`,
           tipo: "success",
           titulo: "🎉 Meta atingida!",
@@ -58,7 +63,7 @@ export function useAlertasCompletos() {
       }
       // Meta quase completa (90-99%)
       else if (meta.progresso >= 90 && meta.progresso < 100) {
-        alertasMetas.push({
+        metas.push({
           id: `meta-proxima-${meta.id}`,
           tipo: "info",
           titulo: "Quase lá!",
@@ -76,7 +81,7 @@ export function useAlertasCompletos() {
 
         if (diasRestantes < 0) {
           // Prazo vencido
-          alertasMetas.push({
+          metas.push({
             id: `meta-vencida-${meta.id}`,
             tipo: "warning",
             titulo: "Prazo da meta vencido",
@@ -86,7 +91,7 @@ export function useAlertasCompletos() {
           });
         } else if (diasRestantes <= 7) {
           // Prazo próximo
-          alertasMetas.push({
+          metas.push({
             id: `meta-prazo-${meta.id}`,
             tipo: "info",
             titulo: "Prazo da meta se aproxima",
@@ -97,17 +102,21 @@ export function useAlertasCompletos() {
         }
       }
     });
-  }
 
-  // Alertas de economia (baseado no comparativo)
-  const alertasEconomia: AlertaCompleto[] = [];
-  
-  if (dashboard?.comparativo) {
+    return metas;
+  }, [dashboard?.metas]);
+
+  // Memoizar alertas de economia
+  const alertasEconomia = useMemo<AlertaCompleto[]>(() => {
+    const economia: AlertaCompleto[] = [];
+    
+    if (!dashboard?.comparativo) return economia;
+
     const { variacaoPct, tipo } = dashboard.comparativo;
     
     // Aumento significativo nos gastos (>20%)
     if (tipo === "aumento" && variacaoPct > 20) {
-      alertasEconomia.push({
+      economia.push({
         id: "economia-aumento-gastos",
         tipo: "warning",
         titulo: "Gastos aumentaram!",
@@ -118,7 +127,7 @@ export function useAlertasCompletos() {
     }
     // Redução nos gastos (>10%)
     else if (tipo === "reducao" && Math.abs(variacaoPct) > 10) {
-      alertasEconomia.push({
+      economia.push({
         id: "economia-reducao-gastos",
         tipo: "success",
         titulo: "Parabéns! Você economizou!",
@@ -127,32 +136,35 @@ export function useAlertasCompletos() {
         categoria: "economia",
       });
     }
-  }
 
-  // Combinar todos os alertas
-  const todosAlertas: AlertaCompleto[] = [
-    ...alertasCartoes,
-    ...alertasMetas,
-    ...(alertasTransacoes || []),
-    ...(alertasOrcamento || []),
-    ...(alertasAcertos || []),
-    ...alertasEconomia,
-  ];
+    return economia;
+  }, [dashboard?.comparativo]);
 
-  // Ordenar por prioridade
-  const alertasOrdenados = todosAlertas.sort((a, b) => {
-    return (prioridadeTipo[a.tipo] || 5) - (prioridadeTipo[b.tipo] || 5);
-  });
+  // Memoizar ordenação de todos os alertas
+  const alertasOrdenados = useMemo(() => {
+    const todosAlertas: AlertaCompleto[] = [
+      ...alertasCartoes,
+      ...alertasMetas,
+      ...(alertasTransacoes || []),
+      ...(alertasOrcamento || []),
+      ...(alertasAcertos || []),
+      ...alertasEconomia,
+    ];
 
-  // Contar categorias
-  const categoriasContagem = {
+    return todosAlertas.sort((a, b) => {
+      return (prioridadeTipo[a.tipo] || 5) - (prioridadeTipo[b.tipo] || 5);
+    });
+  }, [alertasCartoes, alertasMetas, alertasTransacoes, alertasOrcamento, alertasAcertos, alertasEconomia]);
+
+  // Memoizar contagem de categorias
+  const categoriasContagem = useMemo(() => ({
     cartao: alertasCartoes.length,
     transacao: (alertasTransacoes || []).length,
     meta: alertasMetas.length,
     orcamento: (alertasOrcamento || []).length,
     acerto: (alertasAcertos || []).length,
     economia: alertasEconomia.length,
-  };
+  }), [alertasCartoes.length, alertasTransacoes, alertasMetas.length, alertasOrcamento, alertasAcertos, alertasEconomia.length]);
 
   return {
     data: alertasOrdenados,

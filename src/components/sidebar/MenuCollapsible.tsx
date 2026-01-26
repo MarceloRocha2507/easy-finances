@@ -1,3 +1,4 @@
+import React, { useMemo, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LucideIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ interface MenuCollapsibleProps {
   badge?: BadgeConfig;
 }
 
-function MenuBadge({ count, variant = 'default', pulse, dot }: BadgeConfig) {
+const MenuBadge = React.memo(function MenuBadge({ count, variant = 'default', pulse, dot }: BadgeConfig) {
   if (!count && !dot) return null;
   
   const colorClasses = {
@@ -53,9 +54,9 @@ function MenuBadge({ count, variant = 'default', pulse, dot }: BadgeConfig) {
       {!dot && (count && count > 9 ? "9+" : count)}
     </span>
   );
-}
+});
 
-export function MenuCollapsible({
+export const MenuCollapsible = React.memo(function MenuCollapsible({
   icon: Icon,
   label,
   subItems,
@@ -67,11 +68,16 @@ export function MenuCollapsible({
 }: MenuCollapsibleProps) {
   const location = useLocation();
 
-  const isMenuActive = Array.isArray(basePath)
-    ? basePath.some((path) => location.pathname.startsWith(path))
-    : location.pathname.startsWith(basePath);
+  const isMenuActive = useMemo(() => {
+    return Array.isArray(basePath)
+      ? basePath.some((path) => location.pathname.startsWith(path))
+      : location.pathname.startsWith(basePath);
+  }, [basePath, location.pathname]);
 
-  const isItemActive = (href: string) => location.pathname === href;
+  const isItemActive = useCallback(
+    (href: string) => location.pathname === href,
+    [location.pathname]
+  );
 
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
@@ -137,4 +143,4 @@ export function MenuCollapsible({
       </CollapsibleContent>
     </Collapsible>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,13 +27,19 @@ export default function Cartoes() {
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoComResumo | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
   const regenerarParcelas = useRegenerarParcelas();
+  const verificacaoExecutada = useRef(false);
 
   const responsaveis = previsaoData?.responsaveis || [];
   const previsao = previsaoData?.previsao || [];
 
-  // Verificação automática silenciosa ao carregar a página
+  // Verificação automática silenciosa ao carregar a página (com debounce)
   useEffect(() => {
-    const verificarParcelas = async () => {
+    // Evitar múltiplas execuções
+    if (verificacaoExecutada.current) return;
+    verificacaoExecutada.current = true;
+
+    // Esperar 2 segundos após a página carregar para não bloquear a navegação
+    const timer = setTimeout(async () => {
       try {
         const resultado = await regenerarParcelasFaltantes();
         if (resultado.parcelasRegeneradas > 0) {
@@ -42,10 +48,10 @@ export default function Cartoes() {
       } catch (e) {
         console.error("Erro na verificação automática:", e);
       }
-    };
-    
-    verificarParcelas();
-  }, []);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [refetch]);
 
   // Navegação de mês
   const irMesAnterior = () => {
