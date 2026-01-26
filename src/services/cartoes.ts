@@ -224,6 +224,26 @@ export async function listarCartoesComResumo(
 }
 
 /**
+ * Verificar se já existe um cartão com o mesmo nome
+ */
+export async function verificarCartaoDuplicado(nome: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return false;
+
+  const { data, error } = await (supabase as any)
+    .from("cartoes")
+    .select("id")
+    .eq("user_id", user.id)
+    .ilike("nome", nome.trim())
+    .limit(1);
+
+  if (error) return false;
+
+  return data && data.length > 0;
+}
+
+/**
  * Criar cartão
  */
 export async function criarCartao(
@@ -232,6 +252,12 @@ export async function criarCartao(
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) throw new Error("Usuário não autenticado");
+
+  // Verificar duplicado
+  const duplicado = await verificarCartaoDuplicado(cartao.nome);
+  if (duplicado) {
+    throw new Error("Já existe um cartão com este nome");
+  }
 
   const { error } = await (supabase as any)
     .from("cartoes")
