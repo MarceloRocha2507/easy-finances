@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CalendarClock,
-  Calendar,
+  Calendar as CalendarIcon,
   Wallet,
   Hash,
   CreditCard,
@@ -31,8 +31,11 @@ import {
   List,
   LayoutList,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
 import { format, addDays, addMonths, startOfMonth } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +52,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useResponsaveis } from "@/services/responsaveis";
 import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
-import { FiltroDataRange } from "@/components/FiltroDataRange";
+
 
 type ViewMode = "lista" | "agrupado";
 
@@ -283,60 +286,67 @@ export default function DespesasFuturas() {
           </Card>
         )}
 
-        {/* Filtros */}
+        {/* Filtros - Linha única */}
         <Card>
-          <CardContent className="pt-6 space-y-4">
-            {/* Linha 1: Período */}
+          <CardContent className="pt-4 pb-4">
             <div className="flex flex-wrap items-center gap-2">
-              <FiltroDataRange
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                onRefresh={() => refetch()}
-                isLoading={isLoading}
-              />
-              <div className="flex gap-1 ml-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleProximos30Dias}
-                  className="text-xs px-2"
-                >
-                  30d
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleProximos3Meses}
-                  className="text-xs px-2"
-                >
-                  3 meses
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleProximos6Meses}
-                  className="text-xs px-2"
-                >
-                  6 meses
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleProximo12Meses}
-                  className="text-xs px-2"
-                >
-                  12 meses
-                </Button>
-              </div>
-            </div>
+              {/* Date Pickers */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="min-w-[110px] justify-start">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    locale={ptBR}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
 
-            {/* Linha 2: Filtros de seleção */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Categoria */}
+              <span className="text-muted-foreground text-sm">até</span>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="min-w-[110px] justify-start">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    locale={ptBR}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Atalhos de período FUTURO */}
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={handleProximos30Dias} className="text-xs px-2">30d</Button>
+                <Button variant="ghost" size="sm" onClick={handleProximos3Meses} className="text-xs px-2">3m</Button>
+                <Button variant="ghost" size="sm" onClick={handleProximos6Meses} className="text-xs px-2">6m</Button>
+                <Button variant="ghost" size="sm" onClick={handleProximo12Meses} className="text-xs px-2">12m</Button>
+              </div>
+
+              <Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isLoading} className="h-8 w-8">
+                <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+              </Button>
+
+              {/* Separador visual */}
+              <div className="w-px h-6 bg-border hidden sm:block" />
+
+              {/* Dropdowns de filtro */}
               <Select value={categoriaId} onValueChange={setCategoriaId}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[130px] h-8">
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,10 +355,7 @@ export default function DespesasFuturas() {
                   {categorias?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       <span className="flex items-center gap-2">
-                        <span
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                         {cat.name}
                       </span>
                     </SelectItem>
@@ -356,9 +363,8 @@ export default function DespesasFuturas() {
                 </SelectContent>
               </Select>
 
-              {/* Responsável */}
               <Select value={responsavelId} onValueChange={setResponsavelId}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[130px] h-8">
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,9 +377,8 @@ export default function DespesasFuturas() {
                 </SelectContent>
               </Select>
 
-              {/* Cartão/Origem */}
               <Select value={cartaoId} onValueChange={setCartaoId}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[130px] h-8">
                   <SelectValue placeholder="Origem" />
                 </SelectTrigger>
                 <SelectContent>
@@ -382,10 +387,7 @@ export default function DespesasFuturas() {
                   {cartoes?.map((cartao) => (
                     <SelectItem key={cartao.id} value={cartao.id}>
                       <span className="flex items-center gap-2">
-                        <CreditCard
-                          className="h-3 w-3"
-                          style={{ color: cartao.cor }}
-                        />
+                        <CreditCard className="h-3 w-3" style={{ color: cartao.cor }} />
                         {cartao.nome}
                       </span>
                     </SelectItem>
@@ -393,9 +395,8 @@ export default function DespesasFuturas() {
                 </SelectContent>
               </Select>
 
-              {/* Tipo */}
               <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[110px] h-8">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -406,30 +407,28 @@ export default function DespesasFuturas() {
                 </SelectContent>
               </Select>
 
-              {/* Toggle de Visualização */}
-              <div className="flex items-center gap-1 ml-auto border rounded-lg p-1">
-                <Button
-                  variant={viewMode === "lista" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("lista")}
-                  className="h-7 px-2"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "agrupado" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("agrupado")}
-                  className="h-7 px-2"
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
+              {/* Toggle de visualização + Limpar */}
+              <div className="flex items-center gap-1 ml-auto">
+                <div className="flex border rounded-lg p-0.5">
+                  <Button
+                    variant={viewMode === "lista" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("lista")}
+                    className="h-7 px-2"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "agrupado" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("agrupado")}
+                    className="h-7 px-2"
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" onClick={limparFiltros}>Limpar</Button>
               </div>
-
-              {/* Limpar */}
-              <Button variant="ghost" size="sm" onClick={limparFiltros}>
-                Limpar
-              </Button>
             </div>
           </CardContent>
         </Card>
