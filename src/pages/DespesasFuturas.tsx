@@ -234,35 +234,53 @@ export default function DespesasFuturas() {
 
         {/* Resumo por Cartão */}
         {resumoPorCartao.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <CreditCard className="h-4 w-4" />
-              Por Cartão:
-            </span>
-            {resumoPorCartao.map((item) => (
-              <button
-                key={item.cartaoId || "transacao"}
-                onClick={() => handleFiltrarCartao(item.cartaoId)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-2 py-1 text-sm rounded-md border hover:bg-muted/50 transition-colors",
-                  (item.cartaoId === null && cartaoId === "transacao") ||
-                    (item.cartaoId && cartaoId === item.cartaoId)
-                    ? "ring-1 ring-primary bg-muted/30"
-                    : ""
-                )}
-                style={{ borderColor: item.cartaoCor || undefined }}
-              >
-                {item.cartaoId ? (
-                  <CreditCard className="h-3 w-3" style={{ color: item.cartaoCor }} />
-                ) : (
-                  <Receipt className="h-3 w-3 text-muted-foreground" />
-                )}
-                <span className="font-medium">{item.cartaoNome}</span>
-                <span className="text-expense font-semibold">{formatCurrency(item.total)}</span>
-                <span className="text-muted-foreground text-xs">({item.quantidade})</span>
-              </button>
-            ))}
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Por Cartão
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {resumoPorCartao.map((item) => (
+                  <button
+                    key={item.cartaoId || "transacao"}
+                    onClick={() => handleFiltrarCartao(item.cartaoId)}
+                    className={cn(
+                      "p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left",
+                      (item.cartaoId === null && cartaoId === "transacao") ||
+                        (item.cartaoId && cartaoId === item.cartaoId)
+                        ? "ring-2 ring-primary bg-muted/30"
+                        : ""
+                    )}
+                    style={{ borderColor: item.cartaoCor || undefined }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      {item.cartaoId ? (
+                        <CreditCard
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: item.cartaoCor }}
+                        />
+                      ) : (
+                        <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="font-medium text-sm truncate">
+                        {item.cartaoNome}
+                      </span>
+                    </div>
+                    <p className="text-lg font-bold text-expense">
+                      {formatCurrency(item.total)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantidade}{" "}
+                      {item.quantidade === 1 ? "despesa" : "despesas"}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Filtros */}
