@@ -1,122 +1,79 @@
 
 
-## Plano: Simplificar Footer do Sidebar (Estilo Inline)
+## Plano: Melhorar Diagnóstico de Duplicatas na Importação
 
-### Design de Referência
+### Problema Relatado
 
-A imagem mostra uma barra horizontal simples com:
+Ao tentar importar compras para o cartão Nubank (que está vazio), o sistema mostra "duplicatas detectadas", mas não há compras visíveis no cartão.
 
-```text
-┌──────────────────────────────────────┐
-│  🔵 MR   Marcelo Ro...   🔔   →│    │
-└──────────────────────────────────────┘
-```
+### Diagnóstico
 
-Elementos inline:
-1. Avatar com iniciais
-2. Nome truncado
-3. Ícone de sino (link para notificações)
-4. Ícone de sair (logout)
+Após análise do banco de dados:
+- O cartão Nubank (8607c9f1...) tem **0 compras** (ativas ou inativas)
+- A verificação de duplicatas filtra corretamente por `cartao_id`
+- Portanto, as duplicatas são provavelmente do tipo **"lote"** (dentro do próprio texto importado)
 
-### Mudança de Comportamento
+### Causas Prováveis
 
-- **Avatar/Nome**: Ao clicar, navega para `/profile` (que abre as configurações)
-- **Ícone de sino**: Link direto para `/notificacoes`
-- **Ícone de sair**: Executa logout
+1. **Duplicatas no Lote**: Se o texto de importação contém múltiplas parcelas da mesma compra (ex: "Loja X - Parcela 1/3" e "Loja X - Parcela 2/3"), o sistema detecta como duplicata pois ao importar a primeira parcela, as demais são geradas automaticamente.
 
-### Alterações
+2. **Fingerprint Muito Agressivo**: A normalização da descrição pode estar gerando o mesmo hash para compras diferentes.
 
-**Arquivo:** `src/components/Layout.tsx`
+### Solução Proposta
 
-| Atual | Novo |
-|-------|------|
-| DropdownMenu com submenu | Layout inline simples |
-| ChevronDown | Removido |
-| Submenu de configurações | Removido (perfil abre configs) |
-| Badge no trigger | Badge no ícone de sino |
+Adicionar informações de diagnóstico mais claras na interface para ajudar a entender por que uma compra foi marcada como duplicata.
 
-### Estrutura JSX Proposta
+#### Alterações
 
-```typescript
-{/* User section - Inline simples */}
-<div className="p-3 border-t border-border/50">
-  <div className="flex items-center justify-between px-2">
-    {/* Avatar + Nome clicável para /profile */}
-    <Link 
-      to="/profile" 
-      onClick={closeSidebar}
-      className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-    >
-      <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-        <AvatarImage src={profile?.avatar_url} alt={userName} />
-        <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-          {userInitials}
-        </AvatarFallback>
-      </Avatar>
-      <span className="text-sm font-medium truncate max-w-[90px]">
-        {userName}
-      </span>
-    </Link>
-    
-    {/* Ícones de ação */}
-    <div className="flex items-center gap-1">
-      {/* Notificações */}
-      <Link 
-        to="/notificacoes" 
-        onClick={closeSidebar}
-        className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
-      >
-        <Bell className="h-4 w-4 text-muted-foreground" />
-        {alertasCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 ...">
-            {alertasCount}
-          </span>
-        )}
-      </Link>
-      
-      {/* Sair */}
-      <button 
-        onClick={signOut}
-        className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-      >
-        <LogOut className="h-4 w-4 text-muted-foreground" />
-      </button>
-    </div>
-  </div>
-</div>
-```
+**Arquivo:** `src/pages/cartoes/ImportarCompras.tsx`
 
-### Imports a Remover
+| Local | Alteração |
+|-------|-----------|
+| Coluna "Duplicata" | Exibir tooltip com fingerprint calculado |
+| Mensagem de duplicata | Adicionar motivo detalhado (descrição base, parcelas, mês base) |
+
+**Arquivo:** `src/services/importar-compras-cartao.ts`
+
+| Local | Alteração |
+|-------|-----------|
+| Função `detectarDuplicatasNoLote` | Incluir campos de debug no `duplicataInfo` |
+| Função `verificarDuplicatas` | Incluir fingerprint no retorno para debug |
+
+#### Nova Estrutura de Debug
 
 ```typescript
-// Remover do import (não mais utilizados):
-- DropdownMenu, DropdownMenuContent, DropdownMenuItem
-- DropdownMenuSeparator, DropdownMenuTrigger
-- DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent
-- ChevronDown, User, Sliders
+interface DuplicataInfo {
+  compraId: string;
+  descricao: string;
+  origemDuplicata: "banco" | "lote";
+  parcelaEncontrada?: number;
+  mesInicio?: string;
+  // Novos campos para diagnóstico
+  motivoDetalhado?: string;
+  fingerprintCalculado?: string;
+}
 ```
 
-### Resultado Visual
+#### Nova Mensagem na Interface
 
-```text
-┌──────────────────────────────────────┐
-│  🔵   Nome...         🔔      →│     │
-│  └─ clique abre /profile              │
-└──────────────────────────────────────┘
+Em vez de apenas:
+```
+Duplicata no lote (linha 1)
+```
+
+Exibir:
+```
+Duplicata no lote: mesma compra que linha 1
+(Descrição: "mercado xyz", Parcelas: 2, Mês base: jan/26)
 ```
 
 ### Benefícios
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Cliques para logout | 2 (abrir dropdown + clicar) | 1 |
-| Cliques para perfil | 2 | 1 |
-| Complexidade visual | Alta (dropdown) | Baixa (inline) |
-| Componentes | DropdownMenu + Submenu | Links + Button simples |
+- O usuário entende exatamente por que a duplicata foi detectada
+- Facilita identificar falsos positivos
+- Permite corrigir o texto de entrada se necessário
 
-### Arquivo a Modificar
+### Alternativa Rápida
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/Layout.tsx` | Substituir DropdownMenu por layout inline |
+Se preferir uma solução mais simples, posso apenas **adicionar um console.log** no processamento para você verificar no DevTools qual fingerprint está sendo gerado para cada linha.
 
