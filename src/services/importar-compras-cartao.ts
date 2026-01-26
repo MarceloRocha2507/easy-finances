@@ -433,6 +433,22 @@ export async function importarComprasEmLote(
 ====================================================== */
 
 /**
+ * Calcular range de datas para um mês específico
+ * Retorna o primeiro dia do mês e o primeiro dia do próximo mês
+ */
+function calcularRangeMes(mesFatura: string): { inicio: string; fim: string } {
+  const [ano, mes] = mesFatura.split("-").map(Number);
+  const inicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
+  
+  // Próximo mês
+  const proxMes = mes === 12 ? 1 : mes + 1;
+  const proxAno = mes === 12 ? ano + 1 : ano;
+  const fim = `${proxAno}-${String(proxMes).padStart(2, '0')}-01`;
+  
+  return { inicio, fim };
+}
+
+/**
  * Normalizar texto para comparação (remove acentos, lowercase, espaços extras)
  */
 function normalizar(texto: string): string {
@@ -600,12 +616,21 @@ export async function verificarDuplicatas(
   
   // Buscar compras existentes apenas dos meses relevantes
   const mesesArray = Array.from(mesesUnicos);
+  
+  // Construir filtros OR para cada mês usando range de datas (gte/lt)
+  const filtros = mesesArray
+    .map(m => {
+      const { inicio, fim } = calcularRangeMes(m);
+      return `and(mes_inicio.gte.${inicio},mes_inicio.lt.${fim})`;
+    })
+    .join(",");
+  
   const { data: existentes, error } = await supabase
     .from("compras_cartao")
     .select("id, descricao, valor_total, parcela_inicial, mes_inicio, parcelas")
     .eq("cartao_id", cartaoId)
     .eq("ativo", true)
-    .or(mesesArray.map(m => `mes_inicio.like.${m}%`).join(","));
+    .or(filtros);
 
   if (error) {
     console.error("Erro ao verificar duplicatas:", error);
@@ -620,7 +645,9 @@ export async function verificarDuplicatas(
   const comprasPorMes = new Map<string, typeof existentes>();
   
   for (const existente of existentes) {
-    const mesFatura = existente.mes_inicio.substring(0, 7); // "YYYY-MM"
+    // mes_inicio é DATE, formatar para "YYYY-MM"
+    const mesDate = new Date(existente.mes_inicio);
+    const mesFatura = format(mesDate, "yyyy-MM");
     const lista = comprasPorMes.get(mesFatura) || [];
     lista.push(existente);
     comprasPorMes.set(mesFatura, lista);
