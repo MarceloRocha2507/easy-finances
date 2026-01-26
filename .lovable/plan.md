@@ -1,150 +1,66 @@
 
-# Plano: Adicionar Hora da Última Alteração na Tabela de Despesas
+# Plano: Adicionar Coluna "Última Alteração" na Tabela de Despesas
 
 ## Objetivo
 
-Exibir a hora da última alteração de cada compra/parcela diretamente na tabela de Despesas do Cartão, conforme solicitado.
+Tornar a hora da última alteração mais visível, exibindo-a diretamente como uma coluna na tabela ao invés de escondida em um tooltip.
 
-## Análise Técnica
+## Situação Atual
 
-### Situação Atual
-- A tabela `parcelas_cartao` possui apenas `created_at` (data de criação)
-- Não existe um campo `updated_at` para rastrear alterações
-- As alterações são registradas na tabela `auditoria_cartao` separadamente
+- A informação `updated_at` já existe e é retornada pela query
+- Está sendo exibida no tooltip do botão Editar (pouco visível)
+- A função `formatarTempoRelativo` já está importada e funcionando
 
-### Abordagens Possíveis
+## Mudanças Técnicas
 
-| Abordagem | Prós | Contras |
-|-----------|------|---------|
-| **A: Adicionar `updated_at`** | Simples, eficiente, uma única query | Requer migração do banco |
-| **B: Buscar da auditoria** | Usa dados existentes | Query adicional, mais lenta |
+### Arquivo: `src/pages/DespesasCartao.tsx`
 
-**Recomendação**: Opção A (adicionar `updated_at`) é mais robusta e performática.
+#### 1. Adicionar novo TableHead na linha 660
 
----
-
-## Solução Proposta
-
-### 1. Migração do Banco de Dados
-
-Adicionar coluna `updated_at` nas tabelas `parcelas_cartao` e `compras_cartao`, com trigger para atualização automática:
-
-```sql
--- Adicionar coluna updated_at
-ALTER TABLE public.parcelas_cartao 
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
-
-ALTER TABLE public.compras_cartao 
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
-
--- Criar função de trigger para atualizar automaticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Criar triggers
-CREATE TRIGGER update_parcelas_cartao_updated_at
-  BEFORE UPDATE ON public.parcelas_cartao
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_compras_cartao_updated_at
-  BEFORE UPDATE ON public.compras_cartao
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Inicializar com created_at para registros existentes
-UPDATE public.parcelas_cartao SET updated_at = created_at WHERE updated_at IS NULL;
-UPDATE public.compras_cartao SET updated_at = created_at WHERE updated_at IS NULL;
-```
-
-### 2. Atualizar o Tipo `ParcelaFatura`
-
-Arquivo: `src/services/compras-cartao.ts`
+Entre "Valor" e a coluna de ações (vazia), adicionar:
 
 ```typescript
-export type ParcelaFatura = {
-  // ... campos existentes ...
-  updated_at?: string;  // NOVO: hora da última alteração
-};
+<TableHead className="hidden xl:table-cell text-center">Alterado</TableHead>
 ```
 
-### 3. Atualizar a Query `listarParcelasDaFatura`
+Usar `xl:table-cell` para exibir apenas em telas maiores, evitando poluição visual em mobile.
 
-Adicionar o campo `updated_at` na query e no mapeamento:
+#### 2. Adicionar nova TableCell na linha 778
+
+Após a célula de Valor e antes da célula de ações:
 
 ```typescript
-.select(`
-  id,
-  compra_id,
-  numero_parcela,
-  valor,
-  mes_referencia,
-  paga,
-  created_at,
-  updated_at,  // NOVO
-  compra:compras_cartao(...)
-`)
-
-// No mapeamento:
-return {
-  // ... campos existentes ...
-  updated_at: p.updated_at || p.created_at,
-};
+<TableCell className="hidden xl:table-cell text-center">
+  <span className="text-xs text-muted-foreground">
+    {p.updated_at ? formatarTempoRelativo(p.updated_at) : '-'}
+  </span>
+</TableCell>
 ```
 
-### 4. Exibir na Tabela de Despesas
+#### 3. Atualizar colSpan das mensagens de loading/vazio
 
-Arquivo: `src/pages/DespesasCartao.tsx`
+Alterar `colSpan={8}` para `colSpan={9}` nas linhas 666 e 674 para acomodar a nova coluna.
 
-Adicionar um indicador sutil mostrando a hora da última alteração. Duas opções de UI:
+## Layout Final da Tabela
 
-**Opção A**: Tooltip no ícone de edição
-```text
-[Ícone Editar] → Tooltip: "Última alteração: 14:32"
-```
+| ✓ | Descrição | Data | Categoria | Responsável | Parcela | Valor | Alterado | Ações |
+|---|-----------|------|-----------|-------------|---------|-------|----------|-------|
+| □ | Nortmotos | 05/01 | - | - | 4/4 | R$ 499 | há 5 min | ✎ ↺ 🗑 |
 
-**Opção B**: Coluna adicional (mais visível)
-```text
-| Descrição | Data | Categoria | ... | Alterado |
-|-----------|------|-----------|-----|----------|
-| Nortmotos | 05/01/2026 | - | ... | 14:32 |
-```
+## Comportamento Responsivo
 
-**Opção C**: Badge/Texto abaixo da descrição (mais discreto, recomendado)
-```text
-Nortmotos - Parcela 3/4
-↳ Alterado às 14:32
-```
-
----
+| Tela | Coluna "Alterado" |
+|------|-------------------|
+| xl (1280px+) | Visível |
+| lg, md, sm | Oculta (info ainda disponível no tooltip do Editar) |
 
 ## Arquivos a Modificar
 
-1. **Migração SQL** (nova)
-   - Adicionar colunas `updated_at`
-   - Criar triggers de atualização automática
-
-2. `src/services/compras-cartao.ts`
-   - Adicionar `updated_at` ao tipo `ParcelaFatura`
-   - Incluir na query e mapeamento
-
-3. `src/pages/DespesasCartao.tsx`
-   - Exibir hora da última alteração na UI
-   - Formatação: "HH:mm" ou tempo relativo ("há 5 min")
-
----
-
-## Resultado Esperado
-
-| Item | Exibição |
-|------|----------|
-| Parcela recém-criada | Hora de criação |
-| Parcela editada | Hora da última edição |
-| Formato | "14:32" ou "há 5 min" |
+1. `src/pages/DespesasCartao.tsx`
+   - Adicionar `TableHead` para "Alterado"
+   - Adicionar `TableCell` com tempo relativo formatado
+   - Ajustar `colSpan` das linhas de loading/empty
 
 ## Tempo Estimado
 
-5-8 minutos para implementar.
+2-3 minutos para implementar.
