@@ -1,166 +1,191 @@
 
+# Plano: Restaurar Compras Deletadas e Corrigir Situação
 
-## Plano: Adicionar Opção "Desfazer Última Alteração" em Cartões
+## Diagnóstico
 
-### Contexto
+Às **10:58:23** de hoje houve uma deleção em massa de 42 compras do cartão Nubank, seguida de uma reimportação às **10:58:57**. O problema é que:
 
-O sistema já possui um robusto sistema de auditoria (`auditoria_cartao`) que registra automaticamente todas as operações de INSERT, UPDATE e DELETE em `compras_cartao` e `parcelas_cartao`. Os dados anteriores e novos são armazenados em campos JSONB, o que permite restaurar o estado anterior de qualquer registro.
+| Original (Deletado) | Reimportado |
+|---------------------|-------------|
+| 42 compras em janeiro (2026-01-01) | 41 compras em fevereiro (2026-02-01) |
+| Valor total: R$ 4.002,83 | + 1 compra em março |
 
-### Abordagem
+A reimportação atribuiu as compras ao mês errado (fevereiro ao invés de janeiro).
 
-A funcionalidade "Desfazer" será implementada seguindo o padrão já existente no `AdiantarFaturaDialog`, que exibe um botão "Desfazer" em um toast após a ação. No entanto, para uma funcionalidade mais robusta, vamos adicionar:
+## Solução: Duas Opções
 
-1. **Botão permanente** no header da página de Cartões
-2. **Dialog de confirmação** mostrando o que será desfeito
-3. **Serviço de undo** que usa os dados da auditoria
+### Opção A: Restaurar do Backup (Auditoria)
 
-### Arquitetura da Solução
+Criar uma funcionalidade para restaurar as compras deletadas a partir da tabela `auditoria_cartao`:
+
+1. **Criar função de restauração em massa**
+   - Arquivo: `src/services/compras-cartao.ts`
+   - Nova função: `restaurarComprasDeletadas(cartaoId, dataDelecao)`
+
+2. **Lógica:**
+   ```typescript
+   async function restaurarComprasDeletadas(cartaoId: string, dataDelecao: string) {
+     // 1. Buscar registros de auditoria com deleções naquele momento
+     const { data: auditoriaCompras } = await supabase
+       .from("auditoria_cartao")
+       .select("dados_anteriores")
+       .eq("acao", "DELETE")
+       .eq("tabela", "compras_cartao")
+       .filter("dados_anteriores->cartao_id", "eq", cartaoId)
+       .gte("created_at", dataDelecao);
+     
+     // 2. Deletar as compras reimportadas incorretamente
+     await supabase
+       .from("compras_cartao")
+       .delete()
+       .eq("cartao_id", cartaoId)
+       .gte("created_at", dataDelecao);
+     
+     // 3. Re-inserir as compras originais
+     for (const registro of auditoriaCompras) {
+       await supabase.from("compras_cartao").insert(registro.dados_anteriores);
+     }
+     
+     // 4. Regenerar parcelas
+   }
+   ```
+
+### Opção B: Reimportar Corretamente (Mais Simples)
+
+Se você ainda tem o arquivo CSV ou os dados originais:
+
+1. **Excluir as compras atuais do cartão** (fevereiro/março)
+2. **Reimportar usando o mês correto** (automático ou janeiro fixo)
+
+---
+
+## Implementação Recomendada: Restauração via Auditoria
+
+### Arquivos a criar/modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/services/compras-cartao.ts` | Adicionar `restaurarComprasDeletadas()` |
+| `src/components/cartoes/RestaurarComprasDialog.tsx` | **Novo** - Dialog de confirmação |
+| `src/pages/cartoes/Despesas.tsx` | Adicionar botão "Restaurar Backup" |
+
+### Novo componente: RestaurarComprasDialog
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  Cartoes.tsx (Header)                                   │
-│  ┌───────────────────┐                                  │
-│  │ Botão "Desfazer"  │ ──────► UltimaAlteracaoDialog   │
-│  └───────────────────┘                                  │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  useUltimaAlteracao.ts (Hook)                           │
-│  - Busca último registro de auditoria do usuário        │
-│  - Retorna dados formatados para exibição               │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│  desfazerUltimaAlteracao() (Serviço)                    │
-│  - INSERT → DELETE (remove o registro criado)           │
-│  - UPDATE → Restaura dados_anteriores                   │
-│  - DELETE → Re-insere os dados_anteriores               │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Alterações por Arquivo
-
-#### 1. Novo arquivo: `src/hooks/useUltimaAlteracao.ts`
-
-Hook para buscar e gerenciar a última alteração:
-
-| Função | Descrição |
-|--------|-----------|
-| `useUltimaAlteracao()` | Query que busca o registro mais recente em `auditoria_cartao` |
-| Retorno | `{ data, isLoading, refetch }` com o último registro |
-
-#### 2. Novo arquivo: `src/components/cartoes/DesfazerAlteracaoDialog.tsx`
-
-Dialog de confirmação que exibe:
-- Tipo da ação (Inserção/Atualização/Exclusão)
-- Tabela afetada (Compra/Parcela)
-- Data/hora da alteração
-- Resumo do que será desfeito
-- Botões Cancelar/Confirmar
-
-#### 3. Atualização: `src/services/compras-cartao.ts`
-
-Nova função `desfazerUltimaAlteracao(registro: RegistroAuditoria)`:
-
-| Ação Original | Operação de Undo |
-|---------------|------------------|
-| INSERT | DELETE do registro criado |
-| UPDATE | UPDATE restaurando `dados_anteriores` |
-| DELETE | INSERT re-criando o registro |
-
-Considerações especiais:
-- Para DELETE de `compras_cartao`: também restaurar as parcelas relacionadas
-- Para INSERT de `compras_cartao`: também deletar as parcelas criadas
-- Marcar o registro de auditoria como "desfeito" para evitar undo duplo
-
-#### 4. Atualização: `src/pages/Cartoes.tsx`
-
-Adicionar no header:
-- Botão "Desfazer" com ícone `Undo2`
-- Estado para controlar abertura do dialog
-- Integração com o hook `useUltimaAlteracao`
-
-### Interface do Usuário
-
-**Botão no Header:**
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Cartões                                                          │
-│  Gerencie seus cartões e acompanhe as faturas                    │
-│                                                                   │
-│  [↶ Desfazer]  [🔄 Verificar Parcelas]  [+ Novo Cartão]         │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Dialog de Confirmação:**
-```
 ┌─────────────────────────────────────────────────────┐
-│  ↶ Desfazer Última Alteração                       │
+│  🔄 Restaurar Compras do Backup                    │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
-│  ⚠️ Você está prestes a desfazer:                  │
+│  Foram encontradas 42 compras deletadas:            │
 │                                                     │
-│  • Ação: Inserção                                   │
-│  • Tipo: Compra                                     │
-│  • Descrição: "Mercado XYZ - R$ 150,00"            │
-│  • Realizada: há 5 minutos                          │
+│  • Deletadas em: 26/01/2026 às 10:58               │
+│  • Período: Janeiro/2026                            │
+│  • Valor total: R$ 4.002,83                        │
 │                                                     │
-│  Esta ação irá remover a compra e todas as          │
-│  parcelas associadas.                               │
+│  ⚠️ Esta ação irá:                                 │
+│  1. Remover as 42 compras atuais (fev/mar)         │
+│  2. Restaurar as 42 compras originais (jan)         │
+│  3. Regenerar todas as parcelas                     │
 │                                                     │
 ├─────────────────────────────────────────────────────┤
-│                        [Cancelar]  [Confirmar]      │
+│                        [Cancelar]  [Restaurar]      │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Detalhes Técnicos
+### Função de restauração
 
-#### Lógica de Undo por Tipo de Ação
-
-**1. Desfazer INSERT (compras_cartao):**
 ```typescript
-// Deletar parcelas associadas
-await supabase.from("parcelas_cartao").delete().eq("compra_id", registroId);
-// Deletar a compra
-await supabase.from("compras_cartao").delete().eq("id", registroId);
+// src/services/compras-cartao.ts
+
+export async function restaurarComprasDeletadas(
+  cartaoId: string,
+  timestampDelecao: string
+): Promise<{ restauradas: number; parcelas: number }> {
+  // 1. Buscar compras deletadas da auditoria
+  const { data: auditoriaCompras, error: erroBusca } = await supabase
+    .from("auditoria_cartao")
+    .select("dados_anteriores, registro_id")
+    .eq("acao", "DELETE")
+    .eq("tabela", "compras_cartao")
+    .gte("created_at", timestampDelecao)
+    .lte("created_at", new Date(new Date(timestampDelecao).getTime() + 60000).toISOString());
+
+  if (erroBusca) throw erroBusca;
+  if (!auditoriaCompras?.length) throw new Error("Nenhuma compra encontrada para restaurar");
+
+  // Filtrar apenas do cartão específico
+  const comprasDoCartao = auditoriaCompras.filter(
+    a => (a.dados_anteriores as any)?.cartao_id === cartaoId
+  );
+
+  // 2. Deletar compras reimportadas (criadas após a deleção)
+  const { error: erroDelete } = await supabase
+    .from("compras_cartao")
+    .delete()
+    .eq("cartao_id", cartaoId)
+    .gte("created_at", timestampDelecao);
+
+  if (erroDelete) throw erroDelete;
+
+  // 3. Restaurar compras originais
+  let restauradas = 0;
+  for (const registro of comprasDoCartao) {
+    const dados = registro.dados_anteriores as Record<string, unknown>;
+    
+    // Inserir a compra original
+    const { error: erroInsert } = await supabase
+      .from("compras_cartao")
+      .insert(dados);
+    
+    if (!erroInsert) restauradas++;
+  }
+
+  // 4. Regenerar parcelas (o sistema já tem essa funcionalidade)
+  // As parcelas serão regeneradas automaticamente pelo hook existente
+
+  return { 
+    restauradas, 
+    parcelas: 0 // Será regenerado automaticamente
+  };
+}
 ```
 
-**2. Desfazer UPDATE:**
-```typescript
-// Restaurar dados anteriores
-await supabase.from(tabela).update(dados_anteriores).eq("id", registroId);
+### Etapas de implementação
+
+1. **Adicionar função `restaurarComprasDeletadas` em `compras-cartao.ts`**
+2. **Criar `RestaurarComprasDialog.tsx`** com interface clara
+3. **Adicionar botão na página de Despesas** quando detectar situação de backup disponível
+4. **Testar restauração** garantindo integridade dos dados
+
+---
+
+## Solução Imediata (Sem Código)
+
+Se você precisar resolver **agora**, posso executar um SQL para restaurar os dados diretamente:
+
+```sql
+-- 1. Deletar compras reimportadas incorretamente
+DELETE FROM compras_cartao 
+WHERE cartao_id = '8607c9f1-ccdc-42df-ad2a-d2669c7b347c'
+  AND created_at >= '2026-01-26 10:58:00';
+
+-- 2. Restaurar compras originais da auditoria
+INSERT INTO compras_cartao 
+SELECT (dados_anteriores)::jsonb 
+FROM auditoria_cartao 
+WHERE acao = 'DELETE' 
+  AND tabela = 'compras_cartao'
+  AND dados_anteriores->>'cartao_id' = '8607c9f1-ccdc-42df-ad2a-d2669c7b347c'
+  AND created_at >= '2026-01-26 10:58:00';
 ```
 
-**3. Desfazer DELETE (compras_cartao):**
-```typescript
-// Re-inserir a compra com os dados anteriores
-await supabase.from("compras_cartao").insert(dados_anteriores);
-// Buscar e re-inserir parcelas do mesmo período na auditoria
-// (parcelas deletadas em cascata terão registros de auditoria próximos)
-```
+---
 
-#### Limitações e Segurança
+## Benefícios da Implementação
 
-| Aspecto | Tratamento |
-|---------|------------|
-| Apenas 1 nível de undo | Por simplicidade, apenas a última ação pode ser desfeita |
-| Timeout de 24h | Alterações com mais de 24h não podem ser desfeitas |
-| Undo de undo | Evitado - o undo gera novos registros de auditoria que podem ser desfeitos |
-| Cascata | DELETE de compra restaura automaticamente as parcelas |
-
-### Sequência de Implementação
-
-1. Criar `useUltimaAlteracao.ts` - hook para buscar última alteração
-2. Criar `DesfazerAlteracaoDialog.tsx` - dialog de confirmação
-3. Adicionar `desfazerUltimaAlteracao()` em `compras-cartao.ts`
-4. Integrar botão e dialog em `Cartoes.tsx`
-
-### Benefícios
-
-- Segurança para o usuário reverter erros rapidamente
-- Usa infraestrutura de auditoria já existente
-- Interface clara mostrando exatamente o que será desfeito
-- Padrão consistente com outros "desfazer" do sistema (como AdiantarFatura)
-
+| Aspecto | Benefício |
+|---------|-----------|
+| **Segurança** | Usuário pode recuperar dados deletados acidentalmente |
+| **Auditoria** | Usa infraestrutura já existente |
+| **UX** | Interface clara mostrando o que será restaurado |
+| **Prevenção** | Funcionalidade de backup integrada ao sistema |
