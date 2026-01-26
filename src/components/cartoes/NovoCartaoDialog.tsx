@@ -22,6 +22,7 @@ import { DaySelector } from "@/components/ui/day-selector";
 import { Check, Plus, Lock } from "lucide-react";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { PlanLimitAlert } from "@/components/ui/plan-limit-alert";
+import { BancoSelector } from "@/components/bancos";
 
 // Lista de cartões brasileiros com bandeira e cor padrão
 const CARTOES_BRASIL = [
@@ -80,6 +81,7 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
     dia_fechamento: 5,
     dia_vencimento: 12,
     cor: "#6366f1",
+    banco_id: null as string | null,
   });
 
   const limitReached = isLimitReached("cartoes");
@@ -141,6 +143,7 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
       await criarCartao({
         ...form,
         nome: nomeCartao,
+        banco_id: form.banco_id,
       });
       toast({ title: "Cartão cadastrado com sucesso" });
       setOpen(false);
@@ -163,6 +166,7 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
       dia_fechamento: 5,
       dia_vencimento: 12,
       cor: "#6366f1",
+      banco_id: null,
     });
   }
 
@@ -286,6 +290,14 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
                 onChange={(e) => setForm({ ...form, limite: Number(e.target.value) })}
               />
             </div>
+
+            {/* Banco */}
+            <BancoSelector
+              value={form.banco_id}
+              onChange={(bancoId) => setForm({ ...form, banco_id: bancoId })}
+              label="Banco (opcional)"
+              placeholder="Selecione o banco"
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <DaySelector

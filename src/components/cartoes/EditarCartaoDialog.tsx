@@ -20,6 +20,7 @@ import { Cartao, atualizarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
 import { DaySelector } from "@/components/ui/day-selector";
 import { Check } from "lucide-react";
+import { BancoSelector } from "@/components/bancos";
 
 // Lista de cartões brasileiros com bandeira e cor padrão
 const CARTOES_BRASIL = [
@@ -84,6 +85,7 @@ export function EditarCartaoDialog({
     dia_fechamento: 1,
     dia_vencimento: 1,
     cor: "#6366f1",
+    banco_id: null as string | null,
   });
 
   const isOutro = cartaoSelecionado === "Outro";
@@ -112,6 +114,7 @@ export function EditarCartaoDialog({
       dia_fechamento: cartao.dia_fechamento,
       dia_vencimento: cartao.dia_vencimento,
       cor: cartao.cor || "#6366f1",
+      banco_id: (cartao as any).banco_id || null,
     });
   }, [cartao, open]);
 
@@ -160,6 +163,7 @@ export function EditarCartaoDialog({
         dia_fechamento: form.dia_fechamento,
         dia_vencimento: form.dia_vencimento,
         cor: form.cor,
+        banco_id: form.banco_id,
       });
 
       toast({
@@ -278,6 +282,14 @@ export function EditarCartaoDialog({
               onChange={(day) => setForm({ ...form, dia_vencimento: day })}
             />
           </div>
+
+          {/* Banco */}
+          <BancoSelector
+            value={form.banco_id}
+            onChange={(bancoId) => setForm({ ...form, banco_id: bancoId })}
+            label="Banco (opcional)"
+            placeholder="Selecione o banco"
+          />
 
           {/* Seletor de Cor */}
           <div className="space-y-2">
