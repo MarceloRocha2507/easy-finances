@@ -106,9 +106,14 @@ export function EditarCompraDialog({
   // Gerar opções de mês da fatura centradas no mês da parcela
   const opcoesMesFatura = useMemo(() => {
     // Usar o mês da parcela como referência, ou hoje se não disponível
-    const mesBase = parcela?.mes_referencia 
-      ? new Date(parcela.mes_referencia + "-01")
-      : new Date();
+    let mesBase = new Date();
+    
+    if (parcela?.mes_referencia) {
+      const parsed = new Date(parcela.mes_referencia + "-01");
+      if (!isNaN(parsed.getTime())) {
+        mesBase = parsed;
+      }
+    }
     
     const meses = [];
     for (let i = -12; i < 12; i++) {
