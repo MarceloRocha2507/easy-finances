@@ -29,6 +29,7 @@ import {
   Upload,
   History,
   Building2,
+  CalendarClock,
 } from "lucide-react";
 
 const DEMO_EMAIL = "demo@fina.app";
@@ -50,6 +51,7 @@ const transacoesMenu = {
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
     { icon: RefreshCw, label: "Recorrentes", href: "/transactions/recorrentes" },
     { icon: Upload, label: "Importar", href: "/transactions/importar" },
+    { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
   ],
 };
 

@@ -40,6 +40,7 @@ const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 const RecorrentesPage = lazy(() => import("./pages/transactions/Recorrentes"));
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
+const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 const InstalarPage = lazy(() => import("./pages/Instalar"));
 
 const queryClient = new QueryClient();
@@ -91,6 +92,17 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingScreen />}>
                     <ImportarPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/transactions/futuras"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <DespesasFuturasPage />
                   </Suspense>
                 </ProtectedRoute>
               }
