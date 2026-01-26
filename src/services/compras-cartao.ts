@@ -19,6 +19,7 @@ export type ParcelaFatura = {
   descricao: string;
   data_compra: string;
   tipo_lancamento?: string;
+  updated_at?: string; // Hora da última alteração
   // Campos do responsável
   responsavel_id?: string;
   responsavel_nome?: string;
@@ -141,6 +142,7 @@ export async function listarParcelasDaFatura(
       mes_referencia,
       paga,
       created_at,
+      updated_at,
       compra:compras_cartao(
         id,
         descricao,
@@ -150,6 +152,7 @@ export async function listarParcelasDaFatura(
         categoria_id,
         responsavel_id,
         created_at,
+        updated_at,
         categoria:categories(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
       )
@@ -181,6 +184,8 @@ export async function listarParcelasDaFatura(
       paga: p.paga,
       descricao: p.compra?.descricao || "",
       data_compra: p.compra?.data_compra || "",
+      // Hora da última alteração (prioriza parcela, depois compra)
+      updated_at: p.updated_at || p.compra?.updated_at || p.created_at,
       // Responsável
       responsavel_id: p.compra?.responsavel?.id || null,
       responsavel_nome: p.compra?.responsavel?.nome || null,

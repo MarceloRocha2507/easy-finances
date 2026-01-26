@@ -253,6 +253,7 @@ export type Database = {
           parcelas: number
           responsavel_id: string | null
           tipo_lancamento: string
+          updated_at: string | null
           user_id: string
           valor_total: number
         }
@@ -270,6 +271,7 @@ export type Database = {
           parcelas?: number
           responsavel_id?: string | null
           tipo_lancamento?: string
+          updated_at?: string | null
           user_id: string
           valor_total: number
         }
@@ -287,6 +289,7 @@ export type Database = {
           parcelas?: number
           responsavel_id?: string | null
           tipo_lancamento?: string
+          updated_at?: string | null
           user_id?: string
           valor_total?: number
         }
@@ -567,6 +570,7 @@ export type Database = {
           paga: boolean
           tipo_recorrencia: string
           total_parcelas: number
+          updated_at: string | null
           valor: number
         }
         Insert: {
@@ -579,6 +583,7 @@ export type Database = {
           paga?: boolean
           tipo_recorrencia?: string
           total_parcelas: number
+          updated_at?: string | null
           valor: number
         }
         Update: {
@@ -591,6 +596,7 @@ export type Database = {
           paga?: boolean
           tipo_recorrencia?: string
           total_parcelas?: number
+          updated_at?: string | null
           valor?: number
         }
         Relationships: [

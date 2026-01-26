@@ -69,6 +69,7 @@ import { useResponsaveis } from "@/services/responsaveis";
 import { Cartao } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { formatarTempoRelativo } from "@/hooks/useUltimaAlteracao";
 import { EditarCompraDialog } from "@/components/cartoes/EditarCompraDialog";
 import { ExcluirCompraDialog } from "@/components/cartoes/ExcluirCompraDialog";
 import { NovaCompraCartaoDialog } from "@/components/cartoes/NovaCompraCartaoDialog";
@@ -793,7 +794,16 @@ export default function DespesasCartao() {
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Editar</TooltipContent>
+                              <TooltipContent>
+                                <div className="text-center">
+                                  <div>Editar</div>
+                                  {p.updated_at && (
+                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                      Alterado {formatarTempoRelativo(p.updated_at)}
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
 
