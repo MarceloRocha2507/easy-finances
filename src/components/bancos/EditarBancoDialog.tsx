@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Banco, useAtualizarBanco } from "@/services/bancos";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Banco, useAtualizarBanco, TIPOS_CONTA } from "@/services/bancos";
 import { Check, Building2 } from "lucide-react";
 
 const CORES_PREDEFINIDAS = [
@@ -39,6 +46,9 @@ export function EditarBancoDialog({
     codigo: "",
     cor: "#6366f1",
     ativo: true,
+    tipo_conta: "corrente",
+    agencia: "",
+    conta: "",
   });
 
   useEffect(() => {
@@ -48,6 +58,9 @@ export function EditarBancoDialog({
         codigo: banco.codigo || "",
         cor: banco.cor,
         ativo: banco.ativo,
+        tipo_conta: banco.tipo_conta || "corrente",
+        agencia: banco.agencia || "",
+        conta: banco.conta || "",
       });
     }
   }, [banco]);
@@ -62,6 +75,9 @@ export function EditarBancoDialog({
         codigo: form.codigo.trim() || undefined,
         cor: form.cor,
         ativo: form.ativo,
+        tipo_conta: form.tipo_conta,
+        agencia: form.agencia.trim() || undefined,
+        conta: form.conta.trim() || undefined,
       },
     });
 
@@ -73,10 +89,10 @@ export function EditarBancoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Banco</DialogTitle>
-          <DialogDescription>Atualize as informações do banco</DialogDescription>
+          <DialogTitle>Editar Conta</DialogTitle>
+          <DialogDescription>Atualize as informações da conta bancária</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -89,6 +105,45 @@ export function EditarBancoDialog({
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
             />
+          </div>
+
+          {/* Tipo de Conta */}
+          <div className="space-y-2">
+            <Label>Tipo de conta</Label>
+            <Select value={form.tipo_conta} onValueChange={(v) => setForm({ ...form, tipo_conta: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIPOS_CONTA.map((tipo) => (
+                  <SelectItem key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Agência e Conta */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="agencia">Agência</Label>
+              <Input
+                id="agencia"
+                placeholder="0000"
+                value={form.agencia}
+                onChange={(e) => setForm({ ...form, agencia: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="conta">Conta</Label>
+              <Input
+                id="conta"
+                placeholder="00000-0"
+                value={form.conta}
+                onChange={(e) => setForm({ ...form, conta: e.target.value })}
+              />
+            </div>
           </div>
 
           {/* Código */}
@@ -127,7 +182,7 @@ export function EditarBancoDialog({
             <div>
               <Label htmlFor="ativo">Status</Label>
               <p className="text-xs text-muted-foreground">
-                {form.ativo ? "Banco ativo e visível" : "Banco desativado"}
+                {form.ativo ? "Conta ativa e visível" : "Conta desativada"}
               </p>
             </div>
             <Switch
@@ -148,9 +203,9 @@ export function EditarBancoDialog({
               <Building2 className="h-6 w-6" />
               <div>
                 <p className="font-semibold">{form.nome || "Nome do Banco"}</p>
-                {form.codigo && (
-                  <p className="text-xs opacity-80">Código: {form.codigo}</p>
-                )}
+                <p className="text-xs opacity-80">
+                  {TIPOS_CONTA.find(t => t.value === form.tipo_conta)?.label || "Conta"}
+                </p>
               </div>
             </div>
           </div>

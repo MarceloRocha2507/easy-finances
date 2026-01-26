@@ -10,6 +10,10 @@ export interface Banco {
   cor: string;
   logo_url: string | null;
   ativo: boolean;
+  saldo_inicial: number;
+  tipo_conta: string | null;
+  agencia: string | null;
+  conta: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +23,7 @@ export interface BancoComResumo extends Banco {
   limiteTotal: number;
   faturaTotal: number;
   disponivelTotal: number;
+  saldoCalculado: number; // saldo_inicial + transações vinculadas
 }
 
 export type NovoBanco = {
@@ -26,11 +31,23 @@ export type NovoBanco = {
   codigo?: string;
   cor?: string;
   logo_url?: string;
+  saldo_inicial?: number;
+  tipo_conta?: string;
+  agencia?: string;
+  conta?: string;
 };
 
 export type AtualizarBanco = Partial<NovoBanco> & {
   ativo?: boolean;
 };
+
+export const TIPOS_CONTA = [
+  { value: 'corrente', label: 'Conta Corrente' },
+  { value: 'poupanca', label: 'Poupança' },
+  { value: 'digital', label: 'Conta Digital' },
+  { value: 'investimento', label: 'Investimento' },
+  { value: 'salario', label: 'Conta Salário' },
+];
 
 // ============ Funções CRUD ============
 
@@ -104,6 +121,26 @@ export async function listarBancosComResumo(): Promise<BancoComResumo[]> {
 
   if (erParcelas) throw erParcelas;
 
+  // Buscar transações completed vinculadas a bancos
+  const { data: transacoes, error: erTrans } = await supabase
+    .from("transactions")
+    .select("banco_id, type, amount")
+    .eq("user_id", user.id)
+    .eq("status", "completed")
+    .not("banco_id", "is", null);
+
+  if (erTrans) throw erTrans;
+
+  // Calcular saldo por banco (transações)
+  const saldoPorBanco = new Map<string, number>();
+  (transacoes || []).forEach((t) => {
+    if (t.banco_id) {
+      const atual = saldoPorBanco.get(t.banco_id) || 0;
+      const valor = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+      saldoPorBanco.set(t.banco_id, atual + valor);
+    }
+  });
+
   // Mapear compra_id -> cartao_id
   const compraToCartao = new Map<string, string>();
   (compras || []).forEach((c) => {
@@ -130,6 +167,10 @@ export async function listarBancosComResumo(): Promise<BancoComResumo[]> {
       0
     );
     const disponivelTotal = limiteTotal - faturaTotal;
+    
+    // Saldo calculado = saldo_inicial + transações vinculadas
+    const transacoesVinculadas = saldoPorBanco.get(banco.id) || 0;
+    const saldoCalculado = Number(banco.saldo_inicial || 0) + transacoesVinculadas;
 
     return {
       ...(banco as Banco),
@@ -137,10 +178,27 @@ export async function listarBancosComResumo(): Promise<BancoComResumo[]> {
       limiteTotal,
       faturaTotal,
       disponivelTotal,
+      saldoCalculado,
     };
   });
 
   return resultado;
+}
+
+// Função para calcular o saldo inicial total de todos os bancos
+export async function calcularSaldoInicialTotal(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  const { data: bancos, error } = await supabase
+    .from("bancos")
+    .select("saldo_inicial")
+    .eq("user_id", user.id)
+    .eq("ativo", true);
+
+  if (error) throw error;
+
+  return (bancos || []).reduce((acc, b) => acc + Number(b.saldo_inicial || 0), 0);
 }
 
 export async function criarBanco(dados: NovoBanco): Promise<Banco> {
@@ -155,6 +213,10 @@ export async function criarBanco(dados: NovoBanco): Promise<Banco> {
       codigo: dados.codigo || null,
       cor: dados.cor || "#6366f1",
       logo_url: dados.logo_url || null,
+      saldo_inicial: dados.saldo_inicial || 0,
+      tipo_conta: dados.tipo_conta || "corrente",
+      agencia: dados.agencia || null,
+      conta: dados.conta || null,
     })
     .select()
     .single();
@@ -172,6 +234,10 @@ export async function atualizarBanco(id: string, dados: AtualizarBanco): Promise
       ...(dados.cor !== undefined && { cor: dados.cor }),
       ...(dados.logo_url !== undefined && { logo_url: dados.logo_url }),
       ...(dados.ativo !== undefined && { ativo: dados.ativo }),
+      ...(dados.saldo_inicial !== undefined && { saldo_inicial: dados.saldo_inicial }),
+      ...(dados.tipo_conta !== undefined && { tipo_conta: dados.tipo_conta }),
+      ...(dados.agencia !== undefined && { agencia: dados.agencia }),
+      ...(dados.conta !== undefined && { conta: dados.conta }),
     })
     .eq("id", id)
     .select()

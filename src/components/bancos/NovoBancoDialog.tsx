@@ -8,7 +8,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCriarBanco } from "@/services/bancos";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCriarBanco, TIPOS_CONTA } from "@/services/bancos";
 import { Check, Building2 } from "lucide-react";
 
 // Bancos brasileiros populares
@@ -44,14 +51,19 @@ export function NovoBancoDialog({ open, onOpenChange, onSaved }: NovoBancoDialog
     nome: "",
     codigo: "",
     cor: "#6366f1",
+    saldo_inicial: "",
+    tipo_conta: "corrente",
+    agencia: "",
+    conta: "",
   });
 
   const handleBancoSugerido = (banco: typeof BANCOS_SUGERIDOS[0]) => {
-    setForm({
+    setForm((prev) => ({
+      ...prev,
       nome: banco.nome,
       codigo: banco.codigo,
       cor: banco.cor,
-    });
+    }));
   };
 
   const handleSalvar = async () => {
@@ -61,24 +73,35 @@ export function NovoBancoDialog({ open, onOpenChange, onSaved }: NovoBancoDialog
       nome: form.nome.trim(),
       codigo: form.codigo.trim() || undefined,
       cor: form.cor,
+      saldo_inicial: form.saldo_inicial ? parseFloat(form.saldo_inicial.replace(",", ".")) : 0,
+      tipo_conta: form.tipo_conta,
+      agencia: form.agencia.trim() || undefined,
+      conta: form.conta.trim() || undefined,
     });
 
-    setForm({ nome: "", codigo: "", cor: "#6366f1" });
+    setForm({ nome: "", codigo: "", cor: "#6366f1", saldo_inicial: "", tipo_conta: "corrente", agencia: "", conta: "" });
     onSaved();
   };
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
-      setForm({ nome: "", codigo: "", cor: "#6366f1" });
+      setForm({ nome: "", codigo: "", cor: "#6366f1", saldo_inicial: "", tipo_conta: "corrente", agencia: "", conta: "" });
     }
     onOpenChange(isOpen);
   };
 
+  const formatCurrency = (value: string) => {
+    const numbers = value.replace(/[^\d]/g, "");
+    if (!numbers) return "";
+    const amount = parseInt(numbers, 10) / 100;
+    return amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Banco</DialogTitle>
+          <DialogTitle>Nova Conta Bancária</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -117,6 +140,63 @@ export function NovoBancoDialog({ open, onOpenChange, onSaved }: NovoBancoDialog
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
             />
+          </div>
+
+          {/* Tipo de Conta */}
+          <div className="space-y-2">
+            <Label>Tipo de conta</Label>
+            <Select value={form.tipo_conta} onValueChange={(v) => setForm({ ...form, tipo_conta: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIPOS_CONTA.map((tipo) => (
+                  <SelectItem key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Saldo Inicial */}
+          <div className="space-y-2">
+            <Label htmlFor="saldo_inicial">Saldo inicial da conta</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+              <Input
+                id="saldo_inicial"
+                placeholder="0,00"
+                className="pl-10"
+                value={form.saldo_inicial}
+                onChange={(e) => setForm({ ...form, saldo_inicial: formatCurrency(e.target.value) })}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Informe o saldo atual da sua conta conforme o extrato bancário
+            </p>
+          </div>
+
+          {/* Agência e Conta */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="agencia">Agência</Label>
+              <Input
+                id="agencia"
+                placeholder="0000"
+                value={form.agencia}
+                onChange={(e) => setForm({ ...form, agencia: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="conta">Conta</Label>
+              <Input
+                id="conta"
+                placeholder="00000-0"
+                value={form.conta}
+                onChange={(e) => setForm({ ...form, conta: e.target.value })}
+              />
+            </div>
           </div>
 
           {/* Código */}
@@ -161,9 +241,10 @@ export function NovoBancoDialog({ open, onOpenChange, onSaved }: NovoBancoDialog
               <Building2 className="h-6 w-6" />
               <div>
                 <p className="font-semibold">{form.nome || "Nome do Banco"}</p>
-                {form.codigo && (
-                  <p className="text-xs opacity-80">Código: {form.codigo}</p>
-                )}
+                <p className="text-xs opacity-80">
+                  {TIPOS_CONTA.find(t => t.value === form.tipo_conta)?.label || "Conta"}
+                  {form.saldo_inicial && ` • R$ ${form.saldo_inicial}`}
+                </p>
               </div>
             </div>
           </div>
@@ -173,7 +254,7 @@ export function NovoBancoDialog({ open, onOpenChange, onSaved }: NovoBancoDialog
             onClick={handleSalvar}
             disabled={!form.nome.trim() || criarBanco.isPending}
           >
-            {criarBanco.isPending ? "Salvando..." : "Salvar banco"}
+            {criarBanco.isPending ? "Salvando..." : "Salvar conta"}
           </Button>
         </div>
       </DialogContent>
