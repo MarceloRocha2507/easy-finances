@@ -1,122 +1,173 @@
 
 
-# Plano: Simplificar a Seção "Por Cartão"
+# Plano: Simplificar e Unificar os Filtros
 
-## Objetivo
+## Problema Identificado
 
-Tornar a seção de resumo por cartão mais compacta e menos "polida", removendo elementos decorativos excessivos e reduzindo o espaçamento.
+A seção de filtros está visualmente "duplicada" e confusa:
 
-## Situação Atual
+1. **`FiltroDataRange` tem atalhos para o PASSADO**: "Hoje", "Semana", "Mês", "30 dias" (últimos 30 dias)
+2. **A página tem atalhos para o FUTURO**: "30d", "3 meses", "6 meses", "12 meses" (próximos X)
 
-A seção "Por Cartão" usa:
-- Um `Card` container com `CardHeader` e `CardContent`
-- Botões individuais com `p-3`, bordas coloridas e `ring-2` ao selecionar
-- Texto do valor em `text-lg`
-- Espaçamento `gap-3` entre os items
+Para uma página de "Despesas Futuras", os atalhos do passado não fazem sentido.
 
-## Mudanças Propostas
-
-### Antes (atual):
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Por Cartão                                                      │
-├──────────────┬──────────────┬──────────────┬───────────────────┤
-│ ┌──────────┐ │ ┌──────────┐ │ ┌──────────┐ │ ┌───────────────┐ │
-│ │ Nubank   │ │ │ Inter    │ │ │ PicPay   │ │ │ Will Bank     │ │
-│ │ R$ 3.254 │ │ │ R$ 1.442 │ │ │ R$ 308   │ │ │ R$ 75         │ │
-│ └──────────┘ │ └──────────┘ │ └──────────┘ │ └───────────────┘ │
-└──────────────┴──────────────┴──────────────┴───────────────────┘
+**Situação atual:**
+```
+[📅 26/01/2026] até [📅 26/04/2026] Hoje Semana Mês 30dias 🔄    30d 3meses 6meses 12meses
+[Categoria ▼] [Responsável ▼] [Origem ▼] [Tipo ▼]              [≡] [⋮⋮] Limpar
 ```
 
-### Depois (mais compacto):
-```text
-Por Cartão: Transações R$ 4.442 (11) • Nubank R$ 3.254 (66) • Inter R$ 1.442 (94) • PicPay R$ 308 (4) • Will Bank R$ 75 (1)
+## Solução Proposta
+
+Consolidar tudo em UMA única linha de filtros:
+
+**Nova estrutura:**
+```
+[📅 Data Inicial] até [📅 Data Final]  30d 3m 6m 12m  🔄  |  [Categoria ▼] [Responsável ▼] [Origem ▼] [Tipo ▼]  [≡ ⋮⋮]  Limpar
 ```
 
-Ou como badges/chips inline:
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Por Cartão                                                                  │
-│ [Transações R$ 4.442] [Nubank R$ 3.254] [Inter R$ 1.442] [PicPay R$ 308]   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**Mudanças:**
+1. Remover o componente `FiltroDataRange` (que tem atalhos do passado)
+2. Usar date pickers simples diretamente na página
+3. Manter apenas os atalhos de período FUTURO (30d, 3m, 6m, 12m)
+4. Unir tudo em uma única linha fluída (flex-wrap)
 
 ## Mudanças Técnicas
 
 ### Arquivo: `src/pages/DespesasFuturas.tsx`
 
-Substituir o grid de cards por uma lista de chips/badges em linha:
+**1. Remover import do FiltroDataRange:**
+```diff
+- import { FiltroDataRange } from "@/components/FiltroDataRange";
++ import { Calendar } from "@/components/ui/calendar";
++ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
++ import { CalendarIcon, RefreshCw } from "lucide-react";
+```
 
-**De (linhas 236-284):**
+**2. Substituir a seção de filtros (linhas 286-435) por uma versão unificada:**
+
 ```tsx
+{/* Filtros - Linha única */}
 <Card>
-  <CardHeader className="pb-2">...</CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      {/* Botões grandes com bordas */}
+  <CardContent className="pt-4 pb-4">
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Date Pickers */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="min-w-[120px] justify-start">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+          <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
+        </PopoverContent>
+      </Popover>
+
+      <span className="text-muted-foreground text-sm">até</span>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="min-w-[120px] justify-start">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+          <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
+        </PopoverContent>
+      </Popover>
+
+      {/* Atalhos de período FUTURO */}
+      <div className="flex gap-1">
+        <Button variant="ghost" size="sm" onClick={handleProximos30Dias}>30d</Button>
+        <Button variant="ghost" size="sm" onClick={handleProximos3Meses}>3m</Button>
+        <Button variant="ghost" size="sm" onClick={handleProximos6Meses}>6m</Button>
+        <Button variant="ghost" size="sm" onClick={handleProximo12Meses}>12m</Button>
+      </div>
+
+      <Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isLoading}>
+        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+      </Button>
+
+      {/* Separador visual */}
+      <div className="w-px h-6 bg-border hidden sm:block" />
+
+      {/* Dropdowns de filtro */}
+      <Select value={categoriaId} onValueChange={setCategoriaId}>
+        <SelectTrigger className="w-[130px]">
+          <SelectValue placeholder="Categoria" />
+        </SelectTrigger>
+        <SelectContent>...</SelectContent>
+      </Select>
+
+      <Select value={responsavelId} onValueChange={setResponsavelId}>
+        <SelectTrigger className="w-[130px]">
+          <SelectValue placeholder="Responsável" />
+        </SelectTrigger>
+        <SelectContent>...</SelectContent>
+      </Select>
+
+      <Select value={cartaoId} onValueChange={setCartaoId}>
+        <SelectTrigger className="w-[130px]">
+          <SelectValue placeholder="Origem" />
+        </SelectTrigger>
+        <SelectContent>...</SelectContent>
+      </Select>
+
+      <Select value={tipo} onValueChange={setTipo}>
+        <SelectTrigger className="w-[110px]">
+          <SelectValue placeholder="Tipo" />
+        </SelectTrigger>
+        <SelectContent>...</SelectContent>
+      </Select>
+
+      {/* Toggle de visualização + Limpar */}
+      <div className="flex items-center gap-1 ml-auto">
+        <div className="flex border rounded-lg p-0.5">
+          <Button variant={viewMode === "lista" ? "secondary" : "ghost"} size="sm">
+            <List className="h-4 w-4" />
+          </Button>
+          <Button variant={viewMode === "agrupado" ? "secondary" : "ghost"} size="sm">
+            <LayoutList className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button variant="ghost" size="sm" onClick={limparFiltros}>Limpar</Button>
+      </div>
     </div>
   </CardContent>
 </Card>
 ```
 
-**Para:**
-```tsx
-<div className="flex flex-wrap items-center gap-2">
-  <span className="text-sm text-muted-foreground flex items-center gap-1">
-    <CreditCard className="h-4 w-4" />
-    Por Cartão:
-  </span>
-  {resumoPorCartao.map((item) => (
-    <button
-      key={item.cartaoId || "transacao"}
-      onClick={() => handleFiltrarCartao(item.cartaoId)}
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-1 text-sm rounded-md border hover:bg-muted/50 transition-colors",
-        (item.cartaoId === null && cartaoId === "transacao") ||
-          (item.cartaoId && cartaoId === item.cartaoId)
-          ? "ring-1 ring-primary bg-muted/30"
-          : ""
-      )}
-      style={{ borderColor: item.cartaoCor || undefined }}
-    >
-      {item.cartaoId ? (
-        <CreditCard className="h-3 w-3" style={{ color: item.cartaoCor }} />
-      ) : (
-        <Receipt className="h-3 w-3 text-muted-foreground" />
-      )}
-      <span className="font-medium">{item.cartaoNome}</span>
-      <span className="text-expense font-semibold">{formatCurrency(item.total)}</span>
-      <span className="text-muted-foreground text-xs">({item.quantidade})</span>
-    </button>
-  ))}
-</div>
-```
-
 ## Resultado Visual
 
-Uma linha horizontal com chips clicáveis, cada um mostrando:
-- Ícone do cartão (colorido)
-- Nome do cartão
-- Valor total
-- Quantidade entre parênteses
+**Antes (2 linhas confusas):**
+```
+[📅] até [📅] Hoje Semana Mês 30dias 🔄       30d 3meses 6meses 12meses
+[Categoria▼] [Responsável▼] [Origem▼] [Tipo▼]        [≡][⋮⋮] Limpar
+```
+
+**Depois (1 linha organizada):**
+```
+[📅] até [📅] 30d 3m 6m 12m 🔄 | [Categoria▼] [Responsável▼] [Origem▼] [Tipo▼] [≡⋮⋮] Limpar
+```
 
 ## Benefícios
 
 | Aspecto | Antes | Depois |
 |---------|-------|--------|
-| Espaço vertical | ~120px | ~40px |
-| Bordas | Grossas e coloridas | Sutis |
-| Padding | `p-3` generoso | `px-2 py-1` compacto |
-| Layout | Grid rígido | Flex wrap fluído |
+| Linhas de filtros | 2 | 1 |
+| Atalhos duplicados | Sim (8 botões) | Não (4 botões) |
+| Espaço vertical | ~100px | ~50px |
+| Clareza | Confuso | Intuitivo |
 
 ## Arquivos a Modificar
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/pages/DespesasFuturas.tsx` | Substituir grid de cards por linha de chips |
+| `src/pages/DespesasFuturas.tsx` | Remover `FiltroDataRange`, adicionar date pickers inline, unificar em uma linha |
 
 ## Tempo Estimado
 
-2-3 minutos para implementar.
+5-7 minutos para implementar.
 
