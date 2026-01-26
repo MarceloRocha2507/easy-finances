@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { useCartoes, usePrevisaoPorResponsavel, CartaoComResumo } from "@/services/cartoes";
 import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
+import { DesfazerAlteracaoDialog } from "@/components/cartoes/DesfazerAlteracaoDialog";
 import { cn } from "@/lib/utils";
 
 export default function Cartoes() {
@@ -130,6 +131,7 @@ export default function Cartoes() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
             <Button
               variant="outline"
               size="sm"
