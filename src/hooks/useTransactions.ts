@@ -561,6 +561,30 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
 
       if (allError) throw allError;
 
+      // Buscar total guardado em metas
+      const { data: metas } = await supabase
+        .from('metas')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('concluida', false);
+
+      const totalMetas = (metas || []).reduce(
+        (sum, meta) => sum + Number(meta.valor_atual), 0
+      );
+
+      // Buscar total guardado em investimentos
+      const { data: investimentos } = await supabase
+        .from('investimentos')
+        .select('valor_atual')
+        .eq('user_id', user!.id)
+        .eq('ativo', true);
+
+      const totalInvestido = (investimentos || []).reduce(
+        (sum, inv) => sum + Number(inv.valor_atual), 0
+      );
+
+      const totalGuardado = totalMetas + totalInvestido;
+
       // Calcular saldo progressivo (patrimônio bruto)
       let saldo = saldoInicial;
       const saldoMap = new Map<string, number>();
@@ -569,6 +593,17 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
         saldo += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
         // Armazenar o patrimônio total após cada transação
         saldoMap.set(t.id, saldo);
+      }
+
+      // Identificar a última transação (mais recente por created_at)
+      const ultimaTransacaoId = allCompleted && allCompleted.length > 0 
+        ? allCompleted[allCompleted.length - 1].id 
+        : undefined;
+
+      // Ajustar APENAS a última transação para mostrar saldo disponível
+      if (ultimaTransacaoId) {
+        const patrimonioAtual = saldoMap.get(ultimaTransacaoId) || 0;
+        saldoMap.set(ultimaTransacaoId, patrimonioAtual - totalGuardado);
       }
 
       // Buscar transações filtradas para exibição
@@ -602,6 +637,8 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
       return {
         transactions: data as Transaction[],
         saldoMap,
+        totalGuardado,
+        ultimaTransacaoId,
       };
     },
     enabled: !!user,
