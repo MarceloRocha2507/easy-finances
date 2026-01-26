@@ -1,143 +1,166 @@
 
-## Plano: Corrigir Seletor Global de Mês para Re-verificar Duplicatas
 
-### Problema Identificado
+## Plano: Adicionar Opção "Desfazer Última Alteração" em Cartões
 
-Ao selecionar "Fixar todas as compras em: março/2026", o sistema:
-1. ✅ Atualiza o estado `mesFaturaGlobal`
-2. ✅ Atualiza o `mesFatura` de cada item via `useEffect`
-3. ❌ **NÃO** re-verifica duplicatas após a mudança
+### Contexto
 
-Como o fingerprint de duplicatas inclui o mês de referência, mudar o mês deveria atualizar a verificação de duplicatas.
+O sistema já possui um robusto sistema de auditoria (`auditoria_cartao`) que registra automaticamente todas as operações de INSERT, UPDATE e DELETE em `compras_cartao` e `parcelas_cartao`. Os dados anteriores e novos são armazenados em campos JSONB, o que permite restaurar o estado anterior de qualquer registro.
 
-### Causa Raiz
+### Abordagem
 
-```typescript
-// Linha 155-163 - useEffect atual
-useEffect(() => {
-  if (modoMesFatura === "fixo" && mesFaturaGlobal && previewData.length > 0) {
-    setPreviewData(prev => prev.map(p => ({
-      ...p,
-      mesFatura: mesFaturaGlobal
-    })));
-  }
-}, [modoMesFatura, mesFaturaGlobal]);
-// ❌ Não chama verificarDuplicatas()
-```
+A funcionalidade "Desfazer" será implementada seguindo o padrão já existente no `AdiantarFaturaDialog`, que exibe um botão "Desfazer" em um toast após a ação. No entanto, para uma funcionalidade mais robusta, vamos adicionar:
 
-### Solução
+1. **Botão permanente** no header da página de Cartões
+2. **Dialog de confirmação** mostrando o que será desfeito
+3. **Serviço de undo** que usa os dados da auditoria
 
-Substituir o `useEffect` por um handler dedicado que:
-1. Atualiza todos os `mesFatura`
-2. Chama `verificarDuplicatas()` com os dados atualizados
-3. Atualiza o `previewData` com o resultado
-
-### Alterações
-
-**Arquivo:** `src/pages/cartoes/ImportarCompras.tsx`
-
-| Seção | Alteração |
-|-------|-----------|
-| Estado | Remover o `useEffect` das linhas 155-163 |
-| Novo handler | Criar `handleMesFaturaGlobalChange()` assíncrono |
-| Select | Usar o novo handler no `onValueChange` |
-| RadioGroup | Também usar handler ao mudar modo |
-
-### Novo Código
-
-```typescript
-// Remover useEffect das linhas 155-163
-
-// Novo handler para mudança de mês global
-async function handleMesFaturaGlobalChange(novoMes: string) {
-  setMesFaturaGlobal(novoMes);
-  
-  if (previewData.length > 0 && cartaoId) {
-    // Atualiza o mês de todas as compras
-    const dadosAtualizados = previewData.map(p => ({
-      ...p,
-      mesFatura: novoMes
-    }));
-    
-    // Re-verifica duplicatas com os novos meses
-    const comDuplicatas = await verificarDuplicatas(cartaoId, dadosAtualizados);
-    setPreviewData(comDuplicatas);
-  }
-}
-
-// Handler para mudança de modo (automático/fixo)
-async function handleModoMesFaturaChange(novoModo: ModoMesFatura) {
-  setModoMesFatura(novoModo);
-  
-  if (novoModo === "automatico" && previewData.length > 0 && cartaoId && cartao) {
-    // Recalcula mês automático para cada compra
-    const dadosAtualizados = previewData.map(p => {
-      if (p.dataCompra) {
-        const mesFaturaCalculado = calcularMesFatura(p.dataCompra, cartao.dia_fechamento);
-        return { ...p, mesFatura: mesFaturaCalculado };
-      }
-      return p;
-    });
-    
-    const comDuplicatas = await verificarDuplicatas(cartaoId, dadosAtualizados);
-    setPreviewData(comDuplicatas);
-  } else if (novoModo === "fixo") {
-    // Inicializa com mês atual se não houver seleção
-    const mesInicial = mesFaturaGlobal || format(new Date(), "yyyy-MM");
-    if (!mesFaturaGlobal) {
-      setMesFaturaGlobal(mesInicial);
-    }
-    await handleMesFaturaGlobalChange(mesInicial);
-  }
-}
-```
-
-### Alterações no JSX
-
-```typescript
-// RadioGroup - linha ~551
-<RadioGroup
-  value={modoMesFatura}
-  onValueChange={handleModoMesFaturaChange}  // ← novo handler
-  ...
->
-
-// Select do mês fixo - linha ~567
-<Select
-  value={mesFaturaGlobal}
-  onValueChange={handleMesFaturaGlobalChange}  // ← novo handler
->
-```
-
-### Import Adicional
-
-```typescript
-import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
-```
-
-### Fluxo Após Correção
+### Arquitetura da Solução
 
 ```text
-Usuário seleciona "março/2026"
-       ↓
-handleMesFaturaGlobalChange("2026-03")
-       ↓
-1. setMesFaturaGlobal("2026-03")
-2. Atualiza mesFatura de todas as linhas
-3. await verificarDuplicatas() → re-analisa com novo mês
-4. setPreviewData(resultado)
-       ↓
-UI atualiza com:
-- Todos os itens mostrando "março/2026" na coluna Fatura
-- Resumo por mês mostrando apenas "mar/26"
-- Duplicatas re-verificadas corretamente
+┌─────────────────────────────────────────────────────────┐
+│  Cartoes.tsx (Header)                                   │
+│  ┌───────────────────┐                                  │
+│  │ Botão "Desfazer"  │ ──────► UltimaAlteracaoDialog   │
+│  └───────────────────┘                                  │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  useUltimaAlteracao.ts (Hook)                           │
+│  - Busca último registro de auditoria do usuário        │
+│  - Retorna dados formatados para exibição               │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  desfazerUltimaAlteracao() (Serviço)                    │
+│  - INSERT → DELETE (remove o registro criado)           │
+│  - UPDATE → Restaura dados_anteriores                   │
+│  - DELETE → Re-insere os dados_anteriores               │
+└─────────────────────────────────────────────────────────┘
 ```
+
+### Alterações por Arquivo
+
+#### 1. Novo arquivo: `src/hooks/useUltimaAlteracao.ts`
+
+Hook para buscar e gerenciar a última alteração:
+
+| Função | Descrição |
+|--------|-----------|
+| `useUltimaAlteracao()` | Query que busca o registro mais recente em `auditoria_cartao` |
+| Retorno | `{ data, isLoading, refetch }` com o último registro |
+
+#### 2. Novo arquivo: `src/components/cartoes/DesfazerAlteracaoDialog.tsx`
+
+Dialog de confirmação que exibe:
+- Tipo da ação (Inserção/Atualização/Exclusão)
+- Tabela afetada (Compra/Parcela)
+- Data/hora da alteração
+- Resumo do que será desfeito
+- Botões Cancelar/Confirmar
+
+#### 3. Atualização: `src/services/compras-cartao.ts`
+
+Nova função `desfazerUltimaAlteracao(registro: RegistroAuditoria)`:
+
+| Ação Original | Operação de Undo |
+|---------------|------------------|
+| INSERT | DELETE do registro criado |
+| UPDATE | UPDATE restaurando `dados_anteriores` |
+| DELETE | INSERT re-criando o registro |
+
+Considerações especiais:
+- Para DELETE de `compras_cartao`: também restaurar as parcelas relacionadas
+- Para INSERT de `compras_cartao`: também deletar as parcelas criadas
+- Marcar o registro de auditoria como "desfeito" para evitar undo duplo
+
+#### 4. Atualização: `src/pages/Cartoes.tsx`
+
+Adicionar no header:
+- Botão "Desfazer" com ícone `Undo2`
+- Estado para controlar abertura do dialog
+- Integração com o hook `useUltimaAlteracao`
+
+### Interface do Usuário
+
+**Botão no Header:**
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Cartões                                                          │
+│  Gerencie seus cartões e acompanhe as faturas                    │
+│                                                                   │
+│  [↶ Desfazer]  [🔄 Verificar Parcelas]  [+ Novo Cartão]         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Dialog de Confirmação:**
+```
+┌─────────────────────────────────────────────────────┐
+│  ↶ Desfazer Última Alteração                       │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ⚠️ Você está prestes a desfazer:                  │
+│                                                     │
+│  • Ação: Inserção                                   │
+│  • Tipo: Compra                                     │
+│  • Descrição: "Mercado XYZ - R$ 150,00"            │
+│  • Realizada: há 5 minutos                          │
+│                                                     │
+│  Esta ação irá remover a compra e todas as          │
+│  parcelas associadas.                               │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                        [Cancelar]  [Confirmar]      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Detalhes Técnicos
+
+#### Lógica de Undo por Tipo de Ação
+
+**1. Desfazer INSERT (compras_cartao):**
+```typescript
+// Deletar parcelas associadas
+await supabase.from("parcelas_cartao").delete().eq("compra_id", registroId);
+// Deletar a compra
+await supabase.from("compras_cartao").delete().eq("id", registroId);
+```
+
+**2. Desfazer UPDATE:**
+```typescript
+// Restaurar dados anteriores
+await supabase.from(tabela).update(dados_anteriores).eq("id", registroId);
+```
+
+**3. Desfazer DELETE (compras_cartao):**
+```typescript
+// Re-inserir a compra com os dados anteriores
+await supabase.from("compras_cartao").insert(dados_anteriores);
+// Buscar e re-inserir parcelas do mesmo período na auditoria
+// (parcelas deletadas em cascata terão registros de auditoria próximos)
+```
+
+#### Limitações e Segurança
+
+| Aspecto | Tratamento |
+|---------|------------|
+| Apenas 1 nível de undo | Por simplicidade, apenas a última ação pode ser desfeita |
+| Timeout de 24h | Alterações com mais de 24h não podem ser desfeitas |
+| Undo de undo | Evitado - o undo gera novos registros de auditoria que podem ser desfeitos |
+| Cascata | DELETE de compra restaura automaticamente as parcelas |
+
+### Sequência de Implementação
+
+1. Criar `useUltimaAlteracao.ts` - hook para buscar última alteração
+2. Criar `DesfazerAlteracaoDialog.tsx` - dialog de confirmação
+3. Adicionar `desfazerUltimaAlteracao()` em `compras-cartao.ts`
+4. Integrar botão e dialog em `Cartoes.tsx`
 
 ### Benefícios
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Atualiza mês | ✅ | ✅ |
-| Re-verifica duplicatas | ❌ | ✅ |
-| Atualiza resumo por mês | Parcial | ✅ Correto |
-| UX consistente | ❌ | ✅ |
+- Segurança para o usuário reverter erros rapidamente
+- Usa infraestrutura de auditoria já existente
+- Interface clara mostrando exatamente o que será desfeito
+- Padrão consistente com outros "desfazer" do sistema (como AdiantarFatura)
+
