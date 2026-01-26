@@ -1,79 +1,60 @@
 
 
-## Plano: Melhorar Diagnóstico de Duplicatas na Importação
+## Plano: Corrigir Layout do Cabeçalho "Forçar Todos"
 
-### Problema Relatado
+### Problema Identificado
 
-Ao tentar importar compras para o cartão Nubank (que está vazio), o sistema mostra "duplicatas detectadas", mas não há compras visíveis no cartão.
+O texto "Forçar todos" está sendo cortado na tabela porque:
+1. A largura da coluna (`w-28` = 112px) é insuficiente
+2. O texto está quebrado em múltiplas linhas
 
-### Diagnóstico
-
-Após análise do banco de dados:
-- O cartão Nubank (8607c9f1...) tem **0 compras** (ativas ou inativas)
-- A verificação de duplicatas filtra corretamente por `cartao_id`
-- Portanto, as duplicatas são provavelmente do tipo **"lote"** (dentro do próprio texto importado)
-
-### Causas Prováveis
-
-1. **Duplicatas no Lote**: Se o texto de importação contém múltiplas parcelas da mesma compra (ex: "Loja X - Parcela 1/3" e "Loja X - Parcela 2/3"), o sistema detecta como duplicata pois ao importar a primeira parcela, as demais são geradas automaticamente.
-
-2. **Fingerprint Muito Agressivo**: A normalização da descrição pode estar gerando o mesmo hash para compras diferentes.
-
-### Solução Proposta
-
-Adicionar informações de diagnóstico mais claras na interface para ajudar a entender por que uma compra foi marcada como duplicata.
-
-#### Alterações
+### Solução
 
 **Arquivo:** `src/pages/cartoes/ImportarCompras.tsx`
 
-| Local | Alteração |
-|-------|-----------|
-| Coluna "Duplicata" | Exibir tooltip com fingerprint calculado |
-| Mensagem de duplicata | Adicionar motivo detalhado (descrição base, parcelas, mês base) |
+| Alteração | Descrição |
+|-----------|-----------|
+| Aumentar largura da coluna | Mudar de `w-28` para `w-32` ou `min-w-fit` |
+| Ajustar layout | Usar `whitespace-nowrap` para evitar quebra de linha |
+| Texto mais compacto | Trocar "Forçar todos" por "Forçar ✓" ou manter com layout melhor |
 
-**Arquivo:** `src/services/importar-compras-cartao.ts`
-
-| Local | Alteração |
-|-------|-----------|
-| Função `detectarDuplicatasNoLote` | Incluir campos de debug no `duplicataInfo` |
-| Função `verificarDuplicatas` | Incluir fingerprint no retorno para debug |
-
-#### Nova Estrutura de Debug
+### Código Proposto
 
 ```typescript
-interface DuplicataInfo {
-  compraId: string;
-  descricao: string;
-  origemDuplicata: "banco" | "lote";
-  parcelaEncontrada?: number;
-  mesInicio?: string;
-  // Novos campos para diagnóstico
-  motivoDetalhado?: string;
-  fingerprintCalculado?: string;
-}
+<TableHead className="w-32">
+  {stats.duplicatas > 0 ? (
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <Checkbox
+        id="forcar-todos"
+        checked={previewData.filter(p => p.possivelDuplicata).every(p => p.forcarImportacao)}
+        onCheckedChange={(checked) => {
+          setPreviewData(prev => prev.map(p => 
+            p.possivelDuplicata ? { ...p, forcarImportacao: checked === true } : p
+          ));
+        }}
+        className="h-3.5 w-3.5"
+      />
+      <label htmlFor="forcar-todos" className="text-xs cursor-pointer font-normal">
+        Forçar
+      </label>
+    </div>
+  ) : (
+    <span className="text-xs">Duplicata</span>
+  )}
+</TableHead>
 ```
 
-#### Nova Mensagem na Interface
+### Mudanças Visuais
 
-Em vez de apenas:
-```
-Duplicata no lote (linha 1)
-```
-
-Exibir:
-```
-Duplicata no lote: mesma compra que linha 1
-(Descrição: "mercado xyz", Parcelas: 2, Mês base: jan/26)
-```
+| Antes | Depois |
+|-------|--------|
+| "Fo" (cortado) | "✓ Forçar" (completo) |
+| "to" (segunda linha) | Linha única |
+| Sem label quando não há duplicatas | Mostra "Duplicata" quando não há duplicatas |
 
 ### Benefícios
 
-- O usuário entende exatamente por que a duplicata foi detectada
-- Facilita identificar falsos positivos
-- Permite corrigir o texto de entrada se necessário
-
-### Alternativa Rápida
-
-Se preferir uma solução mais simples, posso apenas **adicionar um console.log** no processamento para você verificar no DevTools qual fingerprint está sendo gerado para cada linha.
+- Texto visível por completo
+- Layout consistente
+- Menor ocupação de espaço horizontal
 
