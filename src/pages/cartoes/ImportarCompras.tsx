@@ -630,7 +630,24 @@ Exemplo:
                           <TableHead>Responsável</TableHead>
                           <TableHead>Fatura</TableHead>
                           <TableHead>Tipo</TableHead>
-                          <TableHead className="w-24">Duplicata</TableHead>
+                          <TableHead className="w-28">
+                            {stats.duplicatas > 0 && (
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="forcar-todos"
+                                  checked={previewData.filter(p => p.possivelDuplicata).every(p => p.forcarImportacao)}
+                                  onCheckedChange={(checked) => {
+                                    setPreviewData(prev => prev.map(p => 
+                                      p.possivelDuplicata ? { ...p, forcarImportacao: checked === true } : p
+                                    ));
+                                  }}
+                                />
+                                <label htmlFor="forcar-todos" className="text-xs cursor-pointer font-normal">
+                                  Forçar todos
+                                </label>
+                              </div>
+                            )}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
