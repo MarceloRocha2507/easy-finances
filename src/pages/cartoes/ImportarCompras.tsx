@@ -754,26 +754,40 @@ Exemplo:
                                       <TooltipTrigger asChild>
                                         <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
                                       </TooltipTrigger>
-                                      <TooltipContent side="left" className="max-w-[300px]">
+                                      <TooltipContent side="left" className="max-w-[350px]">
                                         <p className="font-medium">
                                           {p.duplicataInfo?.origemDuplicata === "lote" 
                                             ? "Duplicata no lote de importação"
                                             : "Compra similar já existe no banco"
                                           }
                                         </p>
+                                        
+                                        {/* Motivo detalhado */}
+                                        {p.duplicataInfo?.motivoDetalhado && (
+                                          <p className="text-xs mt-1 text-amber-600">
+                                            {p.duplicataInfo.motivoDetalhado}
+                                          </p>
+                                        )}
+                                        
+                                        {/* Info original */}
                                         <p className="text-xs text-muted-foreground mt-1">
-                                          {p.duplicataInfo?.descricao || "Descrição similar encontrada"}
+                                          Descrição: "{p.duplicataInfo?.descricao || "N/A"}"
                                         </p>
+                                        
                                         {p.duplicataInfo?.origemDuplicata === "banco" && (
-                                          <p className="text-xs text-muted-foreground mt-1">
+                                          <p className="text-xs text-muted-foreground">
                                             Parcela {p.duplicataInfo.parcelaEncontrada}/{p.parcelas} · 
                                             Fatura {p.duplicataInfo.mesInicio}
                                           </p>
                                         )}
-                                        {p.duplicataInfo?.origemDuplicata === "lote" && (
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            Mesma compra base encontrada na linha {p.duplicataInfo.compraId.replace("linha-", "")}
-                                          </p>
+                                        
+                                        {/* Debug: fingerprint */}
+                                        {p.duplicataInfo?.fingerprintCalculado && (
+                                          <div className="mt-2 pt-2 border-t border-border/50">
+                                            <p className="text-[10px] text-muted-foreground font-mono break-all">
+                                              FP: {p.duplicataInfo.fingerprintCalculado}
+                                            </p>
+                                          </div>
                                         )}
                                       </TooltipContent>
                                     </Tooltip>

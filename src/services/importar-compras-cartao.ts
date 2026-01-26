@@ -15,6 +15,11 @@ export interface DuplicataInfo {
   origemDuplicata: "banco" | "lote";
   parcelaEncontrada?: number;
   mesInicio?: string;
+  // Campos de diagnóstico
+  motivoDetalhado?: string;
+  fingerprintCalculado?: string;
+  descricaoBase?: string;
+  mesBase?: string;
 }
 
 export interface PreviewCompra {
@@ -559,6 +564,9 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
   return compras.map(compra => {
     if (duplicatasNoLote.has(compra.linha)) {
       const principal = principaisPorFingerprint.get(compra.fingerprint || "");
+      const fp = compra.fingerprint || "";
+      const [descBase, , , mesBase] = fp.split("|");
+      
       return {
         ...compra,
         possivelDuplicata: true,
@@ -568,6 +576,11 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
           origemDuplicata: "lote" as const,
           parcelaEncontrada: principal?.parcelaInicial,
           mesInicio: principal?.mesFatura,
+          // Diagnóstico
+          fingerprintCalculado: fp,
+          descricaoBase: descBase,
+          mesBase: mesBase,
+          motivoDetalhado: `Mesma compra base que linha ${principal?.linha}: "${descBase}", ${compra.parcelas}x, mês base ${mesBase}`,
         },
       };
     }
@@ -639,6 +652,8 @@ export async function verificarDuplicatas(
       compra.parcelaInicial
     );
     
+    const [descBase, , , mesBase] = fingerprint.split("|");
+    
     // Verificar match exato
     const matchExato = fingerprintsBanco.get(fingerprint);
     if (matchExato) {
@@ -652,17 +667,21 @@ export async function verificarDuplicatas(
           origemDuplicata: "banco" as const,
           parcelaEncontrada: matchExato.parcela_inicial,
           mesInicio: matchExato.mes_inicio.substring(0, 7),
+          // Diagnóstico
+          fingerprintCalculado: fingerprint,
+          descricaoBase: descBase,
+          mesBase: mesBase,
+          motivoDetalhado: `Match exato: "${descBase}", ${compra.parcelas}x, mês base ${mesBase}`,
         },
       };
     }
     
     // Verificar match por descrição base + parcelas (tolerância de valor)
     for (const [fpBanco, existente] of fingerprintsBanco) {
-      const [descBase, parcelas, , mesBase] = fingerprint.split("|");
-      const [descBaseBanco, parcelasBanco, valorBanco, mesBaseBanco] = fpBanco.split("|");
+      const [descBaseBanco, parcelasBanco, , mesBaseBanco] = fpBanco.split("|");
       
       const mesmaDescBase = descBase === descBaseBanco;
-      const mesmasParcelas = parcelas === parcelasBanco;
+      const mesmasParcelas = String(compra.parcelas) === parcelasBanco;
       const mesmoMesBase = mesBase === mesBaseBanco;
       const valorSimilar = Math.abs(compra.valorTotal - existente.valor_total) < 0.10;
       
@@ -677,6 +696,11 @@ export async function verificarDuplicatas(
             origemDuplicata: "banco" as const,
             parcelaEncontrada: existente.parcela_inicial,
             mesInicio: existente.mes_inicio.substring(0, 7),
+            // Diagnóstico
+            fingerprintCalculado: fingerprint,
+            descricaoBase: descBase,
+            mesBase: mesBase,
+            motivoDetalhado: `Match por similaridade: "${descBase}", ${compra.parcelas}x, mês base ${mesBase} (valor ±R$0.10)`,
           },
         };
       }
