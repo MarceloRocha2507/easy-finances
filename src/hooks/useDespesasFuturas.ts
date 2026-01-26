@@ -299,6 +299,67 @@ export function agruparPorMes(despesas: DespesaFutura[]) {
   return grupos;
 }
 
+/* ======================================================
+   RESUMO POR CARTÃO
+====================================================== */
+
+export type ResumoCartaoFuturo = {
+  cartaoId: string | null;
+  cartaoNome: string;
+  cartaoCor?: string;
+  total: number;
+  quantidade: number;
+};
+
+export function agruparPorCartao(
+  despesas: DespesaFutura[],
+  cartoes: Array<{ id: string; nome: string; cor: string }>
+): ResumoCartaoFuturo[] {
+  const grupos: Record<string, { total: number; quantidade: number }> = {};
+
+  // Agrupar por cartaoId (null = transações)
+  despesas.forEach((d) => {
+    const key = d.cartaoId || "__transacao__";
+    if (!grupos[key]) {
+      grupos[key] = { total: 0, quantidade: 0 };
+    }
+    grupos[key].total += d.valor;
+    grupos[key].quantidade += 1;
+  });
+
+  // Mapear para o tipo de retorno
+  const resultado: ResumoCartaoFuturo[] = [];
+
+  // Adicionar cartões que têm despesas
+  Object.entries(grupos).forEach(([key, dados]) => {
+    if (key === "__transacao__") {
+      resultado.push({
+        cartaoId: null,
+        cartaoNome: "Transações",
+        cartaoCor: undefined,
+        total: dados.total,
+        quantidade: dados.quantidade,
+      });
+    } else {
+      const cartao = cartoes.find((c) => c.id === key);
+      if (cartao) {
+        resultado.push({
+          cartaoId: cartao.id,
+          cartaoNome: cartao.nome,
+          cartaoCor: cartao.cor,
+          total: dados.total,
+          quantidade: dados.quantidade,
+        });
+      }
+    }
+  });
+
+  // Ordenar por total (maior para menor)
+  resultado.sort((a, b) => b.total - a.total);
+
+  return resultado;
+}
+
 export function getDefaultFiltros(): FiltrosDespesasFuturas {
   const hoje = new Date();
   return {
