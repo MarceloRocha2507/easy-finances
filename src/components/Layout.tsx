@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -100,26 +100,26 @@ export function Layout({ children }: LayoutProps) {
   const { importantes: alertasCount, hasDanger } = useAlertasCount();
   const { data: profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [transacoesOpen, setTransacoesOpen] = useState(
-    location.pathname.startsWith("/transactions")
-  );
-  const [cartoesOpen, setCartoesOpen] = useState(
-    location.pathname.startsWith("/cartoes")
-  );
-  const [economiaOpen, setEconomiaOpen] = useState(
-    location.pathname.startsWith("/economia")
-  );
-  const [relatoriosOpen, setRelatoriosOpen] = useState(
-    location.pathname.startsWith("/reports")
-  );
-  const [configOpen, setConfigOpen] = useState(
-    location.pathname.startsWith("/profile") || location.pathname.startsWith("/configuracoes")
-  );
+  const [transacoesOpen, setTransacoesOpen] = useState(false);
+  const [cartoesOpen, setCartoesOpen] = useState(false);
+  const [economiaOpen, setEconomiaOpen] = useState(false);
+  const [relatoriosOpen, setRelatoriosOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+
+  // Sincronizar estados de menu com a rota atual
+  useEffect(() => {
+    const path = location.pathname;
+    setTransacoesOpen(path.startsWith("/transactions"));
+    setCartoesOpen(path.startsWith("/cartoes"));
+    setEconomiaOpen(path.startsWith("/economia"));
+    setRelatoriosOpen(path.startsWith("/reports"));
+    setConfigOpen(path.startsWith("/profile") || path.startsWith("/configuracoes"));
+  }, [location.pathname]);
 
   const isDemoUser = user?.email === DEMO_EMAIL;
 
-  // Get user initials for avatar fallback
-  const getUserInitials = () => {
+  // Memoizar iniciais do usuário
+  const userInitials = useMemo(() => {
     const fullName = user?.user_metadata?.full_name || user?.email || "";
     if (fullName.includes("@")) {
       return fullName.substring(0, 2).toUpperCase();
@@ -129,11 +129,14 @@ export function Layout({ children }: LayoutProps) {
       return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     }
     return fullName.substring(0, 2).toUpperCase();
-  };
+  }, [user?.user_metadata?.full_name, user?.email]);
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário";
+  const userName = useMemo(() => {
+    return user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário";
+  }, [user?.user_metadata?.full_name, user?.email]);
 
-  const isActive = (href: string) => {
+  // Memoizar função isActive
+  const isActive = useCallback((href: string) => {
     if (href === "/economia") {
       return location.pathname === "/economia";
     }
@@ -147,7 +150,10 @@ export function Layout({ children }: LayoutProps) {
       return location.pathname === "/transactions";
     }
     return location.pathname === href;
-  };
+  }, [location.pathname]);
+
+  // Memoizar handler de fechar sidebar
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
 
   return (
@@ -195,7 +201,7 @@ export function Layout({ children }: LayoutProps) {
               <Link
                 key={item.href}
                 to={item.href}
-                onClick={() => setSidebarOpen(false)}
+                onClick={closeSidebar}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive(item.href)
@@ -223,7 +229,7 @@ export function Layout({ children }: LayoutProps) {
               basePath="/transactions"
               open={transacoesOpen}
               onOpenChange={setTransacoesOpen}
-              onItemClick={() => setSidebarOpen(false)}
+              onItemClick={closeSidebar}
             />
 
             <MenuCollapsible
@@ -233,7 +239,7 @@ export function Layout({ children }: LayoutProps) {
               basePath="/cartoes"
               open={cartoesOpen}
               onOpenChange={setCartoesOpen}
-              onItemClick={() => setSidebarOpen(false)}
+              onItemClick={closeSidebar}
             />
 
             <MenuCollapsible
@@ -243,7 +249,7 @@ export function Layout({ children }: LayoutProps) {
               basePath="/economia"
               open={economiaOpen}
               onOpenChange={setEconomiaOpen}
-              onItemClick={() => setSidebarOpen(false)}
+              onItemClick={closeSidebar}
             />
 
             <MenuCollapsible
@@ -253,7 +259,7 @@ export function Layout({ children }: LayoutProps) {
               basePath="/reports"
               open={relatoriosOpen}
               onOpenChange={setRelatoriosOpen}
-              onItemClick={() => setSidebarOpen(false)}
+              onItemClick={closeSidebar}
             />
 
             {/* Separador */}
@@ -263,7 +269,7 @@ export function Layout({ children }: LayoutProps) {
             {isAdmin && (
               <Link
                 to="/admin"
-                onClick={() => setSidebarOpen(false)}
+                onClick={closeSidebar}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive("/admin")
@@ -289,7 +295,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Link para Perfil com Avatar */}
             <Link
               to="/profile"
-              onClick={() => setSidebarOpen(false)}
+              onClick={closeSidebar}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
                 isActive("/profile")
@@ -300,7 +306,7 @@ export function Layout({ children }: LayoutProps) {
               <Avatar className="h-9 w-9 ring-2 ring-primary/20">
                 <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                  {getUserInitials()}
+                  {userInitials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
@@ -312,7 +318,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Link para Notificações com badge */}
             <Link
               to="/notificacoes"
-              onClick={() => setSidebarOpen(false)}
+              onClick={closeSidebar}
               className={cn(
                 "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                 isActive("/notificacoes")
@@ -351,7 +357,7 @@ export function Layout({ children }: LayoutProps) {
               basePath={["/profile", "/configuracoes"]}
               open={configOpen}
               onOpenChange={setConfigOpen}
-              onItemClick={() => setSidebarOpen(false)}
+              onItemClick={closeSidebar}
             />
 
             <Button
