@@ -1,4 +1,4 @@
-import { format, subMonths, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { criarCompraCartao, CompraCartaoInput } from "./compras-cartao";
 import { supabase } from "@/integrations/supabase/client";
@@ -470,32 +470,21 @@ function extrairDescricaoBase(descricao: string): string {
 }
 
 /**
- * Calcular mês base (mês da primeira parcela) a partir do mês atual e número da parcela
- * Ex: parcela 6 em 2026-03 → mes_base = 2025-10
- */
-function calcularMesBase(mesFatura: string, parcelaInicial: number): string {
-  const data = parseISO(mesFatura + "-01");
-  const mesBase = subMonths(data, parcelaInicial - 1);
-  return format(mesBase, "yyyy-MM");
-}
-
-/**
- * Gerar fingerprint único para uma compra parcelada
- * Componentes: descrição_base | total_parcelas | valor_total_arredondado | mes_base
+ * Gerar fingerprint único para uma compra NO MÊS ESPECÍFICO
+ * Componentes: descrição_base | valor_parcela_arredondado | mes_fatura
+ * 
+ * Isso permite importar parcelas diferentes do mesmo parcelamento em meses diferentes
  */
 function gerarFingerprint(
   descricao: string,
-  parcelas: number,
-  valorTotal: number,
-  mesFatura: string,
-  parcelaInicial: number
+  valorParcela: number,
+  mesFatura: string
 ): string {
   const descBase = extrairDescricaoBase(descricao);
-  const mesBase = calcularMesBase(mesFatura, parcelaInicial);
   // Arredondar valor para evitar problemas com centavos
-  const valorArredondado = Math.round(valorTotal * 100) / 100;
+  const valorArredondado = Math.round(valorParcela * 100) / 100;
   
-  return `${descBase}|${parcelas}|${valorArredondado}|${mesBase}`;
+  return `${descBase}|${valorArredondado}|${mesFatura}`;
 }
 
 /**
@@ -518,10 +507,10 @@ export function gerarOpcoesAnoMes(mesSugerido: string): OpcaoMesFatura[] {
 
 /**
  * Detectar duplicatas dentro do próprio lote de importação
- * Marca como duplicata todas as linhas com mesmo fingerprint, exceto a primeira (menor parcelaInicial)
+ * Marca como duplicata linhas com mesma descrição, mesmo mês e valor similar
  */
 function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
-  // Agrupar por fingerprint
+  // Agrupar por fingerprint (descrição + valor + mês)
   const grupos = new Map<string, PreviewCompra[]>();
   
   for (const compra of compras) {
@@ -529,10 +518,8 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
     
     const fingerprint = gerarFingerprint(
       compra.descricao,
-      compra.parcelas,
-      compra.valorTotal,
-      compra.mesFatura,
-      compra.parcelaInicial
+      compra.valor, // Valor da parcela individual
+      compra.mesFatura
     );
     
     compra.fingerprint = fingerprint;
@@ -548,8 +535,8 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
   
   for (const [fingerprint, grupo] of grupos) {
     if (grupo.length > 1) {
-      // Ordenar por parcelaInicial (menor primeiro) para manter a "principal"
-      grupo.sort((a, b) => a.parcelaInicial - b.parcelaInicial);
+      // Manter a primeira ocorrência (menor número de linha)
+      grupo.sort((a, b) => a.linha - b.linha);
       const principal = grupo[0];
       principaisPorFingerprint.set(fingerprint, principal);
       
@@ -565,7 +552,7 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
     if (duplicatasNoLote.has(compra.linha)) {
       const principal = principaisPorFingerprint.get(compra.fingerprint || "");
       const fp = compra.fingerprint || "";
-      const [descBase, , , mesBase] = fp.split("|");
+      const [descBase, valor, mes] = fp.split("|");
       
       return {
         ...compra,
@@ -575,12 +562,12 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
           descricao: principal?.descricao || compra.descricao,
           origemDuplicata: "lote" as const,
           parcelaEncontrada: principal?.parcelaInicial,
-          mesInicio: principal?.mesFatura,
+          mesInicio: mes,
           // Diagnóstico
           fingerprintCalculado: fp,
           descricaoBase: descBase,
-          mesBase: mesBase,
-          motivoDetalhado: `Mesma compra base que linha ${principal?.linha}: "${descBase}", ${compra.parcelas}x, mês base ${mesBase}`,
+          mesBase: mes,
+          motivoDetalhado: `Duplicata da linha ${principal?.linha} no mesmo mês: "${descBase}", R$${valor}, ${mes}`,
         },
       };
     }
@@ -590,7 +577,7 @@ function detectarDuplicatasNoLote(compras: PreviewCompra[]): PreviewCompra[] {
 
 /**
  * Verificar se existem compras duplicadas no cartão (banco de dados)
- * Usa sistema de fingerprint para detectar mesma "compra base" mesmo com parcelas diferentes
+ * Verifica apenas no MÊS ESPECÍFICO da fatura - não cruza meses diferentes
  */
 export async function verificarDuplicatas(
   cartaoId: string,
@@ -599,41 +586,47 @@ export async function verificarDuplicatas(
   // Primeiro, detectar duplicatas dentro do próprio lote
   let resultado = detectarDuplicatasNoLote(compras);
   
-  // Buscar todas as compras ativas do cartão (incluir parcelas para fingerprint)
+  // Coletar todos os meses únicos das compras sendo importadas
+  const mesesUnicos = new Set<string>();
+  for (const compra of compras) {
+    if (compra.mesFatura) {
+      mesesUnicos.add(compra.mesFatura);
+    }
+  }
+  
+  if (mesesUnicos.size === 0) {
+    return resultado;
+  }
+  
+  // Buscar compras existentes apenas dos meses relevantes
+  const mesesArray = Array.from(mesesUnicos);
   const { data: existentes, error } = await supabase
     .from("compras_cartao")
     .select("id, descricao, valor_total, parcela_inicial, mes_inicio, parcelas")
     .eq("cartao_id", cartaoId)
-    .eq("ativo", true);
+    .eq("ativo", true)
+    .or(mesesArray.map(m => `mes_inicio.like.${m}%`).join(","));
 
   if (error) {
     console.error("Erro ao verificar duplicatas:", error);
-    return resultado; // Retorna com duplicatas do lote apenas
+    return resultado;
   }
 
   if (!existentes || existentes.length === 0) {
     return resultado;
   }
 
-  // Gerar fingerprints das compras existentes no banco
-  const fingerprintsBanco = new Map<string, typeof existentes[0]>();
+  // Indexar compras existentes por mês para busca rápida
+  const comprasPorMes = new Map<string, typeof existentes>();
   
   for (const existente of existentes) {
-    const mesInicio = existente.mes_inicio; // formato "YYYY-MM-DD"
-    const mesFatura = mesInicio.substring(0, 7); // "YYYY-MM"
-    
-    const fingerprint = gerarFingerprint(
-      existente.descricao,
-      existente.parcelas,
-      existente.valor_total,
-      mesFatura,
-      existente.parcela_inicial
-    );
-    
-    fingerprintsBanco.set(fingerprint, existente);
+    const mesFatura = existente.mes_inicio.substring(0, 7); // "YYYY-MM"
+    const lista = comprasPorMes.get(mesFatura) || [];
+    lista.push(existente);
+    comprasPorMes.set(mesFatura, lista);
   }
 
-  // Verificar cada compra do preview contra o banco
+  // Verificar cada compra do preview contra o banco (mesmo mês apenas)
   resultado = resultado.map(compra => {
     // Se já marcada como duplicata do lote, não sobrescrever
     if (compra.possivelDuplicata) {
@@ -646,46 +639,23 @@ export async function verificarDuplicatas(
 
     const fingerprint = gerarFingerprint(
       compra.descricao,
-      compra.parcelas,
-      compra.valorTotal,
-      compra.mesFatura,
-      compra.parcelaInicial
+      compra.valor,
+      compra.mesFatura
     );
     
-    const [descBase, , , mesBase] = fingerprint.split("|");
+    const descBase = extrairDescricaoBase(compra.descricao);
     
-    // Verificar match exato
-    const matchExato = fingerprintsBanco.get(fingerprint);
-    if (matchExato) {
-      return {
-        ...compra,
-        fingerprint,
-        possivelDuplicata: true,
-        duplicataInfo: {
-          compraId: matchExato.id,
-          descricao: matchExato.descricao,
-          origemDuplicata: "banco" as const,
-          parcelaEncontrada: matchExato.parcela_inicial,
-          mesInicio: matchExato.mes_inicio.substring(0, 7),
-          // Diagnóstico
-          fingerprintCalculado: fingerprint,
-          descricaoBase: descBase,
-          mesBase: mesBase,
-          motivoDetalhado: `Match exato: "${descBase}", ${compra.parcelas}x, mês base ${mesBase}`,
-        },
-      };
-    }
+    // Buscar apenas compras do mesmo mês
+    const comprasDoMes = comprasPorMes.get(compra.mesFatura) || [];
     
-    // Verificar match por descrição base + parcelas (tolerância de valor)
-    for (const [fpBanco, existente] of fingerprintsBanco) {
-      const [descBaseBanco, parcelasBanco, , mesBaseBanco] = fpBanco.split("|");
+    for (const existente of comprasDoMes) {
+      const descBaseExistente = extrairDescricaoBase(existente.descricao);
+      const valorParcela = existente.valor_total / existente.parcelas;
       
-      const mesmaDescBase = descBase === descBaseBanco;
-      const mesmasParcelas = String(compra.parcelas) === parcelasBanco;
-      const mesmoMesBase = mesBase === mesBaseBanco;
-      const valorSimilar = Math.abs(compra.valorTotal - existente.valor_total) < 0.10;
+      const mesmaDescBase = descBase === descBaseExistente;
+      const valorSimilar = Math.abs(compra.valor - valorParcela) < 0.10;
       
-      if (mesmaDescBase && mesmasParcelas && mesmoMesBase && valorSimilar) {
+      if (mesmaDescBase && valorSimilar) {
         return {
           ...compra,
           fingerprint,
@@ -699,8 +669,8 @@ export async function verificarDuplicatas(
             // Diagnóstico
             fingerprintCalculado: fingerprint,
             descricaoBase: descBase,
-            mesBase: mesBase,
-            motivoDetalhado: `Match por similaridade: "${descBase}", ${compra.parcelas}x, mês base ${mesBase} (valor ±R$0.10)`,
+            mesBase: compra.mesFatura,
+            motivoDetalhado: `Duplicata no mês ${compra.mesFatura}: "${descBase}", R$${compra.valor.toFixed(2)}`,
           },
         };
       }
