@@ -1,105 +1,267 @@
 
+## Plano: Otimização de Performance na Navegação do Sidebar
 
-## Diagnóstico: Cartões Duplicados no Sistema
+### Diagnóstico Completo
 
-### Problema Identificado
+O travamento na navegação entre seções (especialmente dentro do menu "Cartões") é causado por uma **cascata de re-renders e computações pesadas** que ocorrem a cada mudança de rota.
 
-O sistema possui **cartões duplicados** com o mesmo nome, causando confusão na visualização:
+---
 
-| Cartão | Limite | Banco Vinculado | Criado Em | Status |
-|--------|--------|-----------------|-----------|--------|
-| Inter | R$ 1.400 | Inter | 04/01/2026 | **Original** (com compras) |
-| Inter | R$ 5.000 | Nenhum | 26/01/2026 | Duplicado (sem compras) |
-| Nubank | R$ 3.500 | Nubank | 04/01/2026 | **Original** (sem compras) |
-| Nubank | R$ 8.000 | Nenhum | 26/01/2026 | Duplicado (com compras) |
+### Causas Identificadas
 
-### Causa Provável
+#### 1. Cascata de Hooks Pesados no Layout (Principal Causa)
 
-Os cartões duplicados foram criados em 26/01/2026 às 00:00 (horário UTC), possivelmente durante:
-1. Uma migração de dados anterior
-2. Criação manual acidental
-3. Importação de dados
+Toda vez que você navega, o `Layout.tsx` re-renderiza e dispara esta cadeia:
 
-### Por que os valores parecem "alterados"
+```text
+Layout.tsx
+   └── useAlertasCount()
+         └── useNotificacoes()
+               └── useAlertasCompletos()
+                     ├── useDashboardCompleto()    ← Busca cartões, metas, transações
+                     ├── useAlertasTransacoes()    ← Busca transações pendentes
+                     ├── useAlertasOrcamento()     ← Busca orçamentos
+                     └── useAlertasAcertos()       ← Busca acertos pendentes
+```
 
-Na verdade, os valores **não mudaram**. O que acontece é que:
-- Ao vincular o cartão "Inter (R$ 1.400)" ao banco Inter, ele aparece com suas compras reais (R$ 1.442,93 usado)
-- O cartão "Inter (R$ 5.000)" duplicado não tem compras vinculadas
-- A interface mostra ambos, causando a impressão de inconsistência
+Cada navegação executa:
+- **4 queries ao banco** simultâneas
+- **Mapeamento e filtragem** de arrays grandes
+- **Ordenação** de alertas por prioridade
+
+#### 2. Falta de Memoização
+
+| Componente | Problema |
+|------------|----------|
+| `MenuCollapsible` | Re-renderiza todos os itens a cada navegação |
+| `isItemActive()` | Recalculada para cada sub-item em cada render |
+| `isMenuActive` | Recalculada para cada menu em cada render |
+| `getUserInitials()` | Função recriada a cada render |
+
+#### 3. Estados de Menu Recalculados
+
+Os estados `transacoesOpen`, `cartoesOpen`, etc. são inicializados com `location.pathname.startsWith()`:
+
+```typescript
+const [cartoesOpen, setCartoesOpen] = useState(
+  location.pathname.startsWith("/cartoes")
+);
+```
+
+Porém, quando a navegação ocorre, o componente re-renderiza mas os estados não atualizam automaticamente (são calculados apenas na montagem), causando comportamento inconsistente.
+
+#### 4. Verificação Automática em Cartões
+
+O `Cartoes.tsx` executa `regenerarParcelasFaltantes()` ao montar:
+
+```typescript
+useEffect(() => {
+  const verificarParcelas = async () => {
+    await regenerarParcelasFaltantes(); // Operação pesada
+  };
+  verificarParcelas();
+}, []);
+```
+
+---
 
 ### Solução Proposta
 
-**Opção 1: Limpar Cartões Duplicados (Recomendado)**
+#### Fase 1: Otimizar o Sistema de Alertas (Maior Impacto)
 
-Excluir os cartões duplicados que não têm compras vinculadas:
+**1.1 Adicionar `staleTime` nos hooks de alertas**
 
-```sql
--- Verificar antes de excluir
-SELECT c.id, c.nome, c.limite, COUNT(comp.id) as compras
-FROM cartoes c
-LEFT JOIN compras_cartao comp ON comp.cartao_id = c.id
-WHERE c.nome IN ('Nubank', 'Inter')
-GROUP BY c.id, c.nome, c.limite;
+```typescript
+// useAlertasCompletos.ts
+const { data: dashboard } = useDashboardCompleto();
+// Adicionar staleTime para evitar refetch desnecessário
+```
 
--- Excluir cartões sem compras (após confirmar)
-DELETE FROM cartoes WHERE id IN (
-  'a192f332-3fa2-4ba2-ba98-6300b1784f3e', -- Inter R$ 5.000 (duplicado)
-  'a0938e60-31de-4e5c-a954-6bb4f1b28c2c'  -- Nubank R$ 8.000 (duplicado - MAS TEM COMPRAS!)
+**1.2 Memoizar cálculos pesados com `useMemo`**
+
+```typescript
+const alertasOrdenados = useMemo(() => {
+  return todosAlertas.sort((a, b) => ...);
+}, [todosAlertas]);
+```
+
+**1.3 Mover contagem para hook separado com cache**
+
+```typescript
+// Evitar recálculo de categorias a cada render
+const categorias = useMemo(() => ({
+  cartao: alertasCartoes.length,
+  ...
+}), [alertasCartoes, ...]);
+```
+
+#### Fase 2: Memoizar Componentes do Sidebar
+
+**2.1 Envolver `MenuCollapsible` em `React.memo`**
+
+```typescript
+export const MenuCollapsible = React.memo(function MenuCollapsible({...}) {
+  // ...
+});
+```
+
+**2.2 Memoizar funções `isActive`**
+
+```typescript
+const isItemActive = useCallback(
+  (href: string) => location.pathname === href,
+  [location.pathname]
 );
 ```
 
-**Atenção**: O cartão Nubank R$ 8.000 tem **5 compras no valor de R$ 3.040**. Antes de excluir, essas compras precisariam ser transferidas para o cartão Nubank R$ 3.500.
+**2.3 Memoizar `getUserInitials`**
 
-**Opção 2: Renomear para Diferenciar**
-
-Renomear os cartões para evitar confusão:
-- "Nubank (R$ 3.500)" → "Nubank Principal"
-- "Nubank (R$ 8.000)" → "Nubank Adicional"
-- "Inter (R$ 1.400)" → "Inter Principal"
-- "Inter (R$ 5.000)" → "Inter Adicional"
-
-**Opção 3: Transferir Compras e Consolidar**
-
-1. Transferir todas as compras para os cartões principais
-2. Ajustar os limites se necessário
-3. Excluir os cartões duplicados
-
-### Implementação Recomendada
-
-**Fase 1: Diagnóstico Completo**
-1. Verificar todas as compras de cada cartão duplicado
-2. Identificar qual cartão deve ser mantido
-3. Confirmar com o usuário
-
-**Fase 2: Migração de Compras**
-```sql
--- Transferir compras do Nubank R$ 8.000 para o Nubank R$ 3.500
-UPDATE compras_cartao 
-SET cartao_id = '8607c9f1-ccdc-42df-ad2a-d2669c7b347c'
-WHERE cartao_id = 'a0938e60-31de-4e5c-a954-6bb4f1b28c2c';
+```typescript
+const userInitials = useMemo(() => {
+  const fullName = user?.user_metadata?.full_name || user?.email || "";
+  // ...
+}, [user?.user_metadata?.full_name, user?.email]);
 ```
 
-**Fase 3: Limpeza**
-```sql
--- Excluir cartões duplicados após migração
-DELETE FROM cartoes 
-WHERE id IN (
-  'a192f332-3fa2-4ba2-ba98-6300b1784f3e',
-  'a0938e60-31de-4e5c-a954-6bb4f1b28c2c'
-);
+#### Fase 3: Otimizar Estados do Menu
+
+**3.1 Sincronizar estados com a rota usando `useEffect`**
+
+```typescript
+useEffect(() => {
+  setCartoesOpen(location.pathname.startsWith("/cartoes"));
+  setTransacoesOpen(location.pathname.startsWith("/transactions"));
+  // ...
+}, [location.pathname]);
 ```
 
-### Prevenção Futura
+#### Fase 4: Debounce na Verificação de Parcelas
 
-Implementar validação no cadastro de cartões:
-1. Alertar quando um cartão com mesmo nome já existe
-2. Sugerir editar o existente em vez de criar novo
-3. Adicionar constraint única opcional (nome + user_id)
+**4.1 Adicionar flag para evitar múltiplas execuções**
 
-### Próximos Passos
+```typescript
+const [verificado, setVerificado] = useState(false);
 
-Você gostaria que eu:
-1. **Execute a limpeza automaticamente** (transferir compras + excluir duplicados)?
-2. **Apenas renomeie os cartões** para diferenciá-los?
-3. **Mostre um diálogo de confirmação** para você escolher quais manter?
+useEffect(() => {
+  if (verificado) return;
+  // ...
+  setVerificado(true);
+}, [verificado]);
+```
 
+**4.2 Mover verificação para um momento menos crítico**
+
+```typescript
+// Esperar 2 segundos após a página carregar
+setTimeout(() => verificarParcelas(), 2000);
+```
+
+---
+
+### Arquivos a Modificar
+
+| Arquivo | Alterações |
+|---------|------------|
+| `src/hooks/useAlertasCompletos.ts` | Adicionar `useMemo` para cálculos pesados |
+| `src/hooks/useNotificacoes.ts` | Aumentar `staleTime` para evitar refetch |
+| `src/components/sidebar/MenuCollapsible.tsx` | Envolver em `React.memo` + `useCallback` |
+| `src/components/Layout.tsx` | Memoizar funções + sincronizar estados |
+| `src/pages/Cartoes.tsx` | Debounce na verificação automática |
+
+---
+
+### Detalhes Técnicos
+
+#### MenuCollapsible Otimizado
+
+```typescript
+import React, { useCallback } from "react";
+
+export const MenuCollapsible = React.memo(function MenuCollapsible({
+  icon: Icon,
+  label,
+  subItems,
+  basePath,
+  open,
+  onOpenChange,
+  onItemClick,
+  badge,
+}: MenuCollapsibleProps) {
+  const location = useLocation();
+  
+  const isMenuActive = useMemo(() => {
+    return Array.isArray(basePath)
+      ? basePath.some((path) => location.pathname.startsWith(path))
+      : location.pathname.startsWith(basePath);
+  }, [basePath, location.pathname]);
+
+  const isItemActive = useCallback(
+    (href: string) => location.pathname === href,
+    [location.pathname]
+  );
+
+  // ... resto do componente
+});
+```
+
+#### Layout com Estados Sincronizados
+
+```typescript
+// Sincronizar estados de menu com a rota atual
+useEffect(() => {
+  const path = location.pathname;
+  setTransacoesOpen(path.startsWith("/transactions"));
+  setCartoesOpen(path.startsWith("/cartoes"));
+  setEconomiaOpen(path.startsWith("/economia"));
+  setRelatoriosOpen(path.startsWith("/reports"));
+  setConfigOpen(path.startsWith("/profile") || path.startsWith("/configuracoes"));
+}, [location.pathname]);
+```
+
+#### useAlertasCompletos Otimizado
+
+```typescript
+const alertasOrdenados = useMemo(() => {
+  const todosAlertas = [
+    ...alertasCartoes,
+    ...alertasMetas,
+    ...(alertasTransacoes || []),
+    ...(alertasOrcamento || []),
+    ...(alertasAcertos || []),
+    ...alertasEconomia,
+  ];
+  
+  return todosAlertas.sort((a, b) => 
+    (prioridadeTipo[a.tipo] || 5) - (prioridadeTipo[b.tipo] || 5)
+  );
+}, [alertasCartoes, alertasMetas, alertasTransacoes, alertasOrcamento, alertasAcertos, alertasEconomia]);
+```
+
+---
+
+### Ordem de Implementação
+
+```text
+1. useAlertasCompletos.ts     ← Adicionar useMemo (maior impacto)
+2. useNotificacoes.ts         ← Aumentar staleTime
+3. MenuCollapsible.tsx        ← React.memo + useCallback
+4. Layout.tsx                 ← Sincronizar estados + memoizar
+5. Cartoes.tsx                ← Debounce na verificação
+```
+
+---
+
+### Resultado Esperado
+
+| Antes | Depois |
+|-------|--------|
+| ~500ms de travamento | Navegação instantânea |
+| Re-fetch de dados a cada clique | Cache inteligente |
+| Re-render de todo o sidebar | Apenas itens afetados |
+| Verificação bloqueante | Verificação assíncrona delayed |
+
+### Métricas de Sucesso
+
+- Navegação entre seções do menu "Cartões" sem travamento perceptível
+- Console sem re-fetches desnecessários durante navegação
+- Transições suaves mantendo as micro-animações existentes
