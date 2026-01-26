@@ -103,19 +103,23 @@ export function EditarCompraDialog({
   const [salvando, setSalvando] = useState(false);
   const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
 
-  // Gerar opções de mês da fatura (12 meses antes e 12 depois)
+  // Gerar opções de mês da fatura centradas no mês da parcela
   const opcoesMesFatura = useMemo(() => {
-    const hoje = new Date();
+    // Usar o mês da parcela como referência, ou hoje se não disponível
+    const mesBase = parcela?.mes_referencia 
+      ? new Date(parcela.mes_referencia + "-01")
+      : new Date();
+    
     const meses = [];
     for (let i = -12; i < 12; i++) {
-      const mes = addMonths(hoje, i);
+      const mes = addMonths(mesBase, i);
       meses.push({
         value: format(mes, "yyyy-MM"),
         label: format(mes, "MMMM/yyyy", { locale: ptBR }),
       });
     }
     return meses;
-  }, []);
+  }, [parcela?.mes_referencia]);
 
   // Gerar opções de parcela inicial baseado no total
   const opcoesParcelaInicial = useMemo(() => {
@@ -149,8 +153,18 @@ export function EditarCompraDialog({
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
           
-          // Converter mes_inicio para formato yyyy-MM
-          if (compra.mes_inicio) {
+          // Calcular mes_inicio a partir do mes_referencia da parcela
+          // Isso garante que o dialog mostre dados consistentes com o contexto
+          if (parcela?.mes_referencia) {
+            const parcelaAtual = parcela.numero_parcela;
+            const parcelaInicialVal = compra.parcela_inicial || 1;
+            const offset = parcelaAtual - parcelaInicialVal;
+            
+            const [ano, mes] = parcela.mes_referencia.split("-").map(Number);
+            const mesInicioCalculado = new Date(ano, mes - 1 - offset, 1);
+            setMesFatura(format(mesInicioCalculado, "yyyy-MM"));
+          } else if (compra.mes_inicio) {
+            // Fallback para o valor original
             const mesDate = new Date(compra.mes_inicio);
             setMesFatura(format(mesDate, "yyyy-MM"));
           }
