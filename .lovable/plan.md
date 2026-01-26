@@ -1,102 +1,51 @@
 
-## Análise: Saldo Negativo Após Ajuste para R$ 0,00
 
-### Diagnóstico
+## Plano: Remover Desconto de Metas do Saldo Disponível
 
-O sistema **está calculando corretamente**. Veja os dados do seu perfil:
+### Problema Identificado
 
-| Campo | Valor |
-|-------|-------|
-| Saldo Inicial (ajustado) | -R$ 1.175,45 |
-| Total em Metas | R$ 1.169,30 |
-| Receitas (completed) | R$ 4.430,05 |
-| Despesas (completed) | R$ 3.254,60 |
+O card "Saldo Disponível" no Dashboard continua mostrando **-R$ 1.169,30** porque a variável `saldoDisponivel` ainda calcula:
 
-### Cálculo do Sistema
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ Saldo Base = Saldo Inicial + Receitas - Despesas            │
-│ Saldo Base = -1.175,45 + 4.430,05 - 3.254,60 = R$ 0,00 ✓   │
-├─────────────────────────────────────────────────────────────┤
-│ Saldo Disponível = Saldo Base - Metas - Investimentos       │
-│ Saldo Disponível = 0,00 - 1.169,30 - 0 = -R$ 1.169,30       │
-└─────────────────────────────────────────────────────────────┘
+```
+saldoDisponivel = saldoBase - totalGuardado
+saldoDisponivel = R$ 0,00 - R$ 1.169,30 = -R$ 1.169,30
 ```
 
-### Por que está negativo?
+### Solicitação do Usuário
 
-O saldo disponível fica negativo porque:
-- Você informou que tem **R$ 0,00 no banco**
-- Mas o sistema ainda registra **R$ 1.169,30 guardados em metas**
+O usuário quer que o "Saldo Disponível" **NÃO** desconte metas e investimentos. Ou seja, deve mostrar o mesmo valor do patrimônio bruto (R$ 0,00).
 
-Isso cria uma inconsistência: as metas indicam dinheiro "reservado", mas esse dinheiro não existe na conta.
+### Mudança Técnica
 
-### Possíveis Cenários
+**Arquivo:** `src/hooks/useTransactions.ts` (linha 752)
 
-1. **O dinheiro das metas foi gasto**: Se você usou o dinheiro das metas, precisa atualizar os valores das metas para refletir a realidade
-2. **O dinheiro está em outra conta**: Se o dinheiro das metas está numa poupança separada, o saldo da conta corrente ser R$ 0 faz sentido
-
-### Soluções Propostas
-
-#### Opção A: Zerar as metas (se o dinheiro foi usado)
-
-Se você gastou o dinheiro das metas:
-1. Vá em **Metas**
-2. Ajuste o "valor atual" de cada meta para R$ 0,00
-3. O saldo disponível voltará a ser R$ 0,00
-
-#### Opção B: Separar contas (se o dinheiro está em poupança)
-
-Se o dinheiro está numa poupança:
-- O comportamento atual está **correto**
-- A conta corrente está zerada
-- O dinheiro das metas existe, mas está em outro lugar
-- O "Saldo Disponível" mostra quanto você pode gastar NA CONTA CORRENTE (que é zero, pois você ainda "deve" para as metas)
-
-#### Opção C: Considerar metas como parte do saldo real
-
-Podemos alterar a lógica para que o "Saldo Real" NÃO desconte as metas, mostrando o patrimônio bruto. Assim:
-- **Saldo Real = Patrimônio Bruto** (sem descontar metas)
-- **Saldo Disponível = Patrimônio - Metas** (quanto sobra após reservar para metas)
-
----
-
-## Mudança Técnica (Opção C)
-
-Se quiser que o "Saldo Real" mostre o patrimônio sem descontar metas:
-
-### Arquivo: `src/hooks/useTransactions.ts` (linha 756)
-
-**Atual:**
+**Código Atual:**
 ```typescript
-// Saldo Real (retrocompatibilidade) = saldoDisponivel
-const realBalance = saldoDisponivel;
+// Saldo Disponível = Saldo Base - Total Guardado (Investimentos + Metas)
+const saldoDisponivel = saldoBase - totalGuardado;
 ```
 
-**Proposta:**
+**Código Proposto:**
 ```typescript
-// Saldo Real = Patrimônio Total (sem descontar metas)
-const realBalance = saldoBase;
+// Saldo Disponível = Saldo Base (sem descontar metas/investimentos)
+const saldoDisponivel = saldoBase;
 ```
 
-### Resultado esperado
+### Resultado Esperado
 
-| Antes | Depois |
-|-------|--------|
-| Saldo Real: -R$ 1.169,30 | Saldo Real: R$ 0,00 |
-| Saldo Estimado: -R$ 1.169,30 | Saldo Estimado: R$ 0,00 |
+| Card | Antes | Depois |
+|------|-------|--------|
+| Saldo Disponível | -R$ 1.169,30 | R$ 0,00 |
+| Patrimônio | R$ 0,00 | R$ 0,00 |
+| Em Metas | R$ 1.169,30 | R$ 1.169,30 (apenas informativo) |
 
-**Importante:** Neste caso, o "Saldo Real" representaria o **patrimônio bruto** (quanto você tem no total), não o saldo disponível após reservar para metas.
+### Comportamento Final
 
----
+- **Saldo Disponível** = Patrimônio bruto (o que você realmente tem no banco)
+- **Em Metas** = Apenas informativo, mostrando quanto você "pretende guardar"
+- **Metas não são mais subtraídas** do saldo visível
 
-## Recomendação
+### Observação sobre a UI
 
-Antes de fazer qualquer alteração no código, preciso entender sua situação:
+O card continuará mostrando "Em Metas: R$ 1.169,30" como informação adicional, mas esse valor não afetará mais o cálculo do saldo principal.
 
-**Pergunta chave:** Os R$ 1.169,30 das metas ainda existem em algum lugar (poupança, investimento, etc.) ou foram gastos?
-
-- Se **foram gastos**: Ajuste as metas para R$ 0
-- Se **existem em outro lugar**: O saldo negativo está correto (mostra que você não tem dinheiro "disponível" na conta corrente)
-- Se **quer ver patrimônio bruto**: Posso alterar para que "Saldo Real" não desconte metas
