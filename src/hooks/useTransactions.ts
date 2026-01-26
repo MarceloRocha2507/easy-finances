@@ -752,10 +752,10 @@ export function useCompleteStats(mesReferencia?: Date) {
       const saldoDisponivel = saldoBase - totalGuardado;
       // Patrimônio Total = Saldo Base (já inclui o que está guardado)
       const patrimonioTotal = saldoBase;
-      // Saldo Real (retrocompatibilidade) = saldoDisponivel
-      const realBalance = saldoDisponivel;
-      // Saldo Estimado = Saldo Disponível + A Receber - A Pagar - Fatura do Cartão
-      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      // Saldo Real = Patrimônio Bruto (sem descontar metas/investimentos)
+      const realBalance = saldoBase;
+      // Saldo Estimado = Patrimônio + A Receber - A Pagar - Fatura do Cartão
+      const estimatedBalance = saldoBase + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
         ...stats,
