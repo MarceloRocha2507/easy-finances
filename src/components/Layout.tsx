@@ -1,7 +1,6 @@
 import { ReactNode, useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -10,18 +9,39 @@ import { useProfile } from "@/hooks/useProfile";
 import { DemoBanner } from "@/components/DemoBanner";
 import { MenuCollapsible } from "@/components/sidebar";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
+import {
   LayoutDashboard,
   ArrowLeftRight,
   Tags,
   BarChart3,
   CreditCard,
   PiggyBank,
-  Target,
   LogOut,
   Menu,
   X,
   Shield,
   Bell,
+  ChevronDown,
+  User,
+  Sliders,
+  Layers,
+  Users,
+  Gauge,
+  PieChart,
+  Download,
+  RefreshCw,
+  Upload,
+  History,
+  Building2,
 } from "lucide-react";
 
 const DEMO_EMAIL = "demo@fina.app";
@@ -29,8 +49,6 @@ const DEMO_EMAIL = "demo@fina.app";
 interface LayoutProps {
   children: ReactNode;
 }
-
-import { TrendingUp, Receipt, Layers, Users, Gauge, PieChart, Download, Settings, Sliders, RefreshCw, Upload, History, Building2 } from "lucide-react";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -68,7 +86,7 @@ const economiaMenu = {
   href: "/economia",
   subItems: [
     { icon: PiggyBank, label: "Visão Geral", href: "/economia" },
-    { icon: Target, label: "Metas", href: "/economia/metas" },
+    { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
   ],
 };
 
@@ -83,16 +101,6 @@ const relatoriosMenu = {
   ],
 };
 
-const configMenu = {
-  icon: Settings,
-  label: "Configurações",
-  subItems: [
-    { icon: Sliders, label: "Preferências", href: "/profile/preferencias" },
-    { icon: Shield, label: "Segurança", href: "/profile/seguranca" },
-    { icon: Bell, label: "Notificações", href: "/configuracoes/notificacoes" },
-  ],
-};
-
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -104,7 +112,6 @@ export function Layout({ children }: LayoutProps) {
   const [cartoesOpen, setCartoesOpen] = useState(false);
   const [economiaOpen, setEconomiaOpen] = useState(false);
   const [relatoriosOpen, setRelatoriosOpen] = useState(false);
-  const [configOpen, setConfigOpen] = useState(false);
 
   // Sincronizar estados de menu com a rota atual
   useEffect(() => {
@@ -113,7 +120,6 @@ export function Layout({ children }: LayoutProps) {
     setCartoesOpen(path.startsWith("/cartoes"));
     setEconomiaOpen(path.startsWith("/economia"));
     setRelatoriosOpen(path.startsWith("/reports"));
-    setConfigOpen(path.startsWith("/profile") || path.startsWith("/configuracoes"));
   }, [location.pathname]);
 
   const isDemoUser = user?.email === DEMO_EMAIL;
@@ -169,14 +175,12 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/10">
           <span className="text-sm font-semibold text-primary">Fina</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hover:glass-hover"
+        <button
+          className="p-2 rounded-lg hover:glass-hover transition-colors"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        </button>
       </header>
 
       {/* Sidebar */}
@@ -290,86 +294,98 @@ export function Layout({ children }: LayoutProps) {
             )}
           </nav>
 
-          {/* User section - Perfil + Configurações + Logout */}
-          <div className="p-3 border-t border-border/50 space-y-1">
-            {/* Link para Perfil com Avatar */}
-            <Link
-              to="/profile"
-              onClick={closeSidebar}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
-                isActive("/profile")
-                  ? "glass"
-                  : "hover:glass-hover"
-              )}
-            >
-              <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-foreground truncate">{userName}</span>
-                <span className="text-xs text-muted-foreground">Ver perfil</span>
-              </div>
-            </Link>
-
-            {/* Link para Notificações com badge */}
-            <Link
-              to="/notificacoes"
-              onClick={closeSidebar}
-              className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
-                isActive("/notificacoes")
-                  ? "glass text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:glass-hover"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
-                  isActive("/notificacoes")
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground"
-                )}>
-                  <Bell className="h-4 w-4" />
-                </div>
-                Notificações
-              </div>
-              {alertasCount > 0 && (
-                <span 
-                  className={cn(
-                    "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
-                    hasDanger ? "bg-expense animate-pulse" : "bg-warning"
-                  )}
+          {/* User section - Compacta com Dropdown */}
+          <div className="p-3 border-t border-border/50">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:glass-hover transition-all duration-200 outline-none">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                      <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-foreground truncate max-w-[100px]">{userName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {alertasCount > 0 && (
+                      <span 
+                        className={cn(
+                          "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
+                          hasDanger ? "bg-expense animate-pulse" : "bg-warning"
+                        )}
+                      >
+                        {alertasCount > 9 ? "9+" : alertasCount}
+                      </span>
+                    )}
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              
+              <DropdownMenuContent align="end" side="top" className="w-56 mb-1">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" onClick={closeSidebar} className="flex items-center gap-2 cursor-pointer">
+                    <User className="h-4 w-4" />
+                    Meu Perfil
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem asChild>
+                  <Link to="/notificacoes" onClick={closeSidebar} className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Notificações
+                    </div>
+                    {alertasCount > 0 && (
+                      <span 
+                        className={cn(
+                          "flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold text-white px-1.5",
+                          hasDanger ? "bg-expense" : "bg-warning"
+                        )}
+                      >
+                        {alertasCount > 9 ? "9+" : alertasCount}
+                      </span>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2">
+                    <Sliders className="h-4 w-4" />
+                    Configurações
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/preferencias" onClick={closeSidebar} className="cursor-pointer">
+                        Preferências
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/seguranca" onClick={closeSidebar} className="cursor-pointer">
+                        Segurança
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/configuracoes/notificacoes" onClick={closeSidebar} className="cursor-pointer">
+                        Notificações
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem 
+                  onClick={() => signOut()} 
+                  className="flex items-center gap-2 cursor-pointer text-expense focus:text-expense"
                 >
-                  {alertasCount > 9 ? "9+" : alertasCount}
-                </span>
-              )}
-            </Link>
-
-            {/* Menu Configurações com submenu */}
-            <MenuCollapsible
-              icon={configMenu.icon}
-              label={configMenu.label}
-              subItems={configMenu.subItems}
-              basePath={["/profile", "/configuracoes"]}
-              open={configOpen}
-              onOpenChange={setConfigOpen}
-              onItemClick={closeSidebar}
-            />
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm text-muted-foreground hover:text-foreground hover:glass-hover rounded-xl mt-1"
-              onClick={() => signOut()}
-            >
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground">
-                <LogOut className="h-4 w-4" />
-              </div>
-              Sair
-            </Button>
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>
