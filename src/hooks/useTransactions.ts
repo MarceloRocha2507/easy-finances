@@ -771,8 +771,8 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       // Saldo Base = Saldo Inicial + Receitas Recebidas - Despesas Pagas
       const saldoBase = saldoInicial + stats.completedIncome - stats.completedExpense;
-      // Saldo Disponível = Saldo Base - Valor Guardado em Metas
-      const saldoDisponivel = saldoBase - totalGuardado;
+      // Saldo Disponível = Saldo Base - Valor Guardado em Metas (mínimo 0)
+      const saldoDisponivel = Math.max(0, saldoBase - totalGuardado);
       // Patrimônio Total = Saldo Base (já inclui o que está guardado)
       const patrimonioTotal = saldoBase;
       // Saldo Real = Patrimônio Bruto (sem descontar metas/investimentos)
