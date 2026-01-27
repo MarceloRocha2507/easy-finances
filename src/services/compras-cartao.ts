@@ -124,14 +124,14 @@ export async function listarParcelasDaFatura(
   cartaoId: string,
   mesReferencia: Date
 ): Promise<ParcelaFatura[]> {
-  // Buscar pelo range do mês inteiro (primeiro ao último dia real do mês)
+  // Calcular range do mês
   const ano = mesReferencia.getFullYear();
   const mes = mesReferencia.getMonth();
-  const primeiroDia = new Date(ano, mes, 1).toISOString().split("T")[0];
-  // Último dia do mês: dia 0 do próximo mês = último dia do mês atual
-  const ultimoDia = new Date(ano, mes + 1, 0).toISOString().split("T")[0];
+  const primeiroDia = `${ano}-${String(mes + 1).padStart(2, "0")}-01`;
+  const proximoMes = new Date(ano, mes + 1, 1);
+  const fimMes = `${proximoMes.getFullYear()}-${String(proximoMes.getMonth() + 1).padStart(2, "0")}-01`;
 
-  // Buscar parcelas do mês
+  // UMA ÚNICA QUERY otimizada com JOIN e filtro direto no cartão
   const { data: parcelas, error: parcelasError } = await (supabase as any)
     .from("parcelas_cartao")
     .select(`
@@ -143,7 +143,8 @@ export async function listarParcelasDaFatura(
       paga,
       created_at,
       updated_at,
-      compra:compras_cartao(
+      ativo,
+      compra:compras_cartao!inner(
         id,
         descricao,
         parcelas,
@@ -151,52 +152,42 @@ export async function listarParcelasDaFatura(
         tipo_lancamento,
         categoria_id,
         responsavel_id,
+        cartao_id,
         created_at,
         updated_at,
         categoria:categories(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
       )
     `)
+    .eq("compra.cartao_id", cartaoId)
     .gte("mes_referencia", primeiroDia)
-    .lte("mes_referencia", ultimoDia)
+    .lt("mes_referencia", fimMes)
+    .eq("ativo", true)
     .order("created_at", { ascending: true });
 
   if (parcelasError) throw parcelasError;
   if (!parcelas) return [];
 
-  // Filtrar apenas parcelas do cartão
-  const { data: comprasCartao } = await (supabase as any)
-    .from("compras_cartao")
-    .select("id")
-    .eq("cartao_id", cartaoId);
-
-  const compraIds = new Set((comprasCartao || []).map((c: any) => c.id));
-
-  return parcelas
-    .filter((p: any) => compraIds.has(p.compra_id))
-    .map((p: any) => ({
-      id: p.id,
-      compra_id: p.compra_id,
-      numero_parcela: p.numero_parcela,
-      total_parcelas: p.compra?.parcelas || 1,
-      valor: p.valor,
-      mes_referencia: p.mes_referencia,
-      paga: p.paga,
-      descricao: p.compra?.descricao || "",
-      data_compra: p.compra?.data_compra || "",
-      // Hora da última alteração (prioriza parcela, depois compra)
-      updated_at: p.updated_at || p.compra?.updated_at || p.created_at,
-      // Responsável
-      responsavel_id: p.compra?.responsavel?.id || null,
-      responsavel_nome: p.compra?.responsavel?.nome || null,
-      responsavel_apelido: p.compra?.responsavel?.apelido || null,
-      // Categoria
-      categoria_id: p.compra?.categoria?.id || null,
-      categoria_nome: p.compra?.categoria?.name || null,
-      categoria_cor: p.compra?.categoria?.color || null,
-      categoria_icone: p.compra?.categoria?.icon || null,
-      tipo_lancamento: p.compra?.tipo_lancamento || null,
-    }));
+  return parcelas.map((p: any) => ({
+    id: p.id,
+    compra_id: p.compra_id,
+    numero_parcela: p.numero_parcela,
+    total_parcelas: p.compra?.parcelas || 1,
+    valor: p.valor,
+    mes_referencia: p.mes_referencia,
+    paga: p.paga,
+    descricao: p.compra?.descricao || "",
+    data_compra: p.compra?.data_compra || "",
+    updated_at: p.updated_at || p.compra?.updated_at || p.created_at,
+    responsavel_id: p.compra?.responsavel?.id || null,
+    responsavel_nome: p.compra?.responsavel?.nome || null,
+    responsavel_apelido: p.compra?.responsavel?.apelido || null,
+    categoria_id: p.compra?.categoria?.id || null,
+    categoria_nome: p.compra?.categoria?.name || null,
+    categoria_cor: p.compra?.categoria?.color || null,
+    categoria_icone: p.compra?.categoria?.icon || null,
+    tipo_lancamento: p.compra?.tipo_lancamento || null,
+  }));
 }
 
 /* ======================================================
