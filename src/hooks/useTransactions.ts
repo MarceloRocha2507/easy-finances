@@ -254,6 +254,8 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
       toast({
         title: 'Registro criado',
         description: 'O registro financeiro foi criado com sucesso.',
@@ -367,6 +369,8 @@ export function useCreateInstallmentTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
       
       const msg = variables.tipoLancamento === 'parcelada'
         ? `${variables.totalParcelas} parcelas foram criadas.`
@@ -410,6 +414,8 @@ export function useUpdateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
       toast({
         title: 'Registro atualizado',
         description: 'O registro financeiro foi atualizado com sucesso.',
@@ -443,6 +449,8 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
       toast({
         title: 'Registro removido',
         description: 'O registro financeiro foi removido com sucesso.',
@@ -481,6 +489,8 @@ export function useMarkAsPaid() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
       toast({
         title: 'Marcado como pago',
         description: 'A transação foi marcada como realizada.',
