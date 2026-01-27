@@ -1,81 +1,84 @@
 
-# Plano: Corrigir Atualização Automática ao Registrar Transações
+# Plano: Descontar Depósitos em Metas do Saldo Disponível
 
 ## Resumo do Problema
 
-Quando você registra uma receita ou despesa, ela só aparece no Dashboard após recarregar a página. Isso acontece porque o sistema não está atualizando automaticamente os dados do Dashboard quando uma nova transação é criada.
+Quando você adiciona R$96 a uma meta de economia, o valor é registrado apenas como progresso da meta, mas **não reduz o saldo disponível**. Você espera que esse valor seja tratado como dinheiro "guardado" e subtraído do saldo.
 
-## Causa Identificada
+## Solução Proposta
 
-O hook que cria transações (`useCreateTransaction`) atualiza apenas algumas partes do cache:
-- Transações
-- Estatísticas básicas
-- Despesas por categoria
-- Dados mensais
+Modificar o cálculo do saldo disponível para **subtrair o total acumulado em metas** do saldo base.
 
-**Porém, não atualiza:**
-- `complete-stats` (usado para mostrar saldo, receitas e despesas no Dashboard)
-- `dashboard-completo` (usado para cartões, alertas e outros componentes do Dashboard)
+## Alterações Necessárias
 
-## Solução
+### 1. Atualizar o cálculo em `useTransactions.ts`
 
-Adicionar a invalidação das queryKeys faltantes em **todos os hooks de mutação de transações**:
+Modificar a função `useCompleteStats` para subtrair o valor total das metas do saldo disponível:
 
-### Arquivos Afetados
+| Campo | Cálculo Atual | Novo Cálculo |
+|-------|---------------|--------------|
+| Saldo Base | `saldoInicial + receitas - despesas` | Mantém igual |
+| Saldo Disponível | `saldoBase` (sem descontos) | `saldoBase - totalGuardadoEmMetas` |
+| Patrimônio Total | `saldoBase` | Mantém igual |
 
-| Hook | Arquivo |
-|------|---------|
-| `useCreateTransaction` | `src/hooks/useTransactions.ts` |
-| `useCreateInstallmentTransaction` | `src/hooks/useTransactions.ts` |
-| `useUpdateTransaction` | `src/hooks/useTransactions.ts` |
-| `useDeleteTransaction` | `src/hooks/useTransactions.ts` |
-| `useMarkAsPaid` | `src/hooks/useTransactions.ts` |
+**Lógica:**
+- O patrimônio total continua mostrando tudo que você tem
+- O saldo disponível passa a mostrar quanto você pode gastar (descontando o que está guardado em metas)
 
-### QueryKeys a Adicionar
+### 2. Código da Alteração
 
-Em cada um dos hooks acima, adicionar no `onSuccess`:
+Linhas 774-777 de `src/hooks/useTransactions.ts`:
 
-```text
-queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+```javascript
+// ANTES:
+const saldoDisponivel = saldoBase;
+
+// DEPOIS:
+const saldoDisponivel = saldoBase - totalGuardado;
 ```
+
+Onde `totalGuardado` já é calculado no hook como a soma de `valor_atual` de todas as metas.
+
+### 3. Verificar invalidação de cache
+
+Confirmar que `useAdicionarValorMeta` já invalida `complete-stats` e `dashboard-completo` (já está implementado no código).
+
+## Impacto Visual
+
+| Situação | Antes | Depois |
+|----------|-------|--------|
+| Receita de R$96 | Saldo: R$96 | Saldo: R$96 |
+| Deposita R$96 na meta | Saldo: R$96 (não muda) | Saldo: R$0 |
+| Meta mostra | Progresso: R$96 | Progresso: R$96 |
+
+## Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/hooks/useTransactions.ts` | Subtrair `totalGuardado` do `saldoDisponivel` |
 
 ## Detalhes Técnicos
 
-### Modificações em `useCreateTransaction` (linha 252-268)
+### Localização exata da alteração
 
-Adicionar duas novas linhas de invalidação após as existentes:
+No hook `useCompleteStats` (linhas 680-795):
 
 ```javascript
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ['transactions'] });
-  queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-  queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-  queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-  // ADICIONAR:
-  queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-  queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
-  // ...resto do código
-}
+// Linha 789-790 - já existe o totalGuardado:
+totalMetas,
+totalGuardado,
+
+// Linha 774-775 - alterar de:
+const saldoDisponivel = saldoBase;
+
+// Para:
+const saldoDisponivel = saldoBase - totalGuardado;
 ```
 
-### Modificações nos Demais Hooks
-
-Aplicar o mesmo padrão para:
-- `useCreateInstallmentTransaction` (linha 365-389)
-- `useUpdateTransaction` (linha 408-425)
-- `useDeleteTransaction` (linha 441-458)
-- `useMarkAsPaid` (linha 481-496)
+O `totalGuardado` já é calculado anteriormente no hook (busca a soma de `valor_atual` de todas as metas).
 
 ## Resultado Esperado
 
-Após a implementação:
-- Ao criar uma receita ou despesa, o Dashboard atualizará automaticamente
-- Os valores de saldo, receitas e despesas refletirão a nova transação imediatamente
-- Não será mais necessário recarregar a página
-
-## Impacto
-
-- **Baixo risco**: Apenas adiciona invalidações de cache
-- **Melhora experiência**: Feedback visual instantâneo
-- **Consistência**: Segue o mesmo padrão já usado nos hooks de metas e investimentos
+- Ao adicionar valor a uma meta, o saldo disponível reduz imediatamente
+- O patrimônio total permanece inalterado (o dinheiro ainda é seu, só está "reservado")
+- A atualização será automática sem precisar recarregar a página
