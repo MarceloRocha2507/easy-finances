@@ -2,23 +2,43 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useTheme } from 'next-themes';
-import { Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { Palette, Sun, Moon, Monitor, Wallet, PiggyBank } from 'lucide-react';
 import { usePreferenciasUsuario } from '@/hooks/usePreferenciasUsuario';
+import { useSaldoInicial } from '@/hooks/useSaldoInicial';
 import { cn } from '@/lib/utils';
 
 export function PreferenciasTab() {
   const { theme, setTheme } = useTheme();
   const { preferencias, salvarPreferencias, getTema } = usePreferenciasUsuario();
+  const { 
+    saldoInicial, 
+    saldoInicialGuardado, 
+    atualizarSaldo, 
+    atualizarSaldoGuardado,
+    isUpdating,
+    isUpdatingGuardado,
+  } = useSaldoInicial();
 
   const [tema, setTemaLocal] = useState<string>(getTema());
   const [hasChanges, setHasChanges] = useState(false);
+  const [saldoInicialInput, setSaldoInicialInput] = useState<string>('');
+  const [saldoGuardadoInput, setSaldoGuardadoInput] = useState<string>('');
 
   useEffect(() => {
     if (preferencias) {
       setTemaLocal(preferencias.tema || 'system');
     }
   }, [preferencias]);
+
+  useEffect(() => {
+    setSaldoInicialInput(saldoInicial.toFixed(2));
+  }, [saldoInicial]);
+
+  useEffect(() => {
+    setSaldoGuardadoInput(saldoInicialGuardado.toFixed(2));
+  }, [saldoInicialGuardado]);
 
   const handleTemaChange = (novoTema: string) => {
     setTemaLocal(novoTema);
@@ -33,6 +53,16 @@ export function PreferenciasTab() {
     setHasChanges(false);
   };
 
+  const handleSalvarSaldoInicial = () => {
+    const valor = parseFloat(saldoInicialInput.replace(',', '.')) || 0;
+    atualizarSaldo(valor);
+  };
+
+  const handleSalvarSaldoGuardado = () => {
+    const valor = parseFloat(saldoGuardadoInput.replace(',', '.')) || 0;
+    atualizarSaldoGuardado(valor);
+  };
+
   const temaOptions = [
     { value: 'light', label: 'Claro', icon: Sun },
     { value: 'dark', label: 'Escuro', icon: Moon },
@@ -41,6 +71,86 @@ export function PreferenciasTab() {
 
   return (
     <div className="space-y-6">
+      {/* Saldos Iniciais */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            Saldos Iniciais
+          </CardTitle>
+          <CardDescription>
+            Configure os saldos que você tinha antes de começar a usar o sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Saldo Inicial */}
+          <div className="space-y-2">
+            <Label htmlFor="saldo-inicial">Saldo Inicial (em conta)</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  id="saldo-inicial"
+                  type="text"
+                  inputMode="decimal"
+                  value={saldoInicialInput}
+                  onChange={(e) => setSaldoInicialInput(e.target.value)}
+                  className="pl-10"
+                  placeholder="0,00"
+                />
+              </div>
+              <Button 
+                onClick={handleSalvarSaldoInicial}
+                disabled={isUpdating}
+                size="sm"
+              >
+                {isUpdating ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Valor que você tinha em conta quando começou a usar o sistema
+            </p>
+          </div>
+
+          {/* Saldo Inicial Guardado */}
+          <div className="space-y-2">
+            <Label htmlFor="saldo-guardado" className="flex items-center gap-2">
+              <PiggyBank className="w-4 h-4 text-primary" />
+              Saldo Inicial Guardado (em metas)
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  id="saldo-guardado"
+                  type="text"
+                  inputMode="decimal"
+                  value={saldoGuardadoInput}
+                  onChange={(e) => setSaldoGuardadoInput(e.target.value)}
+                  className="pl-10"
+                  placeholder="0,00"
+                />
+              </div>
+              <Button 
+                onClick={handleSalvarSaldoGuardado}
+                disabled={isUpdatingGuardado}
+                size="sm"
+              >
+                {isUpdatingGuardado ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Valor que você já tinha guardado em metas <strong>antes</strong> de usar o sistema. 
+              Este valor será somado ao patrimônio para que o saldo disponível fique correto.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Aparência */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -87,14 +197,16 @@ export function PreferenciasTab() {
         </CardContent>
       </Card>
 
-      {/* Botão Salvar */}
-      <Button 
-        onClick={handleSalvar} 
-        disabled={!hasChanges || salvarPreferencias.isPending}
-        className="w-full sm:w-auto"
-      >
-        {salvarPreferencias.isPending ? 'Salvando...' : 'Salvar Preferências'}
-      </Button>
+      {/* Botão Salvar Tema */}
+      {hasChanges && (
+        <Button 
+          onClick={handleSalvar} 
+          disabled={salvarPreferencias.isPending}
+          className="w-full sm:w-auto"
+        >
+          {salvarPreferencias.isPending ? 'Salvando...' : 'Salvar Preferências de Tema'}
+        </Button>
+      )}
     </div>
   );
 }

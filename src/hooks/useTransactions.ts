@@ -675,14 +675,18 @@ export function useCompleteStats(mesReferencia?: Date) {
         (acc, b) => acc + Number(b.saldo_inicial || 0), 0
       );
 
-      // Fallback: se não tem bancos, buscar do profile (compatibilidade)
+      // Buscar saldo inicial e saldo inicial guardado do profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('saldo_inicial, saldo_inicial_guardado')
+        .eq('user_id', user!.id)
+        .single();
+
+      const saldoInicialGuardado = Number(profile?.saldo_inicial_guardado) || 0;
+
+      // Fallback: se não tem bancos, usar saldo_inicial do profile
       let saldoInicial = saldoInicialBancos;
       if (saldoInicialBancos === 0) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('saldo_inicial')
-          .eq('user_id', user!.id)
-          .single();
         saldoInicial = Number(profile?.saldo_inicial) || 0;
       }
 
@@ -769,8 +773,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
       });
 
-      // Saldo Base = Saldo Inicial + Receitas Recebidas - Despesas Pagas
-      const saldoBase = saldoInicial + stats.completedIncome - stats.completedExpense;
+      // Saldo Base = Saldo Inicial + Saldo Inicial Guardado + Receitas Recebidas - Despesas Pagas
+      const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
       // Saldo Disponível = Saldo Base - Valor Guardado em Metas (mínimo 0)
       const saldoDisponivel = Math.max(0, saldoBase - totalGuardado);
       // Patrimônio Total = Saldo Base (já inclui o que está guardado)
@@ -782,6 +786,7 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       return {
         ...stats,
+        saldoInicialGuardado,
         realBalance,
         saldoDisponivel,
         patrimonioTotal,
