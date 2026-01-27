@@ -242,83 +242,11 @@ export async function criarCompraParcelada(data: {
 }
 
 /* ======================================================
-   LISTAR PARCELAS DA FATURA
+   LISTAR PARCELAS DA FATURA (DEPRECATED - use compras-cartao.ts)
+   Mantido apenas para compatibilidade temporária
 ====================================================== */
 
-export async function listarParcelasDaFatura(
-  cartaoId: string,
-  mesReferencia: Date
-): Promise<ParcelaFatura[]> {
-  try {
-    const inicio = new Date(
-      mesReferencia.getFullYear(),
-      mesReferencia.getMonth(),
-      1
-    );
-    const fim = new Date(
-      mesReferencia.getFullYear(),
-      mesReferencia.getMonth() + 1,
-      1
-    );
-
-    const inicioStr = firstDayOfMonth(inicio);
-    const fimStr = firstDayOfMonth(fim);
-
-    // 1. Buscar compras do cartão
-    const { data: compras, error: comprasError } = await (supabase as any)
-      .from("compras_cartao")
-      .select("id, descricao")
-      .eq("cartao_id", cartaoId);
-
-    if (comprasError || !compras?.length) {
-      return [];
-    }
-
-    const compraIds = compras.map((c: any) => c.id);
-    const compraMap = Object.fromEntries(
-      compras.map((c: any) => [c.id, { descricao: c.descricao }])
-    );
-
-    // 2. Buscar parcelas do mês (apenas ativas)
-    const { data: parcelas, error: parcelasError } = await (supabase as any)
-      .from("parcelas_cartao")
-      .select("id, compra_id, valor, numero_parcela, total_parcelas, mes_referencia, paga, created_at, tipo_recorrencia, ativo")
-      .in("compra_id", compraIds)
-      .gte("mes_referencia", inicioStr)
-      .lt("mes_referencia", fimStr)
-      .eq("ativo", true)
-      .order("numero_parcela", { ascending: true });
-
-    if (parcelasError) {
-      console.log("Erro ao buscar parcelas:", parcelasError.message);
-      return [];
-    }
-
-    return (parcelas ?? []).map((r: any) => {
-      const compra = compraMap[r.compra_id] || {};
-      return {
-        id: String(r.id),
-        compra_id: String(r.compra_id),
-        valor: Number(r.valor ?? 0),
-        numero_parcela: Number(r.numero_parcela ?? 1),
-        total_parcelas: Number(r.total_parcelas ?? 1),
-        mes_referencia: String(r.mes_referencia ?? ""),
-        paga: r.paga ?? false,
-        created_at: r.created_at,
-        descricao: compra.descricao ?? "Sem descrição",
-        categoria_id: null,
-        categoria_nome: null,
-        categoria_cor: null,
-        categoria_icone: null,
-        tipo_recorrencia: r.tipo_recorrencia ?? "normal",
-        ativo: r.ativo ?? true,
-      };
-    });
-  } catch (err) {
-    console.log("Erro ao listar parcelas:", err);
-    return [];
-  }
-}
+export { listarParcelasDaFatura } from "@/services/compras-cartao";
 
 /* ======================================================
    BUSCAR COMPRA POR ID

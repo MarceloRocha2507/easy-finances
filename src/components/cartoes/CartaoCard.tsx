@@ -1,6 +1,6 @@
 import { CreditCard, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { listarParcelasDaFatura } from "@/services/transactions";
+import { listarParcelasDaFatura } from "@/services/compras-cartao";
 
 type StatusFatura = "ABERTA" | "FECHADA";
 

@@ -156,12 +156,19 @@ export function useDashboardCompleto(mesReferencia?: Date) {
 
       const cartaoIds = cartoes.map((c: any) => c.id);
 
-      // ========== 2. BUSCAR COMPRAS ==========
+      // ========== 2. BUSCAR COMPRAS (com limite de período) ==========
+      // Limita a 90 dias para reduzir dados transferidos
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - 90);
+      const dataLimiteStr = dataLimite.toISOString().split("T")[0];
+
       const { data: compras } = await (supabase as any)
         .from("compras_cartao")
         .select("id, cartao_id, descricao, valor_total, parcelas, created_at")
         .in("cartao_id", cartaoIds)
-        .order("created_at", { ascending: false });
+        .gte("created_at", dataLimiteStr)
+        .order("created_at", { ascending: false })
+        .limit(200);
 
       const compraIds = (compras || []).map((c: any) => c.id);
       const compraCartaoMap: Record<string, string> = {};
