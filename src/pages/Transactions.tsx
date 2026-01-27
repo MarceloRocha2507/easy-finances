@@ -704,8 +704,15 @@ export default function Transactions() {
                 <Wallet className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground">Saldo Inicial da Conta</span>
-                <p className="font-semibold">{formatCurrency(stats?.saldoInicial || 0)}</p>
+                <span className="text-xs text-muted-foreground">Saldo Inicial</span>
+                <p className="font-semibold">
+                  {formatCurrency((stats?.saldoInicial || 0) + (stats?.saldoInicialGuardado || 0))}
+                </p>
+                {(stats?.saldoInicialGuardado || 0) !== 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    conta: {formatCurrency(stats?.saldoInicial || 0)} | guardado: {formatCurrency(stats?.saldoInicialGuardado || 0)}
+                  </p>
+                )}
               </div>
             </div>
             <Button 
