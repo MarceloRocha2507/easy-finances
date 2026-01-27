@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAlertasCount } from "@/hooks/useAlertasCount";
 import { useProfile } from "@/hooks/useProfile";
-import { DemoBanner } from "@/components/DemoBanner";
 import { MenuCollapsible } from "@/components/sidebar";
 import {
   LayoutDashboard,
@@ -31,8 +30,6 @@ import {
   Building2,
   CalendarClock,
 } from "lucide-react";
-
-const DEMO_EMAIL = "demo@fina.app";
 
 interface LayoutProps {
   children: ReactNode;
@@ -110,8 +107,6 @@ export function Layout({ children }: LayoutProps) {
     setEconomiaOpen(path.startsWith("/economia"));
     setRelatoriosOpen(path.startsWith("/reports"));
   }, [location.pathname]);
-
-  const isDemoUser = user?.email === DEMO_EMAIL;
 
   // Memoizar iniciais do usuário
   const userInitials = useMemo(() => {
@@ -347,7 +342,6 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen flex flex-col">
-        {isDemoUser && <DemoBanner className="lg:ml-0" />}
         <div className="p-6 animate-fade-in flex-1">{children}</div>
       </main>
     </div>
