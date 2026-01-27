@@ -1,84 +1,104 @@
 
-# Plano: Descontar Depósitos em Metas do Saldo Disponível
+# Plano: Adicionar Campo "Saldo Inicial Guardado" no Perfil
 
-## Resumo do Problema
+## Objetivo
 
-Quando você adiciona R$96 a uma meta de economia, o valor é registrado apenas como progresso da meta, mas **não reduz o saldo disponível**. Você espera que esse valor seja tratado como dinheiro "guardado" e subtraído do saldo.
+Criar um campo nas preferências do usuário para registrar dinheiro que **já estava guardado antes de usar o sistema**. Isso permite regularizar metas existentes sem precisar criar receitas retroativas.
 
-## Solução Proposta
+## Como Vai Funcionar
 
-Modificar o cálculo do saldo disponível para **subtrair o total acumulado em metas** do saldo base.
+| Situação | Atual | Novo |
+|----------|-------|------|
+| Patrimônio calculado | Saldo Inicial + Receitas - Despesas | Saldo Inicial + **Saldo Inicial Guardado** + Receitas - Despesas |
+| Seu caso | R$ 96,00 (não considera os R$ 1.265 guardados antes) | R$ 1.361,30 (96 + 1.265,30) |
+| Saldo Disponível | R$ 0,00 (patrimônio menor que metas) | R$ 96,00 (1.361,30 - 1.265,30) |
 
 ## Alterações Necessárias
 
-### 1. Atualizar o cálculo em `useTransactions.ts`
+### 1. Banco de Dados
+Adicionar coluna `saldo_inicial_guardado` na tabela `profiles` com valor padrão 0.
 
-Modificar a função `useCompleteStats` para subtrair o valor total das metas do saldo disponível:
+### 2. Interface - Tab Preferências
+Adicionar campo no `PreferenciasTab.tsx` para o usuário informar quanto já tinha guardado em metas antes de usar o sistema.
 
-| Campo | Cálculo Atual | Novo Cálculo |
-|-------|---------------|--------------|
-| Saldo Base | `saldoInicial + receitas - despesas` | Mantém igual |
-| Saldo Disponível | `saldoBase` (sem descontos) | `saldoBase - totalGuardadoEmMetas` |
-| Patrimônio Total | `saldoBase` | Mantém igual |
+### 3. Hook de Saldo
+Atualizar `useSaldoInicial.ts` para buscar e salvar o novo campo.
 
-**Lógica:**
-- O patrimônio total continua mostrando tudo que você tem
-- O saldo disponível passa a mostrar quanto você pode gastar (descontando o que está guardado em metas)
-
-### 2. Código da Alteração
-
-Linhas 774-777 de `src/hooks/useTransactions.ts`:
-
-```javascript
-// ANTES:
-const saldoDisponivel = saldoBase;
-
-// DEPOIS:
-const saldoDisponivel = saldoBase - totalGuardado;
-```
-
-Onde `totalGuardado` já é calculado no hook como a soma de `valor_atual` de todas as metas.
-
-### 3. Verificar invalidação de cache
-
-Confirmar que `useAdicionarValorMeta` já invalida `complete-stats` e `dashboard-completo` (já está implementado no código).
-
-## Impacto Visual
-
-| Situação | Antes | Depois |
-|----------|-------|--------|
-| Receita de R$96 | Saldo: R$96 | Saldo: R$96 |
-| Deposita R$96 na meta | Saldo: R$96 (não muda) | Saldo: R$0 |
-| Meta mostra | Progresso: R$96 | Progresso: R$96 |
+### 4. Cálculo do Patrimônio
+Atualizar `useTransactions.ts` para incluir o "saldo inicial guardado" no cálculo do patrimônio.
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/hooks/useTransactions.ts` | Subtrair `totalGuardado` do `saldoDisponivel` |
+| `profiles` (banco) | Nova coluna `saldo_inicial_guardado` |
+| `src/hooks/useSaldoInicial.ts` | Buscar e atualizar novo campo |
+| `src/components/profile/PreferenciasTab.tsx` | Campo de input para saldo guardado |
+| `src/hooks/useTransactions.ts` | Incluir no cálculo do patrimônio |
 
 ## Detalhes Técnicos
 
-### Localização exata da alteração
+### Migration SQL
 
-No hook `useCompleteStats` (linhas 680-795):
+```sql
+ALTER TABLE profiles 
+ADD COLUMN saldo_inicial_guardado numeric NOT NULL DEFAULT 0;
 
-```javascript
-// Linha 789-790 - já existe o totalGuardado:
-totalMetas,
-totalGuardado,
-
-// Linha 774-775 - alterar de:
-const saldoDisponivel = saldoBase;
-
-// Para:
-const saldoDisponivel = saldoBase - totalGuardado;
+COMMENT ON COLUMN profiles.saldo_inicial_guardado IS 
+'Valor que o usuário já tinha guardado em metas antes de usar o sistema';
 ```
 
-O `totalGuardado` já é calculado anteriormente no hook (busca a soma de `valor_atual` de todas as metas).
+### Hook `useSaldoInicial.ts`
+
+```typescript
+const { data, isLoading } = useQuery({
+  queryKey: ['saldo-inicial', user?.id],
+  queryFn: async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('saldo_inicial, saldo_inicial_guardado')
+      .eq('user_id', user!.id)
+      .single();
+    
+    return {
+      saldoInicial: Number(data?.saldo_inicial) || 0,
+      saldoInicialGuardado: Number(data?.saldo_inicial_guardado) || 0,
+    };
+  },
+});
+```
+
+### Cálculo em `useTransactions.ts`
+
+```typescript
+// Buscar saldo inicial guardado junto com saldo inicial
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('saldo_inicial, saldo_inicial_guardado')
+  .eq('user_id', user!.id)
+  .single();
+
+const saldoInicialGuardado = Number(profile?.saldo_inicial_guardado) || 0;
+
+// Patrimônio = Saldo Inicial + Saldo Guardado Anterior + Receitas - Despesas
+const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
+```
+
+### Interface `PreferenciasTab.tsx`
+
+Adicionar seção "Saldos Iniciais" com:
+- Saldo Inicial (já existe, pode adicionar aqui também)
+- Saldo Inicial Guardado (novo campo)
+- Descrição explicando o uso
 
 ## Resultado Esperado
 
-- Ao adicionar valor a uma meta, o saldo disponível reduz imediatamente
-- O patrimônio total permanece inalterado (o dinheiro ainda é seu, só está "reservado")
-- A atualização será automática sem precisar recarregar a página
+Ao preencher R$ 1.265,30 no campo "Saldo inicial guardado":
+
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| Patrimônio | R$ 96,00 | R$ 1.361,30 |
+| Em Metas | R$ 1.265,30 | R$ 1.265,30 |
+| Saldo Disponível | R$ 0,00 | R$ 96,00 |
+
+O sistema passa a reconhecer que você já tinha esse dinheiro guardado antes de começar a usar o app.
