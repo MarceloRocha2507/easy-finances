@@ -1,104 +1,112 @@
 
-# Plano: Adicionar Campo "Saldo Inicial Guardado" no Perfil
+# Plano: Corrigir Exibição do Saldo na Página de Transações
 
-## Objetivo
+## Diagnóstico
 
-Criar um campo nas preferências do usuário para registrar dinheiro que **já estava guardado antes de usar o sistema**. Isso permite regularizar metas existentes sem precisar criar receitas retroativas.
+A implementação do campo "Saldo Inicial Guardado" está **funcionalmente correta**. O cálculo em `useCompleteStats` já inclui:
 
-## Como Vai Funcionar
+```typescript
+const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
+```
 
-| Situação | Atual | Novo |
-|----------|-------|------|
-| Patrimônio calculado | Saldo Inicial + Receitas - Despesas | Saldo Inicial + **Saldo Inicial Guardado** + Receitas - Despesas |
-| Seu caso | R$ 96,00 (não considera os R$ 1.265 guardados antes) | R$ 1.361,30 (96 + 1.265,30) |
-| Saldo Disponível | R$ 0,00 (patrimônio menor que metas) | R$ 96,00 (1.361,30 - 1.265,30) |
+### Por que os valores ainda mostram R$ 96,00?
 
-## Alterações Necessárias
+**O campo `saldo_inicial_guardado` está zerado no banco:**
 
-### 1. Banco de Dados
-Adicionar coluna `saldo_inicial_guardado` na tabela `profiles` com valor padrão 0.
+| user_id | saldo_inicial | saldo_inicial_guardado |
+|---------|---------------|------------------------|
+| seu_id  | -1175.45      | **0** |
 
-### 2. Interface - Tab Preferências
-Adicionar campo no `PreferenciasTab.tsx` para o usuário informar quanto já tinha guardado em metas antes de usar o sistema.
+Você ainda não preencheu o valor R$ 1.265,30 no campo "Saldo Inicial Guardado" em Preferências.
 
-### 3. Hook de Saldo
-Atualizar `useSaldoInicial.ts` para buscar e salvar o novo campo.
+## Ação Imediata (sem código)
 
-### 4. Cálculo do Patrimônio
-Atualizar `useTransactions.ts` para incluir o "saldo inicial guardado" no cálculo do patrimônio.
+1. Acesse **Perfil > Preferências**
+2. Preencha **R$ 1.265,30** no campo "Saldo Inicial Guardado (em metas)"
+3. Clique em **Salvar**
+
+Após isso, os valores serão recalculados automaticamente:
+
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| Saldo Real | R$ 96,00 | R$ 1.361,30 |
+| Saldo Estimado | R$ 96,00 | R$ 1.361,30 |
+
+## Melhorias Sugeridas na Interface
+
+Para evitar confusão futura, proponho melhorias visuais na página de Transações:
+
+### 1. Mostrar Composição do Patrimônio
+
+Adicionar um tooltip ou expandir o card "Saldo Inicial da Conta" para mostrar a composição:
+
+**Atual:**
+- Saldo Inicial da Conta: -R$ 1.175,45
+
+**Novo:**
+- Saldo Inicial (conta): -R$ 1.175,45
+- Saldo Inicial (guardado): +R$ 1.265,30
+- **Patrimônio Inicial Total:** R$ 89,85
+
+### Alterações em `src/pages/Transactions.tsx`
+
+Exibir o breakdown no card de saldo inicial, incluindo o `saldoInicialGuardado` quando disponível.
+
+## Detalhes Técnicos
+
+### Modificar Card de Saldo Inicial (Transactions.tsx linhas 700-720)
+
+```tsx
+{/* Card de Saldo Inicial - ATUALIZADO */}
+<div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+  <div className="flex items-center gap-3">
+    <div className="p-2 rounded-lg bg-primary/10">
+      <Wallet className="w-4 h-4 text-primary" />
+    </div>
+    <div>
+      <span className="text-xs text-muted-foreground">Saldo Inicial</span>
+      <p className="font-semibold">
+        {formatCurrency((stats?.saldoInicial || 0) + (stats?.saldoInicialGuardado || 0))}
+      </p>
+      {(stats?.saldoInicialGuardado || 0) > 0 && (
+        <p className="text-[10px] text-muted-foreground">
+          conta: {formatCurrency(stats?.saldoInicial || 0)} | 
+          guardado: {formatCurrency(stats?.saldoInicialGuardado || 0)}
+        </p>
+      )}
+    </div>
+  </div>
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    onClick={() => setEditarSaldoOpen(true)}
+    className="gap-2"
+  >
+    <Settings className="w-4 h-4" />
+    Configurar
+  </Button>
+</div>
+```
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `profiles` (banco) | Nova coluna `saldo_inicial_guardado` |
-| `src/hooks/useSaldoInicial.ts` | Buscar e atualizar novo campo |
-| `src/components/profile/PreferenciasTab.tsx` | Campo de input para saldo guardado |
-| `src/hooks/useTransactions.ts` | Incluir no cálculo do patrimônio |
-
-## Detalhes Técnicos
-
-### Migration SQL
-
-```sql
-ALTER TABLE profiles 
-ADD COLUMN saldo_inicial_guardado numeric NOT NULL DEFAULT 0;
-
-COMMENT ON COLUMN profiles.saldo_inicial_guardado IS 
-'Valor que o usuário já tinha guardado em metas antes de usar o sistema';
-```
-
-### Hook `useSaldoInicial.ts`
-
-```typescript
-const { data, isLoading } = useQuery({
-  queryKey: ['saldo-inicial', user?.id],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('saldo_inicial, saldo_inicial_guardado')
-      .eq('user_id', user!.id)
-      .single();
-    
-    return {
-      saldoInicial: Number(data?.saldo_inicial) || 0,
-      saldoInicialGuardado: Number(data?.saldo_inicial_guardado) || 0,
-    };
-  },
-});
-```
-
-### Cálculo em `useTransactions.ts`
-
-```typescript
-// Buscar saldo inicial guardado junto com saldo inicial
-const { data: profile } = await supabase
-  .from('profiles')
-  .select('saldo_inicial, saldo_inicial_guardado')
-  .eq('user_id', user!.id)
-  .single();
-
-const saldoInicialGuardado = Number(profile?.saldo_inicial_guardado) || 0;
-
-// Patrimônio = Saldo Inicial + Saldo Guardado Anterior + Receitas - Despesas
-const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
-```
-
-### Interface `PreferenciasTab.tsx`
-
-Adicionar seção "Saldos Iniciais" com:
-- Saldo Inicial (já existe, pode adicionar aqui também)
-- Saldo Inicial Guardado (novo campo)
-- Descrição explicando o uso
+| `src/pages/Transactions.tsx` | Mostrar saldoInicialGuardado no card de saldo inicial |
 
 ## Resultado Esperado
 
-Ao preencher R$ 1.265,30 no campo "Saldo inicial guardado":
+Após preencher o valor em Preferências:
 
-| Campo | Antes | Depois |
-|-------|-------|--------|
-| Patrimônio | R$ 96,00 | R$ 1.361,30 |
-| Em Metas | R$ 1.265,30 | R$ 1.265,30 |
-| Saldo Disponível | R$ 0,00 | R$ 96,00 |
+1. **Saldo Real** mostrará R$ 1.361,30 (patrimônio total)
+2. **Saldo Estimado** mostrará R$ 1.361,30
+3. **Card de Saldo Inicial** mostrará a composição:
+   - conta: -R$ 1.175,45
+   - guardado: +R$ 1.265,30
 
-O sistema passa a reconhecer que você já tinha esse dinheiro guardado antes de começar a usar o app.
+## Resumo
+
+O problema principal é que **você ainda não salvou o valor** no novo campo. A implementação está correta, só precisa de:
+
+1. **Ação do usuário**: Preencher R$ 1.265,30 em Preferências
+2. **Melhoria opcional**: Mostrar breakdown no card de saldo inicial
