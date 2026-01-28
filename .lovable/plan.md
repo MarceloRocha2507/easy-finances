@@ -1,129 +1,77 @@
 
-# Plano: Corrigir Ícones Exibidos como Texto na Visão Geral
+# Plano: Corrigir Contraste dos Icones em "Maiores Transacoes"
 
 ## Problema Identificado
 
-Na página `/reports` (Visão Geral), as seções:
-- **Detalhamento por Categoria**
-- **Maiores Transações do Período**
+Na secao "Maiores Transacoes do Periodo" (paginas `/reports` e `/reports/categorias`), os icones estao usando:
+- Classes `gradient-income` / `gradient-expense` para o fundo
+- Cor `text-white` para o icone
 
-Estão exibindo os ícones como texto (ex: "credit-card", "wallet", "car", "piggy-bank") em vez de renderizar os componentes Lucide correspondentes.
+Porem, esses gradientes sao **muito claros**:
+```css
+.gradient-income {
+  @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30;
+}
 
-## Causa Raiz
-
-O código atual simplesmente renderiza `{category.icon}` e `{transaction.category?.icon}` diretamente, que são **strings** vindas do banco de dados, não componentes React.
-
-## Solução
-
-Aplicar o mesmo padrão já utilizado em `RelatorioCategorias.tsx`:
-1. Criar um mapeamento `ICON_MAP` de strings para componentes Lucide
-2. Criar função helper `getIconComponent()`
-3. Usar o componente retornado para renderizar os ícones
-
-## Alterações Necessárias
-
-### Arquivo: `src/pages/Reports.tsx`
-
-**1. Adicionar imports dos ícones Lucide (linha 10):**
-```tsx
-import { 
-  FileText, Table, Wallet, TrendingUp, TrendingDown, Calendar,
-  DollarSign, Briefcase, ShoppingCart, Home, Car, Utensils, 
-  Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, 
-  Book, Package, Zap, Tag, CreditCard, PiggyBank,
-  type LucideIcon
-} from 'lucide-react';
-```
-
-**2. Adicionar ICON_MAP após os imports (antes do MONTHS):**
-```tsx
-const ICON_MAP: Record<string, LucideIcon> = {
-  'dollar-sign': DollarSign,
-  'wallet': Wallet,
-  'briefcase': Briefcase,
-  'shopping-cart': ShoppingCart,
-  'home': Home,
-  'car': Car,
-  'utensils': Utensils,
-  'heart': Heart,
-  'graduation-cap': GraduationCap,
-  'gift': Gift,
-  'plane': Plane,
-  'gamepad': Gamepad2,
-  'shirt': Shirt,
-  'pill': Pill,
-  'book': Book,
-  'package': Package,
-  'zap': Zap,
-  'trending-up': TrendingUp,
-  'tag': Tag,
-  'credit-card': CreditCard,
-  'piggy-bank': PiggyBank,
-};
-
-function getIconComponent(iconName: string | null | undefined): LucideIcon {
-  if (!iconName) return Package;
-  return ICON_MAP[iconName] || Package;
+.gradient-expense {
+  @apply bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/30 dark:to-red-950/30;
 }
 ```
 
-**3. Atualizar "Detalhamento por Categoria" (linhas 230-236):**
-```tsx
-// Antes
-<div
-  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-  style={{ backgroundColor: `${category.color}20` }}
->
-  {category.icon}
-</div>
+Resultado: icone branco sobre fundo esverdeado/rosado muito claro = icone invisivel.
 
-// Depois
-{(() => {
-  const IconComp = getIconComponent(category.icon);
-  return (
-    <div
-      className="w-10 h-10 rounded-lg flex items-center justify-center"
-      style={{ backgroundColor: `${category.color}20` }}
-    >
-      <IconComp className="w-5 h-5" style={{ color: category.color }} />
-    </div>
-  );
-})()}
-```
+## Solucao
 
-**4. Atualizar "Maiores Transações do Período" (linhas 270-276):**
+Usar cores **solidas e mais vibrantes** para os icones pequenos (40x40px), com contraste adequado:
+
+| Tipo | Fundo Atual | Fundo Proposto |
+|------|-------------|----------------|
+| Income | `gradient-income` (emerald-50) | `bg-emerald-500` |
+| Expense | `gradient-expense` (rose-50) | `bg-rose-500` |
+
+Esta abordagem e consistente com outros componentes do sistema (como `StatCardPrimary`) que usam cores solidas para areas pequenas.
+
+## Alteracoes Necessarias
+
+### Arquivo 1: `src/pages/Reports.tsx`
+
+**Secao "Maiores Transacoes do Periodo" (linhas 313-316):**
+
+Antes:
 ```tsx
-// Antes
 <div
-  className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
     transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
   }`}
 >
-  {transaction.category?.icon || '📦'}
+  <IconComp className="w-5 h-5 text-white" />
 </div>
-
-// Depois
-{(() => {
-  const IconComp = getIconComponent(transaction.category?.icon);
-  return (
-    <div
-      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-        transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
-      }`}
-    >
-      <IconComp className="w-5 h-5 text-white" />
-    </div>
-  );
-})()}
 ```
+
+Depois:
+```tsx
+<div
+  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+    transaction.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'
+  }`}
+>
+  <IconComp className="w-5 h-5 text-white" />
+</div>
+```
+
+### Arquivo 2: `src/pages/reports/RelatorioCategorias.tsx`
+
+Verificar se a mesma secao "Maiores Transacoes" existe e aplicar a mesma correcao.
 
 ## Resultado Esperado
 
-- Os ícones serão renderizados como componentes Lucide reais em vez de texto
-- Mesma aparência e comportamento da página "Por Categoria"
-- Ícones com cores corretas baseadas na categoria
-- Fallback para `Package` quando o ícone não for reconhecido
+- Icones com fundo verde vibrante (emerald-500) para receitas
+- Icones com fundo vermelho vibrante (rose-500) para despesas
+- Icone branco com alto contraste e facilmente visivel
+- Consistencia visual com outros icones do sistema
 
-## Consistência
+## Teste
 
-Esta alteração garante que ambas as páginas de relatórios (Visão Geral e Por Categoria) usem o mesmo sistema de mapeamento de ícones, mantendo consistência visual em todo o módulo.
+- Navegar para `/reports` e verificar que todos os icones da secao "Maiores Transacoes" estao visiveis
+- Verificar tanto transacoes de receita (verde) quanto despesa (vermelho)
+- Testar no modo claro e escuro
