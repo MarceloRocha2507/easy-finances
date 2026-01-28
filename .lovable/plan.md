@@ -1,218 +1,139 @@
 
-# Plano: Aplicar Estilos de Cards do Dashboard em Todo o Sistema
 
-## Visao Geral
+# Plano: Correção da Página de Relatórios
 
-Vou propagar os estilos visuais dos cards do Dashboard (`StatCardPrimary`, `StatCardSecondary`) para todas as outras paginas e componentes do sistema, garantindo consistencia visual em toda a aplicacao.
+## Problemas Identificados
 
----
+### 1. Gráfico de Pizza Bugado
+O gráfico atual usa labels externos que estão se sobrepondo, causando confusão visual. O Dashboard já possui um componente muito melhor: `PieChartWithLegend` que tem:
+- Gráfico de rosca (donut) em vez de pizza simples
+- Legenda interativa ao lado
+- Hover states com destaque
+- Tooltip customizado elegante
 
-## Componentes de Referencia (Dashboard)
-
-### StatCardPrimary
-- Gradientes por tipo: `income`, `expense`, `neutral`
-- `shadow-lg rounded-xl border-0`
-- Padding: `p-6`
-- Valores: `text-2xl sm:text-3xl font-bold`
-- Icones: container `w-12 h-12 rounded-xl`
-- Animacao: `animate-fade-in-up` com delay
-
-### StatCardSecondary
-- Borda colorida esquerda: `border-l-4 border-l-{color}-500`
-- `shadow-sm rounded-xl`
-- Padding: `p-6`
-- Valores: `text-xl font-semibold`
-- Icones: container `w-10 h-10 rounded-lg`
+### 2. Ícones Mostrando Texto
+No "Detalhamento por Categoria", os ícones aparecem como texto (`credit-card`, `car`, `package`) porque o código renderiza `{category.icon}` diretamente como string. Precisa converter essas strings para componentes Lucide.
 
 ---
 
-## Arquivos e Alteracoes
+## Solução
 
-### 1. `src/components/economia/Resumoeconomia.tsx`
+### Alterações no arquivo `src/pages/Reports.tsx`
 
-**Situacao Atual**: Cards simples com `Card` + `CardContent pt-4 pb-4`
+#### 1. Importar o componente PieChartWithLegend
+Substituir o gráfico de pizza manual pelo componente já existente do Dashboard.
 
-**Alteracoes**:
-- Aplicar gradientes por tipo (Receitas = income, Gastos = expense)
-- Adicionar `shadow-lg rounded-xl` nos cards principais
-- Icones com containers coloridos
-- Tipografia maior para valores
+#### 2. Criar mapeamento de ícones
+Adicionar um mapa de ícones (similar ao `ICON_OPTIONS` de Categories.tsx) para converter nomes de ícones em componentes Lucide.
 
-```text
-Receitas: gradient-income + icone TrendingUp
-Gastos: gradient-expense + icone TrendingDown  
-Economizado: gradient-income/expense conforme valor
-Comparativo: neutral com border-l colorido
+#### 3. Atualizar seção "Detalhamento por Categoria"
+Usar o mapeamento de ícones para renderizar os componentes Lucide corretamente em vez de texto.
+
+#### 4. Atualizar seção "Maiores Transações"
+Aplicar o mesmo tratamento para os ícones das transações.
+
+---
+
+## Detalhes Técnicos
+
+### Mapeamento de Ícones
+
+```typescript
+const ICON_MAP: Record<string, LucideIcon> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+  'credit-card': CreditCard,
+  'piggy-bank': PiggyBank,
+};
+
+function getIconComponent(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] || Package;
+}
 ```
 
-### 2. `src/pages/Metas.tsx`
+### Substituição do Gráfico de Pizza
 
-**Situacao Atual**: Cards com `border card-hover` e valores `text-2xl`
-
-**Alteracoes**:
-- Cards de stats (Total, Em andamento, Concluidos, Valor acumulado): usar padroes do Dashboard
-- Adicionar icones com containers coloridos (Target, Clock, Check, Wallet)
-- Adicionar bordas coloridas a esquerda baseado no status
-- Gradientes sutis nos cards de stats
-
-```text
-Total: neutral + icone Target
-Em andamento: warning (amber) + icone Clock
-Concluidos: income (green) + icone Check
-Valor acumulado: info (purple) + icone Wallet
+**Antes:**
+```tsx
+<Card className="border">
+  <CardHeader>
+    <CardTitle>Despesas por Categoria</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ResponsiveContainer>
+      <PieChart>
+        <Pie ... label={...} />
+      </PieChart>
+    </ResponsiveContainer>
+  </CardContent>
+</Card>
 ```
 
-### 3. `src/pages/Investimentos.tsx`
-
-**Situacao Atual**: Cards com `bg-card border rounded-xl p-5 card-hover`
-
-**Alteracoes**:
-- Cards de resumo: aplicar gradientes e shadows
-- Patrimonio total: neutral gradient
-- Total investido: info (blue) border-l
-- Rendimento total: income/expense conforme valor
-- Rentabilidade: info (purple) border-l
-- Aumentar containers de icones para `w-12 h-12 rounded-xl`
-
-### 4. `src/components/investimentos/InvestimentoCard.tsx`
-
-**Situacao Atual**: Card simples com `hover:shadow-lg`
-
-**Alteracoes**:
-- Adicionar `rounded-xl shadow-sm`
-- Melhorar container do icone para `rounded-xl` (ja tem `rounded-xl`)
-- Valor atual em `text-2xl font-bold`
-- Adicionar borda colorida sutil baseada no rendimento (positivo=verde, negativo=vermelho)
-
-### 5. `src/pages/Bancos.tsx`
-
-**Situacao Atual**: Card de resumo com `border mb-6`, texto `text-3xl font-bold`
-
-**Alteracoes**:
-- Card de resumo geral: usar `gradient-neutral shadow-lg rounded-xl`
-- Manter o destaque do saldo total
-- Adicionar icones com containers coloridos nos stats do grid
-
-### 6. `src/components/bancos/BancoCard.tsx`
-
-**Situacao Atual**: Card com `border card-hover`
-
-**Alteracoes**:
-- Adicionar `shadow-sm rounded-xl`
-- Melhorar a area de saldo com gradiente sutil
-- Icone do banco em container `rounded-xl`
-
-### 7. `src/pages/Cartoes.tsx`
-
-**Situacao Atual**: Card de previsao com `card-hover`, CartaoCard com header colorido
-
-**Alteracoes**:
-- Card de Previsao de Faturas: `shadow-lg rounded-xl`
-- Melhorar grid de meses com gradientes sutis
-
-### 8. `src/pages/Admin.tsx`
-
-**Situacao Atual**: Cards com `card-hover animate-fade-in-up`
-
-**Alteracoes**:
-- Aplicar gradientes por tipo de stat
-- Total: neutral
-- Admins: warning (amber)
-- Ativos: income (green)  
-- Inativos: danger (red)
-- Expirando: warning (amber)
-- Adicionar `shadow-lg rounded-xl`
-
-### 9. `src/components/economia/Rankinggastos.tsx`
-
-**Situacao Atual**: Card simples
-
-**Alteracoes**:
-- Adicionar `shadow-sm rounded-xl` ao container
-- Manter layout interno
-
-### 10. `src/components/economia/Insightseconomia.tsx`
-
-**Situacao Atual**: Card simples
-
-**Alteracoes**:
-- Adicionar `shadow-sm rounded-xl`
-- Cards de insight individuais: melhorar borders
-
-### 11. `src/pages/Economia.tsx`
-
-**Situacao Atual**: Cards simples em varias secoes
-
-**Alteracoes**:
-- Card de grafico pizza: `shadow-sm rounded-xl`
-- Card de previsao: `shadow-sm rounded-xl` com gradiente sutil
-- Cards de dicas: `shadow-sm rounded-xl`
-
-### 12. `src/components/profile/EstatisticasTab.tsx`
-
-**Situacao Atual**: Cards com estilos mistos
-
-**Alteracoes**:
-- Aplicar `shadow-sm rounded-xl` uniformemente
-- Icones em containers coloridos
-
-### 13. `src/components/profile/PerfilTab.tsx`, `SegurancaTab.tsx`, `PreferenciasTab.tsx`
-
-**Alteracoes**:
-- Todos os cards de configuracao: `shadow-sm rounded-xl`
-
----
-
-## Classes Utilitarias a Reutilizar
-
-Ja existem em `index.css`:
-```css
-.gradient-income { ... from-emerald-50 to-green-50 ... }
-.gradient-expense { ... from-rose-50 to-red-50 ... }
-.gradient-neutral { ... from-slate-50 to-gray-100 ... }
+**Depois:**
+```tsx
+<PieChartWithLegend data={pieData} />
 ```
 
----
+### Correção dos Ícones no Detalhamento
 
-## Resumo de Padronizacao
+**Antes:**
+```tsx
+<div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+     style={{ backgroundColor: `${category.color}20` }}>
+  {category.icon}  {/* ❌ Renderiza texto como "credit-card" */}
+</div>
+```
 
-| Tipo de Card | Gradiente | Border-L | Shadow | Corners | Padding |
-|--------------|-----------|----------|--------|---------|---------|
-| Stat Principal | Sim (por tipo) | Opcional | shadow-lg | rounded-xl | p-6 |
-| Stat Secundario | Nao | Sim (4px) | shadow-sm | rounded-xl | p-6 |
-| Card de Conteudo | Nao | Nao | shadow-sm | rounded-xl | p-5/p-6 |
-| Card Destacado | Especial | Nao | shadow-lg | rounded-xl | p-6+ |
+**Depois:**
+```tsx
+{(() => {
+  const IconComp = getIconComponent(category.icon);
+  return (
+    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+         style={{ backgroundColor: `${category.color}20` }}>
+      <IconComp className="w-5 h-5" style={{ color: category.color }} />
+    </div>
+  );
+})()}
+```
 
 ---
 
 ## Arquivos a Modificar
 
-| Arquivo | Tipo de Alteracao |
-|---------|-------------------|
-| `src/components/economia/Resumoeconomia.tsx` | Refatorar 4 cards com gradientes e icones |
-| `src/pages/Metas.tsx` | Refatorar 4 cards de stats |
-| `src/pages/Investimentos.tsx` | Refatorar 4 cards de resumo |
-| `src/components/investimentos/InvestimentoCard.tsx` | Adicionar shadow e border baseado em rendimento |
-| `src/pages/Bancos.tsx` | Refatorar card de resumo geral |
-| `src/components/bancos/BancoCard.tsx` | Adicionar shadow-sm rounded-xl |
-| `src/pages/Cartoes.tsx` | Melhorar card de previsao |
-| `src/pages/Admin.tsx` | Refatorar 5 cards de stats com gradientes |
-| `src/components/economia/Rankinggastos.tsx` | Adicionar shadow-sm rounded-xl |
-| `src/components/economia/Insightseconomia.tsx` | Adicionar shadow-sm rounded-xl |
-| `src/pages/Economia.tsx` | Padronizar todos os cards |
-| `src/components/profile/EstatisticasTab.tsx` | Padronizar cards |
-| `src/components/profile/PerfilTab.tsx` | Padronizar cards |
-| `src/components/profile/SegurancaTab.tsx` | Padronizar cards |
-| `src/components/profile/PreferenciasTab.tsx` | Padronizar cards |
+| Arquivo | Alterações |
+|---------|------------|
+| `src/pages/Reports.tsx` | Importar PieChartWithLegend, criar ICON_MAP, corrigir renderização de ícones |
 
 ---
 
-## Resultado Esperado
+## Resultado Visual Esperado
 
-Todos os cards do sistema terao:
-- Visual consistente com o Dashboard
-- Gradientes sutis para destaque por tipo
-- Shadows apropriadas (lg para principais, sm para secundarios)
-- Cantos arredondados uniformes (rounded-xl)
-- Icones em containers coloridos harmonicos
-- Animacoes de entrada padronizadas
+### Gráfico de Pizza
+- Formato donut (rosca) com centro vazio
+- Legenda interativa ao lado direito
+- Hover que destaca a fatia selecionada
+- Tooltip elegante com valor e cor
+
+### Detalhamento por Categoria
+- Ícones Lucide renderizados corretamente (não mais texto)
+- Cores aplicadas aos ícones
+- Visual consistente com o resto do sistema
+
