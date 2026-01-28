@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Alerta } from "@/hooks/useDashboardCompleto";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const ICONE_MAP: Record<string, React.ReactNode> = {
   "alert-triangle": <AlertTriangle className="h-4 w-4" />,
@@ -27,16 +28,16 @@ const CORES_TIPO: Record<string, { bg: string; border: string; text: string; ico
     icon: "text-expense",
   },
   warning: {
-    bg: "bg-amber-500/5",
-    border: "border-amber-500/20",
-    text: "text-amber-600 dark:text-amber-500",
-    icon: "text-amber-500",
+    bg: "bg-warning/5",
+    border: "border-warning/20",
+    text: "text-warning",
+    icon: "text-warning",
   },
   info: {
-    bg: "bg-primary/5",
-    border: "border-primary/20",
-    text: "text-primary",
-    icon: "text-primary",
+    bg: "bg-info/5",
+    border: "border-info/20",
+    text: "text-info",
+    icon: "text-info",
   },
   success: {
     bg: "bg-income/5",
@@ -65,7 +66,7 @@ export function AlertasInteligentes({ alertas }: Props) {
         return (
           <Card
             key={alerta.id}
-            className={`${cores.bg} ${cores.border} border`}
+            className={cn(cores.bg, cores.border, "border")}
           >
             <CardContent className="p-3 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -73,7 +74,7 @@ export function AlertasInteligentes({ alertas }: Props) {
                   {ICONE_MAP[alerta.icone] || <Info className="h-4 w-4" />}
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${cores.text}`}>{alerta.titulo}</p>
+                  <p className={cn("text-sm font-medium", cores.text)}>{alerta.titulo}</p>
                   <p className="text-xs text-muted-foreground">
                     {alerta.mensagem}
                   </p>
