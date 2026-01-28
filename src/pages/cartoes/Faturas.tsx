@@ -80,7 +80,7 @@ export default function Faturas() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Faturas</h1>
+            <h1 className="text-xl font-semibold text-foreground">Faturas</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
               Acompanhe as faturas mensais dos seus cartões
             </p>

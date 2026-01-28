@@ -9,7 +9,7 @@ export default function Profile() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
+          <h1 className="text-xl font-semibold text-foreground">Meu Perfil</h1>
           <p className="text-muted-foreground">Gerencie suas informações e preferências</p>
         </div>
 

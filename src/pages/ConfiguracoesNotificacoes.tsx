@@ -73,7 +73,7 @@ export default function ConfiguracoesNotificacoes() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Configurações de Notificações</h1>
+            <h1 className="text-xl font-semibold text-foreground">Configurações de Notificações</h1>
             <p className="text-sm text-muted-foreground">
               Escolha quais alertas você deseja receber
             </p>

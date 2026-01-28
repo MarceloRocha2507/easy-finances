@@ -131,7 +131,7 @@ export default function Auditoria() {
               <History className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Auditoria</h1>
+              <h1 className="text-xl font-semibold text-foreground">Auditoria</h1>
               <p className="text-sm text-muted-foreground">
                 Histórico de alterações em compras e parcelas de cartão
               </p>

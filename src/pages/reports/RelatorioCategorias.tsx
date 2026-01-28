@@ -73,12 +73,12 @@ export default function RelatorioCategorias() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatório por Categoria</h1>
-          <p className="text-muted-foreground">Análise detalhada dos gastos por categoria</p>
+          <h1 className="text-xl font-semibold text-foreground">Relatório por Categoria</h1>
+          <p className="text-sm text-muted-foreground">Análise detalhada dos gastos por categoria</p>
         </div>
 
         {/* Period Selector */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function RelatorioCategorias() {
 
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-0 shadow-lg">
+          <Card className="border card-hover">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Total de Despesas</p>
               <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
@@ -130,7 +130,7 @@ export default function RelatorioCategorias() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border card-hover">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Categorias Ativas</p>
               <p className="text-2xl font-bold text-foreground">{pieData.length}</p>
@@ -138,7 +138,7 @@ export default function RelatorioCategorias() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border card-hover">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Maior Categoria</p>
               <p className="text-2xl font-bold text-foreground">
@@ -156,7 +156,7 @@ export default function RelatorioCategorias() {
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Pie Chart */}
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader>
               <CardTitle>Distribuição de Gastos</CardTitle>
             </CardHeader>
@@ -189,7 +189,7 @@ export default function RelatorioCategorias() {
           </Card>
 
           {/* Bar Chart - Comparativo */}
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader>
               <CardTitle>Comparativo com Mês Anterior</CardTitle>
             </CardHeader>
@@ -215,7 +215,7 @@ export default function RelatorioCategorias() {
         </div>
 
         {/* Category Details */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader>
             <CardTitle>Detalhamento por Categoria</CardTitle>
           </CardHeader>

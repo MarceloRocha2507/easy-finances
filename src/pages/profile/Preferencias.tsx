@@ -49,12 +49,12 @@ export default function Preferencias() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Preferências</h1>
+          <h1 className="text-xl font-semibold text-foreground">Preferências</h1>
           <p className="text-muted-foreground">Personalize sua experiência no aplicativo</p>
         </div>
 
         {/* Theme Selection */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader>
             <CardTitle>Aparência</CardTitle>
             <CardDescription>Escolha o tema visual do aplicativo</CardDescription>
@@ -89,7 +89,7 @@ export default function Preferencias() {
         </Card>
 
         {/* Regional Settings */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader>
             <CardTitle>Configurações Regionais</CardTitle>
             <CardDescription>Personalize formatos de data e moeda</CardDescription>
