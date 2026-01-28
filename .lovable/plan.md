@@ -1,38 +1,81 @@
 
-Objetivo
-- Remover o “espaço em branco” destacado em vermelho abaixo do gráfico de “Despesas por Categoria” na rota /reports/categorias.
+# Plano: Aplicar Melhorias da Página "Por Categoria" na "Visão Geral"
 
-Diagnóstico (causa raiz)
-- A seção “Charts” usa um grid com 2 colunas (lg:grid-cols-2). Em grids, a altura da linha é determinada pelo item mais alto.
-- No Relatório por Categoria, o card do gráfico de barras (“Comparativo com Mês Anterior”) está bem mais alto porque o gráfico está com height=300.
-- O card do donut/legenda (PieChartWithLegend) é menor (200px), então sobra um “vão” grande na coluna da esquerda até a próxima seção (“Detalhamento por Categoria”). Esse vão aparece como um grande espaço em branco na página (exatamente a área marcada).
+## Problema Identificado
 
-Solução proposta (mais simples e consistente com o Dashboard)
-- Reduzir a altura do gráfico de barras do relatório para ficar próxima da altura do gráfico de donut, eliminando o vão visual.
-- Também ajustar o padding do header do card do gráfico de barras para ficar consistente com os cards do Dashboard (pb-2), reduzindo ainda mais a altura total do card.
+A página de Relatórios "Visão Geral" (`/reports`) apresenta os mesmos problemas que foram corrigidos em "Por Categoria":
 
-Mudanças de código (1 arquivo)
-1) src/pages/reports/RelatorioCategorias.tsx
-   A) Card “Comparativo com Mês Anterior”
-   - Alterar o ResponsiveContainer do BarChart de height={300} para height={220} (mesmo padrão do Dashboard).
-   - Alterar o empty state correspondente:
-     - de className="h-[300px] ..." para className="h-[220px] ..."
-   - Ajustar o CardHeader para reduzir altura:
-     - adicionar className="pb-2" em <CardHeader> (como no Dashboard).
+1. **Gráfico de pizza sem legenda interativa** - Usa o `PieChart` básico do Recharts em vez do componente `PieChartWithLegend` padronizado
+2. **Altura do gráfico de barras muito grande** - Usa `height={300}` enquanto o padrão ajustado é `height={220}`
+3. **CardHeader sem padding reduzido** - Falta o `pb-2` para consistência visual
 
-Por que isso resolve
-- Com o card da direita (barras) menos alto, a “linha” do grid deixa de ficar muito alta.
-- Assim, a próxima seção (“Detalhamento por Categoria”) sobe e o espaço em branco destacado desaparece (ou fica mínimo/inexistente).
+## Alterações Necessárias
 
-Critérios de aceite (o que você deve ver ao final)
-- Em /reports/categorias:
-  - O bloco de “Charts” não deixa um espaço grande vazio abaixo do donut na coluna esquerda.
-  - “Detalhamento por Categoria” começa logo após os gráficos, sem aquele “vão” grande.
+### Arquivo: `src/pages/Reports.tsx`
 
-Teste rápido (end-to-end)
-- Abrir /reports/categorias em desktop e:
-  - Alternar mês/ano e confirmar que o layout não “estoura” e o espaço em branco não reaparece.
-  - Verificar que o gráfico de barras continua legível com 220px (mostrando as categorias do slice(0, 6)).
+| Alteração | Antes | Depois |
+|-----------|-------|--------|
+| Import | Não importa `PieChartWithLegend` | Adicionar import do `PieChartWithLegend` |
+| Card do Pie Chart (linhas 195-225) | Card customizado com `PieChart` básico | Usar componente `PieChartWithLegend` |
+| CardHeader do Bar Chart (linha 229) | Sem classe | Adicionar `className="pb-2"` |
+| ResponsiveContainer do Bar Chart (linha 233) | `height={300}` | `height={220}` |
 
-Observação / alternativa (se você preferir manter o gráfico de barras grande)
-- Caso você queira manter o gráfico de barras em 300px por questão de leitura, a alternativa seria “aumentar” o card do PieChartWithLegend (ex.: adicionar uma prop de altura/variante “tall” e usar no relatório). Isso é um pouco mais trabalho porque mexe no componente compartilhado, mas também resolve 100%.
+### Detalhes Técnicos
+
+**1. Adicionar import:**
+```tsx
+import { PieChartWithLegend } from '@/components/dashboard';
+```
+
+**2. Substituir o Card do Pie Chart (linhas 194-225):**
+```tsx
+// Antes: Card customizado com PieChart básico
+<Card className="border">
+  <CardHeader>
+    <CardTitle>Despesas por Categoria</CardTitle>
+  </CardHeader>
+  <CardContent>
+    {pieData.length > 0 ? (
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>...</PieChart>
+      </ResponsiveContainer>
+    ) : (
+      <div className="h-[300px]">...</div>
+    )}
+  </CardContent>
+</Card>
+
+// Depois: Usar o componente padronizado
+<PieChartWithLegend data={pieData} />
+```
+
+**3. Ajustar o Card do Bar Chart (linhas 228-244):**
+```tsx
+// Antes
+<CardHeader>
+  <CardTitle>Comparativo Anual ({selectedYear})</CardTitle>
+</CardHeader>
+<CardContent>
+  <ResponsiveContainer width="100%" height={300}>
+
+// Depois
+<CardHeader className="pb-2">
+  <CardTitle className="text-base font-medium">Comparativo Anual ({selectedYear})</CardTitle>
+</CardHeader>
+<CardContent>
+  <ResponsiveContainer width="100%" height={220}>
+```
+
+## Resultado Esperado
+
+- Gráfico de pizza com legenda interativa ao lado (donut com hover e destaque)
+- Cards de gráficos com alturas similares (~220px) eliminando o espaço em branco
+- Visual consistente entre "Visão Geral" e "Por Categoria"
+- Melhor aproveitamento do espaço horizontal
+
+## Benefícios
+
+1. **Consistência visual** - Ambas as páginas de relatórios terão o mesmo padrão
+2. **Reutilização de código** - Usa o componente `PieChartWithLegend` já existente
+3. **Melhor UX** - Legenda interativa permite destacar categorias ao passar o mouse
+4. **Sem espaço em branco** - Os dois cards do grid terão alturas próximas
