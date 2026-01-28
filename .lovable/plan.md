@@ -1,139 +1,54 @@
 
 
-# Plano: Correção da Página de Relatórios
+# Plano: Corrigir Espaço em Branco no Gráfico de Pizza
 
-## Problemas Identificados
+## Problema Identificado
 
-### 1. Gráfico de Pizza Bugado
-O gráfico atual usa labels externos que estão se sobrepondo, causando confusão visual. O Dashboard já possui um componente muito melhor: `PieChartWithLegend` que tem:
-- Gráfico de rosca (donut) em vez de pizza simples
-- Legenda interativa ao lado
-- Hover states com destaque
-- Tooltip customizado elegante
+O componente `PieChartWithLegend` tem um layout flex com:
+- Gráfico fixo de 200x200px à esquerda
+- Legenda com `flex-1 w-full` à direita
 
-### 2. Ícones Mostrando Texto
-No "Detalhamento por Categoria", os ícones aparecem como texto (`credit-card`, `car`, `package`) porque o código renderiza `{category.icon}` diretamente como string. Precisa converter essas strings para componentes Lucide.
-
----
+O problema é que `flex-1` faz a legenda expandir para preencher todo o espaço disponível, criando um gap visual entre o gráfico e a legenda.
 
 ## Solução
 
-### Alterações no arquivo `src/pages/Reports.tsx`
+Alterar o layout para que o gráfico e a legenda fiquem mais próximos, usando `items-start` no container e removendo o comportamento de expansão excessiva da legenda.
 
-#### 1. Importar o componente PieChartWithLegend
-Substituir o gráfico de pizza manual pelo componente já existente do Dashboard.
+## Alterações no arquivo `src/components/dashboard/PieChartWithLegend.tsx`
 
-#### 2. Criar mapeamento de ícones
-Adicionar um mapa de ícones (similar ao `ICON_OPTIONS` de Categories.tsx) para converter nomes de ícones em componentes Lucide.
+| Linha | Antes | Depois |
+|-------|-------|--------|
+| 99 | `flex flex-col lg:flex-row items-center gap-4` | `flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4` |
+| 134 | `flex-1 w-full` | `w-full lg:w-auto lg:min-w-[180px]` |
 
-#### 3. Atualizar seção "Detalhamento por Categoria"
-Usar o mapeamento de ícones para renderizar os componentes Lucide corretamente em vez de texto.
+### Detalhes Técnicos
 
-#### 4. Atualizar seção "Maiores Transações"
-Aplicar o mesmo tratamento para os ícones das transações.
-
----
-
-## Detalhes Técnicos
-
-### Mapeamento de Ícones
-
-```typescript
-const ICON_MAP: Record<string, LucideIcon> = {
-  'dollar-sign': DollarSign,
-  'wallet': Wallet,
-  'briefcase': Briefcase,
-  'shopping-cart': ShoppingCart,
-  'home': Home,
-  'car': Car,
-  'utensils': Utensils,
-  'heart': Heart,
-  'graduation-cap': GraduationCap,
-  'gift': Gift,
-  'plane': Plane,
-  'gamepad': Gamepad2,
-  'shirt': Shirt,
-  'pill': Pill,
-  'book': Book,
-  'package': Package,
-  'zap': Zap,
-  'trending-up': TrendingUp,
-  'tag': Tag,
-  'credit-card': CreditCard,
-  'piggy-bank': PiggyBank,
-};
-
-function getIconComponent(iconName: string): LucideIcon {
-  return ICON_MAP[iconName] || Package;
-}
-```
-
-### Substituição do Gráfico de Pizza
-
-**Antes:**
+**Container principal (linha 99)**:
 ```tsx
-<Card className="border">
-  <CardHeader>
-    <CardTitle>Despesas por Categoria</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <ResponsiveContainer>
-      <PieChart>
-        <Pie ... label={...} />
-      </PieChart>
-    </ResponsiveContainer>
-  </CardContent>
-</Card>
+// Antes
+<div className="flex flex-col lg:flex-row items-center gap-4">
+
+// Depois
+<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4">
 ```
 
-**Depois:**
+**Container da legenda (linha 134)**:
 ```tsx
-<PieChartWithLegend data={pieData} />
+// Antes
+<div className="flex-1 w-full">
+
+// Depois
+<div className="w-full lg:w-auto lg:min-w-[180px]">
 ```
 
-### Correção dos Ícones no Detalhamento
+Estas alterações:
+1. `justify-center` - Centraliza os elementos para eliminar o espaço em branco extra
+2. `lg:items-start` - Alinha o topo da legenda com o gráfico em desktop
+3. `lg:w-auto lg:min-w-[180px]` - Remove a expansão automática, mantendo um tamanho mínimo adequado para a legenda
 
-**Antes:**
-```tsx
-<div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-     style={{ backgroundColor: `${category.color}20` }}>
-  {category.icon}  {/* ❌ Renderiza texto como "credit-card" */}
-</div>
-```
+## Resultado Esperado
 
-**Depois:**
-```tsx
-{(() => {
-  const IconComp = getIconComponent(category.icon);
-  return (
-    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-         style={{ backgroundColor: `${category.color}20` }}>
-      <IconComp className="w-5 h-5" style={{ color: category.color }} />
-    </div>
-  );
-})()}
-```
-
----
-
-## Arquivos a Modificar
-
-| Arquivo | Alterações |
-|---------|------------|
-| `src/pages/Reports.tsx` | Importar PieChartWithLegend, criar ICON_MAP, corrigir renderização de ícones |
-
----
-
-## Resultado Visual Esperado
-
-### Gráfico de Pizza
-- Formato donut (rosca) com centro vazio
-- Legenda interativa ao lado direito
-- Hover que destaca a fatia selecionada
-- Tooltip elegante com valor e cor
-
-### Detalhamento por Categoria
-- Ícones Lucide renderizados corretamente (não mais texto)
-- Cores aplicadas aos ícones
-- Visual consistente com o resto do sistema
+- Gráfico e legenda ficarão mais próximos
+- Sem espaço em branco excessivo entre os elementos
+- Layout continua responsivo (empilhado em mobile, lado a lado em desktop)
 
