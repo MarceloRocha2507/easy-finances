@@ -1,322 +1,318 @@
 
-# Plano de Redesign Inovador - Sistema Completo
+# Plano de Redesign - Estilo Amigável e Acolhedor
 
 ## Visão Geral
 
-Transformação completa do sistema de um design tradicional com cards empilhados para uma interface **imersiva, fluida e diferenciada**, inspirada em apps como **Arc Browser, Linear, Raycast e Apple Finance**. O objetivo é criar uma experiência visual única que não pareça "mais do mesmo".
+Redesign completo inspirado em apps como **Nubank, PicPay, e bancos digitais modernos**. O objetivo é criar uma interface **clara, amigável e organizada**, com cores suaves mas presentes, ícones expressivos e layout intuitivo.
 
-## Conceitos de Inovação
+## Problemas Atuais a Resolver
 
-### 1. Layout "Bento Grid"
-Em vez de listas verticais monótonas, usar um sistema de grid dinâmico onde cards de diferentes tamanhos criam composições visuais interessantes - inspirado no estilo "Bento Box" popular em dashboards modernos.
-
-### 2. Sidebar Compacta com Dock Style
-Transformar a sidebar em um dock flutuante minimalista (estilo macOS dock), liberando espaço horizontal e criando uma navegação mais elegante.
-
-### 3. Glassmorphism 2.0 + Mesh Gradients
-Usar fundos com gradientes mesh (múltiplas cores que se mesclam organicamente) combinados com glassmorphism seletivo em elementos-chave.
-
-### 4. Micro-animações em Todo Lugar
-Transições suaves em cada interação: cards que "respiram", números que animam ao aparecer, hovers com profundidade 3D sutil.
-
-### 5. Tipografia Expressiva
-Usar tamanhos contrastantes - números grandes e impactantes para valores, texto pequeno para labels - criando hierarquia visual forte.
-
-### 6. Cores Vibrantes com Gradientes
-Abandonar o cinza neutro e adotar gradientes vibrantes como identidade: roxo para ações, verde para positivo, vermelho para negativo.
-
----
+1. **Dock de navegação** - Confuso, será substituído por sidebar fixa tradicional
+2. **Layout Bento Grid** - Muito complexo, será simplificado para grid uniforme
+3. **Mesh Gradients e Glassmorphism** - Muito "escuro" e abstrato, será removido
+4. **Cores muito vibrantes** - Serão suavizadas para tons mais acolhedores
 
 ## Novo Design System
 
-### Paleta de Cores
+### Paleta de Cores - Neutro Claro com Toques Coloridos
 
 ```
-CORES BASE
-├── Background: #0A0A0F (dark profundo) / #FAFBFC (light suave)
-├── Surface: rgba(255,255,255,0.03) (dark) / rgba(0,0,0,0.02) (light)
-├── Foreground: #F8F8F2 (dark) / #1A1A2E (light)
+CORES BASE (Neutro Claro)
+├── Background: #FFFFFF (branco puro)
+├── Background Secundário: #F7F8FA (cinza muito claro)
+├── Card: #FFFFFF (branco)
+├── Foreground: #1A1D21 (quase preto, suave)
+├── Muted: #6B7280 (cinza médio)
+├── Border: #E5E7EB (cinza claro)
 
-GRADIENTES VIBRANTES
-├── Primary: linear-gradient(135deg, #667EEA 0%, #764BA2 100%)
-├── Success: linear-gradient(135deg, #11998E 0%, #38EF7D 100%)
-├── Danger: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)
-├── Warning: linear-gradient(135deg, #F7971E 0%, #FFD200 100%)
-├── Info: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)
+CORES DE DESTAQUE (Amigáveis)
+├── Primary: #8B5CF6 (roxo Nubank-like)
+├── Income: #10B981 (verde esmeralda)
+├── Expense: #F43F5E (rosa/vermelho suave)
+├── Warning: #F59E0B (âmbar)
+├── Info: #3B82F6 (azul)
 
-MESH GRADIENTS (fundos)
-├── Dashboard: radial-gradient(at 20% 80%, #667EEA15 0%, transparent 50%),
-               radial-gradient(at 80% 20%, #764BA215 0%, transparent 50%)
+CORES DE FUNDO SUAVES
+├── Primary Light: #EDE9FE (roxo clarinho)
+├── Income Light: #D1FAE5 (verde clarinho)
+├── Expense Light: #FFE4E6 (rosa clarinho)
+├── Warning Light: #FEF3C7 (âmbar clarinho)
+├── Info Light: #DBEAFE (azul clarinho)
 ```
 
-### Tipografia Expressiva
+### Tipografia Amigável
 
 ```
-HIERARQUIA DRAMÁTICA
-├── Display (valores): 48-64px, font-weight: 700, tracking: -0.03em
-├── h1: 28px, font-weight: 600, tracking: -0.02em
-├── h2: 20px, font-weight: 600
-├── h3: 14px, font-weight: 500, uppercase, letter-spacing: 0.05em
+HIERARQUIA
+├── h1: 24px, font-weight: 600, color: foreground
+├── h2: 18px, font-weight: 600
+├── h3: 16px, font-weight: 500
 ├── Body: 14px, font-weight: 400
-├── Caption: 11px, font-weight: 500, uppercase, letter-spacing: 0.08em
+├── Small: 13px, font-weight: 400
+├── Caption: 12px, font-weight: 500, color: muted
+├── Valores: 28-32px, font-weight: 700 (destaque)
 ```
 
-### Componentes Redesenhados
+### Componentes Amigáveis
 
 ```
-CARDS BENTO
-├── Tamanhos: sm (1x1), md (2x1), lg (2x2), xl (3x1)
-├── Background: glass effect sutil
-├── Border: 1px solid rgba(255,255,255,0.06)
-├── Hover: glow sutil + scale(1.01)
+CARDS
+├── Background: branco puro
+├── Border: 1px solid #E5E7EB
+├── Border Radius: 16px (mais arredondado)
+├── Shadow: sutil (0 1px 3px rgba(0,0,0,0.08))
+├── Hover: shadow levemente maior
 
-DOCK NAVIGATION
-├── Posição: fixa na lateral esquerda
-├── Largura: 64px collapsed / 200px expanded
-├── Ícones: 24px com tooltip animado
-├── Hover: glow circular + scale
+SIDEBAR FIXA
+├── Largura: 260px fixo
+├── Background: #F7F8FA (levemente cinza)
+├── Itens: pills arredondados
+├── Ativo: background roxo claro + texto roxo
+├── Ícones: 20px, coloridos quando ativos
 
-INPUTS MODERNOS
-├── Background: transparent
-├── Border-bottom: 2px solid com transição de cor
-├── Focus: gradient underline animado
-├── Sem border-radius nos inputs
+BOTÕES
+├── Primary: roxo sólido, sem gradiente
+├── Secondary: borda + fundo transparente
+├── Hover: opacidade ou cor mais escura
+├── Border Radius: 12px (arredondado)
 
-BUTTONS
-├── Primary: gradient + glow shadow
-├── Secondary: border + glass background
-├── Ghost: apenas texto com hover gradient
-├── Animação: scale(0.98) no click
+INPUTS
+├── Border: 1px solid cinza
+├── Border Radius: 12px
+├── Focus: borda roxa
+├── Background: branco
 ```
 
----
+## Nova Estrutura de Layout
 
-## Estrutura de Páginas Redesenhadas
+### Sidebar Fixa Completa
 
-### 1. Tela de Login (Auth.tsx)
-**Antes**: Card simples centralizado
-**Depois**: Tela full-screen com mesh gradient animado, logo grande, input estilo terminal/minimal
+```
+┌──────────────────────────────────────────────────────────┐
+│ ┌────────────┐                                            │
+│ │  SIDEBAR   │                                            │
+│ │  (260px)   │         CONTEÚDO PRINCIPAL                 │
+│ │            │                                            │
+│ │  • Logo    │         Layout organizado                  │
+│ │  • Menu    │         em grid uniforme                   │
+│ │  • Items   │                                            │
+│ │            │         Cards brancos com                  │
+│ │            │         bordas suaves                      │
+│ │            │                                            │
+│ │  ────────  │                                            │
+│ │  • Avatar  │                                            │
+│ │  • Config  │                                            │
+│ │  • Sair    │                                            │
+│ └────────────┘                                            │
+└──────────────────────────────────────────────────────────┘
+```
 
-### 2. Dashboard Principal
-**Antes**: Cards empilhados em grid uniforme
-**Depois**: Bento grid com cards de tamanhos variados, números gigantes, gráficos integrados nos cards
+### Dashboard Simplificado
 
-### 3. Sidebar/Navegação (Layout.tsx)
-**Antes**: Sidebar tradicional com lista de itens
-**Depois**: Dock flutuante compacto com ícones, expansível ao hover, avatar no topo
+```
+┌─────────────────────────────────────────────────────────┐
+│  HEADER - Olá, Usuário + Filtro de período              │
+└─────────────────────────────────────────────────────────┘
 
-### 4. Transações
-**Antes**: Lista com filtros no topo
-**Depois**: View dividida - esquerda com lista agrupada por dia, direita com preview/detalhes
+┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+│   💰 SALDO     │ │   ↑ RECEITAS   │ │   ↓ DESPESAS   │ │   💳 FATURA    │
+│   R$ 5.420     │ │   R$ 8.500     │ │   R$ 3.080     │ │   R$ 1.250     │
+│                │ │   Verde claro  │ │   Rosa claro   │ │   Roxo claro   │
+└────────────────┘ └────────────────┘ └────────────────┘ └────────────────┘
 
-### 5. Cartões de Crédito
-**Antes**: Cards verticais uniformes
-**Depois**: Cards estilo "cartão de crédito real" com 3D tilt no hover, cores vibrantes
+┌─────────────────────────────────┐ ┌─────────────────────────────────┐
+│   📊 GRÁFICO CATEGORIAS         │ │   📈 RECEITAS VS DESPESAS       │
+│                                 │ │                                 │
+└─────────────────────────────────┘ └─────────────────────────────────┘
 
-### 6. Economia/Metas
-**Antes**: Cards de progresso tradicionais
-**Depois**: Visualização radial/circular com animações, progress arcs gigantes
-
----
+┌─────────────────────────────────────────────────────────────────────┐
+│   💳 CARTÕES DE CRÉDITO                                             │
+│   Cards horizontais com cores suaves                                │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## Arquivos a Modificar
 
-### Fase 1: Tokens e Fundação
+### Fase 1: Design Tokens (Fundação)
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/index.css` | Nova paleta, mesh gradients, utilitários glass, animações |
-| `tailwind.config.ts` | Cores vibrantes, gradientes, animações customizadas |
+| `src/index.css` | Nova paleta neutra clara, remover mesh gradients, simplificar utilities |
+| `tailwind.config.ts` | Cores amigáveis, border-radius maior, sombras suaves |
 
-### Fase 2: Componentes UI Base
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/ui/card.tsx` | Cards com variants bento, glass effect |
-| `src/components/ui/button.tsx` | Botões com gradient, glow, micro-animações |
-| `src/components/ui/input.tsx` | Inputs estilo underline/minimal |
-| `src/components/ui/dialog.tsx` | Modais com backdrop blur forte, animação de entrada |
-| `src/components/ui/tabs.tsx` | Tabs com pill animado que desliza |
-| `src/components/ui/progress.tsx` | Arcos circulares e barras com gradient |
-| `src/components/ui/badge.tsx` | Badges com gradient sutil |
-
-### Fase 3: Layout e Navegação
+### Fase 2: Componentes UI
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/Layout.tsx` | Dock navigation, mesh background, estrutura nova |
-| `src/components/sidebar/MenuCollapsible.tsx` | Ícones com glow, tooltips animados |
+| `src/components/ui/card.tsx` | Cards brancos com bordas suaves, sem glass |
+| `src/components/ui/button.tsx` | Botões sólidos, arredondados, sem gradientes |
+| `src/components/ui/input.tsx` | Inputs arredondados, foco roxo |
+| `src/components/ui/badge.tsx` | Badges com cores claras de fundo |
+| `src/components/ui/progress.tsx` | Barras coloridas simples |
 
-### Fase 4: Páginas Principais
+### Fase 3: Layout Principal
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/Auth.tsx` | Redesign completo com mesh gradient, input minimal |
-| `src/pages/Dashboard.tsx` | Bento grid, números grandes, cards integrados |
-| `src/pages/Transactions.tsx` | Split view, agrupamento por dia, preview lateral |
-| `src/pages/Cartoes.tsx` | Cards 3D estilo cartão real |
-| `src/pages/Bancos.tsx` | Cards com gradientes por banco |
-| `src/pages/Economia.tsx` | Visualização radial, arcos de progresso |
-| `src/pages/Metas.tsx` | Progress arcs gigantes, animações de conquista |
-| `src/pages/Investimentos.tsx` | Gráficos sparkline integrados, números animados |
-| `src/pages/Profile.tsx` | Layout de settings moderno, switches animados |
-| `src/pages/Notificacoes.tsx` | Timeline visual, badges animados |
-| `src/pages/Reports.tsx` | Gráficos full-width, exportação visual |
+| `src/components/Layout.tsx` | Sidebar fixa 260px, background claro, navegação tradicional |
+| `src/components/sidebar/MenuCollapsible.tsx` | Submenus com pills arredondados |
 
-### Fase 5: Componentes de Feature
+### Fase 4: Páginas
 
-| Diretório | Componentes |
+| Arquivo | Alteração |
 |---------|-----------|
-| `src/components/dashboard/` | Cards bento, números animados, micro-charts |
-| `src/components/cartoes/` | Card 3D, dialogs com blur forte |
-| `src/components/bancos/` | Cards coloridos por instituição |
-| `src/components/economia/` | Arcos de progresso, insights visuais |
-| `src/components/investimentos/` | Sparklines, badges de rendimento |
+| `src/pages/Dashboard.tsx` | Grid uniforme 4 colunas, cards com ícones coloridos |
+| `src/pages/Auth.tsx` | Fundo branco limpo, card centralizado simples |
+| `src/pages/Cartoes.tsx` | Cards de cartão com cores suaves |
+| `src/pages/Metas.tsx` | Cards de meta com progresso colorido |
+| `src/pages/Investimentos.tsx` | Cards com ícones e cores amigáveis |
 
----
+## Detalhes de Implementação
 
-## Detalhes Técnicos
-
-### Novas Classes CSS
+### Novas Variáveis CSS
 
 ```css
-/* Mesh gradient backgrounds */
-.mesh-gradient {
-  background: 
-    radial-gradient(at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
-}
-
-/* Glass cards */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Glow effect */
-.glow-primary {
-  box-shadow: 0 0 40px -10px rgba(102, 126, 234, 0.5);
-}
-
-/* 3D tilt hover */
-.card-3d {
-  transform-style: preserve-3d;
-  transition: transform 0.3s ease;
-}
-.card-3d:hover {
-  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
-}
-
-/* Number animation */
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-value {
-  animation: count-up 0.5s ease-out forwards;
+:root {
+  /* Base - Neutro Claro */
+  --background: 0 0% 100%;
+  --background-secondary: 220 14% 98%;
+  --foreground: 220 13% 11%;
+  
+  /* Cards */
+  --card: 0 0% 100%;
+  --card-foreground: 220 13% 11%;
+  
+  /* Cores amigáveis */
+  --primary: 263 70% 58%;
+  --income: 160 84% 39%;
+  --expense: 348 83% 60%;
+  --warning: 38 92% 50%;
+  --info: 217 91% 60%;
+  
+  /* Fundos suaves para stats */
+  --primary-light: 263 100% 96%;
+  --income-light: 152 81% 90%;
+  --expense-light: 348 100% 94%;
+  --warning-light: 48 96% 89%;
+  --info-light: 214 100% 93%;
+  
+  /* Bordas suaves */
+  --border: 220 13% 91%;
+  --radius: 1rem; /* 16px - mais arredondado */
 }
 ```
 
-### Componente Dock Navigation
+### Nova Sidebar (Layout.tsx)
 
 ```tsx
-// Sidebar minimalista estilo dock
-<aside className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
-  <nav className="flex flex-col gap-2 p-2 rounded-2xl glass-card">
+<aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-background-secondary border-r flex-col">
+  {/* Logo */}
+  <div className="p-6">
+    <div className="flex items-center gap-3">
+      <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+        <span className="text-white font-bold">F</span>
+      </div>
+      <span className="font-semibold text-lg">FinApp</span>
+    </div>
+  </div>
+  
+  {/* Navigation */}
+  <nav className="flex-1 px-4 space-y-1">
     {items.map(item => (
-      <Tooltip key={item.href}>
-        <TooltipTrigger asChild>
-          <Link 
-            to={item.href}
-            className={cn(
-              "p-3 rounded-xl transition-all",
-              isActive(item.href) 
-                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white glow-primary"
-                : "hover:bg-white/5"
-            )}
-          >
-            <item.icon className="w-5 h-5" />
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right">{item.label}</TooltipContent>
-      </Tooltip>
+      <Link
+        key={item.href}
+        to={item.href}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
+          isActive(item.href)
+            ? "bg-primary/10 text-primary font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+        )}
+      >
+        <item.icon className={cn(
+          "h-5 w-5",
+          isActive(item.href) && "text-primary"
+        )} />
+        <span>{item.label}</span>
+      </Link>
     ))}
   </nav>
+  
+  {/* Footer */}
+  <div className="p-4 border-t">
+    <Link to="/profile" className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent">
+      <Avatar className="h-10 w-10" />
+      <div>
+        <p className="font-medium">{userName}</p>
+        <p className="text-xs text-muted-foreground">Ver perfil</p>
+      </div>
+    </Link>
+  </div>
 </aside>
 ```
 
-### Bento Grid Dashboard
+### Cards de Stat Amigáveis
 
 ```tsx
-// Grid com tamanhos variados
-<div className="grid grid-cols-4 gap-4 auto-rows-[120px]">
-  {/* Card grande - saldo */}
-  <Card className="col-span-2 row-span-2 glass-card">
-    <p className="text-xs uppercase tracking-wider text-muted-foreground">Saldo</p>
-    <p className="text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-      {formatCurrency(saldo)}
-    </p>
-  </Card>
-  
-  {/* Cards menores */}
-  <Card className="glass-card">
-    <p className="text-xs uppercase">Receitas</p>
-    <p className="text-2xl font-bold text-green-400">+{formatCurrency(receitas)}</p>
-  </Card>
-  
-  <Card className="glass-card">
-    <p className="text-xs uppercase">Despesas</p>
-    <p className="text-2xl font-bold text-red-400">-{formatCurrency(despesas)}</p>
-  </Card>
-  
-  {/* Gráfico integrado */}
-  <Card className="col-span-2 glass-card">
-    <MiniChart data={gastosDiarios} />
-  </Card>
-</div>
-```
+{/* Card de Saldo */}
+<Card className="bg-white shadow-sm">
+  <CardContent className="p-5">
+    <div className="flex items-center gap-3 mb-3">
+      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Wallet className="h-5 w-5 text-primary" />
+      </div>
+      <span className="text-sm text-muted-foreground">Saldo</span>
+    </div>
+    <p className="text-2xl font-bold">{formatCurrency(saldo)}</p>
+  </CardContent>
+</Card>
 
----
+{/* Card de Receitas */}
+<Card className="bg-white shadow-sm">
+  <CardContent className="p-5">
+    <div className="flex items-center gap-3 mb-3">
+      <div className="h-10 w-10 rounded-xl bg-income/10 flex items-center justify-center">
+        <ArrowUpRight className="h-5 w-5 text-income" />
+      </div>
+      <span className="text-sm text-muted-foreground">Receitas</span>
+    </div>
+    <p className="text-2xl font-bold text-income">+{formatCurrency(receitas)}</p>
+  </CardContent>
+</Card>
+```
 
 ## Resultado Esperado
 
 ```
-ANTES (Design Atual):
-├── Sidebar tradicional ocupando espaço
-├── Cards uniformes e previsíveis
-├── Cores neutras sem personalidade
-├── Animações básicas
-├── Layout tradicional de dashboard
+ANTES (Atual):
+├── Dock flutuante confuso
+├── Mesh gradients e glassmorphism
+├── Bento grid com tamanhos variados
+├── Cores vibrantes e escuras
+├── Layout complexo
 
-DEPOIS (Novo Design):
-├── Dock flutuante elegante
-├── Bento grid com composições visuais
-├── Gradientes vibrantes e mesh backgrounds
-├── Micro-animações em cada elemento
-├── Visual único e memorável
-├── Números grandes e impactantes
-├── Cards 3D interativos
-├── Dark mode imersivo
+DEPOIS (Novo):
+├── Sidebar fixa clara e organizada
+├── Fundo branco limpo
+├── Grid uniforme e previsível
+├── Cores suaves e acolhedoras
+├── Ícones grandes e expressivos
+├── Layout simples e intuitivo
+├── Estilo Nubank/PicPay
 ```
 
----
+## Inspiração Visual
 
-## Considerações de Implementação
+O novo design seguirá o estilo de apps financeiros populares:
 
-1. **Dark Mode Priority**: O novo design será otimizado primeiro para dark mode, que é mais impactante visualmente
-2. **Performance**: Usar `will-change` e `transform` para animações GPU-accelerated
-3. **Responsividade**: Dock se transforma em bottom bar no mobile
-4. **Acessibilidade**: Manter contraste adequado mesmo com efeitos visuais
-5. **Fallbacks**: Desabilitar blur em dispositivos de baixa performance
+- **Nubank**: Cards brancos, roxo como cor de destaque, ícones arredondados
+- **PicPay**: Cores amigáveis, layout clean, navegação clara
+- **Inter**: Simplicidade, hierarquia visual forte, espaçamento generoso
 
-## Ordem de Implementação
+## Considerações
 
-1. Tokens de design e CSS (index.css, tailwind.config)
-2. Componentes UI base (card, button, input)
-3. Layout e navegação dock
-4. Página de login (primeira impressão)
-5. Dashboard com bento grid
-6. Demais páginas uma a uma
-7. Refinamentos e animações finais
+1. **Responsividade**: Sidebar vira drawer no mobile
+2. **Dark Mode**: Será ajustado para manter a sensação acolhedora
+3. **Performance**: Remoção de blur/gradients melhora performance
+4. **Acessibilidade**: Contraste adequado com cores claras
+5. **Consistência**: Mesmo estilo em todas as páginas
