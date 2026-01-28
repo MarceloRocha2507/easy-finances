@@ -7,9 +7,44 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { PieChartWithLegend } from '@/components/dashboard';
-import { Download, FileText, Table, Wallet, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { 
+  FileText, Table, Wallet, TrendingUp, TrendingDown, Calendar,
+  DollarSign, Briefcase, ShoppingCart, Home, Car, Utensils, 
+  Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, 
+  Book, Package, Zap, Tag, CreditCard, PiggyBank,
+  type LucideIcon
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+  'credit-card': CreditCard,
+  'piggy-bank': PiggyBank,
+};
+
+function getIconComponent(iconName: string | null | undefined): LucideIcon {
+  if (!iconName) return Package;
+  return ICON_MAP[iconName] || Package;
+}
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -228,12 +263,17 @@ export default function Reports() {
                     .map((category) => (
                       <div key={category.name} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                         <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                            style={{ backgroundColor: `${category.color}20` }}
-                          >
-                            {category.icon}
-                          </div>
+                          {(() => {
+                            const IconComp = getIconComponent(category.icon);
+                            return (
+                              <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                style={{ backgroundColor: `${category.color}20` }}
+                              >
+                                <IconComp className="w-5 h-5" style={{ color: category.color }} />
+                              </div>
+                            );
+                          })()}
                           <span className="font-medium">{category.name}</span>
                         </div>
                         <div className="text-right">
@@ -267,13 +307,18 @@ export default function Reports() {
                     .map((transaction) => (
                       <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                              transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
-                            }`}
-                          >
-                            {transaction.category?.icon || '📦'}
-                          </div>
+                          {(() => {
+                            const IconComp = getIconComponent(transaction.category?.icon);
+                            return (
+                              <div
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
+                                }`}
+                              >
+                                <IconComp className="w-5 h-5 text-white" />
+                              </div>
+                            );
+                          })()}
                           <div>
                             <p className="font-medium">{transaction.description || transaction.category?.name || 'Sem descrição'}</p>
                             <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
