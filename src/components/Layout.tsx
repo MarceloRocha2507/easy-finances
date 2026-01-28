@@ -145,18 +145,22 @@ export function Layout({ children }: LayoutProps) {
   // Memoizar handler de fechar sidebar
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Decorative gradient background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background border-b border-border z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center">
-            <span className="text-sm font-bold text-background">F</span>
-          </div>
-          <span className="text-base font-semibold text-foreground">Fina</span>
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 glass z-50 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/10">
+          <span className="text-sm font-semibold text-primary">Fina</span>
         </div>
         <button
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          className="p-2 rounded-lg hover:glass-hover transition-colors"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -166,19 +170,16 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-60 bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-300",
+          "fixed top-0 left-0 h-full w-60 glass z-40 transition-transform duration-300",
           "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center">
-                <span className="text-sm font-bold text-background">F</span>
-              </div>
-              <span className="text-base font-semibold text-foreground">Fina</span>
+          <div className="h-14 flex items-center px-4 border-b border-border/50">
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-primary/10">
+              <span className="text-base font-semibold text-primary">Fina</span>
             </div>
           </div>
 
@@ -190,16 +191,20 @@ export function Layout({ children }: LayoutProps) {
                 to={item.href}
                 onClick={closeSidebar}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive(item.href)
-                    ? "bg-accent text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    ? "glass text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:glass-hover"
                 )}
               >
-                <item.icon className={cn(
-                  "h-4 w-4",
-                  isActive(item.href) ? "text-foreground" : "text-muted-foreground"
-                )} />
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  <item.icon className="h-4 w-4" />
+                </div>
                 {item.label}
               </Link>
             ))}
@@ -246,7 +251,7 @@ export function Layout({ children }: LayoutProps) {
             />
 
             {/* Separador */}
-            <div className="my-3 border-t border-sidebar-border" />
+            <div className="my-3 border-t border-border/50" />
 
             {/* Link Admin - apenas para admins */}
             {isAdmin && (
@@ -254,23 +259,27 @@ export function Layout({ children }: LayoutProps) {
                 to="/admin"
                 onClick={closeSidebar}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                   isActive("/admin")
-                    ? "bg-accent text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    ? "glass text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:glass-hover"
                 )}
               >
-                <Shield className={cn(
-                  "h-4 w-4",
-                  isActive("/admin") ? "text-foreground" : "text-muted-foreground"
-                )} />
+                <div className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-lg transition-colors",
+                  isActive("/admin")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  <Shield className="h-4 w-4" />
+                </div>
                 Admin
               </Link>
             )}
           </nav>
 
-          {/* User section */}
-          <div className="p-3 border-t border-sidebar-border">
+          {/* User section - Inline simples */}
+          <div className="p-3 border-t border-border/50">
             <div className="flex items-center justify-between px-2">
               {/* Avatar + Nome clicável para /profile */}
               <Link 
@@ -278,9 +287,9 @@ export function Layout({ children }: LayoutProps) {
                 onClick={closeSidebar}
                 className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
               >
-                <Avatar className="h-8 w-8 border border-border">
+                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                   <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -295,7 +304,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link 
                   to="/notificacoes" 
                   onClick={closeSidebar}
-                  className="relative p-2 rounded-lg hover:bg-accent transition-colors"
+                  className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <Bell className="h-4 w-4 text-muted-foreground" />
                   {alertasCount > 0 && (
@@ -313,7 +322,7 @@ export function Layout({ children }: LayoutProps) {
                 {/* Sair */}
                 <button 
                   onClick={() => signOut()}
-                  className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-expense"
+                  className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-expense"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -326,7 +335,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30"
+          className="lg:hidden fixed inset-0 bg-foreground/20 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}

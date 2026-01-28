@@ -14,22 +14,22 @@ export function ComparativoMensal({ comparativo }: Props) {
     aumento: {
       icon: TrendingUp,
       arrowIcon: ArrowUpRight,
-      color: "text-expense",
-      bgColor: "bg-expense/10",
+      color: "text-red-500",
+      bgColor: "bg-red-500/10",
       label: "a mais",
     },
     reducao: {
       icon: TrendingDown,
       arrowIcon: ArrowDownRight,
-      color: "text-income",
-      bgColor: "bg-income/10",
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
       label: "a menos",
     },
     igual: {
       icon: Minus,
       arrowIcon: Minus,
-      color: "text-muted-foreground",
-      bgColor: "bg-muted",
+      color: "text-gray-500",
+      bgColor: "bg-gray-500/10",
       label: "igual",
     },
   };
@@ -37,17 +37,17 @@ export function ComparativoMensal({ comparativo }: Props) {
   const { icon: Icon, arrowIcon: ArrowIcon, color, bgColor, label } = config[tipo];
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          <TrendingUp className="h-4 w-4" />
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
           Comparativo Mensal
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-center mb-5">
+        <div className="text-center mb-6">
           <div
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${bgColor}`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${bgColor}`}
           >
             <ArrowIcon className={`h-5 w-5 ${color}`} />
             <span className={`font-bold text-lg ${color}`}>
@@ -69,30 +69,30 @@ export function ComparativoMensal({ comparativo }: Props) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 rounded-lg bg-muted text-center">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
             <p className="text-xs text-muted-foreground mb-1">Mês Atual</p>
-            <p className="text-lg font-semibold">{formatCurrency(mesAtual)}</p>
+            <p className="text-xl font-bold">{formatCurrency(mesAtual)}</p>
           </div>
-          <div className="p-3 rounded-lg bg-muted text-center">
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
             <p className="text-xs text-muted-foreground mb-1">Mês Anterior</p>
-            <p className="text-lg font-semibold text-muted-foreground">
+            <p className="text-xl font-bold text-muted-foreground">
               {formatCurrency(mesAnterior)}
             </p>
           </div>
         </div>
 
         {tipo === "reducao" && (
-          <div className="mt-4 p-3 rounded-lg bg-income/10 border border-income/20 text-center">
-            <p className="text-sm text-income">
+          <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">
               🎉 Parabéns! Você está economizando!
             </p>
           </div>
         )}
 
         {tipo === "aumento" && variacaoPct > 20 && (
-          <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/20 text-center">
-            <p className="text-sm text-warning">
+          <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
               ⚠️ Atenção aos gastos este mês!
             </p>
           </div>

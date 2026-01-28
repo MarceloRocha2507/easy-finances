@@ -39,7 +39,7 @@ const MenuBadge = React.memo(function MenuBadge({ count, variant = 'default', pu
   const colorClasses = {
     default: 'bg-primary text-primary-foreground',
     warning: 'bg-warning text-warning-foreground',
-    danger: 'bg-expense text-expense-foreground',
+    danger: 'bg-destructive text-destructive-foreground',
   };
 
   return (
@@ -84,17 +84,23 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            "hover:glass-hover",
             open || isMenuActive
-              ? "bg-accent text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              ? "glass text-foreground font-medium"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-3">
-            <Icon className={cn(
-              "h-4 w-4 transition-transform duration-200 group-hover:scale-110",
-              open || isMenuActive ? "text-foreground" : "text-muted-foreground"
-            )} />
+            <div className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200",
+              "group-hover:scale-110",
+              open || isMenuActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+            )}>
+              <Icon className="h-4 w-4 transition-transform duration-200" />
+            </div>
             {label}
           </div>
           <div className="flex items-center gap-2">
@@ -109,25 +115,25 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1 ml-4 space-y-0.5 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+      <CollapsibleContent className="mt-1.5 ml-5 space-y-1 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
         {subItems.map((subItem, index) => (
           <Link
             key={subItem.href}
             to={subItem.href}
             onClick={onItemClick}
-            style={{ animationDelay: `${index * 30}ms` }}
+            style={{ animationDelay: `${index * 50}ms` }}
             className={cn(
               "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200",
               "animate-fade-in opacity-0 [animation-fill-mode:forwards]",
               isItemActive(subItem.href)
-                ? "bg-accent text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                ? "bg-primary/10 text-primary font-medium border border-primary/20 shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:glass-hover"
             )}
           >
             <div className="flex items-center gap-2.5">
               <subItem.icon className={cn(
                 "h-3.5 w-3.5 transition-transform duration-200 group-hover/item:scale-110",
-                isItemActive(subItem.href) ? "text-foreground" : "text-muted-foreground"
+                isItemActive(subItem.href) && "text-primary"
               )} />
               {subItem.label}
             </div>
