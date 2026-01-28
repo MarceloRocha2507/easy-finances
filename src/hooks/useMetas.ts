@@ -238,9 +238,13 @@ export function useAdicionarValorMeta() {
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Validar saldo disponível se fornecido
-      if (data.saldoDisponivel !== undefined && data.valor > data.saldoDisponivel) {
-        throw new Error("Saldo insuficiente para este depósito");
+      // Validar saldo disponível se fornecido (com tolerância para precisão de ponto flutuante)
+      if (data.saldoDisponivel !== undefined) {
+        const valorArredondado = parseFloat(data.valor.toFixed(2));
+        const saldoArredondado = parseFloat(data.saldoDisponivel.toFixed(2));
+        if (valorArredondado > saldoArredondado) {
+          throw new Error("Saldo insuficiente para este depósito");
+        }
       }
 
       const novoValor = data.valorAtualAnterior + data.valor;

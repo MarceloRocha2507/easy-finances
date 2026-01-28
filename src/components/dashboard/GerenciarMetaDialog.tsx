@@ -110,7 +110,8 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
 
   const faltando = Math.max(meta.valorAlvo - meta.valorAtual, 0);
   const valorDepositoNum = parseFloat(valorDeposito) || 0;
-  const depositoExcedeSaldo = valorDepositoNum > saldoDisponivel;
+  // Usar toFixed(2) para evitar problemas de precisão de ponto flutuante
+  const depositoExcedeSaldo = parseFloat(valorDepositoNum.toFixed(2)) > parseFloat(saldoDisponivel.toFixed(2));
 
   function handleDepositar() {
     const valor = parseFloat(valorDeposito);
