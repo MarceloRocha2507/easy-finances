@@ -1,51 +1,38 @@
 
+Objetivo
+- Remover o “espaço em branco” destacado em vermelho abaixo do gráfico de “Despesas por Categoria” na rota /reports/categorias.
 
-# Plano: Corrigir Layout do Gráfico de Pizza
+Diagnóstico (causa raiz)
+- A seção “Charts” usa um grid com 2 colunas (lg:grid-cols-2). Em grids, a altura da linha é determinada pelo item mais alto.
+- No Relatório por Categoria, o card do gráfico de barras (“Comparativo com Mês Anterior”) está bem mais alto porque o gráfico está com height=300.
+- O card do donut/legenda (PieChartWithLegend) é menor (200px), então sobra um “vão” grande na coluna da esquerda até a próxima seção (“Detalhamento por Categoria”). Esse vão aparece como um grande espaço em branco na página (exatamente a área marcada).
 
-## Problema Identificado
+Solução proposta (mais simples e consistente com o Dashboard)
+- Reduzir a altura do gráfico de barras do relatório para ficar próxima da altura do gráfico de donut, eliminando o vão visual.
+- Também ajustar o padding do header do card do gráfico de barras para ficar consistente com os cards do Dashboard (pb-2), reduzindo ainda mais a altura total do card.
 
-Analisando a imagem, o problema real é:
+Mudanças de código (1 arquivo)
+1) src/pages/reports/RelatorioCategorias.tsx
+   A) Card “Comparativo com Mês Anterior”
+   - Alterar o ResponsiveContainer do BarChart de height={300} para height={220} (mesmo padrão do Dashboard).
+   - Alterar o empty state correspondente:
+     - de className="h-[300px] ..." para className="h-[220px] ..."
+   - Ajustar o CardHeader para reduzir altura:
+     - adicionar className="pb-2" em <CardHeader> (como no Dashboard).
 
-1. **Breakpoint incompatível**: O componente `PieChartWithLegend` usa `lg:flex-row` para colocar a legenda ao lado do gráfico. Porém, na página de relatórios, o card está dentro de um grid `lg:grid-cols-2`, ou seja, em telas `lg` o card já está ocupando apenas ~50% da largura.
+Por que isso resolve
+- Com o card da direita (barras) menos alto, a “linha” do grid deixa de ficar muito alta.
+- Assim, a próxima seção (“Detalhamento por Categoria”) sobe e o espaço em branco destacado desaparece (ou fica mínimo/inexistente).
 
-2. **Legenda aparecendo abaixo**: Com apenas ~500px de largura disponível para o card, o breakpoint `lg` (1024px) nunca é atingido dentro do card, então a legenda fica sempre embaixo do gráfico.
+Critérios de aceite (o que você deve ver ao final)
+- Em /reports/categorias:
+  - O bloco de “Charts” não deixa um espaço grande vazio abaixo do donut na coluna esquerda.
+  - “Detalhamento por Categoria” começa logo após os gráficos, sem aquele “vão” grande.
 
-3. **Espaço desperdiçado**: O card tem altura para acomodar gráfico + legenda lado a lado, mas como estão empilhados, sobra muito espaço em branco.
+Teste rápido (end-to-end)
+- Abrir /reports/categorias em desktop e:
+  - Alternar mês/ano e confirmar que o layout não “estoura” e o espaço em branco não reaparece.
+  - Verificar que o gráfico de barras continua legível com 220px (mostrando as categorias do slice(0, 6)).
 
-## Solução
-
-Criar uma versão do componente que seja **mais flexível** e use `md:flex-row` (768px) em vez de `lg:flex-row`, ou passar uma prop para controlar isso. A abordagem mais simples é ajustar o breakpoint dentro do componente.
-
-## Alterações
-
-### Arquivo: `src/components/dashboard/PieChartWithLegend.tsx`
-
-Alterar o breakpoint de `lg` para `md` para que a legenda fique ao lado do gráfico mais cedo:
-
-| Linha | Antes | Depois |
-|-------|-------|--------|
-| 99 | `lg:flex-row` e `lg:items-start` | `md:flex-row` e `md:items-start` |
-| 134 | `lg:w-auto lg:min-w-[180px]` | `md:w-auto md:min-w-[180px]` |
-
-```tsx
-// Linha 99 - Container principal
-<div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4">
-
-// Linha 134 - Container da legenda  
-<div className="w-full md:w-auto md:min-w-[180px]">
-```
-
-## Por que essa mudança resolve
-
-- `md` = 768px breakpoint
-- Em telas `lg` (1024px+), um grid de 2 colunas divide a tela em ~512px cada
-- Com o breakpoint `md`, a legenda vai para o lado do gráfico quando o card tem ~384px+ de largura
-- Isso elimina o espaço em branco, pois a legenda fica ao lado do gráfico mesmo dentro do grid de 2 colunas
-
-## Resultado Esperado
-
-- Gráfico de donut à esquerda
-- Legenda interativa à direita (mesmo em cards estreitos)
-- Sem espaço em branco excessivo
-- Layout responsivo: empilha apenas em mobile real (<768px)
-
+Observação / alternativa (se você preferir manter o gráfico de barras grande)
+- Caso você queira manter o gráfico de barras em 300px por questão de leitura, a alternativa seria “aumentar” o card do PieChartWithLegend (ex.: adicionar uma prop de altura/variante “tall” e usar no relatório). Isso é um pouco mais trabalho porque mexe no componente compartilhado, mas também resolve 100%.
