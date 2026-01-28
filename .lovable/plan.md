@@ -1,81 +1,129 @@
 
-# Plano: Aplicar Melhorias da Página "Por Categoria" na "Visão Geral"
+# Plano: Corrigir Ícones Exibidos como Texto na Visão Geral
 
 ## Problema Identificado
 
-A página de Relatórios "Visão Geral" (`/reports`) apresenta os mesmos problemas que foram corrigidos em "Por Categoria":
+Na página `/reports` (Visão Geral), as seções:
+- **Detalhamento por Categoria**
+- **Maiores Transações do Período**
 
-1. **Gráfico de pizza sem legenda interativa** - Usa o `PieChart` básico do Recharts em vez do componente `PieChartWithLegend` padronizado
-2. **Altura do gráfico de barras muito grande** - Usa `height={300}` enquanto o padrão ajustado é `height={220}`
-3. **CardHeader sem padding reduzido** - Falta o `pb-2` para consistência visual
+Estão exibindo os ícones como texto (ex: "credit-card", "wallet", "car", "piggy-bank") em vez de renderizar os componentes Lucide correspondentes.
+
+## Causa Raiz
+
+O código atual simplesmente renderiza `{category.icon}` e `{transaction.category?.icon}` diretamente, que são **strings** vindas do banco de dados, não componentes React.
+
+## Solução
+
+Aplicar o mesmo padrão já utilizado em `RelatorioCategorias.tsx`:
+1. Criar um mapeamento `ICON_MAP` de strings para componentes Lucide
+2. Criar função helper `getIconComponent()`
+3. Usar o componente retornado para renderizar os ícones
 
 ## Alterações Necessárias
 
 ### Arquivo: `src/pages/Reports.tsx`
 
-| Alteração | Antes | Depois |
-|-----------|-------|--------|
-| Import | Não importa `PieChartWithLegend` | Adicionar import do `PieChartWithLegend` |
-| Card do Pie Chart (linhas 195-225) | Card customizado com `PieChart` básico | Usar componente `PieChartWithLegend` |
-| CardHeader do Bar Chart (linha 229) | Sem classe | Adicionar `className="pb-2"` |
-| ResponsiveContainer do Bar Chart (linha 233) | `height={300}` | `height={220}` |
-
-### Detalhes Técnicos
-
-**1. Adicionar import:**
+**1. Adicionar imports dos ícones Lucide (linha 10):**
 ```tsx
-import { PieChartWithLegend } from '@/components/dashboard';
+import { 
+  FileText, Table, Wallet, TrendingUp, TrendingDown, Calendar,
+  DollarSign, Briefcase, ShoppingCart, Home, Car, Utensils, 
+  Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, 
+  Book, Package, Zap, Tag, CreditCard, PiggyBank,
+  type LucideIcon
+} from 'lucide-react';
 ```
 
-**2. Substituir o Card do Pie Chart (linhas 194-225):**
+**2. Adicionar ICON_MAP após os imports (antes do MONTHS):**
 ```tsx
-// Antes: Card customizado com PieChart básico
-<Card className="border">
-  <CardHeader>
-    <CardTitle>Despesas por Categoria</CardTitle>
-  </CardHeader>
-  <CardContent>
-    {pieData.length > 0 ? (
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>...</PieChart>
-      </ResponsiveContainer>
-    ) : (
-      <div className="h-[300px]">...</div>
-    )}
-  </CardContent>
-</Card>
+const ICON_MAP: Record<string, LucideIcon> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+  'credit-card': CreditCard,
+  'piggy-bank': PiggyBank,
+};
 
-// Depois: Usar o componente padronizado
-<PieChartWithLegend data={pieData} />
+function getIconComponent(iconName: string | null | undefined): LucideIcon {
+  if (!iconName) return Package;
+  return ICON_MAP[iconName] || Package;
+}
 ```
 
-**3. Ajustar o Card do Bar Chart (linhas 228-244):**
+**3. Atualizar "Detalhamento por Categoria" (linhas 230-236):**
 ```tsx
 // Antes
-<CardHeader>
-  <CardTitle>Comparativo Anual ({selectedYear})</CardTitle>
-</CardHeader>
-<CardContent>
-  <ResponsiveContainer width="100%" height={300}>
+<div
+  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+  style={{ backgroundColor: `${category.color}20` }}
+>
+  {category.icon}
+</div>
 
 // Depois
-<CardHeader className="pb-2">
-  <CardTitle className="text-base font-medium">Comparativo Anual ({selectedYear})</CardTitle>
-</CardHeader>
-<CardContent>
-  <ResponsiveContainer width="100%" height={220}>
+{(() => {
+  const IconComp = getIconComponent(category.icon);
+  return (
+    <div
+      className="w-10 h-10 rounded-lg flex items-center justify-center"
+      style={{ backgroundColor: `${category.color}20` }}
+    >
+      <IconComp className="w-5 h-5" style={{ color: category.color }} />
+    </div>
+  );
+})()}
+```
+
+**4. Atualizar "Maiores Transações do Período" (linhas 270-276):**
+```tsx
+// Antes
+<div
+  className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+    transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
+  }`}
+>
+  {transaction.category?.icon || '📦'}
+</div>
+
+// Depois
+{(() => {
+  const IconComp = getIconComponent(transaction.category?.icon);
+  return (
+    <div
+      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+        transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
+      }`}
+    >
+      <IconComp className="w-5 h-5 text-white" />
+    </div>
+  );
+})()}
 ```
 
 ## Resultado Esperado
 
-- Gráfico de pizza com legenda interativa ao lado (donut com hover e destaque)
-- Cards de gráficos com alturas similares (~220px) eliminando o espaço em branco
-- Visual consistente entre "Visão Geral" e "Por Categoria"
-- Melhor aproveitamento do espaço horizontal
+- Os ícones serão renderizados como componentes Lucide reais em vez de texto
+- Mesma aparência e comportamento da página "Por Categoria"
+- Ícones com cores corretas baseadas na categoria
+- Fallback para `Package` quando o ícone não for reconhecido
 
-## Benefícios
+## Consistência
 
-1. **Consistência visual** - Ambas as páginas de relatórios terão o mesmo padrão
-2. **Reutilização de código** - Usa o componente `PieChartWithLegend` já existente
-3. **Melhor UX** - Legenda interativa permite destacar categorias ao passar o mouse
-4. **Sem espaço em branco** - Os dois cards do grid terão alturas próximas
+Esta alteração garante que ambas as páginas de relatórios (Visão Geral e Por Categoria) usem o mesmo sistema de mapeamento de ícones, mantendo consistência visual em todo o módulo.
