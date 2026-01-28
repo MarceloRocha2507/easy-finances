@@ -1,83 +1,86 @@
 
 
-# Plano: Padronizar Layout de Gráficos na Página Economia
+# Plano: Eliminar Espaço em Branco Entre Cards na Economia
 
 ## Problema Identificado
 
-Na página `/economia` (aba "Visão Geral"), a seção de gráficos apresenta:
+Na página `/economia`, os dois cards do grid (Despesas por Categoria + Gastos por Categoria) têm alturas diferentes:
+- **PieChartWithLegend**: ~300px (gráfico 200px + legenda limitada)
+- **RankingGastos**: ~500px+ (lista com 9 categorias + total)
 
-1. **Dois cards separados em grid 2:3** - Um para o gráfico de pizza (Distribuição de Gastos) e outro para o ranking (Gastos por Categoria)
-2. **Espaço em branco excessivo** - O card do gráfico de pizza tem muito espaço vazio na parte inferior
-3. **Implementação customizada** - Não usa o componente `PieChartWithLegend` padronizado
+Resultado: o card do gráfico fica menor, criando espaço em branco visual abaixo dele.
 
-## Solução Proposta
+## Causa Raiz
 
-Substituir a estrutura de dois cards separados por **um único card usando o componente `PieChartWithLegend`**, seguido pelo card de Ranking separado - exatamente como funciona na página de Relatórios.
+1. O `PieChartWithLegend` não tem `h-full` - não se adapta ao container
+2. O `RankingGastos` tem `h-full` mas é maior devido à quantidade de dados
+3. O grid CSS não força alturas iguais automaticamente
 
-**Alternativa**: Manter os dois cards mas usar o `PieChartWithLegend` no lugar do gráfico customizado, eliminando o espaço em branco.
+## Solução
+
+Fazer ambos os cards ocuparem a altura total disponível no grid:
+
+1. **Adicionar `h-full`** ao card do `PieChartWithLegend`
+2. **Remover `max-h-[200px]`** da legenda para permitir scroll quando necessário
+3. **Usar `items-stretch`** no container do grid (padrão, mas garantir)
 
 ## Alterações Necessárias
 
-### Arquivo: `src/pages/Economia.tsx`
+### Arquivo: `src/components/dashboard/PieChartWithLegend.tsx`
 
-**1. Adicionar import do componente padronizado (linha 5):**
+**1. Adicionar `h-full` ao Card (linha 87-90):**
 ```tsx
-import { PieChartWithLegend } from "@/components/dashboard";
+// Antes
+<Card
+  className="border rounded-xl shadow-sm animate-fade-in"
+  style={{ animationDelay: `${delay}s`, opacity: 0 }}
+>
+
+// Depois
+<Card
+  className="border rounded-xl shadow-sm animate-fade-in h-full flex flex-col"
+  style={{ animationDelay: `${delay}s`, opacity: 0 }}
+>
 ```
 
-**2. Substituir a seção do grid (linhas 126-202):**
-
-Antes: Grid 2:3 com dois cards separados
+**2. Permitir que CardContent expanda (linha 97):**
 ```tsx
-<div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-  {/* Card do Gráfico de Pizza */}
-  <Card className="lg:col-span-2 shadow-sm rounded-xl">
-    <CardHeader>Distribuição de Gastos</CardHeader>
-    <CardContent>
-      {/* PieChart customizado com 200px de altura */}
-      {/* Legenda customizada embaixo */}
-    </CardContent>
-  </Card>
+// Antes
+<CardContent>
 
-  {/* Ranking */}
-  <div className="lg:col-span-3">
-    <RankingGastos />
-  </div>
-</div>
+// Depois
+<CardContent className="flex-1 flex flex-col">
 ```
 
-Depois: Grid 1:1 com componente padronizado
+**3. Ajustar o container interno para expandir (linha 99):**
 ```tsx
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  {/* Usar o componente padronizado */}
-  <PieChartWithLegend data={pieData} />
+// Antes
+<div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4">
 
-  {/* Ranking */}
-  {isLoading ? (
-    <Skeleton className="h-[350px] rounded-xl" />
-  ) : (
-    <RankingGastos
-      gastos={analise?.gastosPorCategoria || []}
-      totalGasto={analise?.totalGasto || 0}
-    />
-  )}
-</div>
+// Depois
+<div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4 h-full">
 ```
 
-## Benefícios
+**4. Remover limite de altura da legenda para adaptar ao espaço disponível (linha 135):**
+```tsx
+// Antes
+<div className="space-y-2 max-h-[200px] overflow-y-auto">
 
-1. **Consistência visual** - Mesmo padrão usado em Relatórios e Dashboard
-2. **Legenda interativa** - Hover destaca segmentos do gráfico
-3. **Eliminação do espaço em branco** - Cards com alturas similares
-4. **Menos código** - Remove ~50 linhas de implementação customizada
-5. **Manutenibilidade** - Um único componente para atualizar
+// Depois
+<div className="space-y-2 overflow-y-auto flex-1">
+```
 
 ## Resultado Esperado
 
 | Antes | Depois |
 |-------|--------|
-| Dois cards com proporção 2:3 | Dois cards com proporção 1:1 |
-| Gráfico de pizza com legenda embaixo | Gráfico donut com legenda ao lado |
-| Espaço em branco excessivo | Altura equilibrada entre cards |
-| Implementação customizada | Componente padronizado reutilizado |
+| Card do gráfico menor que o ranking | Cards com alturas iguais |
+| Espaço em branco abaixo do gráfico | Gráfico/legenda ocupam toda altura |
+| Legenda limitada a 200px | Legenda adapta-se ao espaço |
+
+## Teste
+
+- Verificar na página `/economia` que ambos os cards têm a mesma altura
+- Verificar que a legenda pode exibir mais itens quando há espaço
+- Testar em mobile onde os cards ficam empilhados
 
