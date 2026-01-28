@@ -675,14 +675,12 @@ export function useCompleteStats(mesReferencia?: Date) {
         (acc, b) => acc + Number(b.saldo_inicial || 0), 0
       );
 
-      // Buscar saldo inicial e saldo inicial guardado do profile
+      // Buscar saldo inicial do profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('saldo_inicial, saldo_inicial_guardado')
+        .select('saldo_inicial')
         .eq('user_id', user!.id)
         .single();
-
-      const saldoInicialGuardado = Number(profile?.saldo_inicial_guardado) || 0;
 
       // Fallback: se não tem bancos, usar saldo_inicial do profile
       let saldoInicial = saldoInicialBancos;
@@ -773,25 +771,23 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
       });
 
-      // Saldo Base = Saldo Inicial + Saldo Inicial Guardado + Receitas Recebidas - Despesas Pagas
-      const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
-      // Saldo Disponível = Saldo Base - Valor Guardado em Metas (mínimo 0)
-      const saldoDisponivel = Math.max(0, saldoBase - totalGuardado);
-      // Patrimônio Total = Saldo Base (já inclui o que está guardado)
-      const patrimonioTotal = saldoBase;
-      // Saldo Real = Patrimônio Bruto (sem descontar metas/investimentos)
-      const realBalance = saldoBase;
+      // Patrimônio Total = Saldo Inicial + Receitas Recebidas - Despesas Pagas
+      const patrimonioTotal = saldoInicial + stats.completedIncome - stats.completedExpense;
+      // Saldo Disponível = Patrimônio Total - Valor em Metas (mínimo 0)
+      const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
+      // Saldo Real = Patrimônio Total (valor bruto)
+      const realBalance = patrimonioTotal;
       // Saldo Estimado = Patrimônio + A Receber - A Pagar - Fatura do Cartão
-      const estimatedBalance = saldoBase + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      const estimatedBalance = patrimonioTotal + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
         ...stats,
-        saldoInicialGuardado,
         realBalance,
         saldoDisponivel,
         patrimonioTotal,
         estimatedBalance,
         totalMetas,
+        totalInvestido,
         totalGuardado,
       };
     },

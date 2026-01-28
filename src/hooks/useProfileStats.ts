@@ -90,8 +90,9 @@ export function useProfileStats() {
 
   // Saldo base (patrimônio total)
   const patrimonioTotal = (saldoInicial || 0) + totalReceitas - totalDespesas;
-  // Saldo disponível (descontando investimentos)
-  const saldoAtual = patrimonioTotal - totalInvestido;
+  // Saldo disponível (descontando metas e investimentos)
+  const totalMetas = metas?.filter(m => !m.concluida).reduce((sum, m) => sum + Number(m.valorAtual), 0) || 0;
+  const saldoAtual = Math.max(0, patrimonioTotal - totalMetas - totalInvestido);
 
   const metasConcluidas = metas?.filter(m => m.concluida).length || 0;
   const metasEmAndamento = metas?.filter(m => !m.concluida).length || 0;
