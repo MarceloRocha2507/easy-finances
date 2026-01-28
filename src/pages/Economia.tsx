@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useAnaliseGastos, useOrcamentos } from "@/hooks/useEconomia";
-import { FiltroPeriodo } from "@/components/dashboard/FiltroPeriodo";
+import { FiltroPeriodo, PieChartWithLegend } from "@/components/dashboard";
 import {
   RankingGastos,
   InsightsEconomia,
@@ -11,13 +11,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
 import { formatCurrency } from "@/lib/formatters";
 
 export default function Economia() {
@@ -123,82 +116,23 @@ export default function Economia() {
 
           {/* Tab: Visão Geral */}
           <TabsContent value="visao-geral" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              {/* Gráfico de Pizza */}
-              <Card className="lg:col-span-2 shadow-sm rounded-xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">
-                    Distribuição de Gastos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <Skeleton className="h-[240px] rounded-xl" />
-                  ) : pieData.length > 0 ? (
-                    <div className="space-y-4">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            innerRadius={50}
-                            paddingAngle={2}
-                            strokeWidth={0}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "12px",
-                              fontSize: "13px",
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      
-                      {/* Legenda customizada */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center">
-                        {pieData.slice(0, 4).map((item, index) => (
-                          <div key={index} className="flex items-center gap-1.5">
-                            <div
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: item.color }}
-                            />
-                            <span className="text-xs text-muted-foreground">
-                              {item.name}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-[240px] flex items-center justify-center text-muted-foreground">
-                      <p className="text-sm">Nenhum gasto registrado</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Gráfico de Pizza Padronizado */}
+              {isLoading ? (
+                <Skeleton className="h-[350px] rounded-xl" />
+              ) : (
+                <PieChartWithLegend data={pieData} />
+              )}
 
               {/* Ranking de Gastos */}
-              <div className="lg:col-span-3">
-                {isLoading ? (
-                  <Skeleton className="h-[350px] rounded-xl" />
-                ) : (
-                  <RankingGastos
-                    gastos={analise?.gastosPorCategoria || []}
-                    totalGasto={analise?.totalGasto || 0}
-                  />
-                )}
-              </div>
+              {isLoading ? (
+                <Skeleton className="h-[350px] rounded-xl" />
+              ) : (
+                <RankingGastos
+                  gastos={analise?.gastosPorCategoria || []}
+                  totalGasto={analise?.totalGasto || 0}
+                />
+              )}
             </div>
 
             {/* Previsão */}
