@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestimentos, Investimento } from "@/hooks/useInvestimentos";
@@ -18,6 +19,7 @@ import {
   PiggyBank,
   ArrowUpRight,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Investimentos() {
   const { data: investimentos = [], isLoading } = useInvestimentos();
@@ -92,92 +94,101 @@ export default function Investimentos() {
         {/* Cards de resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Patrimônio total */}
-          <div className="bg-card border rounded-xl p-5 card-hover">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Wallet className="h-5 w-5 text-primary" />
+          <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Wallet className="h-6 w-6 text-primary" />
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Patrimônio total</p>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-28 mt-1" />
-                ) : (
-                  <p className="text-xl font-bold">
-                    {formatCurrency(totais.patrimonio)}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+              <p className="text-sm text-muted-foreground font-medium">Patrimônio total</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-28 mt-1" />
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold mt-1">
+                  {formatCurrency(totais.patrimonio)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Total investido */}
-          <div className="bg-card border rounded-xl p-5 card-hover">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <PiggyBank className="h-5 w-5 text-blue-500" />
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-blue-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <PiggyBank className="h-6 w-6 text-blue-500" />
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total investido</p>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-28 mt-1" />
-                ) : (
-                  <p className="text-xl font-bold">
-                    {formatCurrency(totais.investido)}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+              <p className="text-sm text-muted-foreground font-medium">Total investido</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-28 mt-1" />
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold mt-1">
+                  {formatCurrency(totais.investido)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Rendimento total */}
-          <div className="bg-card border rounded-xl p-5 card-hover">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <TrendingUp className="h-5 w-5 text-green-500" />
+          <Card className={cn(
+            "shadow-lg rounded-xl border-0 animate-fade-in-up",
+            totais.rendimento >= 0 ? "gradient-income" : "gradient-expense"
+          )} style={{ animationDelay: "0.1s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  totais.rendimento >= 0 ? "bg-emerald-500/20" : "bg-rose-500/20"
+                )}>
+                  <TrendingUp className={cn(
+                    "h-6 w-6",
+                    totais.rendimento >= 0 ? "text-emerald-600" : "text-rose-600"
+                  )} />
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rendimento total</p>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-28 mt-1" />
-                ) : (
-                  <p
-                    className={`text-xl font-bold ${
-                      totais.rendimento >= 0 ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {totais.rendimento >= 0 ? "+" : ""}
-                    {formatCurrency(totais.rendimento)}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+              <p className="text-sm text-muted-foreground font-medium">Rendimento total</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-28 mt-1" />
+              ) : (
+                <p
+                  className={cn(
+                    "text-2xl sm:text-3xl font-bold mt-1",
+                    totais.rendimento >= 0 ? "text-income" : "text-expense"
+                  )}
+                >
+                  {totais.rendimento >= 0 ? "+" : ""}
+                  {formatCurrency(totais.rendimento)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Rentabilidade */}
-          <div className="bg-card border rounded-xl p-5 card-hover">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <ArrowUpRight className="h-5 w-5 text-purple-500" />
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <ArrowUpRight className="h-6 w-6 text-purple-500" />
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rentabilidade</p>
-                {isLoading ? (
-                  <Skeleton className="h-7 w-20 mt-1" />
-                ) : (
-                  <p
-                    className={`text-xl font-bold ${
-                      parseFloat(totais.percentual) >= 0
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {parseFloat(totais.percentual) >= 0 ? "+" : ""}
-                    {totais.percentual}%
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+              <p className="text-sm text-muted-foreground font-medium">Rentabilidade</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-1" />
+              ) : (
+                <p
+                  className={cn(
+                    "text-2xl sm:text-3xl font-bold mt-1",
+                    parseFloat(totais.percentual) >= 0 ? "text-income" : "text-expense"
+                  )}
+                >
+                  {parseFloat(totais.percentual) >= 0 ? "+" : ""}
+                  {totais.percentual}%
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Lista de investimentos */}

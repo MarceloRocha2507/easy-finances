@@ -15,19 +15,19 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
   const tipoContaLabel = TIPOS_CONTA.find(t => t.value === banco.tipo_conta)?.label || "Conta";
 
   return (
-    <Card className="border card-hover">
-      <CardContent className="p-5">
+    <Card className="shadow-sm rounded-xl card-hover">
+      <CardContent className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-lg flex items-center justify-center"
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${banco.cor}15` }}
             >
               <Building2 className="h-6 w-6" style={{ color: banco.cor }} />
             </div>
             <div>
-              <h3 className="font-medium text-foreground">{banco.nome}</h3>
+              <h3 className="font-semibold text-foreground">{banco.nome}</h3>
               <p className="text-xs text-muted-foreground">{tipoContaLabel}</p>
             </div>
           </div>
@@ -48,11 +48,11 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
         </div>
 
         {/* Saldo da Conta */}
-        <div className="p-3 rounded-lg bg-secondary/30 mb-4">
+        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 mb-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Saldo da Conta</p>
-              <p className="text-xl font-semibold text-income">
+              <p className="text-xl font-bold text-income">
                 {formatCurrency(banco.saldoCalculado)}
               </p>
             </div>
@@ -81,12 +81,12 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
                 <p className="text-xs text-muted-foreground">Cartões</p>
                 <div className="flex items-center gap-1.5">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{banco.quantidadeCartoes}</span>
+                  <span className="font-semibold">{banco.quantidadeCartoes}</span>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Limite Total</p>
-                <p className="font-medium">{formatCurrency(banco.limiteTotal)}</p>
+                <p className="font-semibold">{formatCurrency(banco.limiteTotal)}</p>
               </div>
             </div>
 
@@ -94,11 +94,11 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
             <div className="grid grid-cols-2 gap-4 pt-3 border-t">
               <div>
                 <p className="text-xs text-muted-foreground">Fatura</p>
-                <p className="font-medium text-expense">{formatCurrency(banco.faturaTotal)}</p>
+                <p className="font-semibold text-expense">{formatCurrency(banco.faturaTotal)}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Crédito Disponível</p>
-                <p className="font-medium text-income">{formatCurrency(banco.disponivelTotal)}</p>
+                <p className="font-semibold text-income">{formatCurrency(banco.disponivelTotal)}</p>
               </div>
             </div>
 

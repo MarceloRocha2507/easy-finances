@@ -97,7 +97,7 @@ export function EstatisticasTab() {
   return (
     <div className="space-y-6">
       {/* Resumo Financeiro */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
@@ -116,7 +116,7 @@ export function EstatisticasTab() {
                   key={stat.title}
                   className="p-4 rounded-xl bg-secondary text-center"
                 >
-                  <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center mx-auto mb-3`}>
+                  <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center mx-auto mb-3`}>
                     <Icon className={`w-6 h-6 ${stat.color}`} />
                   </div>
                   <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
@@ -129,7 +129,7 @@ export function EstatisticasTab() {
       </Card>
 
       {/* Uso de Recursos por Plano */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowLeftRight className="w-5 h-5" />
@@ -152,7 +152,7 @@ export function EstatisticasTab() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        "w-8 h-8 rounded-xl flex items-center justify-center",
                         limitHit ? "bg-destructive/10" : "bg-primary/10"
                       )}>
                         <Icon className={cn(
@@ -187,7 +187,7 @@ export function EstatisticasTab() {
       </Card>
 
       {/* Informações do Plano */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Crown className="w-5 h-5" />
@@ -197,7 +197,7 @@ export function EstatisticasTab() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-secondary">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Crown className="w-6 h-6 text-primary" />
               </div>
               <div>

@@ -12,6 +12,8 @@ import {
   Calendar,
   Check,
   ChevronLeft,
+  Clock,
+  Wallet,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { useMetas, Meta } from "@/hooks/useMetas";
@@ -47,7 +49,7 @@ export default function Metas() {
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-28" />
             ))}
           </div>
           <Skeleton className="h-64" />
@@ -88,31 +90,51 @@ export default function Metas() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border card-hover">
-            <CardContent className="p-5">
+          <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-500/20 flex items-center justify-center">
+                  <Target className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground font-medium">Total</p>
-              <p className="text-2xl font-semibold mt-1">{metas.length}</p>
+              <p className="text-2xl sm:text-3xl font-bold mt-1">{metas.length}</p>
             </CardContent>
           </Card>
 
-          <Card className="border card-hover">
-            <CardContent className="p-5">
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-amber-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-amber-600" />
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground font-medium">Em andamento</p>
-              <p className="text-2xl font-semibold mt-1">{metasAtivas.length}</p>
+              <p className="text-2xl sm:text-3xl font-bold mt-1">{metasAtivas.length}</p>
             </CardContent>
           </Card>
 
-          <Card className="border card-hover">
-            <CardContent className="p-5">
+          <Card className="gradient-income shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Check className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground font-medium">Concluídos</p>
-              <p className="text-2xl font-semibold mt-1">{metasConcluidas.length}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-income mt-1">{metasConcluidas.length}</p>
             </CardContent>
           </Card>
 
-          <Card className="border card-hover">
-            <CardContent className="p-5">
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Wallet className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground font-medium">Valor acumulado</p>
-              <p className="text-2xl font-semibold mt-1 value-display">
+              <p className="text-2xl sm:text-3xl font-bold mt-1 value-display">
                 {formatCurrency(totalAtual)}
               </p>
             </CardContent>
@@ -121,8 +143,8 @@ export default function Metas() {
 
         {/* Progresso Geral */}
         {metas.length > 0 && (
-          <Card>
-            <CardContent className="p-5">
+          <Card className="shadow-sm rounded-xl">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium">Progresso geral</span>
                 <span className="text-sm text-muted-foreground">
@@ -151,7 +173,7 @@ export default function Metas() {
 
           <TabsContent value="ativos" className="mt-4">
             {metasAtivas.length === 0 ? (
-              <Card>
+              <Card className="shadow-sm rounded-xl">
                 <CardContent className="py-16 text-center">
                   <Target className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
                   <p className="text-muted-foreground mb-4">
@@ -178,7 +200,7 @@ export default function Metas() {
 
           <TabsContent value="concluidos" className="mt-4">
             {metasConcluidas.length === 0 ? (
-              <Card>
+              <Card className="shadow-sm rounded-xl">
                 <CardContent className="py-16 text-center">
                   <Check className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
                   <p className="text-muted-foreground">
@@ -249,27 +271,27 @@ function MetaCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all card-hover fade-in",
+        "cursor-pointer transition-all shadow-sm rounded-xl card-hover fade-in",
         meta.concluida && "bg-income/5 border-income/20"
       )}
       style={{ animationDelay: `${index * 0.05}s` }}
       onClick={onClick}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div
-              className="h-10 w-10 rounded-lg flex items-center justify-center"
+              className="h-12 w-12 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${meta.cor}15` }}
             >
               {meta.concluida ? (
-                <Check className="h-5 w-5" style={{ color: meta.cor }} strokeWidth={1.75} />
+                <Check className="h-6 w-6" style={{ color: meta.cor }} strokeWidth={1.75} />
               ) : (
-                <Target className="h-5 w-5" style={{ color: meta.cor }} strokeWidth={1.75} />
+                <Target className="h-6 w-6" style={{ color: meta.cor }} strokeWidth={1.75} />
               )}
             </div>
             <div>
-              <p className="font-medium">{meta.titulo}</p>
+              <p className="font-semibold">{meta.titulo}</p>
               {diasRestantes !== null && diasRestantes > 0 && !meta.concluida && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <Calendar className="h-3 w-3" />

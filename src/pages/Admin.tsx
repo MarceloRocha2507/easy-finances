@@ -325,73 +325,73 @@ export default function Admin() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card className="card-hover animate-fade-in-up stagger-1">
-            <CardContent className="p-5">
+          <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total</p>
-                  <p className="text-2xl font-semibold">{users.length}</p>
+                  <p className="text-2xl sm:text-3xl font-bold">{users.length}</p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="card-hover animate-fade-in-up stagger-2">
-            <CardContent className="p-5">
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-amber-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Admins</p>
-                  <p className="text-2xl font-semibold">
+                  <p className="text-2xl sm:text-3xl font-bold">
                     {users.filter(u => u.role === 'admin').length}
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-amber-600" />
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="card-hover animate-fade-in-up stagger-3">
-            <CardContent className="p-5">
+          <Card className="gradient-income shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Ativos</p>
-                  <p className="text-2xl font-semibold">{usuariosAtivos}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-income">{usuariosAtivos}</p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-green-100 dark:bg-green-950 flex items-center justify-center">
-                  <UserCheck className="h-5 w-5 text-green-600" />
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <UserCheck className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="card-hover animate-fade-in-up stagger-4">
-            <CardContent className="p-5">
+          <Card className="gradient-expense shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Inativos</p>
-                  <p className="text-2xl font-semibold">{usuariosInativos}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-expense">{usuariosInativos}</p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                  <UserX className="h-5 w-5 text-red-600" />
+                <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                  <UserX className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="card-hover animate-fade-in-up stagger-5">
-            <CardContent className="p-5">
+          <Card className="shadow-sm rounded-xl border-l-4 border-l-amber-500 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Expirando</p>
-                  <p className="text-2xl font-semibold">{expirandoEmBreve}</p>
+                  <p className="text-2xl sm:text-3xl font-bold">{expirandoEmBreve}</p>
                 </div>
-                <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" />
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -399,7 +399,7 @@ export default function Admin() {
         </div>
 
         {/* Users Table */}
-        <Card className="animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
+        <Card className="shadow-sm rounded-xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <CardHeader>
             <CardTitle>Usuários Cadastrados</CardTitle>
             <CardDescription>
@@ -464,7 +464,7 @@ export default function Admin() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setStatusUser(user)}>
                               <Power className="h-4 w-4 mr-2" />
-                              {user.ativo ? "Desativar" : "Reativar"}
+                              {user.ativo ? 'Desativar' : 'Reativar'}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setRenovarUser(user)}>
                               <RefreshCw className="h-4 w-4 mr-2" />
@@ -493,26 +493,23 @@ export default function Admin() {
         onOpenChange={(open) => !open && setEditUser(null)}
         onSave={handleUpdateUser}
       />
-
       <AlterarStatusDialog
         user={statusUser}
         open={!!statusUser}
         onOpenChange={(open) => !open && setStatusUser(null)}
         onConfirm={handleToggleStatus}
       />
-
-      <ResetarSenhaDialog
-        user={resetUser}
-        open={!!resetUser}
-        onOpenChange={(open) => !open && setResetUser(null)}
-        onReset={handleResetPassword}
-      />
-
       <RenovarPlanoDialog
         user={renovarUser}
         open={!!renovarUser}
         onOpenChange={(open) => !open && setRenovarUser(null)}
         onConfirm={handleRenovarPlano}
+      />
+      <ResetarSenhaDialog
+        user={resetUser}
+        open={!!resetUser}
+        onOpenChange={(open) => !open && setResetUser(null)}
+        onReset={handleResetPassword}
       />
     </Layout>
   );

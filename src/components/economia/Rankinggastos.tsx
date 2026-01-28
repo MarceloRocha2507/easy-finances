@@ -13,7 +13,7 @@ interface Props {
 export function RankingGastos({ gastos, totalGasto }: Props) {
   if (gastos.length === 0) {
     return (
-      <Card className="h-full">
+      <Card className="h-full shadow-sm rounded-xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">
             Gastos por Categoria
@@ -29,7 +29,7 @@ export function RankingGastos({ gastos, totalGasto }: Props) {
   }
 
   return (
-    <Card className="h-full">
+    <Card className="h-full shadow-sm rounded-xl">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">
           Gastos por Categoria
