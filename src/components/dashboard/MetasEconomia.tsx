@@ -19,7 +19,7 @@ interface Props {
 
 export function MetasEconomia({ metas, onNovaMeta, onMetaClick }: Props) {
   return (
-    <Card className="border">
+    <Card className="border rounded-xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Target className="h-4 w-4" />

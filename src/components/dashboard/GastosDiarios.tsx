@@ -44,7 +44,7 @@ export function GastosDiarios({ dados }: Props) {
   }));
 
   return (
-    <Card className="border-0 shadow-lg">
+    <Card className="border rounded-xl shadow-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">

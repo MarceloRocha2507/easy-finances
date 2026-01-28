@@ -117,7 +117,7 @@ interface Props {
 
 export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Props) {
   return (
-    <Card className="border">
+    <Card className="border rounded-xl shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
