@@ -85,7 +85,7 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
 
   return (
     <Card
-      className="border rounded-xl shadow-sm animate-fade-in"
+      className="border rounded-xl shadow-sm animate-fade-in h-full flex flex-col"
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
     >
       <CardHeader className="pb-2">
@@ -94,9 +94,9 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
           Despesas por Categoria
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {data.length > 0 ? (
-          <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4">
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4 h-full">
             {/* Chart */}
             <div className="flex-shrink-0">
               <ResponsiveContainer width={200} height={200}>
@@ -132,7 +132,7 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
 
             {/* Legend */}
             <div className="w-full md:w-auto md:min-w-[180px]">
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div className="space-y-2 overflow-y-auto flex-1">
                 {data.map((item, index) => {
                   const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
                   return (
