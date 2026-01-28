@@ -157,9 +157,6 @@ export default function Dashboard() {
                   {formatCurrency(completeStats?.saldoDisponivel || 0)}
                 </p>
                 <div className="flex flex-col gap-0.5 mt-1">
-                  <p className="text-xs text-muted-foreground">
-                    Patrimônio: {formatCurrency(completeStats?.patrimonioTotal || 0)}
-                  </p>
                   {(completeStats?.totalInvestido || 0) > 0 && (
                     <p className="text-xs text-primary">
                       Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
