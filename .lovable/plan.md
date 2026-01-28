@@ -1,7 +1,7 @@
 
-# Plano: Depósito em Meta Reduz Saldo Disponível
+# Plano: Depósito em Meta Reduz Saldo Disponível (Implementado ✅)
 
-## Objetivo
+## Status: CONCLUÍDO
 
 Quando o usuário depositar valor em uma meta, esse valor deve ser **subtraído do saldo disponível**. Isso significa criar uma **despesa interna** que representa a transferência do dinheiro livre para a meta.
 
