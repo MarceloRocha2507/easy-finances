@@ -195,12 +195,12 @@ export default function RelatorioCategorias() {
 
           {/* Bar Chart - Comparativo */}
           <Card className="border shadow-sm rounded-xl">
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle className="text-base font-medium">Comparativo com Mês Anterior</CardTitle>
             </CardHeader>
             <CardContent>
               {categoryComparison.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={categoryComparison.slice(0, 6)} layout="vertical">
                     <XAxis type="number" tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`} />
                     <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
@@ -211,7 +211,7 @@ export default function RelatorioCategorias() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[220px] flex items-center justify-center text-muted-foreground">
                   Nenhum dado para comparação
                 </div>
               )}
