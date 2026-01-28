@@ -679,7 +679,6 @@ export type Database = {
           id: string
           motivo_desativacao: string | null
           saldo_inicial: number
-          saldo_inicial_guardado: number
           tipo_plano: string | null
           updated_at: string
           user_id: string
@@ -693,7 +692,6 @@ export type Database = {
           id?: string
           motivo_desativacao?: string | null
           saldo_inicial?: number
-          saldo_inicial_guardado?: number
           tipo_plano?: string | null
           updated_at?: string
           user_id: string
@@ -707,7 +705,6 @@ export type Database = {
           id?: string
           motivo_desativacao?: string | null
           saldo_inicial?: number
-          saldo_inicial_guardado?: number
           tipo_plano?: string | null
           updated_at?: string
           user_id?: string

@@ -697,7 +697,7 @@ export default function Transactions() {
 
         {/* Saldo Inicial + Resumo Completo */}
         <div className="space-y-3">
-          {/* Card de Saldo Inicial */}
+          {/* Card de Saldo Inicial e Metas */}
           <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -706,24 +706,29 @@ export default function Transactions() {
               <div>
                 <span className="text-xs text-muted-foreground">Saldo Inicial</span>
                 <p className="font-semibold">
-                  {formatCurrency((stats?.saldoInicial || 0) + (stats?.saldoInicialGuardado || 0))}
+                  {formatCurrency(stats?.saldoInicial || 0)}
                 </p>
-                {(stats?.saldoInicialGuardado || 0) !== 0 && (
-                  <p className="text-[10px] text-muted-foreground">
-                    conta: {formatCurrency(stats?.saldoInicial || 0)} | guardado: {formatCurrency(stats?.saldoInicialGuardado || 0)}
-                  </p>
-                )}
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setEditarSaldoOpen(true)}
-              className="gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Configurar
-            </Button>
+            <div className="flex items-center gap-4">
+              {(stats?.totalMetas || 0) > 0 && (
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">Em Metas</span>
+                  <p className="font-semibold text-primary">
+                    {formatCurrency(stats?.totalMetas || 0)}
+                  </p>
+                </div>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setEditarSaldoOpen(true)}
+                className="gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Configurar
+              </Button>
+            </div>
           </div>
 
           {/* Resumo - 6 Indicadores */}
