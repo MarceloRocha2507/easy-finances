@@ -29,6 +29,7 @@ import {
   History,
   Building2,
   CalendarClock,
+  Wallet,
 } from "lucide-react";
 
 interface LayoutProps {
@@ -178,8 +179,9 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-14 flex items-center px-4 border-b border-border/50">
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-primary/10">
-              <span className="text-base font-semibold text-primary">Fina</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 shadow-sm">
+              <Wallet className="h-5 w-5 text-primary" />
+              <span className="text-lg font-bold text-primary">Fina</span>
             </div>
           </div>
 

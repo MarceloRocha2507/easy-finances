@@ -10,3 +10,7 @@ export { SaldoPorBanco } from "./SaldoPorBanco";
 export { NovaMetaDialog } from "./NovaMetaDialog";
 export { GerenciarMetaDialog } from "./GerenciarMetaDialog";
 export { DetalhesDespesasDialog } from "./DetalhesDespesasDialog";
+export { StatCardPrimary } from "./StatCardPrimary";
+export { StatCardSecondary } from "./StatCardSecondary";
+export { EstimatedBalanceBanner } from "./EstimatedBalanceBanner";
+export { PieChartWithLegend } from "./PieChartWithLegend";

@@ -37,7 +37,7 @@ export function ComparativoMensal({ comparativo }: Props) {
   const { icon: Icon, arrowIcon: ArrowIcon, color, bgColor, label } = config[tipo];
 
   return (
-    <Card className="border-0 shadow-lg">
+    <Card className="border rounded-xl shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />

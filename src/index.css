@@ -194,4 +194,42 @@
   .glass-hover {
     background: hsl(var(--glass-hover));
   }
+
+  /* Gradient utilities for dashboard cards */
+  .gradient-income {
+    @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30;
+  }
+
+  .gradient-expense {
+    @apply bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/30 dark:to-red-950/30;
+  }
+
+  .gradient-neutral {
+    @apply bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800/50 dark:to-slate-900/50;
+  }
+
+  .gradient-banner {
+    @apply bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800;
+  }
+
+  /* Card with status border */
+  .card-status-pending {
+    @apply border-l-4 border-l-blue-500;
+  }
+
+  .card-status-warning {
+    @apply border-l-4 border-l-amber-500;
+  }
+
+  .card-status-danger {
+    @apply border-l-4 border-l-red-500;
+  }
+
+  .card-status-success {
+    @apply border-l-4 border-l-emerald-500;
+  }
+
+  .card-status-info {
+    @apply border-l-4 border-l-purple-500;
+  }
 }
