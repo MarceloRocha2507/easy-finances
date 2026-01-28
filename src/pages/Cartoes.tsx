@@ -171,17 +171,17 @@ export default function Cartoes() {
                 );
               }
               return (
-                <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-center">
                   {[0, 1, 2, 3].map((offset) => (
                     <div key={offset} className={cn(
-                      "p-4 rounded-xl transition-all",
+                      "p-2 sm:p-4 rounded-xl transition-all",
                       offset === 0 
                         ? "bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm" 
                         : "bg-muted/50"
                     )}>
                       <p className="text-xs text-muted-foreground capitalize">{getMesLabel(offset)}</p>
                       <p className={cn(
-                        "text-lg font-bold value-display mt-1",
+                        "text-sm sm:text-lg font-bold value-display mt-1 truncate",
                         offset === 0 ? "text-primary" : "text-foreground"
                       )}>
                         {formatCurrency(getFaturaDoMes(titular.id, offset))}

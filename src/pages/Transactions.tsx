@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -732,70 +733,70 @@ export default function Transactions() {
           </div>
 
           {/* Resumo - 6 Indicadores */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
             {/* Receitas Realizadas */}
-            <div className="flex flex-col p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
-              <span className="text-xs text-muted-foreground">Receitas</span>
-              <span className="font-semibold text-emerald-600">
+            <div className="flex flex-col p-2 sm:p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Receitas</span>
+              <span className="font-semibold text-emerald-600 text-sm sm:text-base truncate">
                 +{formatCurrency(stats?.completedIncome || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">recebidas</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">recebidas</span>
             </div>
             
             {/* Despesas Realizadas */}
-            <div className="flex flex-col p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
-              <span className="text-xs text-muted-foreground">Despesas</span>
-              <span className="font-semibold text-red-600">
+            <div className="flex flex-col p-2 sm:p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Despesas</span>
+              <span className="font-semibold text-red-600 text-sm sm:text-base truncate">
                 -{formatCurrency(stats?.completedExpense || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">pagas</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">pagas</span>
             </div>
             
             {/* A Receber */}
-            <div className="flex flex-col p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-              <span className="text-xs text-muted-foreground">A Receber</span>
-              <span className="font-semibold text-blue-600">
+            <div className="flex flex-col p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">A Receber</span>
+              <span className="font-semibold text-blue-600 text-sm sm:text-base truncate">
                 +{formatCurrency(stats?.pendingIncome || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">pendentes</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">pendentes</span>
             </div>
             
             {/* A Pagar */}
-            <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-              <span className="text-xs text-muted-foreground">A Pagar</span>
-              <span className="font-semibold text-amber-600">
+            <div className="flex flex-col p-2 sm:p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">A Pagar</span>
+              <span className="font-semibold text-amber-600 text-sm sm:text-base truncate">
                 -{formatCurrency(stats?.pendingExpense || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">pendentes</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">pendentes</span>
             </div>
             
             {/* Saldo Real */}
             <div 
-              className="flex flex-col p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors group"
+              className="flex flex-col p-2 sm:p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors group"
               onClick={() => setAjustarSaldoOpen(true)}
               title="Clique para ajustar"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Saldo Real</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Saldo Real</span>
                 <Scale className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <span className={cn("font-semibold", 
+              <span className={cn("font-semibold text-sm sm:text-base truncate", 
                 (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
               )}>
                 {formatCurrency(stats?.realBalance || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">clique para ajustar</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">clique para ajustar</span>
             </div>
             
             {/* Saldo Estimado */}
-            <div className="flex flex-col p-3 bg-primary/10 rounded-lg border border-primary/20">
-              <span className="text-xs text-muted-foreground">Saldo Estimado</span>
-              <span className={cn("font-semibold", 
+            <div className="flex flex-col p-2 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Estimado</span>
+              <span className={cn("font-semibold text-sm sm:text-base truncate", 
                 (stats?.estimatedBalance || 0) >= 0 ? 'text-primary' : 'text-red-600'
               )}>
                 {formatCurrency(stats?.estimatedBalance || 0)}
               </span>
-              <span className="text-[10px] text-muted-foreground">real + a receber - a pagar</span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">real + a receber - a pagar</span>
             </div>
           </div>
         </div>
@@ -999,9 +1000,9 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
             </span>
           )}
-          {/* Saldo após a transação */}
+          {/* Saldo após a transação - esconder em mobile */}
           {saldoApos !== undefined && transaction.status === 'completed' && (
-            <>
+            <span className="hidden sm:contents">
               <span className="text-muted-foreground/50">•</span>
               {isUltimaTransacao && totalGuardado > 0 ? (
                 <TooltipProvider>
@@ -1032,7 +1033,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                   Saldo: {formatCurrency(saldoApos)}
                 </span>
               )}
-            </>
+            </span>
           )}
         </div>
       </div>
@@ -1049,52 +1050,86 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
       </span>
       
-      {/* Ações */}
-      <div className="ml-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {isPending && (
+      {/* Ações - Mobile: dropdown, Desktop: hover buttons */}
+      <div className="ml-2 flex gap-1">
+        {/* Mobile dropdown */}
+        <div className="flex md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isPending && (
+                <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)}>
+                  <Check className="w-4 h-4 mr-2 text-emerald-600" />
+                  Marcar como pago
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => onDuplicate(transaction)}>
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(transaction)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction.id)}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        {/* Desktop hover buttons */}
+        <div className="hidden md:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {isPending && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+              onClick={() => onMarkAsPaid(transaction.id)}
+              title="Marcar como pago"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
-            onClick={() => onMarkAsPaid(transaction.id)}
-            title="Marcar como pago"
+            className="h-8 w-8" 
+            onClick={() => onDuplicate(transaction)}
+            title="Duplicar transação"
           >
-            <Check className="w-3.5 h-3.5" />
+            <Copy className="w-3.5 h-3.5" />
           </Button>
-        )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8" 
-          onClick={() => onDuplicate(transaction)}
-          title="Duplicar transação"
-        >
-          <Copy className="w-3.5 h-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)} title="Editar">
-          <Pencil className="w-3.5 h-3.5" />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onDelete(transaction.id)} className="bg-destructive text-destructive-foreground">
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)} title="Editar">
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(transaction.id)} className="bg-destructive text-destructive-foreground">
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );
