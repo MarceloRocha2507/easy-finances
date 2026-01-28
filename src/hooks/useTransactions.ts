@@ -771,14 +771,19 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
       });
 
-      // Patrimônio Total = Saldo Inicial + Receitas Recebidas - Despesas Pagas
-      const patrimonioTotal = saldoInicial + stats.completedIncome - stats.completedExpense;
-      // Saldo Disponível = Patrimônio Total - Valor em Metas (mínimo 0)
-      const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
-      // Saldo Real = Patrimônio Total (valor bruto)
-      const realBalance = patrimonioTotal;
-      // Saldo Estimado = Patrimônio + A Receber - A Pagar - Fatura do Cartão
-      const estimatedBalance = patrimonioTotal + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      // Saldo Disponível = Saldo Inicial + Receitas Recebidas - Despesas Pagas
+      // (dinheiro "livre" que você pode gastar)
+      const saldoDisponivel = saldoInicial + stats.completedIncome - stats.completedExpense;
+      
+      // Patrimônio Total = Saldo Disponível + Metas + Investimentos
+      // (toda sua riqueza, incluindo reservas)
+      const patrimonioTotal = saldoDisponivel + totalMetas + totalInvestido;
+      
+      // Saldo Real = Saldo Disponível (o que realmente está "livre")
+      const realBalance = saldoDisponivel;
+      
+      // Saldo Estimado = Disponível + A Receber - A Pagar - Fatura do Cartão
+      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
         ...stats,
