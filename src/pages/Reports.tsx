@@ -86,7 +86,7 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
+            <h1 className="text-xl font-semibold text-foreground">Relatórios</h1>
             <p className="text-muted-foreground">Análise detalhada das suas finanças</p>
           </div>
 
@@ -103,7 +103,7 @@ export default function Reports() {
         </div>
 
         {/* Period Selector */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export default function Reports() {
         <div ref={reportRef} className="space-y-6 bg-background p-4 rounded-xl">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-0 shadow-lg">
+            <Card className="border card-hover">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -160,7 +160,7 @@ export default function Reports() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border card-hover">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -174,7 +174,7 @@ export default function Reports() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border card-hover">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -192,7 +192,7 @@ export default function Reports() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pie Chart */}
-            <Card className="border-0 shadow-lg">
+            <Card className="border">
               <CardHeader>
                 <CardTitle>Despesas por Categoria</CardTitle>
               </CardHeader>
@@ -225,7 +225,7 @@ export default function Reports() {
             </Card>
 
             {/* Bar Chart */}
-            <Card className="border-0 shadow-lg">
+            <Card className="border">
               <CardHeader>
                 <CardTitle>Comparativo Anual ({selectedYear})</CardTitle>
               </CardHeader>
@@ -245,7 +245,7 @@ export default function Reports() {
           </div>
 
           {/* Category Breakdown Table */}
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader>
               <CardTitle>Detalhamento por Categoria</CardTitle>
             </CardHeader>
@@ -283,7 +283,7 @@ export default function Reports() {
           </Card>
 
           {/* Top Transactions */}
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader>
               <CardTitle>Maiores Transações do Período</CardTitle>
             </CardHeader>

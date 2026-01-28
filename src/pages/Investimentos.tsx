@@ -78,13 +78,13 @@ export default function Investimentos() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Investimentos</h1>
+            <h1 className="text-xl font-semibold text-foreground">Investimentos</h1>
             <p className="text-muted-foreground">
               Acompanhe seu patrimônio e investimentos
             </p>
           </div>
-          <Button onClick={() => setNovoOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button size="sm" onClick={() => setNovoOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
             Novo investimento
           </Button>
         </div>
@@ -92,7 +92,7 @@ export default function Investimentos() {
         {/* Cards de resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Patrimônio total */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border rounded-xl p-5 card-hover">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Wallet className="h-5 w-5 text-primary" />
@@ -111,7 +111,7 @@ export default function Investimentos() {
           </div>
 
           {/* Total investido */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border rounded-xl p-5 card-hover">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-500/10">
                 <PiggyBank className="h-5 w-5 text-blue-500" />
@@ -130,7 +130,7 @@ export default function Investimentos() {
           </div>
 
           {/* Rendimento total */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border rounded-xl p-5 card-hover">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10">
                 <TrendingUp className="h-5 w-5 text-green-500" />
@@ -154,7 +154,7 @@ export default function Investimentos() {
           </div>
 
           {/* Rentabilidade */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border rounded-xl p-5 card-hover">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10">
                 <ArrowUpRight className="h-5 w-5 text-purple-500" />

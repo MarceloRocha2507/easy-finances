@@ -116,8 +116,8 @@ export default function Recorrentes() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <RefreshCw className="h-6 w-6" />
+            <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
               Lançamentos Recorrentes
             </h1>
             <p className="text-sm text-muted-foreground mt-1">

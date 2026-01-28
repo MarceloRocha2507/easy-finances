@@ -75,7 +75,7 @@ export default function Metas() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Objetivos</h1>
+            <h1 className="text-xl font-semibold text-foreground">Objetivos</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
               Defina e acompanhe suas metas financeiras
             </p>
@@ -88,28 +88,28 @@ export default function Metas() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="border card-hover">
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground font-medium">Total</p>
               <p className="text-2xl font-semibold mt-1">{metas.length}</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border card-hover">
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground font-medium">Em andamento</p>
               <p className="text-2xl font-semibold mt-1">{metasAtivas.length}</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border card-hover">
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground font-medium">Concluídos</p>
               <p className="text-2xl font-semibold mt-1">{metasConcluidas.length}</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border card-hover">
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground font-medium">Valor acumulado</p>
               <p className="text-2xl font-semibold mt-1 value-display">

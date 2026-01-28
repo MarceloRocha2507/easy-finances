@@ -92,7 +92,7 @@ export default function Limites() {
       <div className="space-y-6 fade-in">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Limites</h1>
+          <h1 className="text-xl font-semibold text-foreground">Limites</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Análise consolidada dos limites dos seus cartões
           </p>

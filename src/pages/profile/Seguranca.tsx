@@ -80,12 +80,12 @@ export default function Seguranca() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Segurança</h1>
+          <h1 className="text-xl font-semibold text-foreground">Segurança</h1>
           <p className="text-muted-foreground">Gerencie a segurança da sua conta</p>
         </div>
 
         {/* Account Security */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5" />
@@ -177,7 +177,7 @@ export default function Seguranca() {
         </Card>
 
         {/* Session Management */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader>
             <CardTitle>Sessão Ativa</CardTitle>
             <CardDescription>Informações sobre sua sessão atual</CardDescription>
@@ -199,7 +199,7 @@ export default function Seguranca() {
         </Card>
 
         {/* Danger Zone */}
-        <Card className="border-0 shadow-lg border-expense/20">
+        <Card className="border border-expense/20">
           <CardHeader>
             <CardTitle className="text-expense">Zona de Perigo</CardTitle>
             <CardDescription>Ações que afetam sua conta permanentemente</CardDescription>
