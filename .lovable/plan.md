@@ -1,240 +1,322 @@
 
-# Plano de Redesign Inovador - Página de Parcelamentos
+# Plano de Redesign Inovador - Sistema Completo
 
-## Visão do Novo Design
+## Visão Geral
 
-Um redesign completo que transforma a experiência visual de "lista tradicional" para uma interface **moderna, interativa e visualmente impactante**, inspirada em apps como Linear, Notion e dashboards financeiros premium.
+Transformação completa do sistema de um design tradicional com cards empilhados para uma interface **imersiva, fluida e diferenciada**, inspirada em apps como **Arc Browser, Linear, Raycast e Apple Finance**. O objetivo é criar uma experiência visual única que não pareça "mais do mesmo".
 
 ## Conceitos de Inovação
 
-### 1. Timeline Visual Horizontal
-Em vez de cards empilhados, mostrar parcelamentos como uma **linha do tempo horizontal** onde cada mês é uma coluna, permitindo visualizar o fluxo de pagamentos ao longo do tempo.
+### 1. Layout "Bento Grid"
+Em vez de listas verticais monótonas, usar um sistema de grid dinâmico onde cards de diferentes tamanhos criam composições visuais interessantes - inspirado no estilo "Bento Box" popular em dashboards modernos.
 
-### 2. Cards com Micro-Interações
-Cards que respondem ao hover com animações sutis, revelando informações adicionais e ações rápidas.
+### 2. Sidebar Compacta com Dock Style
+Transformar a sidebar em um dock flutuante minimalista (estilo macOS dock), liberando espaço horizontal e criando uma navegação mais elegante.
 
-### 3. Visualização Radial de Progresso
-Substituir as barras de progresso lineares por **arcos circulares** que mostram o progresso de cada parcelamento de forma mais visual.
+### 3. Glassmorphism 2.0 + Mesh Gradients
+Usar fundos com gradientes mesh (múltiplas cores que se mesclam organicamente) combinados com glassmorphism seletivo em elementos-chave.
 
-### 4. Agrupamento Inteligente
-Agrupar parcelamentos por cartão com headers visuais usando a cor do cartão, criando seções visualmente distintas.
+### 4. Micro-animações em Todo Lugar
+Transições suaves em cada interação: cards que "respiram", números que animam ao aparecer, hovers com profundidade 3D sutil.
 
-### 5. Stats Cards com Animação
-Cards de estatísticas com números animados (count-up) e gradientes sutis.
+### 5. Tipografia Expressiva
+Usar tamanhos contrastantes - números grandes e impactantes para valores, texto pequeno para labels - criando hierarquia visual forte.
 
-## Novo Layout Proposto
+### 6. Cores Vibrantes com Gradientes
+Abandonar o cinza neutro e adotar gradientes vibrantes como identidade: roxo para ações, verde para positivo, vermelho para negativo.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  HEADER                                                  │
-│  Parcelamentos                    [Filtros] [Visualização]│
-└─────────────────────────────────────────────────────────┘
+---
 
-┌─────────────────────────────────────────────────────────┐
-│  STATS RIBBON - Cards horizontais com gradiente         │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐           │
-│  │ 12 Ativos  │ │ R$ 2.450   │ │ R$ 15.800  │           │
-│  │ ○ Progress │ │ /mês       │ │ restante   │           │
-│  └────────────┘ └────────────┘ └────────────┘           │
-└─────────────────────────────────────────────────────────┘
+## Novo Design System
 
-┌─────────────────────────────────────────────────────────┐
-│  TIMELINE VIEW - Meses como colunas                     │
-│                                                         │
-│   Jan      Fev      Mar      Abr      Mai      Jun      │
-│  ┌────┐   ┌────┐   ┌────┐   ┌────┐   ┌────┐   ┌────┐   │
-│  │ •• │   │ •• │   │ •• │   │ •• │   │ •  │   │    │   │
-│  │ •  │   │ •  │   │ •  │   │    │   │    │   │    │   │
-│  └────┘   └────┘   └────┘   └────┘   └────┘   └────┘   │
-│                                                         │
-│   R$3.2k   R$3.2k   R$2.8k   R$1.5k   R$800    R$0     │
-└─────────────────────────────────────────────────────────┘
+### Paleta de Cores
 
-┌─────────────────────────────────────────────────────────┐
-│  PARCELAMENTOS GRID - Cards compactos com progresso     │
-│                                                         │
-│  ┌──────────────────┐  ┌──────────────────┐             │
-│  │ [◐] iPhone 15    │  │ [◔] Geladeira    │             │
-│  │     Nubank       │  │     Inter        │             │
-│  │     4/12 pagas   │  │     2/10 pagas   │             │
-│  │     R$ 450/mês   │  │     R$ 320/mês   │             │
-│  │     ███████░░░░  │  │     ██░░░░░░░░░  │             │
-│  └──────────────────┘  └──────────────────┘             │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```
+CORES BASE
+├── Background: #0A0A0F (dark profundo) / #FAFBFC (light suave)
+├── Surface: rgba(255,255,255,0.03) (dark) / rgba(0,0,0,0.02) (light)
+├── Foreground: #F8F8F2 (dark) / #1A1A2E (light)
+
+GRADIENTES VIBRANTES
+├── Primary: linear-gradient(135deg, #667EEA 0%, #764BA2 100%)
+├── Success: linear-gradient(135deg, #11998E 0%, #38EF7D 100%)
+├── Danger: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)
+├── Warning: linear-gradient(135deg, #F7971E 0%, #FFD200 100%)
+├── Info: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)
+
+MESH GRADIENTS (fundos)
+├── Dashboard: radial-gradient(at 20% 80%, #667EEA15 0%, transparent 50%),
+               radial-gradient(at 80% 20%, #764BA215 0%, transparent 50%)
 ```
 
-## Componentes Novos
+### Tipografia Expressiva
 
-### 1. StatRibbon - Faixa de Estatísticas
-```tsx
-// Cards horizontais com gradiente e ícones animados
-<div className="flex gap-4 overflow-x-auto pb-2">
-  <StatCard
-    icon={<Layers />}
-    label="Parcelamentos"
-    value={12}
-    suffix="ativos"
-    gradient="from-violet-500/10 to-purple-500/10"
-  />
-  ...
-</div>
+```
+HIERARQUIA DRAMÁTICA
+├── Display (valores): 48-64px, font-weight: 700, tracking: -0.03em
+├── h1: 28px, font-weight: 600, tracking: -0.02em
+├── h2: 20px, font-weight: 600
+├── h3: 14px, font-weight: 500, uppercase, letter-spacing: 0.05em
+├── Body: 14px, font-weight: 400
+├── Caption: 11px, font-weight: 500, uppercase, letter-spacing: 0.08em
 ```
 
-### 2. TimelineView - Visão em Timeline
-```tsx
-// Linha do tempo horizontal mostrando concentração de parcelas por mês
-<div className="relative">
-  <div className="flex gap-0 border-b">
-    {meses.map(mes => (
-      <TimelineColumn 
-        mes={mes}
-        parcelas={parcelasDoMes}
-        total={totalDoMes}
-      />
-    ))}
-  </div>
-</div>
+### Componentes Redesenhados
+
+```
+CARDS BENTO
+├── Tamanhos: sm (1x1), md (2x1), lg (2x2), xl (3x1)
+├── Background: glass effect sutil
+├── Border: 1px solid rgba(255,255,255,0.06)
+├── Hover: glow sutil + scale(1.01)
+
+DOCK NAVIGATION
+├── Posição: fixa na lateral esquerda
+├── Largura: 64px collapsed / 200px expanded
+├── Ícones: 24px com tooltip animado
+├── Hover: glow circular + scale
+
+INPUTS MODERNOS
+├── Background: transparent
+├── Border-bottom: 2px solid com transição de cor
+├── Focus: gradient underline animado
+├── Sem border-radius nos inputs
+
+BUTTONS
+├── Primary: gradient + glow shadow
+├── Secondary: border + glass background
+├── Ghost: apenas texto com hover gradient
+├── Animação: scale(0.98) no click
 ```
 
-### 3. ParcelamentoCard Redesenhado
-```tsx
-// Card com progresso circular e micro-interações
-<motion.div whileHover={{ y: -2 }} className="group">
-  <Card className="relative overflow-hidden">
-    {/* Barra colorida do cartão */}
-    <div className="absolute left-0 top-0 bottom-0 w-1" 
-         style={{ backgroundColor: cartaoCor }} />
-    
-    {/* Progresso Circular */}
-    <CircularProgress value={percentual} />
-    
-    {/* Conteúdo */}
-    <div className="pl-4">
-      <h3>{descricao}</h3>
-      <p>{parcelasPagas}/{totalParcelas}</p>
-    </div>
-    
-    {/* Hover Actions */}
-    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-      <Button size="sm">Ver detalhes</Button>
-    </div>
-  </Card>
-</motion.div>
-```
+---
 
-### 4. Filtros com Chips Visuais
-```tsx
-// Chips clicáveis em vez de selects
-<div className="flex gap-2 flex-wrap">
-  <Chip active={filtro === 'todos'}>Todos</Chip>
-  {cartoes.map(cartao => (
-    <Chip 
-      key={cartao.id}
-      active={filtro === cartao.id}
-      color={cartao.cor}
-    >
-      {cartao.nome}
-    </Chip>
-  ))}
-</div>
-```
+## Estrutura de Páginas Redesenhadas
 
-## Detalhes Visuais
+### 1. Tela de Login (Auth.tsx)
+**Antes**: Card simples centralizado
+**Depois**: Tela full-screen com mesh gradient animado, logo grande, input estilo terminal/minimal
 
-### Cores e Gradientes
-```css
-/* Gradientes para stats */
-.stat-violet { background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(168,85,247,0.05) 100%); }
-.stat-emerald { background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.05) 100%); }
-.stat-amber { background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(251,191,36,0.05) 100%); }
+### 2. Dashboard Principal
+**Antes**: Cards empilhados em grid uniforme
+**Depois**: Bento grid com cards de tamanhos variados, números gigantes, gráficos integrados nos cards
 
-/* Cards com hover */
-.card-modern {
-  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted)/0.3) 100%);
-  border: 1px solid hsl(var(--border));
-  transition: all 0.2s ease;
-}
+### 3. Sidebar/Navegação (Layout.tsx)
+**Antes**: Sidebar tradicional com lista de itens
+**Depois**: Dock flutuante compacto com ícones, expansível ao hover, avatar no topo
 
-.card-modern:hover {
-  border-color: hsl(var(--primary)/0.3);
-  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.12);
-}
-```
+### 4. Transações
+**Antes**: Lista com filtros no topo
+**Depois**: View dividida - esquerda com lista agrupada por dia, direita com preview/detalhes
 
-### Progresso Circular
-```tsx
-// SVG-based circular progress
-function CircularProgress({ value, size = 48 }) {
-  const circumference = 2 * Math.PI * 18;
-  const offset = circumference - (value / 100) * circumference;
-  
-  return (
-    <svg width={size} height={size} className="transform -rotate-90">
-      <circle 
-        cx="24" cy="24" r="18" 
-        stroke="hsl(var(--muted))" 
-        strokeWidth="4" 
-        fill="none" 
-      />
-      <circle 
-        cx="24" cy="24" r="18" 
-        stroke="hsl(var(--primary))" 
-        strokeWidth="4" 
-        fill="none"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-```
+### 5. Cartões de Crédito
+**Antes**: Cards verticais uniformes
+**Depois**: Cards estilo "cartão de crédito real" com 3D tilt no hover, cores vibrantes
 
-## Arquivos a Criar/Modificar
+### 6. Economia/Metas
+**Antes**: Cards de progresso tradicionais
+**Depois**: Visualização radial/circular com animações, progress arcs gigantes
+
+---
+
+## Arquivos a Modificar
+
+### Fase 1: Tokens e Fundação
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/cartoes/Parcelamentos.tsx` | Redesign completo da página |
-| `src/components/ui/circular-progress.tsx` | Novo componente de progresso circular |
-| `src/components/ui/chip.tsx` | Novo componente de chip/tag clicável |
-| `src/index.css` | Novos utilitários para gradientes |
+| `src/index.css` | Nova paleta, mesh gradients, utilitários glass, animações |
+| `tailwind.config.ts` | Cores vibrantes, gradientes, animações customizadas |
 
-## Melhorias UX
+### Fase 2: Componentes UI Base
 
-1. **Visualização de Impacto**: Ver claramente quanto cada parcelamento impacta o orçamento mensal
-2. **Timeline Futura**: Entender quando os parcelamentos vão acabar
-3. **Agrupamento Visual**: Identificar rapidamente parcelamentos por cartão
-4. **Micro-interações**: Feedback visual em cada ação
-5. **Responsividade**: Layout adaptado para mobile com cards empilhados
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/ui/card.tsx` | Cards com variants bento, glass effect |
+| `src/components/ui/button.tsx` | Botões com gradient, glow, micro-animações |
+| `src/components/ui/input.tsx` | Inputs estilo underline/minimal |
+| `src/components/ui/dialog.tsx` | Modais com backdrop blur forte, animação de entrada |
+| `src/components/ui/tabs.tsx` | Tabs com pill animado que desliza |
+| `src/components/ui/progress.tsx` | Arcos circulares e barras com gradient |
+| `src/components/ui/badge.tsx` | Badges com gradient sutil |
 
-## Animações
+### Fase 3: Layout e Navegação
 
-```tsx
-// Staggered entrance animation
-{parcelamentos.map((p, i) => (
-  <motion.div
-    key={p.id}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: i * 0.05 }}
-  >
-    <ParcelamentoCard {...p} />
-  </motion.div>
-))}
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/Layout.tsx` | Dock navigation, mesh background, estrutura nova |
+| `src/components/sidebar/MenuCollapsible.tsx` | Ícones com glow, tooltips animados |
+
+### Fase 4: Páginas Principais
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/Auth.tsx` | Redesign completo com mesh gradient, input minimal |
+| `src/pages/Dashboard.tsx` | Bento grid, números grandes, cards integrados |
+| `src/pages/Transactions.tsx` | Split view, agrupamento por dia, preview lateral |
+| `src/pages/Cartoes.tsx` | Cards 3D estilo cartão real |
+| `src/pages/Bancos.tsx` | Cards com gradientes por banco |
+| `src/pages/Economia.tsx` | Visualização radial, arcos de progresso |
+| `src/pages/Metas.tsx` | Progress arcs gigantes, animações de conquista |
+| `src/pages/Investimentos.tsx` | Gráficos sparkline integrados, números animados |
+| `src/pages/Profile.tsx` | Layout de settings moderno, switches animados |
+| `src/pages/Notificacoes.tsx` | Timeline visual, badges animados |
+| `src/pages/Reports.tsx` | Gráficos full-width, exportação visual |
+
+### Fase 5: Componentes de Feature
+
+| Diretório | Componentes |
+|---------|-----------|
+| `src/components/dashboard/` | Cards bento, números animados, micro-charts |
+| `src/components/cartoes/` | Card 3D, dialogs com blur forte |
+| `src/components/bancos/` | Cards coloridos por instituição |
+| `src/components/economia/` | Arcos de progresso, insights visuais |
+| `src/components/investimentos/` | Sparklines, badges de rendimento |
+
+---
+
+## Detalhes Técnicos
+
+### Novas Classes CSS
+
+```css
+/* Mesh gradient backgrounds */
+.mesh-gradient {
+  background: 
+    radial-gradient(at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+}
+
+/* Glass cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Glow effect */
+.glow-primary {
+  box-shadow: 0 0 40px -10px rgba(102, 126, 234, 0.5);
+}
+
+/* 3D tilt hover */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
+}
+
+/* Number animation */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-value {
+  animation: count-up 0.5s ease-out forwards;
+}
 ```
 
-## Resultado Visual Esperado
+### Componente Dock Navigation
 
-**Antes**: Lista vertical monótona com cards repetitivos  
-**Depois**: Dashboard interativo com timeline, progresso visual e agrupamentos inteligentes
+```tsx
+// Sidebar minimalista estilo dock
+<aside className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
+  <nav className="flex flex-col gap-2 p-2 rounded-2xl glass-card">
+    {items.map(item => (
+      <Tooltip key={item.href}>
+        <TooltipTrigger asChild>
+          <Link 
+            to={item.href}
+            className={cn(
+              "p-3 rounded-xl transition-all",
+              isActive(item.href) 
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white glow-primary"
+                : "hover:bg-white/5"
+            )}
+          >
+            <item.icon className="w-5 h-5" />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">{item.label}</TooltipContent>
+      </Tooltip>
+    ))}
+  </nav>
+</aside>
+```
 
-### Elementos Diferenciadores:
-- Progresso circular em vez de barra linear
-- Timeline horizontal para visão temporal
-- Chips coloridos para filtros
-- Cards com hover elevado
-- Gradientes sutis em stats
-- Agrupamento por cartão com headers visuais
-- Números animados com count-up
-- Micro-interações em todos os elementos
+### Bento Grid Dashboard
+
+```tsx
+// Grid com tamanhos variados
+<div className="grid grid-cols-4 gap-4 auto-rows-[120px]">
+  {/* Card grande - saldo */}
+  <Card className="col-span-2 row-span-2 glass-card">
+    <p className="text-xs uppercase tracking-wider text-muted-foreground">Saldo</p>
+    <p className="text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+      {formatCurrency(saldo)}
+    </p>
+  </Card>
+  
+  {/* Cards menores */}
+  <Card className="glass-card">
+    <p className="text-xs uppercase">Receitas</p>
+    <p className="text-2xl font-bold text-green-400">+{formatCurrency(receitas)}</p>
+  </Card>
+  
+  <Card className="glass-card">
+    <p className="text-xs uppercase">Despesas</p>
+    <p className="text-2xl font-bold text-red-400">-{formatCurrency(despesas)}</p>
+  </Card>
+  
+  {/* Gráfico integrado */}
+  <Card className="col-span-2 glass-card">
+    <MiniChart data={gastosDiarios} />
+  </Card>
+</div>
+```
+
+---
+
+## Resultado Esperado
+
+```
+ANTES (Design Atual):
+├── Sidebar tradicional ocupando espaço
+├── Cards uniformes e previsíveis
+├── Cores neutras sem personalidade
+├── Animações básicas
+├── Layout tradicional de dashboard
+
+DEPOIS (Novo Design):
+├── Dock flutuante elegante
+├── Bento grid com composições visuais
+├── Gradientes vibrantes e mesh backgrounds
+├── Micro-animações em cada elemento
+├── Visual único e memorável
+├── Números grandes e impactantes
+├── Cards 3D interativos
+├── Dark mode imersivo
+```
+
+---
+
+## Considerações de Implementação
+
+1. **Dark Mode Priority**: O novo design será otimizado primeiro para dark mode, que é mais impactante visualmente
+2. **Performance**: Usar `will-change` e `transform` para animações GPU-accelerated
+3. **Responsividade**: Dock se transforma em bottom bar no mobile
+4. **Acessibilidade**: Manter contraste adequado mesmo com efeitos visuais
+5. **Fallbacks**: Desabilitar blur em dispositivos de baixa performance
+
+## Ordem de Implementação
+
+1. Tokens de design e CSS (index.css, tailwind.config)
+2. Componentes UI base (card, button, input)
+3. Layout e navegação dock
+4. Página de login (primeira impressão)
+5. Dashboard com bento grid
+6. Demais páginas uma a uma
+7. Refinamentos e animações finais
