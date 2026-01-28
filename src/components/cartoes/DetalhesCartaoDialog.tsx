@@ -227,8 +227,8 @@ export function DetalhesCartaoDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Métricas inline */}
-            <div className="flex items-center gap-4 mt-3 text-sm">
+            {/* Métricas inline - responsivo */}
+            <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-3 text-xs sm:text-sm">
               <div>
                 <span className="text-muted-foreground">Limite:</span>{" "}
                 <span className="font-medium text-foreground">{formatCurrency(limite)}</span>
@@ -273,57 +273,94 @@ export function DetalhesCartaoDialog({
               </div>
 
               <div className="flex items-center gap-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setGerarMensagemOpen(true)}>
-                        <FileText className="h-4 w-4" />
+                {/* Mobile: dropdown com ações */}
+                <div className="flex sm:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Gerar mensagem</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRegistrarAcertoOpen(true)}>
-                        <Wallet className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Registrar acerto</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setAjustarFaturaOpen(true)}>
-                        <Scale className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Ajustar fatura</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8" 
-                        onClick={() => {
-                          onOpenChange(false);
-                          navigate(`/cartoes/${cartao.id}/importar`);
-                        }}
-                      >
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Importar compras</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setGerarMensagemOpen(true)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Gerar mensagem
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setRegistrarAcertoOpen(true)}>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Registrar acerto
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setAjustarFaturaOpen(true)}>
+                        <Scale className="h-4 w-4 mr-2" />
+                        Ajustar fatura
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/cartoes/${cartao.id}/importar`);
+                      }}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar compras
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                {/* Desktop: botões individuais */}
+                <div className="hidden sm:flex items-center gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setGerarMensagemOpen(true)}>
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Gerar mensagem</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRegistrarAcertoOpen(true)}>
+                          <Wallet className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Registrar acerto</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setAjustarFaturaOpen(true)}>
+                          <Scale className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Ajustar fatura</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-8 w-8" 
+                          onClick={() => {
+                            onOpenChange(false);
+                            navigate(`/cartoes/${cartao.id}/importar`);
+                          }}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Importar compras</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
+                {/* Botão Nova Compra sempre visível */}
                 <Button size="sm" className="h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
                   <Plus className="h-3.5 w-3.5" />
-                  Compra
+                  <span className="hidden sm:inline">Compra</span>
                 </Button>
               </div>
             </div>

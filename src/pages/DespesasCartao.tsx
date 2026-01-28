@@ -48,7 +48,14 @@ import {
   Plus,
   Scale,
   RotateCcw,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -331,68 +338,102 @@ export default function DespesasCartao() {
     <Layout>
       <div className="space-y-4">
         {/* Header compacto */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/cartoes")}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/cartoes")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <CreditCard
-              className="h-5 w-5"
+              className="h-5 w-5 shrink-0 hidden sm:block"
               style={{ color: cartao?.cor || "#6366f1" }}
             />
-            <div>
-              <h1 className="text-xl font-bold">{cartao?.nome || "Cartão"}</h1>
-              <p className="text-xs text-muted-foreground">Despesas do mês</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold truncate">{cartao?.nome || "Cartão"}</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">Despesas do mês</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Mobile: dropdown com ações */}
+            <div className="flex sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setAjustarFaturaOpen(true)}>
+                    <Scale className="h-4 w-4 mr-2" />
+                    Ajustar fatura
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setAdiantarFaturaOpen(true)} disabled={totalMes === 0}>
+                    <Banknote className="h-4 w-4 mr-2" />
+                    Adiantar pagamento
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
                     onClick={() => setExcluirFaturaOpen(true)} 
-                    className="gap-1 text-destructive hover:text-destructive"
                     disabled={parcelas.length === 0}
+                    className="text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Excluir toda a fatura do mês</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="sm" variant="outline" onClick={() => setAjustarFaturaOpen(true)} className="gap-1">
-                    <Scale className="h-4 w-4" />
-                    Ajustar
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => setAdiantarFaturaOpen(true)} 
-                    className="gap-1"
-                    disabled={totalMes === 0}
-                  >
-                    <Banknote className="h-4 w-4" />
-                    Adiantar
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Registrar pagamento parcial antecipado</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir fatura
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            {/* Desktop: botões individuais */}
+            <div className="hidden sm:flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => setExcluirFaturaOpen(true)} 
+                      className="gap-1 text-destructive hover:text-destructive"
+                      disabled={parcelas.length === 0}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Excluir toda a fatura do mês</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="sm" variant="outline" onClick={() => setAjustarFaturaOpen(true)} className="gap-1">
+                      <Scale className="h-4 w-4" />
+                      Ajustar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => setAdiantarFaturaOpen(true)} 
+                      className="gap-1"
+                      disabled={totalMes === 0}
+                    >
+                      <Banknote className="h-4 w-4" />
+                      Adiantar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Registrar pagamento parcial antecipado</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            {/* Nova compra sempre visível */}
             <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
               <Plus className="h-4 w-4" />
-              Nova compra
+              <span className="hidden sm:inline">Nova compra</span>
             </Button>
           </div>
         </div>
@@ -473,37 +514,40 @@ export default function DespesasCartao() {
         )}
 
         {/* Navegação de mês + Filtros */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Mês */}
-          <div className="flex items-center gap-1">
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8"
-              onClick={() => setMesRef((m) => addMonths(m, -1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="min-w-[140px] text-center font-medium capitalize">
-              {monthLabel(mesRef)}
-            </span>
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8"
-              onClick={() => setMesRef((m) => addMonths(m, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        <div className="space-y-3">
+          {/* Linha 1: Navegação de mês */}
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8"
+                onClick={() => setMesRef((m) => addMonths(m, -1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[120px] sm:min-w-[140px] text-center font-medium capitalize text-sm sm:text-base">
+                {monthLabel(mesRef)}
+              </span>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8"
+                onClick={() => setMesRef((m) => addMonths(m, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          {/* Filtros inline */}
-          <div className="flex flex-1 items-center gap-2">
-            <div className="relative flex-1 max-w-xs">
+          {/* Linha 2: Filtros - wrap em mobile */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Busca - sempre visível */}
+            <div className="relative flex-1 min-w-[140px] max-w-full sm:max-w-xs">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
-                className="pl-8 h-8"
+                className="pl-8 h-8 text-sm"
                 value={filtros.busca}
                 onChange={(e) =>
                   setFiltros((f) => ({ ...f, busca: e.target.value }))
@@ -521,6 +565,7 @@ export default function DespesasCartao() {
               )}
             </div>
 
+            {/* Status - sempre visível */}
             <Select
               value={filtros.status}
               onValueChange={(v) =>
@@ -530,7 +575,7 @@ export default function DespesasCartao() {
                 }))
               }
             >
-              <SelectTrigger className="w-[120px] h-8">
+              <SelectTrigger className="w-[100px] sm:w-[120px] h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -540,70 +585,73 @@ export default function DespesasCartao() {
               </SelectContent>
             </Select>
 
-            {/* Filtro de Categoria */}
-            <Select
-              value={filtros.categoriaId || "todas"}
-              onValueChange={(v) =>
-                setFiltros((f) => ({
-                  ...f,
-                  categoriaId: v === "todas" ? null : v,
-                }))
-              }
-            >
-              <SelectTrigger className="w-[140px] h-8">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas categorias</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      {cat.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filtros adicionais - ocultos em mobile pequeno */}
+            <div className="hidden sm:flex items-center gap-2">
+              {/* Filtro de Categoria */}
+              <Select
+                value={filtros.categoriaId || "todas"}
+                onValueChange={(v) =>
+                  setFiltros((f) => ({
+                    ...f,
+                    categoriaId: v === "todas" ? null : v,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas categorias</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        {cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* Filtro de Data */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1.5">
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  {filtros.dataInicio || filtros.dataFim ? (
-                    <span className="text-xs">
-                      {filtros.dataInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'} 
-                      {' - '}
-                      {filtros.dataFim?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'}
-                    </span>
-                  ) : (
-                    <span className="text-xs">Período</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={{
-                    from: filtros.dataInicio || undefined,
-                    to: filtros.dataFim || undefined,
-                  }}
-                  onSelect={(range) => {
-                    setFiltros((f) => ({
-                      ...f,
-                      dataInicio: range?.from || null,
-                      dataFim: range?.to || null,
-                    }));
-                  }}
-                  className="pointer-events-auto"
-                  numberOfMonths={1}
-                />
-              </PopoverContent>
-            </Popover>
+              {/* Filtro de Data */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {filtros.dataInicio || filtros.dataFim ? (
+                      <span className="text-xs">
+                        {filtros.dataInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'} 
+                        {' - '}
+                        {filtros.dataFim?.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) || '...'}
+                      </span>
+                    ) : (
+                      <span className="text-xs">Período</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: filtros.dataInicio || undefined,
+                      to: filtros.dataFim || undefined,
+                    }}
+                    onSelect={(range) => {
+                      setFiltros((f) => ({
+                        ...f,
+                        dataInicio: range?.from || null,
+                        dataFim: range?.to || null,
+                      }));
+                    }}
+                    className="pointer-events-auto"
+                    numberOfMonths={1}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
             {temFiltrosAtivos && (
               <Button
@@ -613,7 +661,7 @@ export default function DespesasCartao() {
                 onClick={() => setFiltros(filtrosIniciais)}
               >
                 <X className="h-3 w-3" />
-                Limpar
+                <span className="hidden sm:inline">Limpar</span>
               </Button>
             )}
           </div>

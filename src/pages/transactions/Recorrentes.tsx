@@ -211,11 +211,11 @@ export default function Recorrentes() {
                   return (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm"
+                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm shrink-0"
                           style={{ 
                             backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--muted))',
                             color: category?.color || 'hsl(var(--muted-foreground))'
@@ -223,21 +223,21 @@ export default function Recorrentes() {
                         >
                           {category?.icon || "💰"}
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{transaction.description}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{formatDay(transaction.recurrence_day)}</span>
                             {category && (
                               <>
                                 <span>•</span>
-                                <span>{category.name}</span>
+                                <span className="truncate">{category.name}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                         <p className="font-semibold text-income">
                           +{formatCurrency(Number(transaction.amount))}
                         </p>
@@ -247,7 +247,7 @@ export default function Recorrentes() {
                             checked={isActive}
                             onCheckedChange={() => handleToggleActive(transaction.id, transaction.status)}
                           />
-                          <span className="text-xs text-muted-foreground w-12">
+                          <span className="text-xs text-muted-foreground hidden sm:inline w-12">
                             {isActive ? "Ativo" : "Pausado"}
                           </span>
                         </div>
@@ -305,11 +305,11 @@ export default function Recorrentes() {
                   return (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm"
+                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm shrink-0"
                           style={{ 
                             backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--muted))',
                             color: category?.color || 'hsl(var(--muted-foreground))'
@@ -317,21 +317,21 @@ export default function Recorrentes() {
                         >
                           {category?.icon || "💸"}
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{transaction.description}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{formatDay(transaction.recurrence_day)}</span>
                             {category && (
                               <>
                                 <span>•</span>
-                                <span>{category.name}</span>
+                                <span className="truncate">{category.name}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                         <p className="font-semibold text-expense">
                           -{formatCurrency(Number(transaction.amount))}
                         </p>
@@ -341,7 +341,7 @@ export default function Recorrentes() {
                             checked={isActive}
                             onCheckedChange={() => handleToggleActive(transaction.id, transaction.status)}
                           />
-                          <span className="text-xs text-muted-foreground w-12">
+                          <span className="text-xs text-muted-foreground hidden sm:inline w-12">
                             {isActive ? "Ativo" : "Pausado"}
                           </span>
                         </div>
