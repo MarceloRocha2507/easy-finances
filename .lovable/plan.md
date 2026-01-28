@@ -1,73 +1,76 @@
 
-# Plano: Remover Linha de Patrimônio do Card de Saldo
+# Plano: Corrigir Validação de Saldo para Depósito em Meta
 
-## Alteração
+## Problema Identificado
 
-Remover a linha "Patrimônio: R$ X.XXX,XX" do card de Saldo Disponível, mantendo apenas "Em Metas".
+O depósito está sendo bloqueado mesmo quando o valor é **igual** ao saldo disponível (R$ 67,03 = R$ 67,03).
 
-## Antes
+**Causa**: Precisão de ponto flutuante em JavaScript. Números como `67.03` podem ser representados internamente como `67.02999999999999` ou `67.03000000000001`, fazendo com que a comparação `>` retorne `true` incorretamente.
 
-```
-Saldo Disponível
-R$ 0,00
-Patrimônio: R$ 1.265,30  ← REMOVER
-Em Metas: R$ 1.265,30
-```
+## Solução
 
-## Depois
+Usar uma **tolerância de precisão** (epsilon) nas comparações de valores monetários, ou arredondar os valores para 2 casas decimais antes de comparar.
 
-```
-Saldo Disponível
-R$ 0,00
-Em Metas: R$ 1.265,30    ← MANTER
-```
+## Alterações Necessárias
 
-## Arquivo a Modificar
+### 1. Arquivo: `src/components/dashboard/GerenciarMetaDialog.tsx`
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/Dashboard.tsx` | Remover linhas 160-162 (linha do Patrimônio) |
-
-## Código
-
-**Antes (linhas 159-173):**
-```tsx
-<div className="flex flex-col gap-0.5 mt-1">
-  <p className="text-xs text-muted-foreground">
-    Patrimônio: {formatCurrency(completeStats?.patrimonioTotal || 0)}
-  </p>
-  {(completeStats?.totalInvestido || 0) > 0 && (
-    <p className="text-xs text-primary">
-      Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
-    </p>
-  )}
-  {(completeStats?.totalMetas || 0) > 0 && (
-    <p className="text-xs text-amber-600">
-      Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
-    </p>
-  )}
-</div>
+**Linha 112-113 - Antes:**
+```typescript
+const valorDepositoNum = parseFloat(valorDeposito) || 0;
+const depositoExcedeSaldo = valorDepositoNum > saldoDisponivel;
 ```
 
 **Depois:**
-```tsx
-<div className="flex flex-col gap-0.5 mt-1">
-  {(completeStats?.totalInvestido || 0) > 0 && (
-    <p className="text-xs text-primary">
-      Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
-    </p>
-  )}
-  {(completeStats?.totalMetas || 0) > 0 && (
-    <p className="text-xs text-amber-600">
-      Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
-    </p>
-  )}
-</div>
+```typescript
+const valorDepositoNum = parseFloat(valorDeposito) || 0;
+// Usar toFixed(2) para evitar problemas de precisão de ponto flutuante
+const depositoExcedeSaldo = parseFloat(valorDepositoNum.toFixed(2)) > parseFloat(saldoDisponivel.toFixed(2));
 ```
 
-## Resultado
+### 2. Arquivo: `src/hooks/useMetas.ts`
 
-O card ficará mais limpo, mostrando apenas:
-- **Saldo Disponível** (valor principal)
-- **Investido** (se houver)
-- **Em Metas** (se houver)
+**Linhas 241-244 - Antes:**
+```typescript
+// Validar saldo disponível se fornecido
+if (data.saldoDisponivel !== undefined && data.valor > data.saldoDisponivel) {
+  throw new Error("Saldo insuficiente para este depósito");
+}
+```
+
+**Depois:**
+```typescript
+// Validar saldo disponível se fornecido (com tolerância para precisão de ponto flutuante)
+if (data.saldoDisponivel !== undefined) {
+  const valorArredondado = parseFloat(data.valor.toFixed(2));
+  const saldoArredondado = parseFloat(data.saldoDisponivel.toFixed(2));
+  if (valorArredondado > saldoArredondado) {
+    throw new Error("Saldo insuficiente para este depósito");
+  }
+}
+```
+
+## Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/dashboard/GerenciarMetaDialog.tsx` | Arredondar valores antes de comparar (linha 113) |
+| `src/hooks/useMetas.ts` | Arredondar valores antes de validar (linhas 241-244) |
+
+## Resultado Esperado
+
+- Depósito de R$ 67,03 com saldo de R$ 67,03 → **Permitido** ✅
+- Depósito de R$ 67,04 com saldo de R$ 67,03 → **Bloqueado** ❌
+- Qualquer valor menor que o saldo → **Permitido** ✅
+
+## Detalhes Técnicos
+
+O arredondamento com `toFixed(2)` + `parseFloat` garante que ambos os valores tenham exatamente 2 casas decimais antes da comparação, eliminando problemas como:
+
+```javascript
+// Problema de precisão
+0.1 + 0.2 === 0.3 // false! (0.30000000000000004)
+
+// Solução com arredondamento
+parseFloat((0.1 + 0.2).toFixed(2)) === 0.3 // true
+```
