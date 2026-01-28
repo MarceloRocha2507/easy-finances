@@ -106,7 +106,7 @@ export function SegurancaTab() {
   return (
     <div className="space-y-6">
       {/* Segurança da Conta */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
@@ -122,7 +122,7 @@ export function SegurancaTab() {
             <DialogTrigger asChild>
               <button className="w-full flex items-center justify-between p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <Lock className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-left">
@@ -185,7 +185,7 @@ export function SegurancaTab() {
           {/* Verificação de Email */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-secondary">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
@@ -206,7 +206,7 @@ export function SegurancaTab() {
       </Card>
 
       {/* Zona de Perigo */}
-      <Card className="border-0 shadow-lg border-destructive/20">
+      <Card className="shadow-sm rounded-xl border-destructive/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <LogOut className="w-5 h-5" />

@@ -33,11 +33,11 @@ import {
 
 function BancoSkeleton() {
   return (
-    <Card className="border">
-      <CardContent className="p-5">
+    <Card className="shadow-sm rounded-xl">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Skeleton className="w-12 h-12 rounded-lg" />
+            <Skeleton className="w-12 h-12 rounded-xl" />
             <div>
               <Skeleton className="h-5 w-24 mb-1" />
               <Skeleton className="h-3 w-16" />
@@ -113,36 +113,36 @@ export default function Bancos() {
 
       {/* Resumo Geral */}
       {bancosResumo.length > 0 && (
-        <Card className="border mb-6">
-          <CardContent className="p-5">
+        <Card className="gradient-neutral shadow-lg rounded-xl border-0 mb-6 animate-fade-in-up">
+          <CardContent className="p-6">
             {/* Saldo Total em Destaque */}
             <div className="text-center mb-4 pb-4 border-b">
               <p className="text-sm text-muted-foreground mb-1">Saldo Total em Contas</p>
-              <p className="text-3xl font-bold text-income">{formatCurrency(totalSaldo)}</p>
+              <p className="text-3xl sm:text-4xl font-bold text-income">{formatCurrency(totalSaldo)}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Contas Ativas</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Wallet className="h-4 w-4 text-primary" />
-                  <span className="text-xl font-semibold">{bancosResumo.length}</span>
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-2">
+                  <Wallet className="h-5 w-5 text-primary" />
                 </div>
+                <p className="text-xs text-muted-foreground mb-1">Contas Ativas</p>
+                <span className="text-xl font-bold">{bancosResumo.length}</span>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total Cartões</p>
-                <div className="flex items-center justify-center gap-2">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xl font-semibold">{totalCartoes}</span>
+                <div className="w-10 h-10 rounded-xl bg-slate-500/20 flex items-center justify-center mx-auto mb-2">
+                  <CreditCard className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                 </div>
+                <p className="text-xs text-muted-foreground mb-1">Total Cartões</p>
+                <span className="text-xl font-bold">{totalCartoes}</span>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Limite Cartões</p>
-                <p className="text-xl font-semibold">{formatCurrency(totalLimite)}</p>
+                <p className="text-xl font-bold">{formatCurrency(totalLimite)}</p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Crédito Disponível</p>
-                <p className="text-xl font-semibold text-income">
+                <p className="text-xl font-bold text-income">
                   {formatCurrency(totalDisponivel)}
                 </p>
               </div>
@@ -159,7 +159,7 @@ export default function Bancos() {
           <BancoSkeleton />
         </div>
       ) : bancosResumo.length === 0 ? (
-        <Card className="border">
+        <Card className="shadow-sm rounded-xl">
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
             <h3 className="text-lg font-medium mb-2">Nenhuma conta cadastrada</h3>
@@ -200,18 +200,18 @@ export default function Bancos() {
           <CollapsibleContent className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {bancosInativos.map((banco) => (
-                <Card key={banco.id} className="border opacity-60">
-                  <CardContent className="p-5">
+                <Card key={banco.id} className="shadow-sm rounded-xl opacity-60">
+                  <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
                           style={{ backgroundColor: `${banco.cor}15` }}
                         >
-                          <Building2 className="h-5 w-5" style={{ color: banco.cor }} />
+                          <Building2 className="h-6 w-6" style={{ color: banco.cor }} />
                         </div>
                         <div>
-                          <p className="font-medium">{banco.nome}</p>
+                          <p className="font-semibold">{banco.nome}</p>
                           <p className="text-xs text-muted-foreground">Inativo</p>
                         </div>
                       </div>

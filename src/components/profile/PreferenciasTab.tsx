@@ -59,7 +59,7 @@ export function PreferenciasTab() {
   return (
     <div className="space-y-6">
       {/* Saldo Inicial */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
@@ -104,7 +104,7 @@ export function PreferenciasTab() {
       </Card>
 
       {/* Aparência */}
-      <Card className="border-0 shadow-lg">
+      <Card className="shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="w-5 h-5" />
@@ -125,7 +125,7 @@ export function PreferenciasTab() {
                     key={option.value}
                     onClick={() => handleTemaChange(option.value)}
                     className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
+                      "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
                       tema === option.value
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"

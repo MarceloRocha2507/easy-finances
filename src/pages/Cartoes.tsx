@@ -149,11 +149,11 @@ export default function Cartoes() {
         </div>
 
         {/* Previsão de Faturas */}
-        <Card className="card-hover">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Receipt className="h-4 w-4 text-primary" strokeWidth={1.75} />
+        <Card className="shadow-lg rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-primary" strokeWidth={1.75} />
               </div>
               <div>
                 <h2 className="font-semibold">Previsão de Faturas</h2>
@@ -173,7 +173,12 @@ export default function Cartoes() {
               return (
                 <div className="grid grid-cols-4 gap-4 text-center">
                   {[0, 1, 2, 3].map((offset) => (
-                    <div key={offset} className={cn("p-3 rounded-lg", offset === 0 ? "bg-primary/10" : "bg-muted/50")}>
+                    <div key={offset} className={cn(
+                      "p-4 rounded-xl transition-all",
+                      offset === 0 
+                        ? "bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm" 
+                        : "bg-muted/50"
+                    )}>
                       <p className="text-xs text-muted-foreground capitalize">{getMesLabel(offset)}</p>
                       <p className={cn(
                         "text-lg font-bold value-display mt-1",
@@ -204,7 +209,7 @@ export default function Cartoes() {
 
         {/* Lista de Cartões */}
         {cartoes.length === 0 ? (
-          <Card>
+          <Card className="shadow-sm rounded-xl">
             <CardContent className="py-16 text-center">
               <CreditCard className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
               <p className="text-muted-foreground mb-4">
@@ -287,7 +292,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
 
   return (
     <Card
-      className="cursor-pointer card-hover fade-in overflow-hidden"
+      className="cursor-pointer shadow-sm rounded-xl card-hover fade-in overflow-hidden"
       style={{ animationDelay: `${index * 0.05}s` }}
       onClick={onClick}
     >
@@ -297,22 +302,22 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
         style={{ backgroundColor: cartao.cor || "#6366f1" }}
       />
 
-      <CardContent className="p-5">
+      <CardContent className="p-6">
         {/* Info do Cartão */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div
-              className="h-10 w-10 rounded-lg flex items-center justify-center"
+              className="h-12 w-12 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${cartao.cor || "#6366f1"}15` }}
             >
               <CreditCard
-                className="h-5 w-5"
+                className="h-6 w-6"
                 style={{ color: cartao.cor || "#6366f1" }}
                 strokeWidth={1.75}
               />
             </div>
             <div>
-              <p className="font-medium">{cartao.nome}</p>
+              <p className="font-semibold">{cartao.nome}</p>
               <p className="text-xs text-muted-foreground uppercase">
                 {cartao.bandeira || "Crédito"}
               </p>
@@ -330,7 +335,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
         </div>
 
         {/* Datas */}
-        <div className="grid grid-cols-2 gap-4 mb-4 p-3 rounded-lg bg-muted/50">
+        <div className="grid grid-cols-2 gap-4 mb-4 p-4 rounded-xl bg-muted/50">
           <div>
             <p className="text-xs text-muted-foreground">Fechamento</p>
             <p className="text-sm font-medium">
@@ -391,7 +396,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
 
         {/* Fatura do Mês - Destaque */}
         <div className={cn(
-          "p-3 rounded-lg border",
+          "p-4 rounded-xl border",
           cartao.faturaAtualPaga 
             ? "bg-emerald-500/5 border-emerald-500/20" 
             : "bg-red-500/5 border-red-500/20"

@@ -8,7 +8,7 @@ interface Props {
 export function InsightsEconomia({ insights }: Props) {
   if (insights.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-sm rounded-xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">
             Insights
@@ -25,7 +25,7 @@ export function InsightsEconomia({ insights }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="shadow-sm rounded-xl">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">
           Insights
@@ -35,7 +35,7 @@ export function InsightsEconomia({ insights }: Props) {
         {insights.map((insight) => (
           <div
             key={insight.id}
-            className="p-4 rounded-lg border"
+            className="p-4 rounded-xl border shadow-sm"
             style={{
               backgroundColor: `${insight.cor}08`,
               borderColor: `${insight.cor}25`,

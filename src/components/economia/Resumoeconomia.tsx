@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown, PiggyBank, ArrowLeftRight } from "lucide-react";
 
 interface Props {
   totalReceitas: number;
@@ -29,20 +30,30 @@ export function ResumoEconomia({
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Receitas */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <p className="text-sm text-muted-foreground">Receitas</p>
-          <p className="text-xl font-semibold text-income mt-1">
+      <Card className="gradient-income shadow-lg rounded-xl border-0 animate-fade-in-up">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-emerald-600" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Receitas</p>
+          <p className="text-2xl sm:text-3xl font-bold text-income mt-1">
             {formatCurrency(totalReceitas)}
           </p>
         </CardContent>
       </Card>
 
       {/* Gastos */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <p className="text-sm text-muted-foreground">Gastos</p>
-          <p className="text-xl font-semibold text-expense mt-1">
+      <Card className="gradient-expense shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
+              <TrendingDown className="h-6 w-6 text-rose-600" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Gastos</p>
+          <p className="text-2xl sm:text-3xl font-bold text-expense mt-1">
             {formatCurrency(totalGasto)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -52,12 +63,26 @@ export function ResumoEconomia({
       </Card>
 
       {/* Economizado */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <p className="text-sm text-muted-foreground">Economizado</p>
+      <Card className={cn(
+        "shadow-lg rounded-xl border-0 animate-fade-in-up",
+        economizado >= 0 ? "gradient-income" : "gradient-expense"
+      )} style={{ animationDelay: "0.1s" }}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center",
+              economizado >= 0 ? "bg-emerald-500/20" : "bg-rose-500/20"
+            )}>
+              <PiggyBank className={cn(
+                "h-6 w-6",
+                economizado >= 0 ? "text-emerald-600" : "text-rose-600"
+              )} />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Economizado</p>
           <p
             className={cn(
-              "text-xl font-semibold mt-1",
+              "text-2xl sm:text-3xl font-bold mt-1",
               economizado >= 0 ? "text-income" : "text-expense"
             )}
           >
@@ -72,13 +97,39 @@ export function ResumoEconomia({
       </Card>
 
       {/* Comparativo */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <p className="text-sm text-muted-foreground">vs Mês Anterior</p>
+      <Card className="shadow-sm rounded-xl border-l-4 animate-fade-in-up" style={{
+        borderLeftColor: comparativo.tipo === "reducao" 
+          ? "hsl(var(--income))" 
+          : comparativo.tipo === "aumento" 
+          ? "hsl(var(--expense))" 
+          : "hsl(var(--muted-foreground))",
+        animationDelay: "0.15s"
+      }}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center",
+              comparativo.tipo === "reducao" 
+                ? "bg-emerald-500/20" 
+                : comparativo.tipo === "aumento" 
+                ? "bg-rose-500/20" 
+                : "bg-muted"
+            )}>
+              <ArrowLeftRight className={cn(
+                "h-6 w-6",
+                comparativo.tipo === "reducao" 
+                  ? "text-emerald-600" 
+                  : comparativo.tipo === "aumento" 
+                  ? "text-rose-600" 
+                  : "text-muted-foreground"
+              )} />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">vs Mês Anterior</p>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span
               className={cn(
-                "text-xl font-semibold",
+                "text-2xl sm:text-3xl font-bold",
                 comparativo.tipo === "reducao"
                   ? "text-income"
                   : comparativo.tipo === "aumento"

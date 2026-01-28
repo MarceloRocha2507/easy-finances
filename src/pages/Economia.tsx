@@ -77,7 +77,7 @@ export default function Economia() {
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
+              <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
           </div>
         ) : (
@@ -125,7 +125,7 @@ export default function Economia() {
           <TabsContent value="visao-geral" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               {/* Gráfico de Pizza */}
-              <Card className="lg:col-span-2">
+              <Card className="lg:col-span-2 shadow-sm rounded-xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-medium">
                     Distribuição de Gastos
@@ -133,7 +133,7 @@ export default function Economia() {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <Skeleton className="h-[240px] rounded-lg" />
+                    <Skeleton className="h-[240px] rounded-xl" />
                   ) : pieData.length > 0 ? (
                     <div className="space-y-4">
                       <ResponsiveContainer width="100%" height={200}>
@@ -158,7 +158,7 @@ export default function Economia() {
                             contentStyle={{
                               backgroundColor: "hsl(var(--card))",
                               border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
+                              borderRadius: "12px",
                               fontSize: "13px",
                             }}
                           />
@@ -191,7 +191,7 @@ export default function Economia() {
               {/* Ranking de Gastos */}
               <div className="lg:col-span-3">
                 {isLoading ? (
-                  <Skeleton className="h-[350px] rounded-lg" />
+                  <Skeleton className="h-[350px] rounded-xl" />
                 ) : (
                   <RankingGastos
                     gastos={analise?.gastosPorCategoria || []}
@@ -203,8 +203,8 @@ export default function Economia() {
 
             {/* Previsão */}
             {!isLoading && analise && analise.previsaoMensal > 0 && (
-              <Card className="mt-6">
-                <CardContent className="py-4">
+              <Card className="mt-6 shadow-sm rounded-xl">
+                <CardContent className="py-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">
@@ -247,7 +247,7 @@ export default function Economia() {
           {/* Tab: Orçamentos */}
           <TabsContent value="orcamentos" className="mt-6">
             {isLoading ? (
-              <Skeleton className="h-[400px] rounded-lg" />
+              <Skeleton className="h-[400px] rounded-xl" />
             ) : (
               <OrcamentosCategoria
                 orcamentos={orcamentos || []}
@@ -260,8 +260,8 @@ export default function Economia() {
             )}
 
             {/* Dicas sobre orçamento */}
-            <Card className="mt-6 bg-muted/30">
-              <CardContent className="py-5">
+            <Card className="mt-6 bg-muted/30 shadow-sm rounded-xl">
+              <CardContent className="py-6">
                 <h3 className="font-medium mb-3">
                   Dicas para definir orçamentos
                 </h3>
@@ -290,13 +290,13 @@ export default function Economia() {
           {/* Tab: Insights */}
           <TabsContent value="insights" className="mt-6">
             {isLoading ? (
-              <Skeleton className="h-[400px] rounded-lg" />
+              <Skeleton className="h-[400px] rounded-xl" />
             ) : (
               <InsightsEconomia insights={analise?.insights || []} />
             )}
 
             {/* Regras de economia */}
-            <Card className="mt-6">
+            <Card className="mt-6 shadow-sm rounded-xl">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-medium">
                   Princípios para economizar
@@ -304,7 +304,7 @@ export default function Economia() {
               </CardHeader>
               <CardContent>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/20">
                     <h4 className="font-medium text-sm mb-1.5">
                       Pague-se primeiro
                     </h4>
@@ -314,7 +314,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/20">
                     <h4 className="font-medium text-sm mb-1.5">
                       Regra das 24 horas
                     </h4>
@@ -324,7 +324,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/20">
                     <h4 className="font-medium text-sm mb-1.5">
                       Fundo de emergência
                     </h4>
@@ -334,7 +334,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/20">
                     <h4 className="font-medium text-sm mb-1.5">
                       Revise assinaturas
                     </h4>

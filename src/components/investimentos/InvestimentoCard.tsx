@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Investimento, TIPOS_INVESTIMENTO } from "@/hooks/useInvestimentos";
 import { formatCurrency } from "@/lib/formatters";
-import { format, differenceInDays, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInDays, parseISO } from "date-fns";
 import {
   PiggyBank,
   Landmark,
@@ -18,6 +17,7 @@ import {
   Eye,
   Calendar,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "piggy-bank": PiggyBank,
@@ -53,14 +53,18 @@ export function InvestimentoCard({
     ? differenceInDays(parseISO(investimento.dataVencimento), new Date())
     : null;
 
+  const isPositive = rendimento >= 0;
+
   return (
     <Card
-      className={`group hover:shadow-lg transition-all duration-200 cursor-pointer ${
-        !investimento.ativo ? "opacity-60" : ""
-      }`}
+      className={cn(
+        "group cursor-pointer shadow-sm rounded-xl card-hover border-l-4 transition-all duration-200",
+        !investimento.ativo && "opacity-60",
+        isPositive ? "border-l-emerald-500" : "border-l-rose-500"
+      )}
       onClick={onDetalhes}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-start gap-3">
           {/* Ícone */}
           <div
@@ -100,17 +104,18 @@ export function InvestimentoCard({
 
             {/* Valor atual */}
             <div className="mt-3">
-              <p className="text-xl font-bold text-foreground">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(investimento.valorAtual)}
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <span
-                  className={`text-sm font-medium ${
-                    rendimento >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
+                  className={cn(
+                    "text-sm font-medium",
+                    isPositive ? "text-income" : "text-expense"
+                  )}
                 >
-                  {rendimento >= 0 ? "+" : ""}
-                  {formatCurrency(rendimento)} ({rendimento >= 0 ? "+" : ""}
+                  {isPositive ? "+" : ""}
+                  {formatCurrency(rendimento)} ({isPositive ? "+" : ""}
                   {percentualRendimento}%)
                 </span>
               </div>

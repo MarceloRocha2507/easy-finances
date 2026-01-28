@@ -63,7 +63,7 @@ export function PerfilTab() {
   const memberSince = user?.created_at ? formatDateLong(user.created_at) : 'N/A';
 
   return (
-    <Card className="border-0 shadow-lg">
+    <Card className="shadow-sm rounded-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="w-5 h-5" />
