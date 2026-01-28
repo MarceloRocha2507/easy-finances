@@ -96,7 +96,7 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
-          <div className="flex flex-col lg:flex-row items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4">
             {/* Chart */}
             <div className="flex-shrink-0">
               <ResponsiveContainer width={200} height={200}>
@@ -131,7 +131,7 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
             </div>
 
             {/* Legend */}
-            <div className="flex-1 w-full">
+            <div className="w-full lg:w-auto lg:min-w-[180px]">
               <div className="space-y-2 max-h-[200px] overflow-y-auto">
                 {data.map((item, index) => {
                   const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
