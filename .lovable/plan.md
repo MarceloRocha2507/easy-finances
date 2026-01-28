@@ -1,112 +1,146 @@
 
-# Plano: Corrigir Exibição do Saldo na Página de Transações
+# Plano: Simplificar Lógica de Saldo - Metas Subtraem do Disponível
 
-## Diagnóstico
+## Objetivo
 
-A implementação do campo "Saldo Inicial Guardado" está **funcionalmente correta**. O cálculo em `useCompleteStats` já inclui:
+Simplificar a lógica para que:
+1. **Patrimônio Total** = Saldo Inicial + Receitas - Despesas (valor bruto)
+2. **Saldo Disponível** = Patrimônio Total - Valor em Metas (dinheiro "livre")
+3. **Remover** o campo "Saldo Inicial Guardado" (não é mais necessário)
 
+## Nova Lógica
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│                    PATRIMÔNIO TOTAL                       │
+│         (Saldo Inicial + Receitas - Despesas)            │
+│                      R$ 1.361,30                          │
+├──────────────────────────────────────────────────────────┤
+│  SALDO DISPONÍVEL    │      GUARDADO EM METAS            │
+│     R$ 96,00         │         R$ 1.265,30               │
+│ (dinheiro "livre")   │    (reserva intocável)            │
+└──────────────────────────────────────────────────────────┘
+```
+
+## Mudanças Necessárias
+
+### 1. Banco de Dados
+- Remover a coluna `saldo_inicial_guardado` da tabela `profiles`
+- O campo não será mais necessário pois metas automaticamente "reservam" o valor
+
+### 2. Hook `useTransactions.ts` - Função `useCompleteStats`
+Simplificar o cálculo:
+
+**Antes:**
 ```typescript
-const saldoBase = saldoInicial + saldoInicialGuardado + stats.completedIncome - stats.completedExpense;
+const saldoBase = saldoInicial + saldoInicialGuardado + receitas - despesas;
+const saldoDisponivel = Math.max(0, saldoBase - totalGuardado);
 ```
 
-### Por que os valores ainda mostram R$ 96,00?
-
-**O campo `saldo_inicial_guardado` está zerado no banco:**
-
-| user_id | saldo_inicial | saldo_inicial_guardado |
-|---------|---------------|------------------------|
-| seu_id  | -1175.45      | **0** |
-
-Você ainda não preencheu o valor R$ 1.265,30 no campo "Saldo Inicial Guardado" em Preferências.
-
-## Ação Imediata (sem código)
-
-1. Acesse **Perfil > Preferências**
-2. Preencha **R$ 1.265,30** no campo "Saldo Inicial Guardado (em metas)"
-3. Clique em **Salvar**
-
-Após isso, os valores serão recalculados automaticamente:
-
-| Campo | Antes | Depois |
-|-------|-------|--------|
-| Saldo Real | R$ 96,00 | R$ 1.361,30 |
-| Saldo Estimado | R$ 96,00 | R$ 1.361,30 |
-
-## Melhorias Sugeridas na Interface
-
-Para evitar confusão futura, proponho melhorias visuais na página de Transações:
-
-### 1. Mostrar Composição do Patrimônio
-
-Adicionar um tooltip ou expandir o card "Saldo Inicial da Conta" para mostrar a composição:
-
-**Atual:**
-- Saldo Inicial da Conta: -R$ 1.175,45
-
-**Novo:**
-- Saldo Inicial (conta): -R$ 1.175,45
-- Saldo Inicial (guardado): +R$ 1.265,30
-- **Patrimônio Inicial Total:** R$ 89,85
-
-### Alterações em `src/pages/Transactions.tsx`
-
-Exibir o breakdown no card de saldo inicial, incluindo o `saldoInicialGuardado` quando disponível.
-
-## Detalhes Técnicos
-
-### Modificar Card de Saldo Inicial (Transactions.tsx linhas 700-720)
-
-```tsx
-{/* Card de Saldo Inicial - ATUALIZADO */}
-<div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
-  <div className="flex items-center gap-3">
-    <div className="p-2 rounded-lg bg-primary/10">
-      <Wallet className="w-4 h-4 text-primary" />
-    </div>
-    <div>
-      <span className="text-xs text-muted-foreground">Saldo Inicial</span>
-      <p className="font-semibold">
-        {formatCurrency((stats?.saldoInicial || 0) + (stats?.saldoInicialGuardado || 0))}
-      </p>
-      {(stats?.saldoInicialGuardado || 0) > 0 && (
-        <p className="text-[10px] text-muted-foreground">
-          conta: {formatCurrency(stats?.saldoInicial || 0)} | 
-          guardado: {formatCurrency(stats?.saldoInicialGuardado || 0)}
-        </p>
-      )}
-    </div>
-  </div>
-  <Button 
-    variant="ghost" 
-    size="sm" 
-    onClick={() => setEditarSaldoOpen(true)}
-    className="gap-2"
-  >
-    <Settings className="w-4 h-4" />
-    Configurar
-  </Button>
-</div>
+**Depois:**
+```typescript
+const patrimonioTotal = saldoInicial + receitas - despesas;
+const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
 ```
+
+### 3. Interface - Remover Campo de Saldo Guardado
+- `PreferenciasTab.tsx`: Remover seção "Saldo Inicial Guardado"
+- `Transactions.tsx`: Remover breakdown do saldo guardado no card
+
+### 4. Dashboard e Cards de Saldo
+Atualizar para mostrar:
+- **Saldo Disponível**: Patrimônio - Metas
+- **Patrimônio Total**: Valor bruto
+- **Em Metas**: Valor reservado
+
+### 5. Hook `useSaldoInicial.ts`
+Remover referências ao `saldo_inicial_guardado`
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/Transactions.tsx` | Mostrar saldoInicialGuardado no card de saldo inicial |
+| `profiles` (banco) | Remover coluna `saldo_inicial_guardado` |
+| `src/hooks/useTransactions.ts` | Simplificar cálculo em `useCompleteStats` |
+| `src/hooks/useSaldoInicial.ts` | Remover `saldoInicialGuardado` e `atualizarSaldoGuardado` |
+| `src/components/profile/PreferenciasTab.tsx` | Remover campo "Saldo Inicial Guardado" |
+| `src/pages/Transactions.tsx` | Simplificar card de saldo inicial |
+| `src/hooks/useProfileStats.ts` | Atualizar se necessário |
+
+## Detalhes Técnicos
+
+### Migration SQL (Remover coluna)
+```sql
+ALTER TABLE profiles DROP COLUMN IF EXISTS saldo_inicial_guardado;
+```
+
+### `useCompleteStats` - Nova Lógica
+```typescript
+// Patrimônio Total = Saldo Inicial + Receitas - Despesas
+const patrimonioTotal = saldoInicial + stats.completedIncome - stats.completedExpense;
+
+// Saldo Disponível = Patrimônio Total - Valor em Metas (mínimo 0)
+const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
+
+// Saldo Real = Patrimônio Bruto
+const realBalance = patrimonioTotal;
+
+// Saldo Estimado = Patrimônio + Pendentes - Fatura
+const estimatedBalance = patrimonioTotal + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+
+return {
+  ...stats,
+  realBalance,
+  saldoDisponivel,
+  patrimonioTotal,
+  estimatedBalance,
+  totalMetas,
+  totalInvestido,
+  totalGuardado: totalMetas + totalInvestido,
+};
+```
+
+### Card de Saldo no Dashboard
+```tsx
+<Card>
+  <p>Saldo Disponível</p>
+  <p>{formatCurrency(completeStats?.saldoDisponivel)}</p>
+  <div>
+    <p>Patrimônio: {formatCurrency(completeStats?.patrimonioTotal)}</p>
+    <p>Em Metas: {formatCurrency(completeStats?.totalMetas)}</p>
+  </div>
+</Card>
+```
 
 ## Resultado Esperado
 
-Após preencher o valor em Preferências:
+Com suas transações atuais:
 
-1. **Saldo Real** mostrará R$ 1.361,30 (patrimônio total)
-2. **Saldo Estimado** mostrará R$ 1.361,30
-3. **Card de Saldo Inicial** mostrará a composição:
-   - conta: -R$ 1.175,45
-   - guardado: +R$ 1.265,30
+| Campo | Valor |
+|-------|-------|
+| Patrimônio Total | R$ 1.361,30 (saldo inicial + receitas - despesas) |
+| Em Metas | R$ 1.265,30 |
+| **Saldo Disponível** | **R$ 96,00** (patrimônio - metas) |
 
-## Resumo
+O usuário não precisa mais configurar nada manualmente. As metas automaticamente "reservam" dinheiro do patrimônio, mostrando quanto está realmente disponível para gastar.
 
-O problema principal é que **você ainda não salvou o valor** no novo campo. A implementação está correta, só precisa de:
+## Fluxo Visual
 
-1. **Ação do usuário**: Preencher R$ 1.265,30 em Preferências
-2. **Melhoria opcional**: Mostrar breakdown no card de saldo inicial
+```text
+ANTES (complexo):
+┌────────────────────────────────────────────────────────┐
+│ Saldo Inicial + Saldo Guardado + Receitas - Despesas  │
+│        ↓              ↓                               │
+│   -R$1.175,45    R$1.265,30 (config manual!)          │
+└────────────────────────────────────────────────────────┘
+
+DEPOIS (simples):
+┌────────────────────────────────────────────────────────┐
+│       Saldo Inicial + Receitas - Despesas             │
+│                    = Patrimônio                        │
+│                    - Valor em Metas                    │
+│                    = Saldo Disponível                  │
+└────────────────────────────────────────────────────────┘
+```
+
+O sistema agora é autocontido: o valor das metas é considerado automaticamente sem configuração extra.
