@@ -6,142 +6,132 @@
 
 @layer base {
   :root {
-    /* Paleta Neutra Clara com Toques Coloridos */
-    --background: 0 0% 100%;
-    --background-secondary: 220 14% 97%;
-    --foreground: 220 13% 13%;
+    /* Nova paleta neutra elegante */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary - Roxo Nubank-like */
-    --primary: 263 70% 58%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 263 100% 96%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 13%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 13% 13%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 263 70% 58%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
 
-    /* Border Radius maior - mais arredondado */
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    /* Cores Semânticas Amigáveis */
+    /* Cores semânticas */
     --income: 160 84% 39%;
     --income-foreground: 0 0% 100%;
-    --income-light: 152 81% 90%;
-
-    --expense: 348 83% 60%;
+    --expense: 0 84% 60%;
     --expense-foreground: 0 0% 100%;
-    --expense-light: 348 100% 94%;
-
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 48 96% 89%;
-
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
-    --info-light: 214 100% 93%;
 
     /* Sidebar */
-    --sidebar-background: 220 14% 97%;
-    --sidebar-foreground: 220 13% 13%;
-    --sidebar-primary: 263 70% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 13% 13%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 263 70% 58%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 0 0% 9%;
 
-    /* Sombras Suaves */
-    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
-    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    /* Gradientes */
+    --gradient-subtle: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 96%) 0%, hsl(0 0% 94%) 100%);
+
+    /* Sombras modernas */
+    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.12);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.15);
 
     /* Chart colors */
     --chart-1: 160 84% 39%;
     --chart-2: 217 91% 60%;
     --chart-3: 38 92% 50%;
-    --chart-4: 263 70% 58%;
-    --chart-5: 348 83% 60%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --background-secondary: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 6%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 263 70% 65%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 263 50% 20%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 263 70% 65%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 83%;
 
     /* Cores semânticas - dark */
     --income: 160 70% 45%;
     --income-foreground: 0 0% 100%;
-    --income-light: 160 50% 15%;
-
-    --expense: 348 70% 55%;
+    --expense: 0 72% 55%;
     --expense-foreground: 0 0% 100%;
-    --expense-light: 348 50% 15%;
-
-    --warning: 38 80% 55%;
+    --warning: 38 85% 55%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 38 50% 15%;
-
-    --info: 217 80% 65%;
+    --info: 217 85% 65%;
     --info-foreground: 0 0% 100%;
-    --info-light: 217 50% 15%;
 
     /* Sidebar - dark */
-    --sidebar-background: 222 47% 9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 263 70% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 263 70% 65%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 0% 83%;
+
+    /* Gradientes - dark */
+    --gradient-subtle: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 8%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 15%) 0%, hsl(0 0% 12%) 100%);
 
     /* Sombras - dark */
     --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.1);
@@ -154,10 +144,10 @@
 
     /* Chart colors - dark */
     --chart-1: 160 70% 45%;
-    --chart-2: 217 80% 65%;
-    --chart-3: 38 80% 55%;
-    --chart-4: 263 70% 65%;
-    --chart-5: 348 70% 55%;
+    --chart-2: 217 85% 65%;
+    --chart-3: 38 85% 55%;
+    --chart-4: 280 55% 65%;
+    --chart-5: 340 65% 60%;
   }
 }
 
@@ -171,13 +161,13 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  /* Tipografia limpa */
+  /* Tipografia padronizada */
   h1 {
     @apply text-2xl font-semibold tracking-tight;
   }
 
   h2 {
-    @apply text-lg font-semibold tracking-tight;
+    @apply text-xl font-semibold tracking-tight;
   }
 
   h3 {
@@ -186,134 +176,77 @@
 }
 
 @layer utilities {
-  /* ========================================
-     FUNDOS - Backgrounds suaves
-  ======================================== */
-  .bg-secondary-subtle {
-    background-color: hsl(var(--background-secondary));
+  /* Card com gradiente sutil */
+  .card-gradient {
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
 
-  /* ========================================
-     STAT CARDS - Cards de estatísticas amigáveis
-  ======================================== */
-  .stat-primary {
-    background-color: hsl(var(--primary-light));
-  }
-
-  .stat-income {
-    background-color: hsl(var(--income-light));
-  }
-
-  .stat-expense {
-    background-color: hsl(var(--expense-light));
-  }
-
-  .stat-warning {
-    background-color: hsl(var(--warning-light));
-  }
-
-  .stat-info {
-    background-color: hsl(var(--info-light));
-  }
-
-  /* ========================================
-     CARDS
-  ======================================== */
-  .card-hover {
-    @apply transition-all duration-200;
-  }
-
-  .card-hover:hover {
+  .card-gradient:hover {
     box-shadow: var(--shadow-md);
   }
 
-  /* ========================================
-     ANIMATIONS - Animações suaves
-  ======================================== */
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+  /* Card interativo */
+  .card-interactive {
+    @apply transition-all duration-200;
   }
 
-  @keyframes fade-in-up {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+  .card-interactive:hover {
+    @apply shadow-md -translate-y-0.5;
   }
 
-  @keyframes scale-in {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+  /* Stat highlight */
+  .stat-highlight {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.03) 0%, transparent 100%);
+    border-left: 3px solid hsl(var(--primary));
   }
 
-  @keyframes slide-in-left {
-    from { opacity: 0; transform: translateX(-16px); }
-    to { opacity: 1; transform: translateX(0); }
+  /* Stagger delays for lists */
+  .stagger-1 { animation-delay: 0.03s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.06s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.09s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.12s; opacity: 0; }
+  .stagger-5 { animation-delay: 0.15s; opacity: 0; }
+  .stagger-6 { animation-delay: 0.18s; opacity: 0; }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-md;
   }
 
-  @keyframes slide-in-right {
-    from { opacity: 0; transform: translateX(16px); }
-    to { opacity: 1; transform: translateX(0); }
+  /* Fade in utility */
+  .fade-in {
+    animation: fade-in 0.3s ease-out forwards;
   }
 
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(100%); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-  .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
-  .animate-scale-in { animation: scale-in 0.25s ease-out forwards; }
-  .animate-slide-in-left { animation: slide-in-left 0.3s ease-out forwards; }
-  .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
-  .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
-
-  /* Stagger delays */
-  .stagger-1 { animation-delay: 0.05s; opacity: 0; }
-  .stagger-2 { animation-delay: 0.1s; opacity: 0; }
-  .stagger-3 { animation-delay: 0.15s; opacity: 0; }
-  .stagger-4 { animation-delay: 0.2s; opacity: 0; }
-  .stagger-5 { animation-delay: 0.25s; opacity: 0; }
-  .stagger-6 { animation-delay: 0.3s; opacity: 0; }
-
-  /* ========================================
-     STATUS INDICATORS
-  ======================================== */
-  .status-success { @apply bg-income/10 text-income border border-income/20; }
-  .status-error { @apply bg-expense/10 text-expense border border-expense/20; }
-  .status-warning { @apply bg-warning/10 text-warning border border-warning/20; }
-  .status-info { @apply bg-info/10 text-info border border-info/20; }
-
-  /* ========================================
-     VALUE DISPLAY - Valores numéricos
-  ======================================== */
+  /* Value display with transition */
   .value-display {
-    @apply tabular-nums transition-colors duration-200;
-    font-feature-settings: "tnum";
+    @apply transition-colors duration-200;
   }
 
-  /* ========================================
-     SCROLLBAR CUSTOM
-  ======================================== */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  /* Badge sutil */
+  .badge-subtle {
+    @apply bg-muted text-muted-foreground;
   }
 
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* Status indicators */
+  .status-success {
+    @apply bg-income/10 text-income;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+  .status-error {
+    @apply bg-expense/10 text-expense;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
+  .status-warning {
+    @apply bg-warning/10 text-warning;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+  .status-info {
+    @apply bg-info/10 text-info;
   }
 }

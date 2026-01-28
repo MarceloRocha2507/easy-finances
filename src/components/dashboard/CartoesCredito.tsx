@@ -16,14 +16,14 @@ interface CartaoCardProps {
 }
 
 function CartaoCard({ cartao, onClick }: CartaoCardProps) {
-  const corCartao = cartao.cor || "#8B5CF6";
+  const corCartao = cartao.cor || "#64748b";
   const limiteAlto = cartao.usoPct >= 80;
   const venceEmBreve = cartao.diasParaVencimento <= 3 && cartao.diasParaVencimento >= 0;
 
   return (
     <div
       onClick={onClick}
-      className="p-4 border rounded-xl hover:bg-accent/50 transition-all duration-200 cursor-pointer hover:shadow-sm"
+      className="p-4 border rounded-lg hover:bg-accent/50 transition-all duration-200 cursor-pointer hover:shadow-sm"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -77,7 +77,10 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
         <Progress
           value={cartao.usoPct}
           className="h-1.5"
-          variant={cartao.usoPct >= 80 ? "expense" : cartao.usoPct >= 50 ? "warning" : "default"}
+          indicatorClassName={cn(
+            cartao.usoPct >= 80 && "bg-expense",
+            cartao.usoPct >= 50 && cartao.usoPct < 80 && "bg-warning"
+          )}
         />
 
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -91,7 +94,7 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
 
 function CartaoSkeleton() {
   return (
-    <div className="p-4 border rounded-xl">
+    <div className="p-4 border rounded-lg">
       <div className="flex items-center gap-3 mb-3">
         <Skeleton className="w-8 h-8 rounded-lg" />
         <div>
@@ -129,7 +132,7 @@ export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Pr
 
       <CardContent>
         {resumo.quantidadeCartoes > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-xl bg-muted">
+          <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-lg bg-muted">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Total Faturas</p>
               <p className="text-sm font-semibold text-expense">

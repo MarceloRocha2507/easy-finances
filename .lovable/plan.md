@@ -1,318 +1,240 @@
 
-# Plano de Redesign - Estilo Amigável e Acolhedor
+# Plano de Redesign Inovador - Página de Parcelamentos
 
-## Visão Geral
+## Visão do Novo Design
 
-Redesign completo inspirado em apps como **Nubank, PicPay, e bancos digitais modernos**. O objetivo é criar uma interface **clara, amigável e organizada**, com cores suaves mas presentes, ícones expressivos e layout intuitivo.
+Um redesign completo que transforma a experiência visual de "lista tradicional" para uma interface **moderna, interativa e visualmente impactante**, inspirada em apps como Linear, Notion e dashboards financeiros premium.
 
-## Problemas Atuais a Resolver
+## Conceitos de Inovação
 
-1. **Dock de navegação** - Confuso, será substituído por sidebar fixa tradicional
-2. **Layout Bento Grid** - Muito complexo, será simplificado para grid uniforme
-3. **Mesh Gradients e Glassmorphism** - Muito "escuro" e abstrato, será removido
-4. **Cores muito vibrantes** - Serão suavizadas para tons mais acolhedores
+### 1. Timeline Visual Horizontal
+Em vez de cards empilhados, mostrar parcelamentos como uma **linha do tempo horizontal** onde cada mês é uma coluna, permitindo visualizar o fluxo de pagamentos ao longo do tempo.
 
-## Novo Design System
+### 2. Cards com Micro-Interações
+Cards que respondem ao hover com animações sutis, revelando informações adicionais e ações rápidas.
 
-### Paleta de Cores - Neutro Claro com Toques Coloridos
+### 3. Visualização Radial de Progresso
+Substituir as barras de progresso lineares por **arcos circulares** que mostram o progresso de cada parcelamento de forma mais visual.
 
-```
-CORES BASE (Neutro Claro)
-├── Background: #FFFFFF (branco puro)
-├── Background Secundário: #F7F8FA (cinza muito claro)
-├── Card: #FFFFFF (branco)
-├── Foreground: #1A1D21 (quase preto, suave)
-├── Muted: #6B7280 (cinza médio)
-├── Border: #E5E7EB (cinza claro)
+### 4. Agrupamento Inteligente
+Agrupar parcelamentos por cartão com headers visuais usando a cor do cartão, criando seções visualmente distintas.
 
-CORES DE DESTAQUE (Amigáveis)
-├── Primary: #8B5CF6 (roxo Nubank-like)
-├── Income: #10B981 (verde esmeralda)
-├── Expense: #F43F5E (rosa/vermelho suave)
-├── Warning: #F59E0B (âmbar)
-├── Info: #3B82F6 (azul)
+### 5. Stats Cards com Animação
+Cards de estatísticas com números animados (count-up) e gradientes sutis.
 
-CORES DE FUNDO SUAVES
-├── Primary Light: #EDE9FE (roxo clarinho)
-├── Income Light: #D1FAE5 (verde clarinho)
-├── Expense Light: #FFE4E6 (rosa clarinho)
-├── Warning Light: #FEF3C7 (âmbar clarinho)
-├── Info Light: #DBEAFE (azul clarinho)
-```
+## Novo Layout Proposto
 
-### Tipografia Amigável
-
-```
-HIERARQUIA
-├── h1: 24px, font-weight: 600, color: foreground
-├── h2: 18px, font-weight: 600
-├── h3: 16px, font-weight: 500
-├── Body: 14px, font-weight: 400
-├── Small: 13px, font-weight: 400
-├── Caption: 12px, font-weight: 500, color: muted
-├── Valores: 28-32px, font-weight: 700 (destaque)
-```
-
-### Componentes Amigáveis
-
-```
-CARDS
-├── Background: branco puro
-├── Border: 1px solid #E5E7EB
-├── Border Radius: 16px (mais arredondado)
-├── Shadow: sutil (0 1px 3px rgba(0,0,0,0.08))
-├── Hover: shadow levemente maior
-
-SIDEBAR FIXA
-├── Largura: 260px fixo
-├── Background: #F7F8FA (levemente cinza)
-├── Itens: pills arredondados
-├── Ativo: background roxo claro + texto roxo
-├── Ícones: 20px, coloridos quando ativos
-
-BOTÕES
-├── Primary: roxo sólido, sem gradiente
-├── Secondary: borda + fundo transparente
-├── Hover: opacidade ou cor mais escura
-├── Border Radius: 12px (arredondado)
-
-INPUTS
-├── Border: 1px solid cinza
-├── Border Radius: 12px
-├── Focus: borda roxa
-├── Background: branco
-```
-
-## Nova Estrutura de Layout
-
-### Sidebar Fixa Completa
-
-```
-┌──────────────────────────────────────────────────────────┐
-│ ┌────────────┐                                            │
-│ │  SIDEBAR   │                                            │
-│ │  (260px)   │         CONTEÚDO PRINCIPAL                 │
-│ │            │                                            │
-│ │  • Logo    │         Layout organizado                  │
-│ │  • Menu    │         em grid uniforme                   │
-│ │  • Items   │                                            │
-│ │            │         Cards brancos com                  │
-│ │            │         bordas suaves                      │
-│ │            │                                            │
-│ │  ────────  │                                            │
-│ │  • Avatar  │                                            │
-│ │  • Config  │                                            │
-│ │  • Sair    │                                            │
-│ └────────────┘                                            │
-└──────────────────────────────────────────────────────────┘
-```
-
-### Dashboard Simplificado
-
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
-│  HEADER - Olá, Usuário + Filtro de período              │
+│  HEADER                                                  │
+│  Parcelamentos                    [Filtros] [Visualização]│
 └─────────────────────────────────────────────────────────┘
 
-┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
-│   💰 SALDO     │ │   ↑ RECEITAS   │ │   ↓ DESPESAS   │ │   💳 FATURA    │
-│   R$ 5.420     │ │   R$ 8.500     │ │   R$ 3.080     │ │   R$ 1.250     │
-│                │ │   Verde claro  │ │   Rosa claro   │ │   Roxo claro   │
-└────────────────┘ └────────────────┘ └────────────────┘ └────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  STATS RIBBON - Cards horizontais com gradiente         │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐           │
+│  │ 12 Ativos  │ │ R$ 2.450   │ │ R$ 15.800  │           │
+│  │ ○ Progress │ │ /mês       │ │ restante   │           │
+│  └────────────┘ └────────────┘ └────────────┘           │
+└─────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────┐ ┌─────────────────────────────────┐
-│   📊 GRÁFICO CATEGORIAS         │ │   📈 RECEITAS VS DESPESAS       │
-│                                 │ │                                 │
-└─────────────────────────────────┘ └─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  TIMELINE VIEW - Meses como colunas                     │
+│                                                         │
+│   Jan      Fev      Mar      Abr      Mai      Jun      │
+│  ┌────┐   ┌────┐   ┌────┐   ┌────┐   ┌────┐   ┌────┐   │
+│  │ •• │   │ •• │   │ •• │   │ •• │   │ •  │   │    │   │
+│  │ •  │   │ •  │   │ •  │   │    │   │    │   │    │   │
+│  └────┘   └────┘   └────┘   └────┘   └────┘   └────┘   │
+│                                                         │
+│   R$3.2k   R$3.2k   R$2.8k   R$1.5k   R$800    R$0     │
+└─────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────────┐
-│   💳 CARTÕES DE CRÉDITO                                             │
-│   Cards horizontais com cores suaves                                │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  PARCELAMENTOS GRID - Cards compactos com progresso     │
+│                                                         │
+│  ┌──────────────────┐  ┌──────────────────┐             │
+│  │ [◐] iPhone 15    │  │ [◔] Geladeira    │             │
+│  │     Nubank       │  │     Inter        │             │
+│  │     4/12 pagas   │  │     2/10 pagas   │             │
+│  │     R$ 450/mês   │  │     R$ 320/mês   │             │
+│  │     ███████░░░░  │  │     ██░░░░░░░░░  │             │
+│  └──────────────────┘  └──────────────────┘             │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Arquivos a Modificar
+## Componentes Novos
 
-### Fase 1: Design Tokens (Fundação)
+### 1. StatRibbon - Faixa de Estatísticas
+```tsx
+// Cards horizontais com gradiente e ícones animados
+<div className="flex gap-4 overflow-x-auto pb-2">
+  <StatCard
+    icon={<Layers />}
+    label="Parcelamentos"
+    value={12}
+    suffix="ativos"
+    gradient="from-violet-500/10 to-purple-500/10"
+  />
+  ...
+</div>
+```
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/index.css` | Nova paleta neutra clara, remover mesh gradients, simplificar utilities |
-| `tailwind.config.ts` | Cores amigáveis, border-radius maior, sombras suaves |
+### 2. TimelineView - Visão em Timeline
+```tsx
+// Linha do tempo horizontal mostrando concentração de parcelas por mês
+<div className="relative">
+  <div className="flex gap-0 border-b">
+    {meses.map(mes => (
+      <TimelineColumn 
+        mes={mes}
+        parcelas={parcelasDoMes}
+        total={totalDoMes}
+      />
+    ))}
+  </div>
+</div>
+```
 
-### Fase 2: Componentes UI
+### 3. ParcelamentoCard Redesenhado
+```tsx
+// Card com progresso circular e micro-interações
+<motion.div whileHover={{ y: -2 }} className="group">
+  <Card className="relative overflow-hidden">
+    {/* Barra colorida do cartão */}
+    <div className="absolute left-0 top-0 bottom-0 w-1" 
+         style={{ backgroundColor: cartaoCor }} />
+    
+    {/* Progresso Circular */}
+    <CircularProgress value={percentual} />
+    
+    {/* Conteúdo */}
+    <div className="pl-4">
+      <h3>{descricao}</h3>
+      <p>{parcelasPagas}/{totalParcelas}</p>
+    </div>
+    
+    {/* Hover Actions */}
+    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button size="sm">Ver detalhes</Button>
+    </div>
+  </Card>
+</motion.div>
+```
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/ui/card.tsx` | Cards brancos com bordas suaves, sem glass |
-| `src/components/ui/button.tsx` | Botões sólidos, arredondados, sem gradientes |
-| `src/components/ui/input.tsx` | Inputs arredondados, foco roxo |
-| `src/components/ui/badge.tsx` | Badges com cores claras de fundo |
-| `src/components/ui/progress.tsx` | Barras coloridas simples |
+### 4. Filtros com Chips Visuais
+```tsx
+// Chips clicáveis em vez de selects
+<div className="flex gap-2 flex-wrap">
+  <Chip active={filtro === 'todos'}>Todos</Chip>
+  {cartoes.map(cartao => (
+    <Chip 
+      key={cartao.id}
+      active={filtro === cartao.id}
+      color={cartao.cor}
+    >
+      {cartao.nome}
+    </Chip>
+  ))}
+</div>
+```
 
-### Fase 3: Layout Principal
+## Detalhes Visuais
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/Layout.tsx` | Sidebar fixa 260px, background claro, navegação tradicional |
-| `src/components/sidebar/MenuCollapsible.tsx` | Submenus com pills arredondados |
-
-### Fase 4: Páginas
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/Dashboard.tsx` | Grid uniforme 4 colunas, cards com ícones coloridos |
-| `src/pages/Auth.tsx` | Fundo branco limpo, card centralizado simples |
-| `src/pages/Cartoes.tsx` | Cards de cartão com cores suaves |
-| `src/pages/Metas.tsx` | Cards de meta com progresso colorido |
-| `src/pages/Investimentos.tsx` | Cards com ícones e cores amigáveis |
-
-## Detalhes de Implementação
-
-### Novas Variáveis CSS
-
+### Cores e Gradientes
 ```css
-:root {
-  /* Base - Neutro Claro */
-  --background: 0 0% 100%;
-  --background-secondary: 220 14% 98%;
-  --foreground: 220 13% 11%;
-  
-  /* Cards */
-  --card: 0 0% 100%;
-  --card-foreground: 220 13% 11%;
-  
-  /* Cores amigáveis */
-  --primary: 263 70% 58%;
-  --income: 160 84% 39%;
-  --expense: 348 83% 60%;
-  --warning: 38 92% 50%;
-  --info: 217 91% 60%;
-  
-  /* Fundos suaves para stats */
-  --primary-light: 263 100% 96%;
-  --income-light: 152 81% 90%;
-  --expense-light: 348 100% 94%;
-  --warning-light: 48 96% 89%;
-  --info-light: 214 100% 93%;
-  
-  /* Bordas suaves */
-  --border: 220 13% 91%;
-  --radius: 1rem; /* 16px - mais arredondado */
+/* Gradientes para stats */
+.stat-violet { background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(168,85,247,0.05) 100%); }
+.stat-emerald { background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.05) 100%); }
+.stat-amber { background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(251,191,36,0.05) 100%); }
+
+/* Cards com hover */
+.card-modern {
+  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted)/0.3) 100%);
+  border: 1px solid hsl(var(--border));
+  transition: all 0.2s ease;
+}
+
+.card-modern:hover {
+  border-color: hsl(var(--primary)/0.3);
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.12);
 }
 ```
 
-### Nova Sidebar (Layout.tsx)
+### Progresso Circular
+```tsx
+// SVG-based circular progress
+function CircularProgress({ value, size = 48 }) {
+  const circumference = 2 * Math.PI * 18;
+  const offset = circumference - (value / 100) * circumference;
+  
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle 
+        cx="24" cy="24" r="18" 
+        stroke="hsl(var(--muted))" 
+        strokeWidth="4" 
+        fill="none" 
+      />
+      <circle 
+        cx="24" cy="24" r="18" 
+        stroke="hsl(var(--primary))" 
+        strokeWidth="4" 
+        fill="none"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+```
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/cartoes/Parcelamentos.tsx` | Redesign completo da página |
+| `src/components/ui/circular-progress.tsx` | Novo componente de progresso circular |
+| `src/components/ui/chip.tsx` | Novo componente de chip/tag clicável |
+| `src/index.css` | Novos utilitários para gradientes |
+
+## Melhorias UX
+
+1. **Visualização de Impacto**: Ver claramente quanto cada parcelamento impacta o orçamento mensal
+2. **Timeline Futura**: Entender quando os parcelamentos vão acabar
+3. **Agrupamento Visual**: Identificar rapidamente parcelamentos por cartão
+4. **Micro-interações**: Feedback visual em cada ação
+5. **Responsividade**: Layout adaptado para mobile com cards empilhados
+
+## Animações
 
 ```tsx
-<aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-background-secondary border-r flex-col">
-  {/* Logo */}
-  <div className="p-6">
-    <div className="flex items-center gap-3">
-      <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-        <span className="text-white font-bold">F</span>
-      </div>
-      <span className="font-semibold text-lg">FinApp</span>
-    </div>
-  </div>
-  
-  {/* Navigation */}
-  <nav className="flex-1 px-4 space-y-1">
-    {items.map(item => (
-      <Link
-        key={item.href}
-        to={item.href}
-        className={cn(
-          "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
-          isActive(item.href)
-            ? "bg-primary/10 text-primary font-medium"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-        )}
-      >
-        <item.icon className={cn(
-          "h-5 w-5",
-          isActive(item.href) && "text-primary"
-        )} />
-        <span>{item.label}</span>
-      </Link>
-    ))}
-  </nav>
-  
-  {/* Footer */}
-  <div className="p-4 border-t">
-    <Link to="/profile" className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent">
-      <Avatar className="h-10 w-10" />
-      <div>
-        <p className="font-medium">{userName}</p>
-        <p className="text-xs text-muted-foreground">Ver perfil</p>
-      </div>
-    </Link>
-  </div>
-</aside>
+// Staggered entrance animation
+{parcelamentos.map((p, i) => (
+  <motion.div
+    key={p.id}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: i * 0.05 }}
+  >
+    <ParcelamentoCard {...p} />
+  </motion.div>
+))}
 ```
 
-### Cards de Stat Amigáveis
+## Resultado Visual Esperado
 
-```tsx
-{/* Card de Saldo */}
-<Card className="bg-white shadow-sm">
-  <CardContent className="p-5">
-    <div className="flex items-center gap-3 mb-3">
-      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-        <Wallet className="h-5 w-5 text-primary" />
-      </div>
-      <span className="text-sm text-muted-foreground">Saldo</span>
-    </div>
-    <p className="text-2xl font-bold">{formatCurrency(saldo)}</p>
-  </CardContent>
-</Card>
+**Antes**: Lista vertical monótona com cards repetitivos  
+**Depois**: Dashboard interativo com timeline, progresso visual e agrupamentos inteligentes
 
-{/* Card de Receitas */}
-<Card className="bg-white shadow-sm">
-  <CardContent className="p-5">
-    <div className="flex items-center gap-3 mb-3">
-      <div className="h-10 w-10 rounded-xl bg-income/10 flex items-center justify-center">
-        <ArrowUpRight className="h-5 w-5 text-income" />
-      </div>
-      <span className="text-sm text-muted-foreground">Receitas</span>
-    </div>
-    <p className="text-2xl font-bold text-income">+{formatCurrency(receitas)}</p>
-  </CardContent>
-</Card>
-```
-
-## Resultado Esperado
-
-```
-ANTES (Atual):
-├── Dock flutuante confuso
-├── Mesh gradients e glassmorphism
-├── Bento grid com tamanhos variados
-├── Cores vibrantes e escuras
-├── Layout complexo
-
-DEPOIS (Novo):
-├── Sidebar fixa clara e organizada
-├── Fundo branco limpo
-├── Grid uniforme e previsível
-├── Cores suaves e acolhedoras
-├── Ícones grandes e expressivos
-├── Layout simples e intuitivo
-├── Estilo Nubank/PicPay
-```
-
-## Inspiração Visual
-
-O novo design seguirá o estilo de apps financeiros populares:
-
-- **Nubank**: Cards brancos, roxo como cor de destaque, ícones arredondados
-- **PicPay**: Cores amigáveis, layout clean, navegação clara
-- **Inter**: Simplicidade, hierarquia visual forte, espaçamento generoso
-
-## Considerações
-
-1. **Responsividade**: Sidebar vira drawer no mobile
-2. **Dark Mode**: Será ajustado para manter a sensação acolhedora
-3. **Performance**: Remoção de blur/gradients melhora performance
-4. **Acessibilidade**: Contraste adequado com cores claras
-5. **Consistência**: Mesmo estilo em todas as páginas
+### Elementos Diferenciadores:
+- Progresso circular em vez de barra linear
+- Timeline horizontal para visão temporal
+- Chips coloridos para filtros
+- Cards com hover elevado
+- Gradientes sutis em stats
+- Agrupamento por cartão com headers visuais
+- Números animados com count-up
+- Micro-interações em todos os elementos

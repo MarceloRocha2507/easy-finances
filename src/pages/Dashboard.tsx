@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -24,7 +25,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, Pencil, Clock, AlertTriangle, CreditCard, ArrowUpRight, ArrowDownRight, Target, PiggyBank } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard } from "lucide-react";
 
 import {
   AlertasInteligentes,
@@ -43,7 +44,6 @@ import { DetalhesDespesasDialog } from "@/components/dashboard/DetalhesDespesasD
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
-import { cn } from "@/lib/utils";
 
 function formatYAxis(value: number): string {
   if (value === 0) return "R$0";
@@ -55,7 +55,7 @@ function formatYAxis(value: number): string {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card rounded-xl p-3 text-sm shadow-lg border">
+      <div className="bg-popover border rounded-md shadow-sm p-3 text-sm">
         <p className="font-medium capitalize mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} style={{ color: entry.fill }}>
@@ -120,14 +120,11 @@ export default function Dashboard() {
   return (
     <Layout>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Olá, {user?.user_metadata?.full_name?.split(' ')[0] || "Usuário"} 👋
+          <h1 className="text-xl font-semibold text-foreground">
+            Olá, {user?.user_metadata?.full_name || "Usuário"}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Aqui está o resumo das suas finanças
-          </p>
         </div>
 
         <FiltroPeriodo
@@ -145,172 +142,197 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Saldo */}
-        <Card className="col-span-2 lg:col-span-1">
+      {/* Stats Cards - Primeira Linha */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Card className="border card-hover animate-fade-in-up stagger-1">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-primary" />
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon-sm" 
-                onClick={() => setEditarSaldoOpen(true)}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Saldo Disponível</p>
-            <p className={cn(
-              "text-2xl font-bold value-display",
-              (completeStats?.saldoDisponivel || 0) >= 0 ? "text-income" : "text-expense"
-            )}>
-              {formatCurrency(completeStats?.saldoDisponivel || 0)}
-            </p>
-            
-            {/* Sub-labels */}
-            <div className="flex gap-3 mt-3">
-              {(completeStats?.totalInvestido || 0) > 0 && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Target className="h-3 w-3" />
-                  <span>{formatCurrency(completeStats?.totalInvestido || 0)} investido</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Disponível</p>
+                <p
+                  className={`text-xl font-semibold ${
+                    (completeStats?.saldoDisponivel || 0) >= 0 ? "text-income" : "text-expense"
+                  }`}
+                >
+                  {formatCurrency(completeStats?.saldoDisponivel || 0)}
+                </p>
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {(completeStats?.totalInvestido || 0) > 0 && (
+                    <p className="text-xs text-primary">
+                      Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
+                    </p>
+                  )}
+                  {(completeStats?.totalMetas || 0) > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
+                    </p>
+                  )}
                 </div>
-              )}
-              {(completeStats?.totalMetas || 0) > 0 && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <PiggyBank className="h-3 w-3" />
-                  <span>{formatCurrency(completeStats?.totalMetas || 0)} em metas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => setEditarSaldoOpen(true)}
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <div className="w-10 h-10 rounded-md bg-secondary flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-muted-foreground" />
                 </div>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Receitas */}
-        <Card>
+        <Card className="border card-hover animate-fade-in-up stagger-2">
           <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-10 w-10 rounded-xl bg-income-light flex items-center justify-center">
-                <ArrowUpRight className="w-5 h-5 text-income" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Receitas</p>
+                <p className="text-xl font-semibold text-income">
+                  {formatCurrency(completeStats?.completedIncome || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">recebidas</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-income/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-income" />
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mb-1">Receitas</p>
-            <p className="text-2xl font-bold text-income value-display">
-              +{formatCurrency(completeStats?.completedIncome || 0)}
-            </p>
           </CardContent>
         </Card>
 
-        {/* Despesas */}
-        <Card>
+        <Card className="border card-hover animate-fade-in-up stagger-3">
           <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-10 w-10 rounded-xl bg-expense-light flex items-center justify-center">
-                <ArrowDownRight className="w-5 h-5 text-expense" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Despesas</p>
+                <p className="text-xl font-semibold text-expense">
+                  {formatCurrency(completeStats?.completedExpense || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">pagas</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-expense/10 flex items-center justify-center">
+                <TrendingDown className="w-5 h-5 text-expense" />
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mb-1">Despesas</p>
-            <p className="text-2xl font-bold text-expense value-display">
-              -{formatCurrency(completeStats?.completedExpense || 0)}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Fatura Cartão */}
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Fatura Cartão</p>
-            <p className="text-2xl font-bold text-primary value-display">
-              -{formatCurrency(completeStats?.faturaCartao || 0)}
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Cards secundários */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* A Receber */}
-        <Card className="bg-info-light border-info/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-info" />
-              <span className="text-xs font-medium text-muted-foreground">pendentes</span>
+      {/* Stats Cards - Segunda Linha (Pendentes) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <Card className="border border-blue-200 dark:border-blue-900 card-hover animate-fade-in-up stagger-4">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">A Receber</p>
+                <p className="text-xl font-semibold text-blue-600">
+                  +{formatCurrency(completeStats?.pendingIncome || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">pendentes</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">A Receber</p>
-            <p className="text-lg font-bold text-info value-display">
-              +{formatCurrency(completeStats?.pendingIncome || 0)}
-            </p>
           </CardContent>
         </Card>
 
-        {/* A Pagar */}
-        <Card className="bg-warning-light border-warning/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-warning" />
-              <span className="text-xs font-medium text-muted-foreground">
-                {(completeStats?.overdueCount || 0) > 0 
-                  ? `${completeStats?.overdueCount} vencida(s)` 
-                  : "pendentes"}
-              </span>
+        <Card className="border border-amber-200 dark:border-amber-900 card-hover animate-fade-in-up stagger-5">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">A Pagar</p>
+                <p className="text-xl font-semibold text-amber-600">
+                  -{formatCurrency(completeStats?.pendingExpense || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(completeStats?.overdueCount || 0) > 0 
+                    ? `${completeStats?.overdueCount} vencida(s)` 
+                    : "pendentes"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">A Pagar</p>
-            <p className="text-lg font-bold text-warning value-display">
-              -{formatCurrency(completeStats?.pendingExpense || 0)}
-            </p>
           </CardContent>
         </Card>
 
-        {/* Total a Pagar */}
+        <Card className="border border-purple-200 dark:border-purple-900 card-hover animate-fade-in-up stagger-6">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Fatura Cartão</p>
+                <p className="text-xl font-semibold text-purple-600">
+                  -{formatCurrency(completeStats?.faturaCartao || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">titular do mês</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-purple-100 dark:bg-purple-950 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card 
-          className="bg-expense-light border-expense/20 cursor-pointer hover:shadow-md transition-shadow"
+          className="border border-red-200 dark:border-red-900 card-hover animate-fade-in-up cursor-pointer hover:border-red-400 dark:hover:border-red-700 transition-colors" 
+          style={{ animationDelay: '0.35s', opacity: 0 }}
           onClick={() => setDespesasDialogOpen(true)}
         >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="w-4 h-4 text-expense" />
-              <span className="text-xs font-medium text-muted-foreground">total</span>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total a Pagar</p>
+                <p className="text-xl font-semibold text-red-600">
+                  {formatCurrency(
+                    -((completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0))
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">contas + cartão</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-red-100 dark:bg-red-950 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-red-600" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">Total a Pagar</p>
-            <p className="text-lg font-bold text-expense value-display">
-              {formatCurrency(
-                -((completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0))
-              )}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Saldo Estimado */}
-        <Card className="bg-primary text-primary-foreground">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-xs font-medium text-primary-foreground/70">estimado</span>
-            </div>
-            <p className="text-xs text-primary-foreground/70 mb-1">Saldo Final</p>
-            <p className="text-lg font-bold value-display">
-              {formatCurrency(completeStats?.estimatedBalance || 0)}
-            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Stats Cards - Terceira Linha (Saldo Estimado) */}
+      <Card className="border-2 border-primary/40 bg-primary/5 card-hover animate-fade-in-up mb-6" style={{ animationDelay: '0.4s', opacity: 0 }}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Estimado do Mês</p>
+                <p className={`text-2xl font-bold ${
+                  (completeStats?.estimatedBalance || 0) >= 0 ? "text-primary" : "text-expense"
+                }`}>
+                  {formatCurrency(completeStats?.estimatedBalance || 0)}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">saldo real + receitas pendentes - despesas pendentes - cartão</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Card>
+        <Card className="border card-hover animate-fade-in" style={{ animationDelay: '0.4s', opacity: 0 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Despesas por Categoria</CardTitle>
+            <CardTitle className="text-base font-medium">Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -318,9 +340,7 @@ export default function Dashboard() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
-                    innerRadius={50}
-                    paddingAngle={2}
+                    outerRadius={70}
                     label={({ name }) => name}
                   >
                     {pieData.map((entry, index) => (
@@ -331,20 +351,20 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
                 Nenhuma despesa registrada
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border card-hover animate-fade-in" style={{ animationDelay: '0.45s', opacity: 0 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Receitas vs Despesas</CardTitle>
+            <CardTitle className="text-base font-medium">Receitas vs Despesas ({mesReferencia.getFullYear()})</CardTitle>
           </CardHeader>
           <CardContent>
             {hasMonthlyData ? (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart
                   data={monthlyData}
                   margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
@@ -370,20 +390,20 @@ export default function Dashboard() {
                   <Tooltip content={<CustomBarTooltip />} />
                   <Bar
                     dataKey="income"
-                    fill="hsl(var(--income))"
+                    fill="hsl(152, 60%, 36%)"
                     name="Receitas"
-                    radius={[4, 4, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                   />
                   <Bar
                     dataKey="expense"
-                    fill="hsl(var(--expense))"
+                    fill="hsl(0, 65%, 51%)"
                     name="Despesas"
-                    radius={[4, 4, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
                 Nenhum dado registrado
               </div>
             )}
@@ -424,57 +444,57 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <ProximasFaturas
           faturas={dashboardData?.proximasFaturas || []}
+          onCartaoClick={(cartaoId) => {
+            const cartao = dashboardData?.cartoes.find((c) => c.id === cartaoId);
+            if (cartao) handleCartaoClick(cartao);
+          }}
         />
-        <UltimasCompras
-          compras={dashboardData?.ultimasCompras || []}
-        />
+        <UltimasCompras compras={dashboardData?.ultimasCompras || []} />
       </div>
 
       {/* Metas */}
-      {dashboardData?.metas && (
+      <div className="mb-6">
         <MetasEconomia
-          metas={dashboardData.metas}
+          metas={dashboardData?.metas || []}
           onNovaMeta={() => setNovaMetaOpen(true)}
           onMetaClick={(meta) => {
             setMetaSelecionada(meta);
             setGerenciarMetaOpen(true);
           }}
         />
+      </div>
+
+      {/* FAB */}
+      <div className="fixed bottom-6 right-6">
+        <Link to="/transactions">
+          <Button size="lg" className="rounded-full h-12 w-12 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-110">
+            <Plus className="w-5 h-5" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Modals */}
+      {cartaoSelecionado && (
+        <DetalhesCartaoDialog
+          cartao={cartaoSelecionado as any}
+          open={detalhesOpen}
+          onOpenChange={setDetalhesOpen}
+          onUpdated={() => refetch()}
+        />
       )}
 
-      {/* Dialogs */}
       <NovaMetaDialog
         open={novaMetaOpen}
         onOpenChange={setNovaMetaOpen}
         onSuccess={() => refetch()}
       />
 
-      {metaSelecionada && (
-        <GerenciarMetaDialog
-          meta={metaSelecionada}
-          open={gerenciarMetaOpen}
-          onOpenChange={setGerenciarMetaOpen}
-          onSuccess={() => refetch()}
-        />
-      )}
-
-      {detalhesOpen && cartaoSelecionado && (
-        <DetalhesCartaoDialog
-          cartao={{
-            id: cartaoSelecionado.id,
-            nome: cartaoSelecionado.nome,
-            bandeira: cartaoSelecionado.bandeira,
-            limite: cartaoSelecionado.limite,
-            dia_fechamento: cartaoSelecionado.dia_fechamento,
-            dia_vencimento: cartaoSelecionado.dia_vencimento,
-            cor: cartaoSelecionado.cor,
-            banco_id: null,
-          }}
-          open={detalhesOpen}
-          onOpenChange={setDetalhesOpen}
-          onUpdated={() => refetch()}
-        />
-      )}
+      <GerenciarMetaDialog
+        meta={metaSelecionada}
+        open={gerenciarMetaOpen}
+        onOpenChange={setGerenciarMetaOpen}
+        onSuccess={() => refetch()}
+      />
 
       <EditarSaldoDialog
         open={editarSaldoOpen}

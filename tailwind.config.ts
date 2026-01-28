@@ -32,12 +32,10 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
-        'background-secondary': 'hsl(var(--background-secondary))',
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-          light: 'hsl(var(--primary-light))'
+          foreground: 'hsl(var(--primary-foreground))'
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -65,23 +63,19 @@ export default {
         },
         income: {
           DEFAULT: 'hsl(var(--income))',
-          foreground: 'hsl(var(--income-foreground))',
-          light: 'hsl(var(--income-light))'
+          foreground: 'hsl(var(--income-foreground))'
         },
         expense: {
           DEFAULT: 'hsl(var(--expense))',
-          foreground: 'hsl(var(--expense-foreground))',
-          light: 'hsl(var(--expense-light))'
+          foreground: 'hsl(var(--expense-foreground))'
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))',
-          light: 'hsl(var(--warning-light))'
+          foreground: 'hsl(var(--warning-foreground))'
         },
         info: {
           DEFAULT: 'hsl(var(--info))',
-          foreground: 'hsl(var(--info-foreground))',
-          light: 'hsl(var(--info-light))'
+          foreground: 'hsl(var(--info-foreground))'
         },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
@@ -104,10 +98,7 @@ export default {
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-        xl: 'calc(var(--radius) + 4px)',
-        '2xl': 'calc(var(--radius) + 8px)',
-        '3xl': 'calc(var(--radius) + 16px)'
+        sm: 'calc(var(--radius) - 4px)'
       },
       keyframes: {
         'accordion-down': {
@@ -127,7 +118,7 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' }
         },
         'scale-in': {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
           '100%': { opacity: '1', transform: 'scale(1)' }
         },
         'slide-in-left': {
@@ -137,10 +128,6 @@ export default {
         'slide-in-right': {
           '0%': { opacity: '0', transform: 'translateX(16px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' }
-        },
-        'slide-up': {
-          '0%': { opacity: '0', transform: 'translateY(100%)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' }
         }
       },
       animation: {
@@ -150,8 +137,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.4s ease-out forwards',
         'scale-in': 'scale-in 0.25s ease-out forwards',
         'slide-in-left': 'slide-in-left 0.3s ease-out forwards',
-        'slide-in-right': 'slide-in-right 0.3s ease-out forwards',
-        'slide-up': 'slide-up 0.3s ease-out forwards'
+        'slide-in-right': 'slide-in-right 0.3s ease-out forwards'
       },
       boxShadow: {
         '2xs': 'var(--shadow-2xs)',
