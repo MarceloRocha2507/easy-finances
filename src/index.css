@@ -249,4 +249,53 @@
   .status-info {
     @apply bg-info/10 text-info;
   }
+
+  /* Gradient stat cards */
+  .stat-violet {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(168,85,247,0.05) 100%);
+  }
+
+  .stat-emerald {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.05) 100%);
+  }
+
+  .stat-amber {
+    background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(251,191,36,0.05) 100%);
+  }
+
+  .stat-rose {
+    background: linear-gradient(135deg, rgba(244,63,94,0.1) 0%, rgba(251,113,133,0.05) 100%);
+  }
+
+  /* Modern card with hover */
+  .card-modern {
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.3) 100%);
+    border: 1px solid hsl(var(--border));
+    transition: all 0.2s ease;
+  }
+
+  .card-modern:hover {
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.12);
+  }
+
+  /* Timeline column */
+  .timeline-column {
+    @apply flex-1 min-w-[80px] p-3 border-r border-border last:border-r-0;
+    @apply transition-colors duration-200;
+  }
+
+  .timeline-column:hover {
+    @apply bg-muted/30;
+  }
+
+  /* Count up animation */
+  @keyframes count-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-count-up {
+    animation: count-up 0.4s ease-out forwards;
+  }
 }
