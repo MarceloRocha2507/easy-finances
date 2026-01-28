@@ -4,14 +4,50 @@ import { useExpensesByCategory, useTransactions } from '@/hooks/useTransactions'
 import { formatCurrency } from '@/lib/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { 
+  Calendar, TrendingUp, TrendingDown, Minus, DollarSign, Wallet, Briefcase,
+  ShoppingCart, Home, Car, Utensils, Heart, GraduationCap, Gift, Plane,
+  Gamepad2, Shirt, Pill, Book, Package, Zap, Tag, CreditCard, PiggyBank,
+  type LucideIcon
+} from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { PieChartWithLegend } from '@/components/dashboard';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+// Icon mapping for dynamic icon rendering
+const ICON_MAP: Record<string, LucideIcon> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+  'credit-card': CreditCard,
+  'piggy-bank': PiggyBank,
+};
+
+function getIconComponent(iconName: string | null | undefined): LucideIcon {
+  if (!iconName) return Package;
+  return ICON_MAP[iconName] || Package;
+}
 
 export default function RelatorioCategorias() {
   const currentDate = new Date();
@@ -36,8 +72,7 @@ export default function RelatorioCategorias() {
   const pieData = expensesByCategory?.map((cat) => ({
     name: cat.name,
     value: cat.total,
-    color: cat.color,
-    icon: cat.icon,
+    color: cat.color || '#666',
   })) || [];
 
   const totalExpenses = pieData.reduce((acc, cur) => acc + cur.value, 0);
@@ -78,7 +113,7 @@ export default function RelatorioCategorias() {
         </div>
 
         {/* Period Selector */}
-        <Card className="border">
+        <Card className="border shadow-sm rounded-xl">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <div className="flex items-center gap-2">
@@ -117,7 +152,7 @@ export default function RelatorioCategorias() {
 
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border card-hover">
+          <Card className="border shadow-sm rounded-xl">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Total de Despesas</p>
               <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
@@ -130,7 +165,7 @@ export default function RelatorioCategorias() {
             </CardContent>
           </Card>
 
-          <Card className="border card-hover">
+          <Card className="border shadow-sm rounded-xl">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Categorias Ativas</p>
               <p className="text-2xl font-bold text-foreground">{pieData.length}</p>
@@ -138,7 +173,7 @@ export default function RelatorioCategorias() {
             </CardContent>
           </Card>
 
-          <Card className="border card-hover">
+          <Card className="border shadow-sm rounded-xl">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-1">Maior Categoria</p>
               <p className="text-2xl font-bold text-foreground">
@@ -155,43 +190,13 @@ export default function RelatorioCategorias() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart */}
-          <Card className="border">
-            <CardHeader>
-              <CardTitle>Distribuição de Gastos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Nenhuma despesa no período
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Pie Chart - Using PieChartWithLegend from Dashboard */}
+          <PieChartWithLegend data={pieData} />
 
           {/* Bar Chart - Comparativo */}
-          <Card className="border">
+          <Card className="border shadow-sm rounded-xl">
             <CardHeader>
-              <CardTitle>Comparativo com Mês Anterior</CardTitle>
+              <CardTitle className="text-base font-medium">Comparativo com Mês Anterior</CardTitle>
             </CardHeader>
             <CardContent>
               {categoryComparison.length > 0 ? (
@@ -215,9 +220,9 @@ export default function RelatorioCategorias() {
         </div>
 
         {/* Category Details */}
-        <Card className="border">
+        <Card className="border shadow-sm rounded-xl">
           <CardHeader>
-            <CardTitle>Detalhamento por Categoria</CardTitle>
+            <CardTitle className="text-base font-medium">Detalhamento por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryComparison.length > 0 ? (
@@ -226,15 +231,19 @@ export default function RelatorioCategorias() {
                   .sort((a, b) => b.total - a.total)
                   .map((category) => {
                     const percentage = totalExpenses > 0 ? (category.total / totalExpenses) * 100 : 0;
+                    const IconComp = getIconComponent(category.icon);
                     return (
-                      <div key={category.name} className="p-4 rounded-lg bg-secondary/50">
+                      <div key={category.name} className="p-4 rounded-xl bg-secondary/50">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                              className="w-10 h-10 rounded-lg flex items-center justify-center"
                               style={{ backgroundColor: `${category.color}20` }}
                             >
-                              {category.icon}
+                              <IconComp 
+                                className="w-5 h-5" 
+                                style={{ color: category.color }} 
+                              />
                             </div>
                             <div>
                               <span className="font-medium">{category.name}</span>
