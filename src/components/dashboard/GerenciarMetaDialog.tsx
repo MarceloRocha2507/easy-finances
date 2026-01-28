@@ -48,8 +48,10 @@ import { Meta } from "@/hooks/useDashboardCompleto";
 import {
   useAtualizarMeta,
   useAdicionarValorMeta,
+  useRetirarValorMeta,
   useExcluirMeta,
 } from "@/hooks/useMetas";
+import { useCompleteStats } from "@/hooks/useTransactions";
 
 interface Props {
   meta: Meta | null;
@@ -88,7 +90,12 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   // Mutations
   const atualizarMeta = useAtualizarMeta();
   const adicionarValor = useAdicionarValorMeta();
+  const retirarValor = useRetirarValorMeta();
   const excluirMeta = useExcluirMeta();
+
+  // Buscar saldo disponível para validação
+  const { data: completeStats } = useCompleteStats();
+  const saldoDisponivel = completeStats?.saldoDisponivel ?? 0;
 
   // Atualizar estado quando a meta mudar
   if (meta && titulo !== meta.titulo) {
@@ -102,6 +109,8 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   if (!meta) return null;
 
   const faltando = Math.max(meta.valorAlvo - meta.valorAtual, 0);
+  const valorDepositoNum = parseFloat(valorDeposito) || 0;
+  const depositoExcedeSaldo = valorDepositoNum > saldoDisponivel;
 
   function handleDepositar() {
     const valor = parseFloat(valorDeposito);
@@ -113,6 +122,8 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
         valor,
         valorAtualAnterior: meta.valorAtual,
         valorAlvo: meta.valorAlvo,
+        metaTitulo: meta.titulo,
+        saldoDisponivel,
       },
       {
         onSuccess: () => {
@@ -127,13 +138,12 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
     const valor = parseFloat(valorRetirada);
     if (!valor || valor <= 0) return;
 
-    const novoValor = Math.max(meta.valorAtual - valor, 0);
-
-    atualizarMeta.mutate(
+    retirarValor.mutate(
       {
         id: meta.id,
-        valorAtual: novoValor,
-        concluida: false,
+        valor,
+        valorAtualAnterior: meta.valorAtual,
+        metaTitulo: meta.titulo,
       },
       {
         onSuccess: () => {
@@ -259,14 +269,25 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
                 type="number"
                 step="0.01"
                 placeholder="0,00"
+                max={saldoDisponivel}
                 value={valorDeposito}
                 onChange={(e) => setValorDeposito(e.target.value)}
+                className={depositoExcedeSaldo ? "border-destructive" : ""}
               />
+              <p className={cn(
+                "text-xs",
+                depositoExcedeSaldo ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {depositoExcedeSaldo
+                  ? `Saldo insuficiente! Disponível: ${formatCurrency(saldoDisponivel)}`
+                  : `Saldo disponível: ${formatCurrency(saldoDisponivel)}`
+                }
+              </p>
             </div>
 
             {/* Valores rápidos */}
             <div className="flex flex-wrap gap-2">
-              {VALORES_RAPIDOS.map((valor) => (
+              {VALORES_RAPIDOS.filter(v => v <= saldoDisponivel).map((valor) => (
                 <Button
                   key={valor}
                   variant="outline"
@@ -283,7 +304,8 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
               onClick={handleDepositar}
               disabled={
                 !valorDeposito ||
-                parseFloat(valorDeposito) <= 0 ||
+                valorDepositoNum <= 0 ||
+                depositoExcedeSaldo ||
                 adicionarValor.isPending
               }
             >
@@ -317,11 +339,11 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
                 !valorRetirada ||
                 parseFloat(valorRetirada) <= 0 ||
                 parseFloat(valorRetirada) > meta.valorAtual ||
-                atualizarMeta.isPending
+                retirarValor.isPending
               }
             >
               <Minus className="w-4 h-4 mr-2" />
-              {atualizarMeta.isPending ? "Retirando..." : "Retirar da meta"}
+              {retirarValor.isPending ? "Retirando..." : "Retirar da meta"}
             </Button>
           </TabsContent>
 
