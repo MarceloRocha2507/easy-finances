@@ -1,267 +1,218 @@
 
-
-# Plano: Redesign Completo do Dashboard Financeiro
+# Plano: Aplicar Estilos de Cards do Dashboard em Todo o Sistema
 
 ## Visao Geral
 
-Vou implementar uma transformacao visual completa do Dashboard seguindo as diretrizes especificadas, criando uma experiencia moderna e profissional inspirada em apps de fintech.
+Vou propagar os estilos visuais dos cards do Dashboard (`StatCardPrimary`, `StatCardSecondary`) para todas as outras paginas e componentes do sistema, garantindo consistencia visual em toda a aplicacao.
 
 ---
 
-## 1. Cards de Resumo Principal (Saldo, Receitas, Despesas)
+## Componentes de Referencia (Dashboard)
 
-### Alteracoes
+### StatCardPrimary
+- Gradientes por tipo: `income`, `expense`, `neutral`
+- `shadow-lg rounded-xl border-0`
+- Padding: `p-6`
+- Valores: `text-2xl sm:text-3xl font-bold`
+- Icones: container `w-12 h-12 rounded-xl`
+- Animacao: `animate-fade-in-up` com delay
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Tamanho | `text-xl font-semibold` | `text-2xl sm:text-3xl font-bold` |
-| Fundo | `border card-hover` | Gradientes sutis + `shadow-lg rounded-xl` |
-| Icones | `w-5 h-5` em container 10x10 | `w-6 h-6` em container 12x12 |
-| Animacao | `animate-fade-in-up` basica | Entrada refinada com transform |
+### StatCardSecondary
+- Borda colorida esquerda: `border-l-4 border-l-{color}-500`
+- `shadow-sm rounded-xl`
+- Padding: `p-6`
+- Valores: `text-xl font-semibold`
+- Icones: container `w-10 h-10 rounded-lg`
 
-### Estilos por Card
+---
+
+## Arquivos e Alteracoes
+
+### 1. `src/components/economia/Resumoeconomia.tsx`
+
+**Situacao Atual**: Cards simples com `Card` + `CardContent pt-4 pb-4`
+
+**Alteracoes**:
+- Aplicar gradientes por tipo (Receitas = income, Gastos = expense)
+- Adicionar `shadow-lg rounded-xl` nos cards principais
+- Icones com containers coloridos
+- Tipografia maior para valores
 
 ```text
-Saldo Disponivel:
-- Gradiente: bg-gradient-to-br from-slate-50 to-slate-100 (light)
-            bg-gradient-to-br from-slate-800 to-slate-900 (dark)
-- Icone destacado com fundo semi-transparente
-
-Receitas:
-- Gradiente: bg-gradient-to-br from-emerald-50 to-green-50 (light)
-            bg-gradient-to-br from-emerald-950/50 to-green-950/50 (dark)
-- Borda sutil esquerda verde
-
-Despesas:
-- Gradiente: bg-gradient-to-br from-rose-50 to-red-50 (light)
-            bg-gradient-to-br from-rose-950/50 to-red-950/50 (dark)
-- Borda sutil esquerda vermelha
+Receitas: gradient-income + icone TrendingUp
+Gastos: gradient-expense + icone TrendingDown  
+Economizado: gradient-income/expense conforme valor
+Comparativo: neutral com border-l colorido
 ```
 
----
+### 2. `src/pages/Metas.tsx`
 
-## 2. Cards Secundarios (A Receber, A Pagar, Fatura, Total)
+**Situacao Atual**: Cards com `border card-hover` e valores `text-2xl`
 
-### Alteracoes
-
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Padding | `p-5` | `p-6` |
-| Borda | `border border-{color}-200` | `border-l-4 border-{color}-500` |
-| Grid | `md:grid-cols-2 lg:grid-cols-4` | Mantido mas com melhor responsividade |
-| Layout | Flexbox basico | Estrutura mais organizada |
-
-### Cores por Status
+**Alteracoes**:
+- Cards de stats (Total, Em andamento, Concluidos, Valor acumulado): usar padroes do Dashboard
+- Adicionar icones com containers coloridos (Target, Clock, Check, Wallet)
+- Adicionar bordas coloridas a esquerda baseado no status
+- Gradientes sutis nos cards de stats
 
 ```text
-A Receber (pendente positivo): border-l-blue-500
-A Pagar (pendente negativo): border-l-amber-500
-Fatura Cartao: border-l-purple-500
-Total a Pagar (critico): border-l-red-500
+Total: neutral + icone Target
+Em andamento: warning (amber) + icone Clock
+Concluidos: income (green) + icone Check
+Valor acumulado: info (purple) + icone Wallet
 ```
 
----
+### 3. `src/pages/Investimentos.tsx`
 
-## 3. Card de Saldo Estimado
+**Situacao Atual**: Cards com `bg-card border rounded-xl p-5 card-hover`
 
-### Transformacao para Banner Destacado
+**Alteracoes**:
+- Cards de resumo: aplicar gradientes e shadows
+- Patrimonio total: neutral gradient
+- Total investido: info (blue) border-l
+- Rendimento total: income/expense conforme valor
+- Rentabilidade: info (purple) border-l
+- Aumentar containers de icones para `w-12 h-12 rounded-xl`
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Fundo | `bg-primary/5` | Gradiente dark: `from-slate-800 via-slate-700 to-slate-800` |
-| Layout | Horizontal basico | Centralizado com icone hero |
-| Tipografia | `text-2xl font-bold` | `text-3xl sm:text-4xl font-bold` |
-| Tooltip | Nao tem | Tooltip explicativo no icone de info |
+### 4. `src/components/investimentos/InvestimentoCard.tsx`
 
-### Estrutura
+**Situacao Atual**: Card simples com `hover:shadow-lg`
 
-```text
-+--------------------------------------------------+
-|  [Icone Grande]                                  |
-|  Saldo Estimado do Mes      [?] tooltip          |
-|  R$ XX.XXX,XX                                    |
-|  saldo + receitas - despesas - cartao            |
-+--------------------------------------------------+
-```
+**Alteracoes**:
+- Adicionar `rounded-xl shadow-sm`
+- Melhorar container do icone para `rounded-xl` (ja tem `rounded-xl`)
+- Valor atual em `text-2xl font-bold`
+- Adicionar borda colorida sutil baseada no rendimento (positivo=verde, negativo=vermelho)
 
----
+### 5. `src/pages/Bancos.tsx`
 
-## 4. Graficos
+**Situacao Atual**: Card de resumo com `border mb-6`, texto `text-3xl font-bold`
 
-### Grafico de Pizza (Despesas por Categoria)
+**Alteracoes**:
+- Card de resumo geral: usar `gradient-neutral shadow-lg rounded-xl`
+- Manter o destaque do saldo total
+- Adicionar icones com containers coloridos nos stats do grid
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Container | `border card-hover` | `border rounded-xl shadow-sm` |
-| Legenda | Labels no grafico | Legenda interativa ao lado |
-| Cores | Cores das categorias | Mantido + hover com destaque |
-| Altura | `220px` | `280px` para acomodar legenda |
+### 6. `src/components/bancos/BancoCard.tsx`
 
-### Grafico de Barras (Receitas vs Despesas)
+**Situacao Atual**: Card com `border card-hover`
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Cores | HSL fixo | `hsl(var(--income))` e `hsl(var(--expense))` |
-| Grid | `strokeDasharray="3 3"` | Grid mais sutil |
-| Bordas | `radius={[2, 2, 0, 0]}` | `radius={[4, 4, 0, 0]}` |
-| Container | `border card-hover` | `border rounded-xl shadow-sm` |
+**Alteracoes**:
+- Adicionar `shadow-sm rounded-xl`
+- Melhorar a area de saldo com gradiente sutil
+- Icone do banco em container `rounded-xl`
 
----
+### 7. `src/pages/Cartoes.tsx`
 
-## 5. Sidebar (Layout.tsx)
+**Situacao Atual**: Card de previsao com `card-hover`, CartaoCard com header colorido
 
-### Melhorias
+**Alteracoes**:
+- Card de Previsao de Faturas: `shadow-lg rounded-xl`
+- Melhorar grid de meses com gradientes sutis
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Hover | `hover:glass-hover` | Transicao mais suave 300ms |
-| Item ativo | `glass text-foreground` | `bg-primary text-primary-foreground` |
-| Logo | Simples | Maior destaque com sombra sutil |
-| Separadores | `border-t border-border/50` | Mais espaco + label de secao |
+### 8. `src/pages/Admin.tsx`
 
-### Classes Atualizadas
+**Situacao Atual**: Cards com `card-hover animate-fade-in-up`
 
-```text
-Item normal: hover:bg-muted/80 transition-all duration-300
-Item ativo: bg-primary text-primary-foreground shadow-sm
-Logo: text-lg font-bold com icone
-```
+**Alteracoes**:
+- Aplicar gradientes por tipo de stat
+- Total: neutral
+- Admins: warning (amber)
+- Ativos: income (green)  
+- Inativos: danger (red)
+- Expirando: warning (amber)
+- Adicionar `shadow-lg rounded-xl`
 
----
+### 9. `src/components/economia/Rankinggastos.tsx`
 
-## 6. Header (FiltroPeriodo)
+**Situacao Atual**: Card simples
 
-### Melhorias
+**Alteracoes**:
+- Adicionar `shadow-sm rounded-xl` ao container
+- Manter layout interno
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Seletor mes | Select basico | Dropdown mais elegante com hover |
-| Botao refresh | Presente | Mantido com feedback visual melhorado |
-| Saudacao | `text-xl font-semibold` | `text-base text-muted-foreground` (menor) |
+### 10. `src/components/economia/Insightseconomia.tsx`
 
----
+**Situacao Atual**: Card simples
 
-## 7. Novos Arquivos/Componentes
+**Alteracoes**:
+- Adicionar `shadow-sm rounded-xl`
+- Cards de insight individuais: melhorar borders
 
-### `src/components/dashboard/StatCardPrimary.tsx` (novo)
+### 11. `src/pages/Economia.tsx`
 
-Componente reutilizavel para cards principais com:
-- Props: titulo, valor, icone, tipo (income/expense/neutral), subinfo
-- Gradiente automatico baseado no tipo
-- Animacao de entrada
+**Situacao Atual**: Cards simples em varias secoes
 
-### `src/components/dashboard/StatCardSecondary.tsx` (novo)
+**Alteracoes**:
+- Card de grafico pizza: `shadow-sm rounded-xl`
+- Card de previsao: `shadow-sm rounded-xl` com gradiente sutil
+- Cards de dicas: `shadow-sm rounded-xl`
 
-Componente para cards secundarios com:
-- Props: titulo, valor, icone, status (pending/warning/danger)
-- Borda colorida a esquerda
-- Estados de hover
+### 12. `src/components/profile/EstatisticasTab.tsx`
 
-### `src/components/dashboard/EstimatedBalanceBanner.tsx` (novo)
+**Situacao Atual**: Cards com estilos mistos
 
-Banner destacado para saldo estimado com:
-- Tooltip explicativo
-- Gradiente dark
-- Layout centralizado
+**Alteracoes**:
+- Aplicar `shadow-sm rounded-xl` uniformemente
+- Icones em containers coloridos
 
-### `src/components/dashboard/PieChartWithLegend.tsx` (novo)
+### 13. `src/components/profile/PerfilTab.tsx`, `SegurancaTab.tsx`, `PreferenciasTab.tsx`
 
-Grafico de pizza aprimorado com:
-- Legenda interativa lateral
-- Hover states
-- Responsivo
+**Alteracoes**:
+- Todos os cards de configuracao: `shadow-sm rounded-xl`
 
 ---
 
-## 8. Alteracoes no index.css
+## Classes Utilitarias a Reutilizar
 
-### Novas Classes Utilitarias
-
+Ja existem em `index.css`:
 ```css
-/* Gradientes para cards */
-.gradient-income {
-  @apply bg-gradient-to-br from-emerald-50 to-green-50 
-         dark:from-emerald-950/30 dark:to-green-950/30;
-}
-
-.gradient-expense {
-  @apply bg-gradient-to-br from-rose-50 to-red-50 
-         dark:from-rose-950/30 dark:to-red-950/30;
-}
-
-.gradient-neutral {
-  @apply bg-gradient-to-br from-slate-50 to-gray-100 
-         dark:from-slate-800 dark:to-slate-900;
-}
-
-.gradient-banner {
-  @apply bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800;
-}
-
-/* Card com borda esquerda */
-.card-status-pending { @apply border-l-4 border-l-blue-500; }
-.card-status-warning { @apply border-l-4 border-l-amber-500; }
-.card-status-danger { @apply border-l-4 border-l-red-500; }
-.card-status-success { @apply border-l-4 border-l-emerald-500; }
+.gradient-income { ... from-emerald-50 to-green-50 ... }
+.gradient-expense { ... from-rose-50 to-red-50 ... }
+.gradient-neutral { ... from-slate-50 to-gray-100 ... }
 ```
 
 ---
 
-## 9. Resumo de Arquivos a Modificar
+## Resumo de Padronizacao
+
+| Tipo de Card | Gradiente | Border-L | Shadow | Corners | Padding |
+|--------------|-----------|----------|--------|---------|---------|
+| Stat Principal | Sim (por tipo) | Opcional | shadow-lg | rounded-xl | p-6 |
+| Stat Secundario | Nao | Sim (4px) | shadow-sm | rounded-xl | p-6 |
+| Card de Conteudo | Nao | Nao | shadow-sm | rounded-xl | p-5/p-6 |
+| Card Destacado | Especial | Nao | shadow-lg | rounded-xl | p-6+ |
+
+---
+
+## Arquivos a Modificar
 
 | Arquivo | Tipo de Alteracao |
 |---------|-------------------|
-| `src/pages/Dashboard.tsx` | Refatorar cards principais, secundarios e banner |
-| `src/components/Layout.tsx` | Melhorar sidebar (hover, ativo, logo) |
-| `src/components/dashboard/FiltroPeriodo.tsx` | Estilizar seletor de mes |
-| `src/components/dashboard/CartoesCredito.tsx` | Adicionar rounded-xl |
-| `src/components/dashboard/GastosDiarios.tsx` | Atualizar estilos do card |
-| `src/components/dashboard/ComparativoMensal.tsx` | Atualizar estilos do card |
-| `src/components/dashboard/MetasEconomia.tsx` | Atualizar estilos do card |
-| `src/index.css` | Adicionar classes utilitarias de gradiente |
+| `src/components/economia/Resumoeconomia.tsx` | Refatorar 4 cards com gradientes e icones |
+| `src/pages/Metas.tsx` | Refatorar 4 cards de stats |
+| `src/pages/Investimentos.tsx` | Refatorar 4 cards de resumo |
+| `src/components/investimentos/InvestimentoCard.tsx` | Adicionar shadow e border baseado em rendimento |
+| `src/pages/Bancos.tsx` | Refatorar card de resumo geral |
+| `src/components/bancos/BancoCard.tsx` | Adicionar shadow-sm rounded-xl |
+| `src/pages/Cartoes.tsx` | Melhorar card de previsao |
+| `src/pages/Admin.tsx` | Refatorar 5 cards de stats com gradientes |
+| `src/components/economia/Rankinggastos.tsx` | Adicionar shadow-sm rounded-xl |
+| `src/components/economia/Insightseconomia.tsx` | Adicionar shadow-sm rounded-xl |
+| `src/pages/Economia.tsx` | Padronizar todos os cards |
+| `src/components/profile/EstatisticasTab.tsx` | Padronizar cards |
+| `src/components/profile/PerfilTab.tsx` | Padronizar cards |
+| `src/components/profile/SegurancaTab.tsx` | Padronizar cards |
+| `src/components/profile/PreferenciasTab.tsx` | Padronizar cards |
 
 ---
 
-## 10. Resultado Visual Esperado
+## Resultado Esperado
 
-```text
-+----------------------------------------------------------+
-| Logo destacado                      [Mes] [Refresh]      |
-+----------------------------------------------------------+
-|                                                          |
-| +----------------+ +----------------+ +----------------+ |
-| |  SALDO DISP.   | |   RECEITAS     | |   DESPESAS     | |
-| |  Gradiente     | | Gradiente      | | Gradiente      | |
-| |  R$ 5.000      | | Verde          | | Vermelho       | |
-| |  3xl bold      | | R$ 8.000       | | R$ 3.000       | |
-| +----------------+ +----------------+ +----------------+ |
-|                                                          |
-| +----------+ +----------+ +----------+ +----------+      |
-| | A Receber| | A Pagar  | | Fatura   | | Total    |      |
-| | |azul    | | |amarelo | | |roxo    | | |vermelho|      |
-| +----------+ +----------+ +----------+ +----------+      |
-|                                                          |
-| +------------------------------------------------------+ |
-| |          SALDO ESTIMADO DO MES                       | |
-| |          Banner gradiente dark                       | |
-| |          R$ XX.XXX,XX                                | |
-| +------------------------------------------------------+ |
-|                                                          |
-| +------------------------+ +------------------------+    |
-| |    Grafico Pizza      | |   Grafico Barras       |    |
-| |    + Legenda lateral  | |   Grid sutil           |    |
-| +------------------------+ +------------------------+    |
-|                                                          |
-+----------------------------------------------------------+
-```
-
----
-
-## 11. Consideracoes Tecnicas
-
-- **Dark Mode**: Todos os gradientes tem variantes dark usando classes Tailwind
-- **Responsividade**: Grid adaptativo (1 col mobile, 2 tablet, 3-4 desktop)
-- **Animacoes**: Usaremos as animacoes ja existentes (`animate-fade-in-up`) com staggers
-- **Skeletons**: Manteremos os skeletons existentes para loading states
-- **Tipografia**: Seguiremos a hierarquia proposta (3xl para principais, xl para secundarios)
-
+Todos os cards do sistema terao:
+- Visual consistente com o Dashboard
+- Gradientes sutis para destaque por tipo
+- Shadows apropriadas (lg para principais, sm para secundarios)
+- Cantos arredondados uniformes (rounded-xl)
+- Icones em containers coloridos harmonicos
+- Animacoes de entrada padronizadas
