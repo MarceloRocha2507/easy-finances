@@ -1,54 +1,51 @@
 
 
-# Plano: Corrigir Espaço em Branco no Gráfico de Pizza
+# Plano: Corrigir Layout do Gráfico de Pizza
 
 ## Problema Identificado
 
-O componente `PieChartWithLegend` tem um layout flex com:
-- Gráfico fixo de 200x200px à esquerda
-- Legenda com `flex-1 w-full` à direita
+Analisando a imagem, o problema real é:
 
-O problema é que `flex-1` faz a legenda expandir para preencher todo o espaço disponível, criando um gap visual entre o gráfico e a legenda.
+1. **Breakpoint incompatível**: O componente `PieChartWithLegend` usa `lg:flex-row` para colocar a legenda ao lado do gráfico. Porém, na página de relatórios, o card está dentro de um grid `lg:grid-cols-2`, ou seja, em telas `lg` o card já está ocupando apenas ~50% da largura.
+
+2. **Legenda aparecendo abaixo**: Com apenas ~500px de largura disponível para o card, o breakpoint `lg` (1024px) nunca é atingido dentro do card, então a legenda fica sempre embaixo do gráfico.
+
+3. **Espaço desperdiçado**: O card tem altura para acomodar gráfico + legenda lado a lado, mas como estão empilhados, sobra muito espaço em branco.
 
 ## Solução
 
-Alterar o layout para que o gráfico e a legenda fiquem mais próximos, usando `items-start` no container e removendo o comportamento de expansão excessiva da legenda.
+Criar uma versão do componente que seja **mais flexível** e use `md:flex-row` (768px) em vez de `lg:flex-row`, ou passar uma prop para controlar isso. A abordagem mais simples é ajustar o breakpoint dentro do componente.
 
-## Alterações no arquivo `src/components/dashboard/PieChartWithLegend.tsx`
+## Alterações
+
+### Arquivo: `src/components/dashboard/PieChartWithLegend.tsx`
+
+Alterar o breakpoint de `lg` para `md` para que a legenda fique ao lado do gráfico mais cedo:
 
 | Linha | Antes | Depois |
 |-------|-------|--------|
-| 99 | `flex flex-col lg:flex-row items-center gap-4` | `flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4` |
-| 134 | `flex-1 w-full` | `w-full lg:w-auto lg:min-w-[180px]` |
+| 99 | `lg:flex-row` e `lg:items-start` | `md:flex-row` e `md:items-start` |
+| 134 | `lg:w-auto lg:min-w-[180px]` | `md:w-auto md:min-w-[180px]` |
 
-### Detalhes Técnicos
-
-**Container principal (linha 99)**:
 ```tsx
-// Antes
-<div className="flex flex-col lg:flex-row items-center gap-4">
+// Linha 99 - Container principal
+<div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4">
 
-// Depois
-<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4">
+// Linha 134 - Container da legenda  
+<div className="w-full md:w-auto md:min-w-[180px]">
 ```
 
-**Container da legenda (linha 134)**:
-```tsx
-// Antes
-<div className="flex-1 w-full">
+## Por que essa mudança resolve
 
-// Depois
-<div className="w-full lg:w-auto lg:min-w-[180px]">
-```
-
-Estas alterações:
-1. `justify-center` - Centraliza os elementos para eliminar o espaço em branco extra
-2. `lg:items-start` - Alinha o topo da legenda com o gráfico em desktop
-3. `lg:w-auto lg:min-w-[180px]` - Remove a expansão automática, mantendo um tamanho mínimo adequado para a legenda
+- `md` = 768px breakpoint
+- Em telas `lg` (1024px+), um grid de 2 colunas divide a tela em ~512px cada
+- Com o breakpoint `md`, a legenda vai para o lado do gráfico quando o card tem ~384px+ de largura
+- Isso elimina o espaço em branco, pois a legenda fica ao lado do gráfico mesmo dentro do grid de 2 colunas
 
 ## Resultado Esperado
 
-- Gráfico e legenda ficarão mais próximos
-- Sem espaço em branco excessivo entre os elementos
-- Layout continua responsivo (empilhado em mobile, lado a lado em desktop)
+- Gráfico de donut à esquerda
+- Legenda interativa à direita (mesmo em cards estreitos)
+- Sem espaço em branco excessivo
+- Layout responsivo: empilha apenas em mobile real (<768px)
 
