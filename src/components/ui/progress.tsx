@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
   indicatorClassName?: string;
-  variant?: "default" | "gradient" | "income" | "expense" | "warning";
+  variant?: "default" | "income" | "expense" | "warning";
 }
 
 const Progress = React.forwardRef<
@@ -14,7 +14,6 @@ const Progress = React.forwardRef<
 >(({ className, value, indicatorClassName, variant = "default", ...props }, ref) => {
   const variantClasses = {
     default: "bg-primary",
-    gradient: "bg-gradient-to-r from-primary to-purple-500",
     income: "bg-income",
     expense: "bg-expense",
     warning: "bg-warning",
@@ -28,7 +27,7 @@ const Progress = React.forwardRef<
     >
       <ProgressPrimitive.Indicator
         className={cn(
-          "h-full w-full flex-1 transition-all duration-500 ease-out",
+          "h-full w-full flex-1 transition-all duration-300 ease-out",
           variantClasses[variant],
           indicatorClassName
         )}
@@ -45,7 +44,7 @@ interface CircularProgressProps {
   size?: number;
   strokeWidth?: number;
   className?: string;
-  variant?: "default" | "gradient" | "income" | "expense";
+  variant?: "default" | "income" | "expense";
   showValue?: boolean;
 }
 
@@ -57,7 +56,6 @@ const CircularProgress = React.forwardRef<SVGSVGElement, CircularProgressProps>(
 
     const colorClasses = {
       default: "stroke-primary",
-      gradient: "stroke-primary",
       income: "stroke-income",
       expense: "stroke-expense",
     };
@@ -91,7 +89,7 @@ const CircularProgress = React.forwardRef<SVGSVGElement, CircularProgressProps>(
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             className={cn(
-              "transition-all duration-500 ease-out",
+              "transition-all duration-300 ease-out",
               colorClasses[variant]
             )}
           />

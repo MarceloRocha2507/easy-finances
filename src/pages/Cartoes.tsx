@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress, CircularProgress } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   Receipt,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
@@ -136,12 +135,12 @@ export default function Cartoes() {
           </div>
         </div>
 
-        {/* Previsão de Faturas - Redesigned */}
-        <Card variant="gradient" className="overflow-hidden">
+        {/* Previsão de Faturas */}
+        <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-                <Receipt className="h-5 w-5 text-white" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h2 className="font-semibold text-lg">Previsão de Faturas</h2>
@@ -168,19 +167,19 @@ export default function Cartoes() {
                         className={cn(
                           "p-4 rounded-xl text-center transition-all",
                           offset === 0 
-                            ? "gradient-primary text-white shadow-glow" 
-                            : "glass-card hover:shadow-md"
+                            ? "bg-primary text-primary-foreground" 
+                            : "bg-muted hover:bg-accent"
                         )}
                       >
                         <p className={cn(
                           "text-xs font-medium capitalize mb-2",
-                          offset === 0 ? "text-white/80" : "text-muted-foreground"
+                          offset === 0 ? "text-primary-foreground/80" : "text-muted-foreground"
                         )}>
                           {getMesLabel(offset)}
                         </p>
                         <p className={cn(
                           "text-lg font-bold value-display",
-                          offset === 0 ? "text-white" : "text-foreground"
+                          offset === 0 ? "text-primary-foreground" : "text-foreground"
                         )}>
                           {formatCurrency(valor)}
                         </p>
@@ -206,9 +205,9 @@ export default function Cartoes() {
           </Button>
         </div>
 
-        {/* Lista de Cartões - 3D Cards */}
+        {/* Lista de Cartões */}
         {cartoes.length === 0 ? (
-          <Card variant="glass" className="py-16 text-center">
+          <Card className="py-16 text-center">
             <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
             <p className="text-muted-foreground mb-2">Nenhum cartão cadastrado</p>
             <p className="text-sm text-muted-foreground">
@@ -218,7 +217,7 @@ export default function Cartoes() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {cartoes.map((cartao, index) => (
-              <CartaoCard3D
+              <CartaoCard
                 key={cartao.id}
                 cartao={cartao}
                 mesReferencia={mesReferencia}
@@ -244,17 +243,17 @@ export default function Cartoes() {
 }
 
 /* ======================================================
-   Componente CartaoCard3D - Design de cartão de crédito real
+   Componente CartaoCard - Design de cartão amigável
 ====================================================== */
 
-interface CartaoCard3DProps {
+interface CartaoCardProps {
   cartao: CartaoComResumo;
   mesReferencia: Date;
   onClick: () => void;
   index: number;
 }
 
-function CartaoCard3D({ cartao, mesReferencia, onClick, index }: CartaoCard3DProps) {
+function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) {
   // Calcular dias até fechamento e vencimento
   const hoje = new Date();
   const anoAtual = hoje.getFullYear();
@@ -284,15 +283,15 @@ function CartaoCard3D({ cartao, mesReferencia, onClick, index }: CartaoCard3DPro
 
   return (
     <div
-      className="group cursor-pointer animate-fade-in"
+      className="cursor-pointer animate-fade-in"
       style={{ animationDelay: `${index * 0.08}s` }}
       onClick={onClick}
     >
       {/* Card Visual - Estilo cartão de crédito */}
       <div 
-        className="card-3d rounded-2xl p-5 mb-4 text-white relative overflow-hidden h-44"
+        className="rounded-2xl p-5 mb-4 text-white relative overflow-hidden h-44 transition-transform hover:scale-[1.02]"
         style={{ 
-          background: `linear-gradient(135deg, ${cartao.cor || '#6366f1'} 0%, ${adjustColor(cartao.cor || '#6366f1', -30)} 100%)` 
+          background: `linear-gradient(135deg, ${cartao.cor || '#8B5CF6'} 0%, ${adjustColor(cartao.cor || '#8B5CF6', -30)} 100%)` 
         }}
       >
         {/* Decorative circles */}
@@ -308,10 +307,10 @@ function CartaoCard3D({ cartao, mesReferencia, onClick, index }: CartaoCard3DPro
               <p className="text-lg font-bold">{cartao.nome}</p>
             </div>
             <Badge 
-              variant={cartao.faturaAtualPaga ? "default" : "glass"}
+              variant={cartao.faturaAtualPaga ? "success" : "muted"}
               className={cn(
                 "text-xs",
-                cartao.faturaAtualPaga && "bg-white/20 text-white"
+                cartao.faturaAtualPaga ? "bg-white/20 text-white border-0" : "bg-white/20 text-white border-0"
               )}
             >
               {cartao.faturaAtualPaga ? "Paga" : "Aberta"}
@@ -325,22 +324,17 @@ function CartaoCard3D({ cartao, mesReferencia, onClick, index }: CartaoCard3DPro
             </p>
           </div>
         </div>
-        
-        {/* Sparkle effect on hover */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-          <Sparkles className="absolute top-4 right-4 w-4 h-4 text-white/50 animate-pulse" />
-        </div>
       </div>
 
       {/* Info Card */}
-      <Card variant="glass" className="p-4">
+      <Card className="p-4">
         {/* Datas */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-center p-2 rounded-lg bg-muted">
             <p className="text-xs text-muted-foreground">Fecha em</p>
             <p className="text-sm font-semibold">{diasAteFechamento} dias</p>
           </div>
-          <div className="text-center p-2 rounded-lg bg-muted/50">
+          <div className="text-center p-2 rounded-lg bg-muted">
             <p className="text-xs text-muted-foreground">Vence em</p>
             <p className="text-sm font-semibold">{diasAteVencimento} dias</p>
           </div>
@@ -354,7 +348,7 @@ function CartaoCard3D({ cartao, mesReferencia, onClick, index }: CartaoCard3DPro
           </div>
           <Progress
             value={cartao.percentualUsado}
-            variant={cartao.percentualUsado > 80 ? "expense" : cartao.percentualUsado > 50 ? "warning" : "gradient"}
+            variant={cartao.percentualUsado > 80 ? "expense" : cartao.percentualUsado > 50 ? "warning" : "default"}
             className="h-2"
           />
         </div>
