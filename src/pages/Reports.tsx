@@ -5,7 +5,8 @@ import { formatCurrency, getMonthRange, formatDate } from '@/lib/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChartWithLegend } from '@/components/dashboard';
 import { Download, FileText, Table, Wallet, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -192,45 +193,15 @@ export default function Reports() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pie Chart */}
-            <Card className="border">
-              <CardHeader>
-                <CardTitle>Despesas por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    Nenhuma despesa no período
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <PieChartWithLegend data={pieData} />
 
             {/* Bar Chart */}
             <Card className="border">
-              <CardHeader>
-                <CardTitle>Comparativo Anual ({selectedYear})</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">Comparativo Anual ({selectedYear})</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={monthlyData}>
                     <XAxis dataKey="month" />
                     <YAxis tickFormatter={(value) => `R$${value / 1000}k`} />
