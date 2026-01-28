@@ -88,11 +88,17 @@ export function useProfileStats() {
     (sum, inv) => sum + Number(inv.valor_atual), 0
   );
 
-  // Saldo base (patrimônio total)
-  const patrimonioTotal = (saldoInicial || 0) + totalReceitas - totalDespesas;
-  // Saldo disponível (descontando metas e investimentos)
-  const totalMetas = metas?.filter(m => !m.concluida).reduce((sum, m) => sum + Number(m.valorAtual), 0) || 0;
-  const saldoAtual = Math.max(0, patrimonioTotal - totalMetas - totalInvestido);
+  // Saldo Disponível = Saldo Inicial + Receitas - Despesas (dinheiro "livre")
+  const saldoDisponivel = (saldoInicial || 0) + totalReceitas - totalDespesas;
+  
+  // Total em Metas (não concluídas)
+  const totalMetasValor = metas?.filter(m => !m.concluida).reduce((sum, m) => sum + Number(m.valorAtual), 0) || 0;
+  
+  // Patrimônio Total = Disponível + Metas + Investimentos (toda riqueza)
+  const patrimonioTotal = saldoDisponivel + totalMetasValor + totalInvestido;
+  
+  // Saldo Atual = Saldo Disponível
+  const saldoAtual = saldoDisponivel;
 
   const metasConcluidas = metas?.filter(m => m.concluida).length || 0;
   const metasEmAndamento = metas?.filter(m => !m.concluida).length || 0;
