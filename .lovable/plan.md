@@ -1,77 +1,83 @@
 
-# Plano: Corrigir Contraste dos Icones em "Maiores Transacoes"
+
+# Plano: Padronizar Layout de Gráficos na Página Economia
 
 ## Problema Identificado
 
-Na secao "Maiores Transacoes do Periodo" (paginas `/reports` e `/reports/categorias`), os icones estao usando:
-- Classes `gradient-income` / `gradient-expense` para o fundo
-- Cor `text-white` para o icone
+Na página `/economia` (aba "Visão Geral"), a seção de gráficos apresenta:
 
-Porem, esses gradientes sao **muito claros**:
-```css
-.gradient-income {
-  @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30;
-}
+1. **Dois cards separados em grid 2:3** - Um para o gráfico de pizza (Distribuição de Gastos) e outro para o ranking (Gastos por Categoria)
+2. **Espaço em branco excessivo** - O card do gráfico de pizza tem muito espaço vazio na parte inferior
+3. **Implementação customizada** - Não usa o componente `PieChartWithLegend` padronizado
 
-.gradient-expense {
-  @apply bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/30 dark:to-red-950/30;
-}
+## Solução Proposta
+
+Substituir a estrutura de dois cards separados por **um único card usando o componente `PieChartWithLegend`**, seguido pelo card de Ranking separado - exatamente como funciona na página de Relatórios.
+
+**Alternativa**: Manter os dois cards mas usar o `PieChartWithLegend` no lugar do gráfico customizado, eliminando o espaço em branco.
+
+## Alterações Necessárias
+
+### Arquivo: `src/pages/Economia.tsx`
+
+**1. Adicionar import do componente padronizado (linha 5):**
+```tsx
+import { PieChartWithLegend } from "@/components/dashboard";
 ```
 
-Resultado: icone branco sobre fundo esverdeado/rosado muito claro = icone invisivel.
+**2. Substituir a seção do grid (linhas 126-202):**
 
-## Solucao
-
-Usar cores **solidas e mais vibrantes** para os icones pequenos (40x40px), com contraste adequado:
-
-| Tipo | Fundo Atual | Fundo Proposto |
-|------|-------------|----------------|
-| Income | `gradient-income` (emerald-50) | `bg-emerald-500` |
-| Expense | `gradient-expense` (rose-50) | `bg-rose-500` |
-
-Esta abordagem e consistente com outros componentes do sistema (como `StatCardPrimary`) que usam cores solidas para areas pequenas.
-
-## Alteracoes Necessarias
-
-### Arquivo 1: `src/pages/Reports.tsx`
-
-**Secao "Maiores Transacoes do Periodo" (linhas 313-316):**
-
-Antes:
+Antes: Grid 2:3 com dois cards separados
 ```tsx
-<div
-  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-    transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
-  }`}
->
-  <IconComp className="w-5 h-5 text-white" />
+<div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+  {/* Card do Gráfico de Pizza */}
+  <Card className="lg:col-span-2 shadow-sm rounded-xl">
+    <CardHeader>Distribuição de Gastos</CardHeader>
+    <CardContent>
+      {/* PieChart customizado com 200px de altura */}
+      {/* Legenda customizada embaixo */}
+    </CardContent>
+  </Card>
+
+  {/* Ranking */}
+  <div className="lg:col-span-3">
+    <RankingGastos />
+  </div>
 </div>
 ```
 
-Depois:
+Depois: Grid 1:1 com componente padronizado
 ```tsx
-<div
-  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-    transaction.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'
-  }`}
->
-  <IconComp className="w-5 h-5 text-white" />
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  {/* Usar o componente padronizado */}
+  <PieChartWithLegend data={pieData} />
+
+  {/* Ranking */}
+  {isLoading ? (
+    <Skeleton className="h-[350px] rounded-xl" />
+  ) : (
+    <RankingGastos
+      gastos={analise?.gastosPorCategoria || []}
+      totalGasto={analise?.totalGasto || 0}
+    />
+  )}
 </div>
 ```
 
-### Arquivo 2: `src/pages/reports/RelatorioCategorias.tsx`
+## Benefícios
 
-Verificar se a mesma secao "Maiores Transacoes" existe e aplicar a mesma correcao.
+1. **Consistência visual** - Mesmo padrão usado em Relatórios e Dashboard
+2. **Legenda interativa** - Hover destaca segmentos do gráfico
+3. **Eliminação do espaço em branco** - Cards com alturas similares
+4. **Menos código** - Remove ~50 linhas de implementação customizada
+5. **Manutenibilidade** - Um único componente para atualizar
 
 ## Resultado Esperado
 
-- Icones com fundo verde vibrante (emerald-500) para receitas
-- Icones com fundo vermelho vibrante (rose-500) para despesas
-- Icone branco com alto contraste e facilmente visivel
-- Consistencia visual com outros icones do sistema
+| Antes | Depois |
+|-------|--------|
+| Dois cards com proporção 2:3 | Dois cards com proporção 1:1 |
+| Gráfico de pizza com legenda embaixo | Gráfico donut com legenda ao lado |
+| Espaço em branco excessivo | Altura equilibrada entre cards |
+| Implementação customizada | Componente padronizado reutilizado |
 
-## Teste
-
-- Navegar para `/reports` e verificar que todos os icones da secao "Maiores Transacoes" estao visiveis
-- Verificar tanto transacoes de receita (verde) quanto despesa (vermelho)
-- Testar no modo claro e escuro
