@@ -1,92 +1,116 @@
 
-# Plano: Simplificar Lógica de Saldo - Metas Subtraem do Disponível
 
-## Objetivo
+# Plano: Inverter Lógica de Saldo - Patrimônio = Disponível + Metas
 
-Simplificar a lógica para que:
-1. **Patrimônio Total** = Saldo Inicial + Receitas - Despesas (valor bruto)
-2. **Saldo Disponível** = Patrimônio Total - Valor em Metas (dinheiro "livre")
-3. **Remover** o campo "Saldo Inicial Guardado" (não é mais necessário)
+## Diagnóstico
 
-## Nova Lógica
+A lógica atual está invertida:
+
+| Campo | Cálculo Atual | Resultado |
+|-------|---------------|-----------|
+| Patrimônio Total | saldoInicial + receitas - despesas | R$ 96,00 |
+| Saldo Disponível | patrimônio - metas = 96 - 1169 | **R$ 0,00** (errado!) |
+
+## Nova Lógica (Correta)
+
+O dinheiro em metas **faz parte** do patrimônio, não é subtraído dele:
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │                    PATRIMÔNIO TOTAL                       │
-│         (Saldo Inicial + Receitas - Despesas)            │
-│                      R$ 1.361,30                          │
+│              R$ 1.265,30 (disponível + metas)            │
 ├──────────────────────────────────────────────────────────┤
 │  SALDO DISPONÍVEL    │      GUARDADO EM METAS            │
-│     R$ 96,00         │         R$ 1.265,30               │
-│ (dinheiro "livre")   │    (reserva intocável)            │
+│     R$ 96,00         │         R$ 1.169,30               │
+│ (dinheiro "livre")   │    (reservado, mas seu)           │
 └──────────────────────────────────────────────────────────┘
 ```
 
-## Mudanças Necessárias
+## Fórmulas Corretas
 
-### 1. Banco de Dados
-- Remover a coluna `saldo_inicial_guardado` da tabela `profiles`
-- O campo não será mais necessário pois metas automaticamente "reservam" o valor
+```typescript
+// Saldo Disponível = Saldo Inicial + Receitas - Despesas
+// (dinheiro "livre" que você pode gastar)
+const saldoDisponivel = saldoInicial + receitas - despesas;
 
-### 2. Hook `useTransactions.ts` - Função `useCompleteStats`
-Simplificar o cálculo:
+// Patrimônio Total = Saldo Disponível + Metas
+// (toda sua riqueza, incluindo reservas)
+const patrimonioTotal = saldoDisponivel + totalMetas + totalInvestido;
+```
+
+Com seus números:
+- Saldo Disponível: R$ 96,00 (seu dinheiro livre)
+- Em Metas: R$ 1.169,30
+- **Patrimônio Total**: R$ 1.265,30 (96 + 1169)
+
+## Alterações Necessárias
+
+### 1. Hook `useTransactions.ts` - Função `useCompleteStats` (linhas 774-792)
 
 **Antes:**
 ```typescript
-const saldoBase = saldoInicial + saldoInicialGuardado + receitas - despesas;
-const saldoDisponivel = Math.max(0, saldoBase - totalGuardado);
+const patrimonioTotal = saldoInicial + stats.completedIncome - stats.completedExpense;
+const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
+const realBalance = patrimonioTotal;
 ```
 
 **Depois:**
 ```typescript
-const patrimonioTotal = saldoInicial + receitas - despesas;
-const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
+// Saldo Disponível = o que você tem para gastar agora
+const saldoDisponivel = saldoInicial + stats.completedIncome - stats.completedExpense;
+
+// Patrimônio Total = disponível + metas + investimentos
+const patrimonioTotal = saldoDisponivel + totalMetas + totalInvestido;
+
+// Saldo Real = Saldo Disponível (o que realmente está "livre")
+const realBalance = saldoDisponivel;
 ```
 
-### 3. Interface - Remover Campo de Saldo Guardado
-- `PreferenciasTab.tsx`: Remover seção "Saldo Inicial Guardado"
-- `Transactions.tsx`: Remover breakdown do saldo guardado no card
+### 2. Hook `useProfileStats.ts` (atualizar mesma lógica)
 
-### 4. Dashboard e Cards de Saldo
-Atualizar para mostrar:
-- **Saldo Disponível**: Patrimônio - Metas
-- **Patrimônio Total**: Valor bruto
-- **Em Metas**: Valor reservado
+### 3. Hook `useDashboardCompleto.ts` (se aplicável)
 
-### 5. Hook `useSaldoInicial.ts`
-Remover referências ao `saldo_inicial_guardado`
+### 4. UI no Dashboard - Reorganizar exibição
+
+Atualizar o card para mostrar a composição correta:
+- Título: **Saldo Disponível** (R$ 96,00)
+- Subtítulo: Patrimônio Total (R$ 1.265,30)
+- Detalhes: Em Metas: R$ 1.169,30
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `profiles` (banco) | Remover coluna `saldo_inicial_guardado` |
-| `src/hooks/useTransactions.ts` | Simplificar cálculo em `useCompleteStats` |
-| `src/hooks/useSaldoInicial.ts` | Remover `saldoInicialGuardado` e `atualizarSaldoGuardado` |
-| `src/components/profile/PreferenciasTab.tsx` | Remover campo "Saldo Inicial Guardado" |
-| `src/pages/Transactions.tsx` | Simplificar card de saldo inicial |
-| `src/hooks/useProfileStats.ts` | Atualizar se necessário |
+| `src/hooks/useTransactions.ts` | Inverter cálculo em `useCompleteStats` |
+| `src/hooks/useProfileStats.ts` | Atualizar mesma lógica |
+| `src/pages/Dashboard.tsx` | Ajustar exibição dos cards |
+
+## Resultado Esperado
+
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| **Saldo Disponível** | R$ 0,00 | **R$ 96,00** |
+| Em Metas | R$ 1.169,30 | R$ 1.169,30 |
+| Patrimônio Total | R$ 96,00 | **R$ 1.265,30** |
 
 ## Detalhes Técnicos
 
-### Migration SQL (Remover coluna)
-```sql
-ALTER TABLE profiles DROP COLUMN IF EXISTS saldo_inicial_guardado;
-```
+### Código atualizado para `useCompleteStats`:
 
-### `useCompleteStats` - Nova Lógica
 ```typescript
-// Patrimônio Total = Saldo Inicial + Receitas - Despesas
-const patrimonioTotal = saldoInicial + stats.completedIncome - stats.completedExpense;
+// Saldo Disponível = Saldo Inicial + Receitas Recebidas - Despesas Pagas
+// Representa o dinheiro "livre" para gastar
+const saldoDisponivel = saldoInicial + stats.completedIncome - stats.completedExpense;
 
-// Saldo Disponível = Patrimônio Total - Valor em Metas (mínimo 0)
-const saldoDisponivel = Math.max(0, patrimonioTotal - totalMetas);
+// Patrimônio Total = Disponível + Metas + Investimentos
+// Representa toda a riqueza do usuário
+const patrimonioTotal = saldoDisponivel + totalMetas + totalInvestido;
 
-// Saldo Real = Patrimônio Bruto
-const realBalance = patrimonioTotal;
+// Saldo Real = Saldo Disponível
+const realBalance = saldoDisponivel;
 
-// Saldo Estimado = Patrimônio + Pendentes - Fatura
-const estimatedBalance = patrimonioTotal + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+// Saldo Estimado = Disponível + Pendentes - Fatura
+const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
 return {
   ...stats,
@@ -96,51 +120,31 @@ return {
   estimatedBalance,
   totalMetas,
   totalInvestido,
-  totalGuardado: totalMetas + totalInvestido,
+  totalGuardado,
 };
 ```
 
-### Card de Saldo no Dashboard
-```tsx
-<Card>
-  <p>Saldo Disponível</p>
-  <p>{formatCurrency(completeStats?.saldoDisponivel)}</p>
-  <div>
-    <p>Patrimônio: {formatCurrency(completeStats?.patrimonioTotal)}</p>
-    <p>Em Metas: {formatCurrency(completeStats?.totalMetas)}</p>
-  </div>
-</Card>
-```
-
-## Resultado Esperado
-
-Com suas transações atuais:
-
-| Campo | Valor |
-|-------|-------|
-| Patrimônio Total | R$ 1.361,30 (saldo inicial + receitas - despesas) |
-| Em Metas | R$ 1.265,30 |
-| **Saldo Disponível** | **R$ 96,00** (patrimônio - metas) |
-
-O usuário não precisa mais configurar nada manualmente. As metas automaticamente "reservam" dinheiro do patrimônio, mostrando quanto está realmente disponível para gastar.
-
-## Fluxo Visual
+## Fluxo Visual Corrigido
 
 ```text
-ANTES (complexo):
-┌────────────────────────────────────────────────────────┐
-│ Saldo Inicial + Saldo Guardado + Receitas - Despesas  │
-│        ↓              ↓                               │
-│   -R$1.175,45    R$1.265,30 (config manual!)          │
-└────────────────────────────────────────────────────────┘
+ANTES (invertido):
+┌────────────────────────────────────────────┐
+│ Patrimônio = saldo + receitas - despesas   │
+│            = R$ 96,00                       │
+│                                            │
+│ Disponível = patrimônio - metas            │
+│            = 96 - 1169 = R$ 0,00 ❌        │
+└────────────────────────────────────────────┘
 
-DEPOIS (simples):
-┌────────────────────────────────────────────────────────┐
-│       Saldo Inicial + Receitas - Despesas             │
-│                    = Patrimônio                        │
-│                    - Valor em Metas                    │
-│                    = Saldo Disponível                  │
-└────────────────────────────────────────────────────────┘
+DEPOIS (correto):
+┌────────────────────────────────────────────┐
+│ Disponível = saldo + receitas - despesas   │
+│            = R$ 96,00 ✅                   │
+│                                            │
+│ Patrimônio = disponível + metas            │
+│            = 96 + 1169 = R$ 1.265,30 ✅    │
+└────────────────────────────────────────────┘
 ```
 
-O sistema agora é autocontido: o valor das metas é considerado automaticamente sem configuração extra.
+Agora o sistema reflete a realidade: você tem R$ 96,00 disponíveis para gastar, e seu patrimônio total (incluindo metas) é R$ 1.265,30.
+
