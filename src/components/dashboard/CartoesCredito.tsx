@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { CartaoDashboard, ResumoCartoes } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 
 interface CartaoCardProps {
   cartao: CartaoDashboard;
@@ -22,12 +23,12 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
   return (
     <div
       onClick={onClick}
-      className="p-4 border rounded-md hover:bg-secondary/30 transition-colors cursor-pointer"
+      className="p-4 border rounded-lg hover:bg-accent/50 transition-all duration-200 cursor-pointer hover:shadow-sm"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-md flex items-center justify-center"
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${corCartao}15` }}
           >
             <CreditCard className="h-4 w-4" style={{ color: corCartao }} />
@@ -48,7 +49,7 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
             </span>
           )}
           {venceEmBreve && cartao.totalPendente > 0 && (
-            <span className="flex items-center gap-1 text-xs text-amber-600">
+            <span className="flex items-center gap-1 text-xs text-warning">
               <Clock className="h-3 w-3" />
               {cartao.diasParaVencimento === 0
                 ? "Hoje"
@@ -75,7 +76,11 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
 
         <Progress
           value={cartao.usoPct}
-          className="h-1"
+          className="h-1.5"
+          indicatorClassName={cn(
+            cartao.usoPct >= 80 && "bg-expense",
+            cartao.usoPct >= 50 && cartao.usoPct < 80 && "bg-warning"
+          )}
         />
 
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -89,9 +94,9 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
 
 function CartaoSkeleton() {
   return (
-    <div className="p-4 border rounded-md">
+    <div className="p-4 border rounded-lg">
       <div className="flex items-center gap-3 mb-3">
-        <Skeleton className="w-8 h-8 rounded-md" />
+        <Skeleton className="w-8 h-8 rounded-lg" />
         <div>
           <Skeleton className="h-4 w-20 mb-1" />
           <Skeleton className="h-3 w-14" />
@@ -102,7 +107,7 @@ function CartaoSkeleton() {
           <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-16" />
         </div>
-        <Skeleton className="h-1 w-full" />
+        <Skeleton className="h-1.5 w-full rounded-full" />
       </div>
     </div>
   );
@@ -117,7 +122,7 @@ interface Props {
 
 export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Props) {
   return (
-    <Card className="border">
+    <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
@@ -127,22 +132,22 @@ export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Pr
 
       <CardContent>
         {resumo.quantidadeCartoes > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-md bg-secondary/50">
+          <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-lg bg-muted">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Total Faturas</p>
-              <p className="text-sm font-medium text-expense">
+              <p className="text-sm font-semibold text-expense">
                 {formatCurrency(resumo.totalPendente)}
               </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Limite Total</p>
-              <p className="text-sm font-medium">
+              <p className="text-sm font-semibold">
                 {formatCurrency(resumo.limiteTotal)}
               </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Disponível</p>
-              <p className="text-sm font-medium text-income">
+              <p className="text-sm font-semibold text-income">
                 {formatCurrency(resumo.limiteDisponivel)}
               </p>
             </div>
