@@ -312,7 +312,7 @@ export default function Reports() {
                             return (
                               <div
                                 className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                  transaction.type === 'income' ? 'gradient-income' : 'gradient-expense'
+                                  transaction.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'
                                 }`}
                               >
                                 <IconComp className="w-5 h-5 text-white" />
