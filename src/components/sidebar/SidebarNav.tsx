@@ -113,16 +113,16 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
             isActive(item.href)
-              ? "menu-item-active text-foreground font-medium"
-              : "text-muted-foreground menu-item-hover"
+              ? "menu-item-floating-active text-foreground font-medium"
+              : "text-muted-foreground menu-item-floating-hover"
           )}
         >
           <div className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
+            "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
             isActive(item.href)
-              ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground icon-glow"
+              ? "bg-primary/15 text-primary"
               : "text-muted-foreground group-hover:text-foreground"
           )}>
             <item.icon className="h-4 w-4" />
@@ -181,16 +181,16 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to="/admin"
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
             isActive("/admin")
-              ? "menu-item-active text-foreground font-medium"
-              : "text-muted-foreground menu-item-hover"
+              ? "menu-item-floating-active text-foreground font-medium"
+              : "text-muted-foreground menu-item-floating-hover"
           )}
         >
           <div className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
+            "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
             isActive("/admin")
-              ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground icon-glow"
+              ? "bg-primary/15 text-primary"
               : "text-muted-foreground group-hover:text-foreground"
           )}>
             <Shield className="h-4 w-4" />
