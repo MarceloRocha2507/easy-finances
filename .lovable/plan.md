@@ -1,279 +1,349 @@
 
+
 # Plano: Correção de Responsividade em Todo o Sistema
 
-## Problemas Identificados nas Imagens
+## Problemas Identificados por Imagem
 
-Com base nas imagens fornecidas, identifiquei os seguintes problemas principais de responsividade:
+### Imagem 1 - Transações (Resumo e Lista)
+- **Card "Saldo Inicial"**: Botão "Configu..." está cortado na lateral direita
+- **Grid de 6 indicadores**: Valores estão muito apertados em mobile
+- **Layout flex**: Elementos não quebram linha adequadamente
 
-### Imagem 1 (Transações - Lista)
-- Valores e texto se sobrepondo na linha da transação
-- Ícones de ação (copiar, editar, excluir) aparecendo por cima do conteúdo
-- Saldo após transação não cabe na linha em mobile
+### Imagem 2 - Novo Registro (Dialog)
+- Dialog parece OK, sem problemas graves
 
-### Imagem 2 (Transações Recorrentes - Despesas Fixas)
-- Switch e texto "Ativo/Pausado" sendo cortados à direita
-- Layout não adaptado para telas pequenas
+### Imagem 3 - Nova Categoria (Dialog)
+- Dialog parece OK, sem problemas graves
 
-### Imagem 3 (Transações - Resumo)
-- Texto "Configu..." cortado (botão Configurar)
-- Cards de resumo muito apertados
-- Grid de 6 colunas não se adapta bem
+### Imagem 4 - Despesas Futuras
+- **Resumo por Cartão**: Cards cortados à direita ("Transaçõ..." truncado incorretamente)
+- **Filtros**: Seletores empilhados causando scroll horizontal indesejado
+- Barra de scroll horizontal visível desnecessariamente
 
-### Imagem 4 (Cartões - Previsão de Faturas)
-- Valores de faturas sobrepostos (R$ 0,00R$ 1,67...)
-- Grid de 4 colunas com texto/valores muito comprimidos
+### Imagem 5 - Cartões (Previsão de Faturas)
+- **Header**: Botão "+" cortado à direita
+- **Previsão de faturas**: Grid parece OK após correções anteriores
 
-### Imagem 5 (DetalhesCartaoDialog)
-- Métricas (Limite, Fatura, Disponível) cortadas
-- Botões de ação cortados no header
+### Imagem 6 - Detalhes Cartão (Dialog)
+- **Métricas**: Limite, Fatura, Disponível já corrigidos com flex-wrap
+- Layout do dialog parece OK
 
-### Imagem 6 (DespesasCartao)
-- Header com muitos botões cortados
-- Filtros não se adaptam bem
+### Imagem 7 - Editar Cartão (Dialog)
+- Dialog parece OK
 
-## Arquivos a Serem Corrigidos
+### Imagem 8 - Nova Compra (Dialog)
+- Dialog parece OK
 
-| Arquivo | Problema Principal |
-|---------|-------------------|
-| `src/pages/Transactions.tsx` | Grid 6 cols, TransactionRow muito densa |
-| `src/pages/transactions/Recorrentes.tsx` | Linha de transação com switch cortado |
-| `src/pages/Cartoes.tsx` | Previsão de faturas - grid 4 cols fixo |
-| `src/pages/DespesasCartao.tsx` | Header e filtros muito largos |
-| `src/components/cartoes/DetalhesCartaoDialog.tsx` | Métricas inline cortadas |
+### Imagem 9 - Auditoria
+- **Header da página**: Não aparece (cortado ou faltando)
+- **Tabela**: Colunas muito largas causando scroll horizontal
+- **Paginação**: Texto "Página 1 de 418" sobreposto/cortado
 
-## Solucoes Propostas
+### Imagem 10 - Economia (Resumo)
+- **Cards de resumo**: Valores cortados à direita
+- **Grid 2x2 em mobile**: Não está respeitando os limites da tela
+- Cards estão estourando a largura
 
-### 1. Transactions.tsx - Grid de Resumo (linhas 735)
+## Arquivos a Corrigir
 
-**Problema**: `grid-cols-2 md:grid-cols-3 lg:grid-cols-6` comprime demais em tablets.
+| Arquivo | Problemas |
+|---------|-----------|
+| `src/pages/Transactions.tsx` | Card saldo inicial com botão cortado |
+| `src/pages/DespesasFuturas.tsx` | Grid de cartões e filtros |
+| `src/pages/Cartoes.tsx` | Header com botões cortados |
+| `src/pages/cartoes/Auditoria.tsx` | Tabela e paginação |
+| `src/components/economia/Resumoeconomia.tsx` | Cards estourando largura |
 
-**Solucao**: Usar grid mais progressivo e reduzir padding/texto em mobile.
+---
 
-```tsx
-// Antes
-<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+## Correções Detalhadas
 
-// Depois
-<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
-```
+### 1. Transactions.tsx - Card de Saldo Inicial (linhas 700-733)
 
-Tambem reduzir texto em mobile usando `text-[10px] sm:text-xs`.
+**Problema**: O layout flex com botão "Configurar" não quebra linha em mobile.
 
-### 2. Transactions.tsx - TransactionRow (linhas 937-1099)
-
-**Problema**: Acoes sempre visiveis em mobile sobrepondo conteudo.
-
-**Solucao**:
-- Em mobile, mostrar apenas valor + menu de acoes (dropdown)
-- Esconder "Saldo apos" em mobile
-- Usar truncate mais agressivo
-
-```tsx
-// Antes - acoes sempre aparecem em hover
-<div className="ml-2 flex gap-1 opacity-0 group-hover:opacity-100">
-
-// Depois - em mobile usar dropdown, em desktop manter hover
-<div className="ml-2 flex gap-1 md:opacity-0 md:group-hover:opacity-100">
-  {/* Em mobile: mostrar apenas 1 botao de menu */}
-  <div className="flex md:hidden">
-    <DropdownMenu>...</DropdownMenu>
-  </div>
-  {/* Em desktop: botoes individuais */}
-  <div className="hidden md:flex gap-1">
-    ...botoes existentes...
-  </div>
-</div>
-```
-
-### 3. Transactions/Recorrentes.tsx (linhas 211-276, 305-370)
-
-**Problema**: Linha com switch + texto "Ativo" + dropdown nao cabe.
-
-**Solucao**: Reorganizar layout para empilhar em mobile.
+**Solução**: Reorganizar para empilhar em telas muito pequenas.
 
 ```tsx
 // Antes
-<div className="flex items-center justify-between p-3">
-  <div>...info...</div>
+<div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+  <div className="flex items-center gap-3">...</div>
   <div className="flex items-center gap-4">
-    <p>valor</p>
-    <div className="flex items-center gap-2">
-      <Switch /> <span>Ativo</span>
-    </div>
-    <DropdownMenu>...</DropdownMenu>
+    ...metas...
+    <Button>Configurar</Button>
   </div>
 </div>
 
 // Depois
-<div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3">
-  <div>...info...</div>
-  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-    <p className="font-semibold">valor</p>
-    <div className="flex items-center gap-2">
-      <Switch />
-      <span className="text-xs hidden sm:inline">Ativo</span>
-    </div>
-    <DropdownMenu>...</DropdownMenu>
+<div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 bg-muted/30 rounded-lg border border-border/50">
+  <div className="flex items-center gap-3">...</div>
+  <div className="flex items-center justify-end gap-2 sm:gap-4 flex-wrap">
+    ...metas...
+    <Button size="sm" className="gap-1.5">
+      <Settings className="w-4 h-4" />
+      <span className="hidden xs:inline">Configurar</span>
+    </Button>
   </div>
 </div>
 ```
 
-### 4. Cartoes.tsx - Previsao de Faturas (linhas 174)
+### 2. DespesasFuturas.tsx - Grid de Cartões (linhas 253-289)
 
-**Problema**: `grid-cols-4` fixo causa sobreposicao de valores.
+**Problema**: Grid `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4` ainda causa overflow.
 
-**Solucao**: Grid responsivo + scroll horizontal + texto menor.
+**Solução**: Adicionar overflow-x-auto e ajustar breakpoints.
 
 ```tsx
 // Antes
-<div className="grid grid-cols-4 gap-4 text-center">
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
 
 // Depois
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-center">
-  {[0, 1, 2, 3].map((offset) => (
-    <div key={offset} className="p-2 sm:p-4 rounded-xl ...">
-      <p className="text-xs text-muted-foreground capitalize">{getMesLabel(offset)}</p>
-      <p className="text-sm sm:text-lg font-bold value-display mt-1 truncate">
-        {formatCurrency(getFaturaDoMes(titular.id, offset))}
-      </p>
-    </div>
+<div className="flex flex-wrap gap-2 sm:gap-3">
+  {resumoPorCartao.map((item) => (
+    <button
+      key={item.cartaoId || "transacao"}
+      className="p-2 sm:p-3 rounded-lg border ... flex-1 min-w-[140px] max-w-[180px]"
+      ...
+    >
+      ...
+    </button>
   ))}
 </div>
 ```
 
-### 5. DespesasCartao.tsx - Header (linhas 334-397)
+### 3. DespesasFuturas.tsx - Filtros (linhas 294-438)
 
-**Problema**: Muitos botoes de acao no header.
+**Problema**: Muitos seletores em linha única causando overflow.
 
-**Solucao**: Agrupar em dropdown no mobile.
+**Solução**: Esconder filtros secundários em mobile e usar dropdown.
 
 ```tsx
-// Antes
-<div className="flex items-center gap-2">
-  <Button>Excluir</Button>
-  <Button>Ajustar</Button>
-  <Button>Adiantar</Button>
-  <Button>Nova compra</Button>
-</div>
-
-// Depois
-<div className="flex items-center gap-2">
-  {/* Mobile: dropdown com acoes */}
+// Filtros principais visíveis + secundários em dropdown no mobile
+<div className="flex flex-wrap items-center gap-2">
+  {/* Datas sempre visíveis */}
+  ...date pickers...
+  
+  {/* Atalhos de período */}
+  <div className="flex gap-1">...</div>
+  
+  {/* Mobile: dropdown com filtros extras */}
   <div className="flex sm:hidden">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+        <Button variant="outline" size="sm">Filtros</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => setAjustarFaturaOpen(true)}>Ajustar</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setAdiantarFaturaOpen(true)}>Adiantar</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setExcluirFaturaOpen(true)}>Excluir</DropdownMenuItem>
+        ...selects de categoria, responsável, origem, tipo...
       </DropdownMenuContent>
     </DropdownMenu>
   </div>
-  {/* Desktop: botoes individuais */}
+  
+  {/* Desktop: filtros inline */}
   <div className="hidden sm:flex items-center gap-2">
-    ...botoes existentes...
+    ...selects...
   </div>
-  {/* Nova compra sempre visivel */}
-  <Button size="sm" onClick={() => setNovaCompraOpen(true)}>
-    <Plus className="h-4 w-4 sm:mr-1" />
-    <span className="hidden sm:inline">Nova compra</span>
-  </Button>
 </div>
 ```
 
-### 6. DespesasCartao.tsx - Filtros (linhas 476-619)
+### 4. Cartoes.tsx - Header com Botões (linhas 133-148)
 
-**Problema**: Filtros em linha unica estouram em mobile.
+**Problema**: Botões "Desfazer", "Verificar Parcelas" e "+" cortados.
 
-**Solucao**: Empilhar em mobile.
+**Solução**: Agrupar em dropdown no mobile.
 
 ```tsx
 // Antes
-<div className="flex flex-col sm:flex-row sm:items-center gap-3">
-  <div>...navegacao mes...</div>
-  <div className="flex flex-1 items-center gap-2">
-    ...todos os filtros em linha...
-  </div>
+<div className="flex items-center gap-2">
+  <DesfazerAlteracaoDialog />
+  <Button>Verificar Parcelas</Button>
+  <NovoCartaoDialog />
 </div>
 
 // Depois
-<div className="space-y-3">
-  {/* Navegacao de mes */}
-  <div className="flex items-center justify-between sm:justify-start gap-2">
-    ...navegacao mes...
+<div className="flex items-center gap-2">
+  {/* Mobile: dropdown */}
+  <div className="flex sm:hidden">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon" className="h-9 w-9">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem>Desfazer alteração</DropdownMenuItem>
+        <DropdownMenuItem>Verificar parcelas</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
-  {/* Filtros - empilham em mobile */}
-  <div className="flex flex-wrap items-center gap-2">
-    <div className="relative flex-1 min-w-[150px] max-w-full sm:max-w-xs">...busca...</div>
-    <Select>...status...</Select>
-    <div className="hidden sm:flex items-center gap-2">
-      <Select>...categoria...</Select>
-      <Popover>...periodo...</Popover>
-    </div>
-    {temFiltrosAtivos && <Button>Limpar</Button>}
+  
+  {/* Desktop: botões individuais */}
+  <div className="hidden sm:flex items-center gap-2">
+    <DesfazerAlteracaoDialog />
+    <Button variant="outline" size="sm">
+      <RefreshCw className="h-4 w-4 mr-2" />
+      Verificar Parcelas
+    </Button>
   </div>
+  
+  {/* Novo Cartão sempre visível */}
+  <NovoCartaoDialog />
 </div>
 ```
 
-### 7. DetalhesCartaoDialog.tsx - Metricas (linhas 231-246)
+### 5. Auditoria.tsx - Tabela Responsiva (linhas 300-352)
 
-**Problema**: Metricas inline (Limite, Fatura, Disponivel) cortadas.
+**Problema**: Tabela com muitas colunas não cabe em mobile.
 
-**Solucao**: Grid responsivo ou wrap.
+**Solução**: Esconder colunas secundárias e usar layout de cards em mobile.
 
 ```tsx
 // Antes
-<div className="flex items-center gap-4 mt-3 text-sm">
-  <div>Limite: {limite}</div>
-  <div>Fatura: {fatura}</div>
-  <div>Disponivel: {disponivel}</div>
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead className="w-[160px]">Data/Hora</TableHead>
+      <TableHead className="w-[100px]">Tabela</TableHead>
+      <TableHead className="w-[110px]">Ação</TableHead>
+      <TableHead>Descrição</TableHead>
+      <TableHead className="w-[80px] text-center">Detalhes</TableHead>
+    </TableRow>
+  </TableHeader>
+  ...
+</Table>
+
+// Depois
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Data/Hora</TableHead>
+      <TableHead className="hidden sm:table-cell">Tabela</TableHead>
+      <TableHead>Ação</TableHead>
+      <TableHead className="hidden md:table-cell">Descrição</TableHead>
+      <TableHead className="w-[60px] text-center">Ver</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {data?.registros.map((registro) => (
+      <TableRow key={registro.id}>
+        <TableCell className="text-xs sm:text-sm">
+          {format(new Date(registro.created_at), "dd/MM/yy HH:mm")}
+        </TableCell>
+        <TableCell className="hidden sm:table-cell">...</TableCell>
+        <TableCell>
+          <Badge className="text-[10px] sm:text-xs">...</Badge>
+        </TableCell>
+        <TableCell className="hidden md:table-cell truncate max-w-[200px]">...</TableCell>
+        <TableCell className="text-center">
+          <Button size="icon" className="h-7 w-7">
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+        </TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+### 6. Auditoria.tsx - Paginação (linhas 354-400)
+
+**Problema**: Texto "Página X de Y (Z registros)" sobrepõe paginação.
+
+**Solução**: Empilhar em mobile.
+
+```tsx
+// Antes
+<div className="flex items-center justify-between mt-4">
+  <p className="text-sm text-muted-foreground">
+    Página {pagina + 1} de {totalPaginas} ({data?.total} registros)
+  </p>
+  <Pagination>...</Pagination>
 </div>
 
 // Depois
-<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs sm:text-sm">
-  <div><span className="text-muted-foreground">Limite:</span> <span className="font-medium">{formatCurrency(limite)}</span></div>
-  <div><span className="text-muted-foreground">Fatura:</span> <span className="font-medium text-destructive">{formatCurrency(totalMes)}</span></div>
-  <div><span className="text-muted-foreground">Disponivel:</span> <span className="font-medium text-emerald-500">{formatCurrency(disponivel)}</span></div>
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+  <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+    Pág. {pagina + 1}/{totalPaginas} ({data?.total})
+  </p>
+  <Pagination className="justify-center sm:justify-end">
+    <PaginationContent className="gap-1">
+      <PaginationItem>
+        <PaginationPrevious className="h-8 w-8 p-0" />
+      </PaginationItem>
+      {/* Mostrar menos páginas em mobile */}
+      {Array.from({ length: Math.min(3, totalPaginas) }).map((_, i) => ...)}
+      <PaginationItem>
+        <PaginationNext className="h-8 w-8 p-0" />
+      </PaginationItem>
+    </PaginationContent>
+  </Pagination>
 </div>
 ```
 
-### 8. DetalhesCartaoDialog.tsx - Botoes de Acao (linhas 275-328)
+### 7. ResumoEconomia.tsx - Cards Estourando (linhas 30-154)
 
-**Problema**: Muitos botoes de acao cortados.
+**Problema**: Cards com valores longos (R$ 4.593,08) estourando container.
 
-**Solucao**: Agrupar em dropdown no mobile.
+**Solução**: Reduzir padding e fonte em mobile, usar truncate.
 
 ```tsx
-// Seguir mesmo padrao do item 5
+// Antes
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  <Card>
+    <CardContent className="p-6">
+      ...
+      <p className="text-2xl sm:text-3xl font-bold">
+        {formatCurrency(totalReceitas)}
+      </p>
+    </CardContent>
+  </Card>
+</div>
+
+// Depois
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+  <Card className="...">
+    <CardContent className="p-3 sm:p-6">
+      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl ...">
+          <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 ..." />
+        </div>
+      </div>
+      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Receitas</p>
+      <p className="text-lg sm:text-2xl md:text-3xl font-bold text-income mt-0.5 sm:mt-1 truncate">
+        {formatCurrency(totalReceitas)}
+      </p>
+    </CardContent>
+  </Card>
+</div>
 ```
 
-## Resumo das Alteracoes
+---
 
-| Arquivo | Tipo de Alteracao |
-|---------|-------------------|
-| `src/pages/Transactions.tsx` | Grid responsivo + dropdown mobile |
-| `src/pages/transactions/Recorrentes.tsx` | Layout empilhado em mobile |
-| `src/pages/Cartoes.tsx` | Grid 2/4 cols + texto menor |
-| `src/pages/DespesasCartao.tsx` | Dropdown acoes + filtros wrap |
-| `src/components/cartoes/DetalhesCartaoDialog.tsx` | Metricas wrap + dropdown |
+## Resumo das Alterações
 
-## Padroes Aplicados
+| Arquivo | Alteração Principal |
+|---------|---------------------|
+| `src/pages/Transactions.tsx` | Card saldo inicial responsivo |
+| `src/pages/DespesasFuturas.tsx` | Grid de cartões flex-wrap + filtros dropdown |
+| `src/pages/Cartoes.tsx` | Botões header em dropdown mobile |
+| `src/pages/cartoes/Auditoria.tsx` | Tabela com colunas hidden + paginação compacta |
+| `src/components/economia/Resumoeconomia.tsx` | Cards com padding/fonte reduzidos |
 
-1. **Breakpoints consistentes**: `sm:` (640px), `md:` (768px), `lg:` (1024px)
-2. **Acoes em mobile**: Agrupar em dropdown quando ha mais de 2 botoes
-3. **Grids responsivos**: Comecar com menos colunas e aumentar progressivamente
-4. **Texto adaptativo**: Usar `text-xs sm:text-sm` para labels
-5. **Truncate agressivo**: Aplicar `truncate` em descricoes longas
-6. **Flex-wrap**: Permitir quebra de linha quando necessario
+## Padrões Aplicados
 
-## Teste
+1. **Breakpoints**: `sm:` (640px) como ponto principal de mudança
+2. **Ações**: Agrupar 3+ botões em dropdown no mobile
+3. **Tabelas**: Esconder colunas secundárias com `hidden sm:table-cell`
+4. **Cards**: Reduzir padding `p-3 sm:p-6` e fonte `text-lg sm:text-2xl`
+5. **Texto longo**: Usar `truncate` em valores monetários
+6. **Flex-wrap**: Permitir quebra de linha em containers flex
+7. **Min/max-width**: Controlar tamanho de cards flexíveis
 
-- Verificar em viewport de 375px (iPhone SE)
-- Verificar em viewport de 414px (iPhone 12)
-- Verificar em viewport de 768px (iPad)
-- Testar rotacao de tela
-- Verificar que nenhum conteudo fica cortado ou sobreposto
+## Testes
+
+- Viewport 375px (iPhone SE)
+- Viewport 390px (iPhone 12)
+- Viewport 414px (iPhone Plus)
+- Viewport 768px (iPad)
+- Rotação de tela (landscape)
+- Verificar ausência de scroll horizontal
+
