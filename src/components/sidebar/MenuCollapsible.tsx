@@ -113,7 +113,7 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1.5 ml-5 space-y-1 overflow-hidden">
+      <CollapsibleContent className="mt-1 ml-6 pl-4 border-l-2 border-border/50 space-y-0.5 overflow-hidden">
         {subItems.map((subItem) => (
           <Link
             key={subItem.href}
@@ -122,8 +122,8 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
             className={cn(
               "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors",
               isItemActive(subItem.href)
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-primary/5 text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
             )}
           >
             <div className="flex items-center gap-2.5">

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { MenuCollapsible } from "./MenuCollapsible";
@@ -79,23 +79,31 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Derivar estados diretamente do pathname (sem useState/useEffect)
-  const menuStates = useMemo(() => ({
+  // Estado local para controle de menus abertos
+  const [openMenus, setOpenMenus] = useState(() => ({
     transacoes: pathname.startsWith("/transactions"),
     cartoes: pathname.startsWith("/cartoes"),
     economia: pathname.startsWith("/economia"),
     relatorios: pathname.startsWith("/reports"),
-  }), [pathname]);
+  }));
 
-  const isActive = useCallback((href: string) => {
-    if (href === "/economia" || href === "/cartoes" || href === "/reports" || href === "/transactions") {
-      return pathname === href;
-    }
-    return pathname === href;
+  // Sincronizar quando URL muda (abrir menu se entrar em subrota)
+  useEffect(() => {
+    setOpenMenus(prev => ({
+      ...prev,
+      transacoes: prev.transacoes || pathname.startsWith("/transactions"),
+      cartoes: prev.cartoes || pathname.startsWith("/cartoes"),
+      economia: prev.economia || pathname.startsWith("/economia"),
+      relatorios: prev.relatorios || pathname.startsWith("/reports"),
+    }));
   }, [pathname]);
 
-  // Handlers que não fazem nada (apenas para manter interface consistente)
-  const noopHandler = useCallback(() => {}, []);
+  // Handler para toggle manual
+  const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
+    setOpenMenus(prev => ({ ...prev, [menu]: open }));
+  }, []);
+
+  const isActive = useCallback((href: string) => pathname === href, [pathname]);
 
   return (
     <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -123,14 +131,14 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         </Link>
       ))}
 
-      {/* Menus com submenu - open derivado da URL */}
+      {/* Menus com submenu - estado local + sincronização URL */}
       <MenuCollapsible
         icon={transacoesMenu.icon}
         label={transacoesMenu.label}
         subItems={transacoesMenu.subItems}
         basePath="/transactions"
-        open={menuStates.transacoes}
-        onOpenChange={noopHandler}
+        open={openMenus.transacoes}
+        onOpenChange={handleMenuChange("transacoes")}
         onItemClick={onItemClick}
       />
 
@@ -139,8 +147,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         label={cartoesMenu.label}
         subItems={cartoesMenu.subItems}
         basePath="/cartoes"
-        open={menuStates.cartoes}
-        onOpenChange={noopHandler}
+        open={openMenus.cartoes}
+        onOpenChange={handleMenuChange("cartoes")}
         onItemClick={onItemClick}
       />
 
@@ -149,8 +157,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         label={economiaMenu.label}
         subItems={economiaMenu.subItems}
         basePath="/economia"
-        open={menuStates.economia}
-        onOpenChange={noopHandler}
+        open={openMenus.economia}
+        onOpenChange={handleMenuChange("economia")}
         onItemClick={onItemClick}
       />
 
@@ -159,8 +167,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         label={relatoriosMenu.label}
         subItems={relatoriosMenu.subItems}
         basePath="/reports"
-        open={menuStates.relatorios}
-        onOpenChange={noopHandler}
+        open={openMenus.relatorios}
+        onOpenChange={handleMenuChange("relatorios")}
         onItemClick={onItemClick}
       />
 
