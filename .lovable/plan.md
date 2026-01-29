@@ -1,170 +1,93 @@
 
-# Plano: Correção de Responsividade no Header e Filtros da Página de Transações
+# Plano: Correção de Scroll nos Modais
 
-## Problemas Identificados (baseado na screenshot)
+## Problema Identificado
 
-### 1. Header com Filtro de Datas
-O título "Transações" e o filtro de datas estão na mesma linha com `flex items-center gap-4`, fazendo os elementos ficarem espalhados verticalmente em mobile:
-- Os botões de calendário empilham
-- O texto "até" fica solto entre eles
-- Os atalhos (Hoje, Mês) ficam em linha separada
+Os modais do sistema usam o componente `DialogContent` que está configurado com posicionamento fixo centralizado (`top-[50%] translate-y-[-50%]`), mas **sem altura máxima nem overflow definido**. Isso causa os seguintes problemas em mobile:
 
-### 2. FiltroDataRange
-Os botões de data têm `min-w-[130px]` que força largura mesmo em telas pequenas, e o layout não é otimizado para mobile.
+1. **Modais com muito conteúdo** ultrapassam a altura da tela
+2. **Não é possível rolar** para ver o conteúdo que está fora da área visível
+3. **Botões de ação** ficam escondidos na parte inferior
 
-### 3. Card de Saldo Inicial
-O card mostra informações espalhadas com o layout `flex-col sm:flex-row`, mas os elementos internos não estão bem organizados em mobile.
+### Análise dos Modais Afetados
+
+| Modal | Arquivo | Status Atual |
+|-------|---------|--------------|
+| Novo Registro (Transações) | `src/pages/Transactions.tsx` | Sem scroll |
+| Novo Cartão | `src/components/cartoes/NovoCartaoDialog.tsx` | Sem scroll |
+| Nova Meta | `src/components/dashboard/NovaMetaDialog.tsx` | Sem scroll |
+| Editar Cartão | `src/components/cartoes/EditarCartaoDialog.tsx` | Sem scroll |
+| Gerenciar Meta | `src/components/dashboard/GerenciarMetaDialog.tsx` | Sem scroll |
+| Responsável | `src/pages/Responsaveis.tsx` | Sem scroll |
+| Novo Investimento | `src/components/investimentos/NovoInvestimentoDialog.tsx` | Com scroll |
+| Nova Compra Cartão | `src/components/cartoes/NovaCompraCartaoDialog.tsx` | Com scroll |
+| Editar Banco | `src/components/bancos/EditarBancoDialog.tsx` | Com scroll |
+| Novo Banco | `src/components/bancos/NovoBancoDialog.tsx` | Com scroll |
 
 ---
 
-## Alterações Propostas
+## Solução Proposta
 
-### 1. Transactions.tsx - Reorganizar Header (linhas 354-365)
+Corrigir o componente **base** `DialogContent` em `src/components/ui/dialog.tsx` para incluir `max-h-[90vh]` e `overflow-y-auto` por padrão. Isso corrige **todos os modais** de uma vez.
 
-**Antes:**
+### Alteração no DialogContent
+
+**Arquivo:** `src/components/ui/dialog.tsx`
+
+**Antes (linha 38-41):**
 ```tsx
-<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-  <div className="flex items-center gap-4">
-    <h1 className="text-xl font-semibold text-foreground">Transações</h1>
-    <FiltroDataRange ... />
-  </div>
-  <div className="flex gap-2">
-    <Button>Cartão</Button>
-    <Button>Nova</Button>
-  </div>
-</div>
+className={cn(
+  "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-4 sm:p-6 shadow-lg duration-200 ...",
+  className,
+)}
 ```
 
 **Depois:**
 ```tsx
-{/* Header - título e botões na mesma linha */}
-<div className="flex items-center justify-between gap-2">
-  <h1 className="text-xl font-semibold text-foreground">Transações</h1>
-  <div className="flex gap-2">
-    <Button variant="outline" size="sm" onClick={() => setCartaoDialogOpen(true)}>
-      <CreditCard className="w-4 h-4 sm:mr-2" />
-      <span className="hidden sm:inline">Cartão</span>
-    </Button>
-    <Button size="sm" className="gradient-primary">
-      <Plus className="w-4 h-4 sm:mr-2" />
-      <span className="hidden sm:inline">Nova</span>
-    </Button>
-  </div>
-</div>
-
-{/* Filtro de datas em linha separada */}
-<FiltroDataRange ... />
+className={cn(
+  "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-4 sm:p-6 shadow-lg duration-200 max-h-[90vh] overflow-y-auto ...",
+  className,
+)}
 ```
 
-### 2. FiltroDataRange.tsx - Layout Compacto para Mobile
+---
 
-**Mudanças principais:**
-- Reduzir `min-w-[130px]` para `min-w-[110px]`
-- Esconder o texto "até" em mobile, usar apenas ícone ou linha
-- Mover calendários para layout vertical em mobile
-- Agrupar atalhos de forma mais compacta
+## Por que essa solução?
 
-```tsx
-// Linha 49 - Container principal
-<div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2">
-  {/* Linha de datas */}
-  <div className="flex items-center gap-2 w-full sm:w-auto">
-    {/* Data Inicial - botão menor em mobile */}
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            "justify-start text-left font-normal flex-1 sm:flex-none min-w-0 sm:min-w-[130px]",
-            !startDate && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
-          <span className="truncate">
-            {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
-          </span>
-        </Button>
-      </PopoverTrigger>
-      ...
-    </Popover>
+1. **Corrige todos os modais** automaticamente sem necessidade de alterar cada um
+2. **Comportamento padrão correto**: modais devem ter scroll quando o conteúdo excede a tela
+3. **Modais pequenos** não são afetados (apenas ganham a capacidade de rolar se necessário)
+4. **90vh** deixa margem visual de 5% em cima e 5% embaixo
+5. **Modais que já têm `max-h-[90vh] overflow-y-auto`** continuam funcionando normalmente (classes duplicadas não causam problemas)
 
-    <span className="text-muted-foreground text-xs sm:text-sm shrink-0">até</span>
+---
 
-    {/* Data Final - mesmo padrão */}
-    <Popover>
-      ...
-    </Popover>
-  </div>
+## Seção Técnica
 
-  {/* Atalhos + Refresh na mesma linha */}
-  <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-start">
-    <div className="flex gap-1">
-      <Button variant="ghost" size="sm" onClick={handleHoje} className="text-xs px-2 h-8">
-        Hoje
-      </Button>
-      <Button variant="ghost" size="sm" onClick={handleEsteMes} className="text-xs px-2 h-8">
-        Mês
-      </Button>
-      <Button variant="ghost" size="sm" onClick={handleEstaSemana} className="text-xs px-2 h-8 hidden sm:inline-flex">
-        Semana
-      </Button>
-      <Button variant="ghost" size="sm" onClick={handleUltimos30Dias} className="text-xs px-2 h-8 hidden sm:inline-flex">
-        30 dias
-      </Button>
-    </div>
-    
-    {onRefresh && (
-      <Button variant="ghost" size="icon" onClick={onRefresh} disabled={isLoading} className="h-8 w-8">
-        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-      </Button>
-    )}
-  </div>
-</div>
+### Classes CSS Adicionadas
+
+- `max-h-[90vh]`: Limita altura máxima a 90% do viewport
+- `overflow-y-auto`: Habilita scroll vertical quando necessário
+
+### Comportamento Resultante
+
 ```
-
-### 3. Transactions.tsx - Card de Saldo Inicial Compacto (linhas 702-733)
-
-**Mudanças:**
-- Layout mais horizontal em mobile
-- Esconder label "Saldo Inicial" em mobile, usar apenas o ícone
-- "Em Metas" e "Configurar" mais compactos
-
-```tsx
-<div className="flex items-center justify-between p-2 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50">
-  {/* Saldo Inicial */}
-  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-    <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
-      <Wallet className="w-4 h-4 text-primary" />
-    </div>
-    <div className="min-w-0">
-      <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Saldo Inicial</span>
-      <p className="font-semibold text-sm sm:text-base truncate">
-        {formatCurrency(stats?.saldoInicial || 0)}
-      </p>
-    </div>
-  </div>
-  
-  {/* Em Metas + Botão */}
-  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-    {(stats?.totalMetas || 0) > 0 && (
-      <div className="text-right">
-        <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
-        <p className="font-semibold text-primary text-sm sm:text-base">
-          {formatCurrency(stats?.totalMetas || 0)}
-        </p>
-      </div>
-    )}
-    <Button 
-      variant="ghost" 
-      size="icon"
-      onClick={() => setEditarSaldoOpen(true)}
-      className="h-8 w-8"
-    >
-      <Settings className="w-4 h-4" />
-    </Button>
-  </div>
-</div>
++-------------------------------------------------+
+|                    5% margem                     |
++-------------------------------------------------+
+|  +-------------------------------------------+  |
+|  | DialogContent (max-h: 90vh)               |  |
+|  |                                           |  |
+|  | [Header]                                  |  |
+|  |                                           |  |
+|  | [Conteúdo rolável]          ← scroll aqui |  |
+|  | ...                                       |  |
+|  |                                           |  |
+|  | [Footer/Botões]                           |  |
+|  +-------------------------------------------+  |
++-------------------------------------------------+
+|                    5% margem                     |
++-------------------------------------------------+
 ```
 
 ---
@@ -173,27 +96,22 @@ O card mostra informações espalhadas com o layout `flex-col sm:flex-row`, mas 
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/Transactions.tsx` (linhas 354-381) | Separar título/botões do filtro, esconder texto dos botões em mobile |
-| `src/pages/Transactions.tsx` (linhas 702-733) | Card de saldo compacto, botão icon-only em mobile |
-| `src/components/FiltroDataRange.tsx` | Layout responsivo, datas com formato curto (dd/MM/yy), atalhos compactos |
+| `src/components/ui/dialog.tsx` (linha 38-41) | Adicionar `max-h-[90vh] overflow-y-auto` ao `DialogContent` |
 
-## Resultado Esperado em Mobile
+---
 
-```
-+---------------------------+
-| Transações       [📦] [+] |  <- título + botões icon-only
-+---------------------------+
-| [📅 01/01/26] até [📅 31/01/26] |
-| [Hoje] [Mês]           [🔄] |
-+---------------------------+
-| 💳 -R$ 1.175,45    [⚙️] |  <- saldo compacto
-|    Em Metas R$ 1.332,33  |
-+---------------------------+
-```
+## Resultado Esperado
 
-## Padrões Utilizados
+- Todos os modais poderão ser rolados quando o conteúdo exceder a tela
+- Botões de ação sempre acessíveis
+- Experiência consistente em todos os dispositivos
+- Nenhum conteúdo cortado ou inacessível
 
-1. **Icon-only buttons em mobile**: `<span className="hidden sm:inline">`
-2. **Formato de data curto**: `dd/MM/yy` em vez de `dd/MM/yyyy`
-3. **Padding adaptativo**: `p-2 sm:p-3`
-4. **Flex com shrink**: `shrink-0` para elementos que não devem encolher
+---
+
+## Testes Recomendados
+
+1. Abrir modal "Novo Registro" em mobile e verificar scroll
+2. Abrir modal "Novo Cartão" e tentar rolar até o botão "Salvar"
+3. Testar modais com formulários longos (Nova Meta, Editar Cartão)
+4. Verificar que modais pequenos continuam centralizados corretamente
