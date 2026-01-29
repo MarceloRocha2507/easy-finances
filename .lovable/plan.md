@@ -1,284 +1,254 @@
 
 
-# Plano: Otimização de Performance da Sidebar
+# Plano: Correção dos Submenus e Novo Design da Sidebar
 
-## Problemas Identificados
+## Problema 1: Subcategorias não Abrem
 
-### 1. Hooks Pesados no Layout
-O componente `Layout.tsx` (que contém a sidebar) está chamando hooks muito pesados que causam re-renders constantes:
-
-| Hook | Problema |
-|------|----------|
-| `useAlertasCount()` | Chama `useNotificacoes()` que chama `useAlertasCompletos()` |
-| `useAlertasCompletos()` | Chama `useDashboardCompleto()` que faz **5+ queries** ao banco |
-| `useProfile()` | Query para buscar dados do perfil |
-| `useAdmin()` | Usa `useState` + `useEffect` (não tem staleTime) |
-
-**Resultado**: A cada navegação, toda a cadeia de hooks é re-executada, gerando centenas de re-renders e requisições desnecessárias.
-
-### 2. Sincronização de Estado com useEffect
-O `useEffect` que sincroniza estados de menus com a rota (linhas 104-110) roda a cada mudança de pathname, disparando 4 `setState` simultaneamente:
-
+### Causa Raiz
+Na refatoração anterior, os menus collapsibles recebem:
 ```tsx
-useEffect(() => {
-  const path = location.pathname;
-  setTransacoesOpen(path.startsWith("/transactions"));
-  setCartoesOpen(path.startsWith("/cartoes"));
-  setEconomiaOpen(path.startsWith("/economia"));
-  setRelatoriosOpen(path.startsWith("/reports"));
-}, [location.pathname]);
+open={menuStates.transacoes}  // Derivado da URL
+onOpenChange={noopHandler}     // Handler que não faz nada!
 ```
 
-### 3. Efeito Glass com backdrop-filter
-O efeito `.glass` usa `backdrop-filter: blur(20px)` que é computacionalmente caro, especialmente em:
-- Sidebar inteira (elemento fixo de 240x100vh)
-- Cada item de menu ativo
-- Mobile header
+Isso significa que:
+- O menu só abre quando você **já está** dentro daquele caminho
+- Clicar no menu para expandir/colapsar **não funciona**
 
-### 4. Animações Excessivas
-O `MenuCollapsible` tem múltiplas animações:
-- `animate-fade-in` com delay staggered em cada sub-item
-- `animate-accordion-down/up` no CollapsibleContent
-- `transition-all duration-200` em vários elementos
-- `group-hover:scale-110` nos ícones
-
----
-
-## Solução Proposta
-
-### Estratégia 1: Separar Sidebar do Layout Principal
-Criar um componente `SidebarContainer` que:
-- Usa `React.memo` com comparação customizada
-- Isola os hooks pesados para não afetar a navegação
-
-### Estratégia 2: Lazy Loading do Badge de Notificações
-O badge de notificações não precisa ser preciso instantaneamente. Podemos:
-- Carregar o count com debounce
-- Usar o valor em cache por mais tempo
-- Mover a lógica para um componente separado
-
-### Estratégia 3: Simplificar Efeitos Visuais
-- Remover `backdrop-filter` do sidebar (usar fundo sólido ou semi-transparente)
-- Reduzir transições de 200ms para 150ms ou removê-las
-- Eliminar animações de hover em dispositivos móveis
-
-### Estratégia 4: Otimizar Gestão de Estado dos Menus
-Consolidar os 4 estados de menu em um único estado ou derivar da URL diretamente.
-
----
-
-## Alterações Detalhadas
-
-### 1. Criar `SidebarNav.tsx` Memoizado (novo arquivo)
+### Solução
+Manter estado local para permitir toggle manual, mas **inicializar** com base na URL:
 
 ```tsx
-// src/components/sidebar/SidebarNav.tsx
-import React, { memo } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { MenuCollapsible } from "./MenuCollapsible";
-// ... imports de ícones
+// Estado local que pode ser alterado pelo clique
+const [openMenus, setOpenMenus] = useState({
+  transacoes: pathname.startsWith("/transactions"),
+  cartoes: pathname.startsWith("/cartoes"),
+  economia: pathname.startsWith("/economia"),
+  relatorios: pathname.startsWith("/reports"),
+});
 
-const mainMenuItems = [...];
-const transacoesMenu = {...};
-const cartoesMenu = {...};
-const economiaMenu = {...};
-const relatoriosMenu = {...};
+// Handler real para toggle
+const handleMenuChange = (menu: string, open: boolean) => {
+  setOpenMenus(prev => ({ ...prev, [menu]: open }));
+};
+```
 
-interface SidebarNavProps {
-  isAdmin: boolean;
-  onItemClick?: () => void;
-}
+---
 
+## Problema 2: Novo Design da Sidebar
+
+Vou apresentar 3 opções de design moderno inspiradas em fintechs populares:
+
+### Opção A: Minimalista Flat (estilo Linear/Notion)
+- Fundo branco puro sem bordas laterais
+- Ícones em cinza, sem backgrounds nos items
+- Hover sutil apenas com mudança de cor
+- Submenus mostrados inline com indentação
+
+### Opção B: Cards Pill (estilo Nubank/PicPay) - **Recomendado**
+- Fundo claro com borda sutil
+- Items ativos com background pill arredondado colorido
+- Ícones em círculos coloridos quando ativos
+- Separadores visuais entre seções
+- Submenus com linha vertical conectora
+
+### Opção C: Sidebar Escura (estilo Stripe/Revolut)
+- Fundo escuro contrastante
+- Texto branco, ícones coloridos
+- Item ativo com destaque lateral (barra colorida)
+- Look premium/profissional
+
+---
+
+## Alterações Propostas
+
+### 1. Corrigir SidebarNav.tsx - Estado de Menus
+
+**Mudanças:**
+- Adicionar `useState` para controle local dos menus abertos
+- Inicializar estado baseado no pathname
+- Criar handler real para `onOpenChange`
+- Usar `useEffect` para sincronizar quando URL muda
+
+```tsx
 export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Derivar estados diretamente do pathname (sem useState/useEffect)
-  const transacoesOpen = pathname.startsWith("/transactions");
-  const cartoesOpen = pathname.startsWith("/cartoes");
-  const economiaOpen = pathname.startsWith("/economia");
-  const relatoriosOpen = pathname.startsWith("/reports");
+  // Estado local para controle de menus abertos
+  const [openMenus, setOpenMenus] = useState(() => ({
+    transacoes: pathname.startsWith("/transactions"),
+    cartoes: pathname.startsWith("/cartoes"),
+    economia: pathname.startsWith("/economia"),
+    relatorios: pathname.startsWith("/reports"),
+  }));
 
-  const isActive = (href: string) => pathname === href;
+  // Sincronizar quando URL muda (abrir menu se entrar em subrota)
+  useEffect(() => {
+    setOpenMenus(prev => ({
+      ...prev,
+      transacoes: prev.transacoes || pathname.startsWith("/transactions"),
+      cartoes: prev.cartoes || pathname.startsWith("/cartoes"),
+      economia: prev.economia || pathname.startsWith("/economia"),
+      relatorios: prev.relatorios || pathname.startsWith("/reports"),
+    }));
+  }, [pathname]);
+
+  // Handler para toggle manual
+  const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
+    setOpenMenus(prev => ({ ...prev, [menu]: open }));
+  }, []);
 
   return (
-    <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-      {/* Menu items renderizados aqui */}
+    <nav>
+      <MenuCollapsible
+        open={openMenus.transacoes}
+        onOpenChange={handleMenuChange("transacoes")}
+        ...
+      />
     </nav>
   );
 });
 ```
 
-### 2. Criar `NotificationBadge.tsx` Isolado (novo arquivo)
+### 2. Atualizar Design Visual - Opção B (Pills Coloridos)
 
+**Layout da Sidebar:**
+
+```
++----------------------------------+
+|  💳 Fina                        |  <- Logo com gradiente suave
++----------------------------------+
+|                                  |
+|  📊 Dashboard                    |  <- Item flat, ícone em círculo
+|  🏷️ Categorias                   |
+|                                  |
+|  ─────── Finanças ───────        |  <- Separador com label
+|                                  |
+|  ↔️ Transações              ▼    |  <- Collapsible
+|     └─ Visão Geral              |  <- Submenu com linha conectora
+|     └─ Recorrentes              |
+|     └─ Importar                 |
+|                                  |
+|  💳 Cartões                 ▼    |
+|  🐷 Economia                ▼    |
+|  📈 Relatórios              ▼    |
+|                                  |
+|  ─────────────────────────       |
+|  🛡️ Admin                        |  <- Apenas para admins
+|                                  |
++----------------------------------+
+|  👤 João · 🔔 · 🚪               |  <- Footer compacto
++----------------------------------+
+```
+
+**Estilo CSS dos Items:**
 ```tsx
-// src/components/sidebar/NotificationBadge.tsx
-import React, { memo } from "react";
-import { Link } from "react-router-dom";
-import { Bell } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAlertasCount } from "@/hooks/useAlertasCount";
+// Item ativo - pill com background
+<div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary/10 text-primary font-medium">
+  <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+    <Icon className="w-4 h-4 text-primary" />
+  </div>
+  <span>Dashboard</span>
+</div>
 
-interface NotificationBadgeProps {
-  onClick?: () => void;
-}
+// Item inativo - minimal
+<div className="flex items-center gap-3 px-3 py-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl">
+  <Icon className="w-4 h-4" />
+  <span>Categorias</span>
+</div>
+```
 
-export const NotificationBadge = memo(function NotificationBadge({ onClick }: NotificationBadgeProps) {
-  const { importantes: alertasCount, hasDanger } = useAlertasCount();
-
-  return (
-    <Link 
-      to="/notificacoes" 
-      onClick={onClick}
-      className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
-    >
-      <Bell className="h-4 w-4 text-muted-foreground" />
-      {alertasCount > 0 && (
-        <span 
-          className={cn(
-            "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full text-[9px] font-bold text-white px-1",
-            hasDanger ? "bg-expense" : "bg-warning"
-          )}
-        >
-          {alertasCount > 9 ? "9+" : alertasCount}
-        </span>
-      )}
+**Submenus com linha conectora:**
+```tsx
+<CollapsibleContent className="mt-1 ml-6 pl-4 border-l-2 border-border/60 space-y-0.5">
+  {subItems.map(item => (
+    <Link className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted/50">
+      <item.icon className="w-3.5 h-3.5" />
+      {item.label}
     </Link>
-  );
-});
+  ))}
+</CollapsibleContent>
 ```
 
-### 3. Simplificar Layout.tsx
+### 3. Atualizar MenuCollapsible.tsx
 
-```tsx
-// src/components/Layout.tsx
-import { SidebarNav } from "@/components/sidebar/SidebarNav";
-import { NotificationBadge } from "@/components/sidebar/NotificationBadge";
-import { SidebarUserSection } from "@/components/sidebar/SidebarUserSection";
-
-export function Layout({ children }: LayoutProps) {
-  const { user, signOut } = useAuth();
-  const { isAdmin, isCheckingRole } = useAdmin();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-
-  return (
-    <div className="min-h-screen bg-background relative">
-      {/* Sidebar com fundo sólido ao invés de glass */}
-      <aside className={cn(
-        "fixed top-0 left-0 h-full w-60 bg-background/95 border-r border-border/50 z-40 transition-transform duration-200",
-        "lg:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        {/* Logo */}
-        <div className="h-14 flex items-center px-4 border-b border-border/50">
-          ...
-        </div>
-
-        {/* Navigation - memoizado */}
-        <SidebarNav isAdmin={!isCheckingRole && isAdmin} onItemClick={closeSidebar} />
-
-        {/* User section - isolado */}
-        <SidebarUserSection 
-          user={user} 
-          onClose={closeSidebar} 
-          onSignOut={signOut} 
-        />
-      </aside>
-      
-      {/* Main content */}
-      <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen">
-        <div className="p-6 flex-1">{children}</div>
-      </main>
-    </div>
-  );
-}
-```
-
-### 4. Otimizar MenuCollapsible.tsx
-
-**Remover animações pesadas:**
-
-```tsx
-// ANTES
-<CollapsibleContent className="mt-1.5 ml-5 space-y-1 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
-  {subItems.map((subItem, index) => (
-    <Link
-      style={{ animationDelay: `${index * 50}ms` }}
-      className="animate-fade-in opacity-0 [animation-fill-mode:forwards]"
-    >
-
-// DEPOIS
-<CollapsibleContent className="mt-1.5 ml-5 space-y-1 overflow-hidden">
-  {subItems.map((subItem) => (
-    <Link
-      className={cn(
-        "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm",
-        isItemActive(subItem.href)
-          ? "bg-primary/10 text-primary font-medium"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-      )}
-    >
-```
-
-**Remover scale no hover:**
-
-```tsx
-// ANTES
-<Icon className="h-4 w-4 transition-transform duration-200" />
-<div className="group-hover:scale-110">
-
-// DEPOIS
-<Icon className="h-4 w-4" />
-<div>
-```
-
-### 5. Simplificar CSS do Glass
-
-```css
-/* ANTES */
-.glass {
-  background: hsl(var(--glass-bg));
-  backdrop-filter: blur(20px);
-  border: 1px solid hsl(var(--glass-border));
-  box-shadow: var(--glass-shadow);
-}
-
-/* DEPOIS - usar apenas para elementos pequenos */
-.glass {
-  background: hsl(var(--background) / 0.95);
-  border: 1px solid hsl(var(--border) / 0.5);
-}
-
-/* Glass com blur apenas para popover/dropdown pequenos */
-.glass-blur {
-  background: hsl(var(--glass-bg));
-  backdrop-filter: blur(12px);
-}
-```
+**Mudanças visuais:**
+- Linha vertical conectando submenus
+- Animação suave de abertura
+- Ícone de chevron mais sutil
+- Transições mais rápidas (150ms)
 
 ---
 
-## Resumo de Arquivos
+## Resumo das Alterações
 
-| Arquivo | Ação |
-|---------|------|
-| `src/components/sidebar/SidebarNav.tsx` | **CRIAR** - Navegação memoizada |
-| `src/components/sidebar/NotificationBadge.tsx` | **CRIAR** - Badge isolado |
-| `src/components/sidebar/SidebarUserSection.tsx` | **CRIAR** - Seção usuário isolada |
-| `src/components/sidebar/index.ts` | **EDITAR** - Exportar novos componentes |
-| `src/components/Layout.tsx` | **EDITAR** - Simplificar e usar novos componentes |
-| `src/components/sidebar/MenuCollapsible.tsx` | **EDITAR** - Remover animações pesadas |
-| `src/index.css` | **EDITAR** - Simplificar .glass |
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/sidebar/SidebarNav.tsx` | Corrigir estado dos menus + novo design visual |
+| `src/components/sidebar/MenuCollapsible.tsx` | Linha conectora em submenus + ajustes visuais |
+| `src/components/Layout.tsx` | Ajustes de background/borda da sidebar |
+
+---
+
+## Seção Técnica
+
+### Estrutura de Estado dos Menus
+
+```typescript
+interface MenuState {
+  transacoes: boolean;
+  cartoes: boolean;
+  economia: boolean;
+  relatorios: boolean;
+}
+
+// Inicialização baseada na URL
+const [openMenus, setOpenMenus] = useState<MenuState>(() => ({
+  transacoes: pathname.startsWith("/transactions"),
+  cartoes: pathname.startsWith("/cartoes"),
+  economia: pathname.startsWith("/economia"),
+  relatorios: pathname.startsWith("/reports"),
+}));
+
+// useEffect apenas abre (não fecha) quando URL muda
+useEffect(() => {
+  const updates: Partial<MenuState> = {};
+  if (pathname.startsWith("/transactions") && !openMenus.transacoes) {
+    updates.transacoes = true;
+  }
+  // ... outros paths
+  if (Object.keys(updates).length > 0) {
+    setOpenMenus(prev => ({ ...prev, ...updates }));
+  }
+}, [pathname]);
+```
+
+### Classes CSS Principais
+
+```tsx
+// Item principal ativo
+"flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary/10 text-primary font-medium"
+
+// Item principal inativo
+"flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+
+// Submenu container com linha
+"mt-1 ml-6 pl-4 border-l-2 border-border/60 space-y-0.5"
+
+// Submenu item ativo
+"flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm bg-primary/5 text-primary font-medium"
+
+// Submenu item inativo
+"flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30"
+```
 
 ---
 
 ## Resultado Esperado
 
-1. **Navegação fluida** - Sem travamentos ao clicar nos menus
-2. **Menos re-renders** - Hooks pesados isolados em componentes memoizados
-3. **Melhor performance em mobile** - Sem backdrop-filter pesado
-4. **Manutenção simplificada** - Componentes menores e focados
+1. **Menus funcionando**: Clicar nos menus expande/colapsa corretamente
+2. **URL sincronizada**: Entrar em uma subrota abre automaticamente o menu pai
+3. **Design moderno**: Visual limpo com pills coloridos e linha conectora nos submenus
+4. **Performance mantida**: Componentes memoizados, transições rápidas
 
