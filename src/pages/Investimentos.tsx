@@ -95,17 +95,17 @@ export default function Investimentos() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Patrimônio total */}
           <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Wallet className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Patrimônio total</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Patrimônio total</p>
               {isLoading ? (
-                <Skeleton className="h-8 w-28 mt-1" />
+                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
               ) : (
-                <p className="text-2xl sm:text-3xl font-bold mt-1">
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totais.patrimonio)}
                 </p>
               )}
@@ -114,17 +114,17 @@ export default function Investimentos() {
 
           {/* Total investido */}
           <Card className="shadow-sm rounded-xl border-l-4 border-l-blue-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <PiggyBank className="h-6 w-6 text-blue-500" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Total investido</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total investido</p>
               {isLoading ? (
-                <Skeleton className="h-8 w-28 mt-1" />
+                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
               ) : (
-                <p className="text-2xl sm:text-3xl font-bold mt-1">
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totais.investido)}
                 </p>
               )}
@@ -136,25 +136,25 @@ export default function Investimentos() {
             "shadow-lg rounded-xl border-0 animate-fade-in-up",
             totais.rendimento >= 0 ? "gradient-income" : "gradient-expense"
           )} style={{ animationDelay: "0.1s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                 <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center",
                   totais.rendimento >= 0 ? "bg-emerald-500/20" : "bg-rose-500/20"
                 )}>
                   <TrendingUp className={cn(
-                    "h-6 w-6",
+                    "h-5 w-5 sm:h-6 sm:w-6",
                     totais.rendimento >= 0 ? "text-emerald-600" : "text-rose-600"
                   )} />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Rendimento total</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Rendimento total</p>
               {isLoading ? (
-                <Skeleton className="h-8 w-28 mt-1" />
+                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
               ) : (
                 <p
                   className={cn(
-                    "text-2xl sm:text-3xl font-bold mt-1",
+                    "text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate",
                     totais.rendimento >= 0 ? "text-income" : "text-expense"
                   )}
                 >
@@ -167,19 +167,19 @@ export default function Investimentos() {
 
           {/* Rentabilidade */}
           <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <ArrowUpRight className="h-6 w-6 text-purple-500" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Rentabilidade</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Rentabilidade</p>
               {isLoading ? (
-                <Skeleton className="h-8 w-20 mt-1" />
+                <Skeleton className="h-7 sm:h-8 w-16 sm:w-20 mt-1" />
               ) : (
                 <p
                   className={cn(
-                    "text-2xl sm:text-3xl font-bold mt-1",
+                    "text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1",
                     parseFloat(totais.percentual) >= 0 ? "text-income" : "text-expense"
                   )}
                 >

@@ -79,13 +79,13 @@ export function MetasEconomia({ metas, onNovaMeta, onMetaClick }: Props) {
                       </div>
                       <div>
                         <p className="text-sm font-medium">{meta.titulo}</p>
-                        {diasRestantes !== null && diasRestantes > 0 && !concluida && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {diasRestantes} dias restantes
-                          </p>
-                        )}
-                      </div>
+                      {diasRestantes !== null && diasRestantes > 0 && !concluida && (
+                        <p className="text-xs text-muted-foreground items-center gap-1 hidden sm:flex">
+                          <Calendar className="h-3 w-3" />
+                          {diasRestantes} dias restantes
+                        </p>
+                      )}
+                    </div>
                     </div>
 
                     {concluida ? (
@@ -111,7 +111,7 @@ export function MetasEconomia({ metas, onNovaMeta, onMetaClick }: Props) {
                       {formatCurrency(meta.valorAlvo)}
                     </span>
                     {!concluida && (
-                      <span>Faltam {formatCurrency(faltando)}</span>
+                      <span className="hidden sm:inline">Faltam {formatCurrency(faltando)}</span>
                     )}
                   </div>
                 </div>

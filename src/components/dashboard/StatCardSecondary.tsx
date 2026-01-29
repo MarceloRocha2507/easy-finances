@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,7 @@ interface StatCardSecondaryProps {
   value: number;
   icon: LucideIcon;
   status: "pending" | "warning" | "danger" | "info";
-  subInfo?: string;
+  subInfo?: ReactNode;
   delay?: number;
   onClick?: () => void;
   prefix?: string;

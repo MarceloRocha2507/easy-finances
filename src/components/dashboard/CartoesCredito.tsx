@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   CreditCard,
   AlertTriangle,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 import { CartaoDashboard, ResumoCartoes } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CartaoCardProps {
   cartao: CartaoDashboard;
@@ -116,6 +118,9 @@ interface Props {
 }
 
 export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Props) {
+  const isMobile = useIsMobile();
+  const cartoesVisiveis = isMobile ? cartoes.slice(0, 2) : cartoes;
+
   return (
     <Card className="border rounded-xl shadow-sm">
       <CardHeader className="pb-2">
@@ -127,22 +132,22 @@ export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Pr
 
       <CardContent>
         {resumo.quantidadeCartoes > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-md bg-secondary/50">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Total Faturas</p>
-              <p className="text-sm font-medium text-expense">
+          <div className="flex flex-wrap sm:grid sm:grid-cols-3 gap-2 sm:gap-4 mb-4 p-2 sm:p-3 rounded-md bg-secondary/50">
+            <div className="text-center flex-1 min-w-[80px]">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Faturas</p>
+              <p className="text-xs sm:text-sm font-medium text-expense truncate">
                 {formatCurrency(resumo.totalPendente)}
               </p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Limite Total</p>
-              <p className="text-sm font-medium">
+            <div className="text-center flex-1 min-w-[80px]">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Limite</p>
+              <p className="text-xs sm:text-sm font-medium truncate">
                 {formatCurrency(resumo.limiteTotal)}
               </p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Disponível</p>
-              <p className="text-sm font-medium text-income">
+            <div className="text-center flex-1 min-w-[80px]">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Disponível</p>
+              <p className="text-xs sm:text-sm font-medium text-income truncate">
                 {formatCurrency(resumo.limiteDisponivel)}
               </p>
             </div>
@@ -162,15 +167,27 @@ export function CartoesCredito({ cartoes, resumo, isLoading, onCartaoClick }: Pr
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {cartoes.map((cartao) => (
-              <CartaoCard
-                key={cartao.id}
-                cartao={cartao}
-                onClick={() => onCartaoClick(cartao)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {cartoesVisiveis.map((cartao) => (
+                <CartaoCard
+                  key={cartao.id}
+                  cartao={cartao}
+                  onClick={() => onCartaoClick(cartao)}
+                />
+              ))}
+            </div>
+            {isMobile && cartoes.length > 2 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-2 text-xs"
+                onClick={() => onCartaoClick(cartoes[0])}
+              >
+                Ver todos ({cartoes.length} cartões)
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

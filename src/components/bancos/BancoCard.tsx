@@ -76,29 +76,29 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
         {/* Cartões Stats */}
         {banco.quantidadeCartoes > 0 && (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-2 sm:mb-3">
               <div>
-                <p className="text-xs text-muted-foreground">Cartões</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Cartões</p>
                 <div className="flex items-center gap-1.5">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold">{banco.quantidadeCartoes}</span>
+                  <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="font-semibold text-sm sm:text-base">{banco.quantidadeCartoes}</span>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Limite Total</p>
-                <p className="font-semibold">{formatCurrency(banco.limiteTotal)}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Limite Total</p>
+                <p className="font-semibold text-sm sm:text-base truncate">{formatCurrency(banco.limiteTotal)}</p>
               </div>
             </div>
 
             {/* Fatura e Disponível */}
-            <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-2 sm:pt-3 border-t">
               <div>
-                <p className="text-xs text-muted-foreground">Fatura</p>
-                <p className="font-semibold text-expense">{formatCurrency(banco.faturaTotal)}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Fatura</p>
+                <p className="font-semibold text-sm sm:text-base text-expense truncate">{formatCurrency(banco.faturaTotal)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Crédito Disponível</p>
-                <p className="font-semibold text-income">{formatCurrency(banco.disponivelTotal)}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Disponível</p>
+                <p className="font-semibold text-sm sm:text-base text-income truncate">{formatCurrency(banco.disponivelTotal)}</p>
               </div>
             </div>
 
@@ -130,7 +130,7 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
 
         {/* Info adicional */}
         {(banco.agencia || banco.conta) && (
-          <div className="mt-3 pt-3 border-t flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="mt-3 pt-3 border-t items-center gap-4 text-xs text-muted-foreground hidden sm:flex">
             {banco.agencia && <span>Ag: {banco.agencia}</span>}
             {banco.conta && <span>Conta: {banco.conta}</span>}
           </div>

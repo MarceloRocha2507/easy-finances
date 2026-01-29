@@ -195,11 +195,11 @@ export default function Economia() {
 
             {/* Dicas sobre orçamento */}
             <Card className="mt-6 bg-muted/30 shadow-sm rounded-xl">
-              <CardContent className="py-6">
-                <h3 className="font-medium mb-3">
+              <CardContent className="py-4 sm:py-6">
+                <h3 className="font-medium mb-3 text-sm sm:text-base">
                   Dicas para definir orçamentos
                 </h3>
-                <div className="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                <div className="grid sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                   <p>
                     <strong className="text-foreground">Regra 50/30/20:</strong>{" "}
                     50% para necessidades, 30% para desejos, 20% para economias
@@ -208,11 +208,11 @@ export default function Economia() {
                     <strong className="text-foreground">Comece pequeno:</strong>{" "}
                     Defina limites para suas 3 maiores categorias primeiro
                   </p>
-                  <p>
+                  <p className="hidden sm:block">
                     <strong className="text-foreground">Seja realista:</strong>{" "}
                     Baseie os limites nos seus gastos médios
                   </p>
-                  <p>
+                  <p className="hidden sm:block">
                     <strong className="text-foreground">Revise mensalmente:</strong>{" "}
                     Ajuste conforme sua realidade financeira
                   </p>
@@ -229,8 +229,8 @@ export default function Economia() {
               <InsightsEconomia insights={analise?.insights || []} />
             )}
 
-            {/* Regras de economia */}
-            <Card className="mt-6 shadow-sm rounded-xl">
+            {/* Regras de economia - esconder em mobile */}
+            <Card className="mt-6 shadow-sm rounded-xl hidden sm:block">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-medium">
                   Princípios para economizar

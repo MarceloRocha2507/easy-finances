@@ -3,12 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, CreditCard } from "lucide-react";
 import { UltimaCompra } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
   compras: UltimaCompra[];
 }
 
 export function UltimasCompras({ compras }: Props) {
+  const isMobile = useIsMobile();
+  const limite = isMobile ? 3 : 5;
+
   if (compras.length === 0) {
     return (
       <Card className="border-0 shadow-lg">
@@ -37,7 +41,7 @@ export function UltimasCompras({ compras }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {compras.map((compra) => (
+        {compras.slice(0, limite).map((compra) => (
           <div
             key={compra.id}
             className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
