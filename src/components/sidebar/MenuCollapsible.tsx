@@ -84,18 +84,18 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors",
+            "group w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
             open || isMenuActive
-              ? "bg-background/80 text-foreground font-medium border border-border/50"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "menu-item-active text-foreground font-medium"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
           <div className="flex items-center gap-3">
             <div className={cn(
-              "flex items-center justify-center w-7 h-7 rounded-lg",
+              "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
               open || isMenuActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
+                ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground icon-glow"
+                : "text-muted-foreground group-hover:text-foreground"
             )}>
               <Icon className="h-4 w-4" />
             </div>
@@ -105,7 +105,7 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
             {badge && <MenuBadge {...badge} />}
             <ChevronDown 
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-300 ease-out",
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
                 open && "rotate-180"
               )} 
             />
@@ -113,22 +113,22 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1 ml-6 pl-4 border-l-2 border-border/50 space-y-0.5 overflow-hidden">
+      <CollapsibleContent className="mt-1 ml-7 pl-3 space-y-0.5 overflow-hidden relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-gradient-to-b before:from-primary/40 before:to-transparent">
         {subItems.map((subItem) => (
           <Link
             key={subItem.href}
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors",
+              "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200",
               isItemActive(subItem.href)
-                ? "bg-primary/5 text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                ? "bg-gradient-to-r from-primary/10 to-transparent text-primary font-medium border-l-2 border-primary -ml-[2px] pl-[14px]"
+                : "text-muted-foreground hover:text-foreground menu-item-hover"
             )}
           >
             <div className="flex items-center gap-2.5">
               <subItem.icon className={cn(
-                "h-3.5 w-3.5",
+                "h-3.5 w-3.5 transition-colors duration-200",
                 isItemActive(subItem.href) && "text-primary"
               )} />
               {subItem.label}

@@ -113,17 +113,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors",
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
             isActive(item.href)
-              ? "bg-background/80 text-foreground font-medium border border-border/50"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "menu-item-active text-foreground font-medium"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
           <div className={cn(
-            "flex items-center justify-center w-7 h-7 rounded-lg",
+            "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
             isActive(item.href)
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground icon-glow"
+              : "text-muted-foreground group-hover:text-foreground"
           )}>
             <item.icon className="h-4 w-4" />
           </div>
@@ -181,17 +181,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to="/admin"
           onClick={onItemClick}
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors",
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
             isActive("/admin")
-              ? "bg-background/80 text-foreground font-medium border border-border/50"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "menu-item-active text-foreground font-medium"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
           <div className={cn(
-            "flex items-center justify-center w-7 h-7 rounded-lg",
+            "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
             isActive("/admin")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground icon-glow"
+              : "text-muted-foreground group-hover:text-foreground"
           )}>
             <Shield className="h-4 w-4" />
           </div>

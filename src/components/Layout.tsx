@@ -38,20 +38,22 @@ export function Layout({ children }: LayoutProps) {
         </button>
       </header>
 
-      {/* Sidebar - fundo sólido ao invés de glass para melhor performance */}
+      {/* Sidebar com gradiente */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-60 bg-background/95 border-r border-border/50 z-40 transition-transform duration-200",
+          "fixed top-0 left-0 h-full w-60 sidebar-gradient border-r border-border/30 z-40 transition-transform duration-200",
           "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="h-14 flex items-center px-4 border-b border-border/50">
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 shadow-sm">
-              <Wallet className="h-5 w-5 text-primary" />
-              <span className="text-lg font-bold text-primary">Fina</span>
+          {/* Logo com shimmer */}
+          <div className="h-14 flex items-center px-4 border-b border-primary/20">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+                <Wallet className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold logo-shimmer">Fina</span>
             </div>
           </div>
 
