@@ -20,6 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   CalendarClock,
   Calendar as CalendarIcon,
   Wallet,
@@ -32,6 +38,7 @@ import {
   LayoutList,
   Receipt,
   RefreshCw,
+  Filter,
 } from "lucide-react";
 import { format, addDays, addMonths, startOfMonth } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -250,13 +257,13 @@ export default function DespesasFuturas() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {resumoPorCartao.map((item) => (
                   <button
                     key={item.cartaoId || "transacao"}
                     onClick={() => handleFiltrarCartao(item.cartaoId)}
                     className={cn(
-                      "p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left",
+                      "p-2 sm:p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left flex-1 min-w-[130px] max-w-[180px]",
                       (item.cartaoId === null && cartaoId === "transacao") ||
                         (item.cartaoId && cartaoId === item.cartaoId)
                         ? "ring-2 ring-primary bg-muted/30"
@@ -273,14 +280,14 @@ export default function DespesasFuturas() {
                       ) : (
                         <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
-                      <span className="font-medium text-sm truncate">
+                      <span className="font-medium text-xs sm:text-sm truncate">
                         {item.cartaoNome}
                       </span>
                     </div>
-                    <p className="text-lg font-bold text-expense">
+                    <p className="text-sm sm:text-lg font-bold text-expense truncate">
                       {formatCurrency(item.total)}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                       {item.quantidade}{" "}
                       {item.quantidade === 1 ? "despesa" : "despesas"}
                     </p>
@@ -349,68 +356,145 @@ export default function DespesasFuturas() {
               {/* Separador visual */}
               <div className="w-px h-6 bg-border hidden sm:block" />
 
-              {/* Dropdowns de filtro */}
-              <Select value={categoriaId} onValueChange={setCategoriaId}>
-                <SelectTrigger className="w-[130px] h-8">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas</SelectItem>
-                  <SelectItem value="sem-categoria">Sem categoria</SelectItem>
-                  {categorias?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                        {cat.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Mobile: dropdown com filtros extras */}
+              <div className="flex sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                      <Filter className="h-3.5 w-3.5" />
+                      Filtros
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 p-2 space-y-2">
+                    <Select value={categoriaId} onValueChange={setCategoriaId}>
+                      <SelectTrigger className="w-full h-8">
+                        <SelectValue placeholder="Categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas</SelectItem>
+                        <SelectItem value="sem-categoria">Sem categoria</SelectItem>
+                        {categorias?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                              {cat.name}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-              <Select value={responsavelId} onValueChange={setResponsavelId}>
-                <SelectTrigger className="w-[130px] h-8">
-                  <SelectValue placeholder="Responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {responsaveis?.map((resp) => (
-                    <SelectItem key={resp.id} value={resp.id}>
-                      {resp.apelido || resp.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <Select value={responsavelId} onValueChange={setResponsavelId}>
+                      <SelectTrigger className="w-full h-8">
+                        <SelectValue placeholder="Responsável" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {responsaveis?.map((resp) => (
+                          <SelectItem key={resp.id} value={resp.id}>
+                            {resp.apelido || resp.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-              <Select value={cartaoId} onValueChange={setCartaoId}>
-                <SelectTrigger className="w-[130px] h-8">
-                  <SelectValue placeholder="Origem" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas</SelectItem>
-                  <SelectItem value="transacao">Transações</SelectItem>
-                  {cartoes?.map((cartao) => (
-                    <SelectItem key={cartao.id} value={cartao.id}>
-                      <span className="flex items-center gap-2">
-                        <CreditCard className="h-3 w-3" style={{ color: cartao.cor }} />
-                        {cartao.nome}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <Select value={cartaoId} onValueChange={setCartaoId}>
+                      <SelectTrigger className="w-full h-8">
+                        <SelectValue placeholder="Origem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas</SelectItem>
+                        <SelectItem value="transacao">Transações</SelectItem>
+                        {cartoes?.map((cartao) => (
+                          <SelectItem key={cartao.id} value={cartao.id}>
+                            <span className="flex items-center gap-2">
+                              <CreditCard className="h-3 w-3" style={{ color: cartao.cor }} />
+                              {cartao.nome}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-              <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger className="w-[110px] h-8">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="parcelada">Parcelada</SelectItem>
-                  <SelectItem value="fixa">Fixa/Recorrente</SelectItem>
-                  <SelectItem value="unica">Única</SelectItem>
-                </SelectContent>
-              </Select>
+                    <Select value={tipo} onValueChange={setTipo}>
+                      <SelectTrigger className="w-full h-8">
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="parcelada">Parcelada</SelectItem>
+                        <SelectItem value="fixa">Fixa/Recorrente</SelectItem>
+                        <SelectItem value="unica">Única</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Desktop: filtros inline */}
+              <div className="hidden sm:flex items-center gap-2">
+                <Select value={categoriaId} onValueChange={setCategoriaId}>
+                  <SelectTrigger className="w-[130px] h-8">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="sem-categoria">Sem categoria</SelectItem>
+                    {categorias?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                          {cat.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={responsavelId} onValueChange={setResponsavelId}>
+                  <SelectTrigger className="w-[130px] h-8">
+                    <SelectValue placeholder="Responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {responsaveis?.map((resp) => (
+                      <SelectItem key={resp.id} value={resp.id}>
+                        {resp.apelido || resp.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={cartaoId} onValueChange={setCartaoId}>
+                  <SelectTrigger className="w-[130px] h-8">
+                    <SelectValue placeholder="Origem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="transacao">Transações</SelectItem>
+                    {cartoes?.map((cartao) => (
+                      <SelectItem key={cartao.id} value={cartao.id}>
+                        <span className="flex items-center gap-2">
+                          <CreditCard className="h-3 w-3" style={{ color: cartao.cor }} />
+                          {cartao.nome}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={tipo} onValueChange={setTipo}>
+                  <SelectTrigger className="w-[110px] h-8">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="parcelada">Parcelada</SelectItem>
+                    <SelectItem value="fixa">Fixa/Recorrente</SelectItem>
+                    <SelectItem value="unica">Única</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Toggle de visualização + Limpar */}
               <div className="flex items-center gap-1 ml-auto">
@@ -432,7 +516,7 @@ export default function DespesasFuturas() {
                     <LayoutList className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={limparFiltros}>Limpar</Button>
+                <Button variant="ghost" size="sm" onClick={limparFiltros} className="hidden sm:flex">Limpar</Button>
               </div>
             </div>
           </CardContent>

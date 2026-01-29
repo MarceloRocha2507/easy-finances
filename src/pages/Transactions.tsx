@@ -699,7 +699,7 @@ export default function Transactions() {
         {/* Saldo Inicial + Resumo Completo */}
         <div className="space-y-3">
           {/* Card de Saldo Inicial e Metas */}
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 bg-muted/30 rounded-lg border border-border/50">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Wallet className="w-4 h-4 text-primary" />
@@ -711,7 +711,7 @@ export default function Transactions() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-end gap-2 sm:gap-4 flex-wrap">
               {(stats?.totalMetas || 0) > 0 && (
                 <div className="text-right">
                   <span className="text-xs text-muted-foreground">Em Metas</span>
@@ -724,10 +724,10 @@ export default function Transactions() {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setEditarSaldoOpen(true)}
-                className="gap-2"
+                className="gap-1.5"
               >
                 <Settings className="w-4 h-4" />
-                Configurar
+                <span className="hidden sm:inline">Configurar</span>
               </Button>
             </div>
           </div>

@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { useAuditoria, useEstatisticasAuditoria, type RegistroAuditoria } from "@/hooks/useAuditoria";
 import { DetalhesAuditoriaDialog } from "@/components/cartoes/DetalhesAuditoriaDialog";
+import { cn } from "@/lib/utils";
 
 const POR_PAGINA = 15;
 
@@ -301,11 +302,11 @@ export default function Auditoria() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[160px]">Data/Hora</TableHead>
-                      <TableHead className="w-[100px]">Tabela</TableHead>
-                      <TableHead className="w-[110px]">Ação</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead className="w-[80px] text-center">Detalhes</TableHead>
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead className="hidden sm:table-cell">Tabela</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead className="hidden md:table-cell">Descrição</TableHead>
+                      <TableHead className="w-[60px] text-center">Ver</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -317,32 +318,32 @@ export default function Auditoria() {
 
                       return (
                         <TableRow key={registro.id}>
-                          <TableCell className="text-sm">
-                            {format(new Date(registro.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          <TableCell className="text-xs sm:text-sm">
+                            {format(new Date(registro.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="flex items-center gap-1.5">
                               <TabelaIcon className="h-3.5 w-3.5 text-muted-foreground" />
                               <span className="text-sm">{tabela.label}</span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={acao.className}>
+                            <Badge variant="outline" className={cn(acao.className, "text-[10px] sm:text-xs")}>
                               <AcaoIcon className="h-3 w-3 mr-1" />
-                              {acao.label}
+                              <span className="hidden sm:inline">{acao.label}</span>
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground truncate max-w-[300px]">
+                          <TableCell className="hidden md:table-cell text-sm text-muted-foreground truncate max-w-[200px]">
                             {extrairDescricao(registro)}
                           </TableCell>
                           <TableCell className="text-center">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-7 w-7"
                               onClick={() => abrirDetalhes(registro)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3.5 w-3.5" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -353,35 +354,35 @@ export default function Auditoria() {
 
                 {/* Paginação */}
                 {totalPaginas > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Página {pagina + 1} de {totalPaginas} ({data?.total} registros)
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+                      Pág. {pagina + 1}/{totalPaginas} ({data?.total})
                     </p>
-                    <Pagination>
-                      <PaginationContent>
+                    <Pagination className="justify-center sm:justify-end">
+                      <PaginationContent className="gap-1">
                         <PaginationItem>
                           <PaginationPrevious
                             onClick={() => setPagina(Math.max(0, pagina - 1))}
-                            className={pagina === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            className={cn("h-8 px-2", pagina === 0 ? "pointer-events-none opacity-50" : "cursor-pointer")}
                           />
                         </PaginationItem>
-                        {Array.from({ length: Math.min(5, totalPaginas) }).map((_, i) => {
+                        {Array.from({ length: Math.min(3, totalPaginas) }).map((_, i) => {
                           let pageNum: number;
-                          if (totalPaginas <= 5) {
+                          if (totalPaginas <= 3) {
                             pageNum = i;
-                          } else if (pagina < 3) {
+                          } else if (pagina < 2) {
                             pageNum = i;
-                          } else if (pagina > totalPaginas - 4) {
-                            pageNum = totalPaginas - 5 + i;
+                          } else if (pagina > totalPaginas - 3) {
+                            pageNum = totalPaginas - 3 + i;
                           } else {
-                            pageNum = pagina - 2 + i;
+                            pageNum = pagina - 1 + i;
                           }
                           return (
                             <PaginationItem key={pageNum}>
                               <PaginationLink
                                 onClick={() => setPagina(pageNum)}
                                 isActive={pagina === pageNum}
-                                className="cursor-pointer"
+                                className="cursor-pointer h-8 w-8"
                               >
                                 {pageNum + 1}
                               </PaginationLink>
@@ -391,7 +392,7 @@ export default function Auditoria() {
                         <PaginationItem>
                           <PaginationNext
                             onClick={() => setPagina(Math.min(totalPaginas - 1, pagina + 1))}
-                            className={pagina === totalPaginas - 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            className={cn("h-8 px-2", pagina === totalPaginas - 1 ? "pointer-events-none opacity-50" : "cursor-pointer")}
                           />
                         </PaginationItem>
                       </PaginationContent>

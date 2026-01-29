@@ -6,11 +6,19 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   CreditCard,
   ChevronRight,
   ChevronLeft,
   Receipt,
   RefreshCw,
+  MoreHorizontal,
+  Undo2,
 } from "lucide-react";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
@@ -131,19 +139,46 @@ export default function Cartoes() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await regenerarParcelas.mutateAsync();
-                refetch();
-              }}
-              disabled={regenerarParcelas.isPending}
-            >
-              <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
-              {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
-            </Button>
+            {/* Mobile: dropdown com ações */}
+            <div className="flex sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await regenerarParcelas.mutateAsync();
+                      refetch();
+                    }}
+                    disabled={regenerarParcelas.isPending}
+                  >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
+                    {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            {/* Desktop: botões individuais */}
+            <div className="hidden sm:flex items-center gap-2">
+              <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await regenerarParcelas.mutateAsync();
+                  refetch();
+                }}
+                disabled={regenerarParcelas.isPending}
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
+                {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
+              </Button>
+            </div>
+            
             <NovoCartaoDialog onSaved={() => refetch()} />
           </div>
         </div>
