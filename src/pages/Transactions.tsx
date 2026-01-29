@@ -936,10 +936,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
-    <div className="group flex items-center py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors">
+    <div className="group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors">
       {/* Ícone da categoria */}
       <div className={cn(
-        "w-9 h-9 rounded-lg flex items-center justify-center mr-3 shrink-0",
+        "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
         isPending 
           ? isOverdue 
             ? 'bg-red-100 dark:bg-red-900/30'
@@ -949,7 +949,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             : 'bg-red-100 dark:bg-red-900/30'
       )}>
         <IconComponent className={cn(
-          "w-4 h-4",
+          "w-3.5 h-3.5 sm:w-4 sm:h-4",
           isPending 
             ? isOverdue 
               ? 'text-red-600'
@@ -962,13 +962,13 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
       
       {/* Descrição + Categoria + Status */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium text-foreground truncate">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <p className="font-medium text-foreground truncate text-sm sm:text-base">
             {transaction.description || transaction.category?.name || 'Sem descrição'}
           </p>
-          {/* Badge de Parcela */}
+          {/* Badge de Parcela - visível em mobile */}
           {transaction.tipo_lancamento === 'parcelada' && transaction.numero_parcela && transaction.total_parcelas && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+            <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
               {transaction.numero_parcela}/{transaction.total_parcelas}
             </span>
           )}
@@ -976,9 +976,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           {transaction.tipo_lancamento === 'fixa' && (
             <RefreshCw className="w-3 h-3 text-muted-foreground shrink-0" />
           )}
+          {/* Badge de Status - esconder em mobile (ícone colorido já indica) */}
           {isPending && (
             <span className={cn(
-              "text-xs px-1.5 py-0.5 rounded-full shrink-0",
+              "text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline",
               isOverdue 
                 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -987,16 +988,20 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+          <span>
             {formatTransactionDay(transaction.date, transaction.created_at)}
-          </p>
-          <span className="text-muted-foreground/50">•</span>
-          <p className="text-sm text-muted-foreground truncate">
-            {transaction.category?.name || 'Sem categoria'}
-          </p>
+          </span>
+          {/* Categoria - esconder em mobile */}
+          <span className="hidden sm:contents">
+            <span className="text-muted-foreground/50">•</span>
+            <span className="truncate max-w-[100px]">
+              {transaction.category?.name || 'Sem categoria'}
+            </span>
+          </span>
+          {/* Vencimento - esconder em mobile */}
           {transaction.due_date && isPending && (
-            <span className="text-xs text-muted-foreground">
+            <span className="hidden sm:inline">
               • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
             </span>
           )}
@@ -1040,7 +1045,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
       
       {/* Valor */}
       <span className={cn(
-        "font-semibold tabular-nums ml-4",
+        "font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base",
         isPending 
           ? 'text-amber-600'
           : transaction.type === 'income' 
