@@ -84,22 +84,20 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
-            "hover:glass-hover",
+            "group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors",
             open || isMenuActive
-              ? "glass text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background/80 text-foreground font-medium border border-border/50"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
           <div className="flex items-center gap-3">
             <div className={cn(
-              "flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200",
-              "group-hover:scale-110",
+              "flex items-center justify-center w-7 h-7 rounded-lg",
               open || isMenuActive
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground"
             )}>
-              <Icon className="h-4 w-4 transition-transform duration-200" />
+              <Icon className="h-4 w-4" />
             </div>
             {label}
           </div>
@@ -115,24 +113,22 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1.5 ml-5 space-y-1 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
-        {subItems.map((subItem, index) => (
+      <CollapsibleContent className="mt-1.5 ml-5 space-y-1 overflow-hidden">
+        {subItems.map((subItem) => (
           <Link
             key={subItem.href}
             to={subItem.href}
             onClick={onItemClick}
-            style={{ animationDelay: `${index * 50}ms` }}
             className={cn(
-              "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200",
-              "animate-fade-in opacity-0 [animation-fill-mode:forwards]",
+              "group/item flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors",
               isItemActive(subItem.href)
-                ? "bg-primary/10 text-primary font-medium border border-primary/20 shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:glass-hover"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
           >
             <div className="flex items-center gap-2.5">
               <subItem.icon className={cn(
-                "h-3.5 w-3.5 transition-transform duration-200 group-hover/item:scale-110",
+                "h-3.5 w-3.5",
                 isItemActive(subItem.href) && "text-primary"
               )} />
               {subItem.label}

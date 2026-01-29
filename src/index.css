@@ -182,17 +182,22 @@
     @apply transition-colors duration-200;
   }
 
-  /* Glass effect utility */
+  /* Glass effect utility - simplificado para performance */
   .glass {
-    background: hsl(var(--glass-bg));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--glass-border));
-    box-shadow: var(--glass-shadow);
+    background: hsl(var(--background) / 0.95);
+    border: 1px solid hsl(var(--border) / 0.5);
   }
 
   .glass-hover {
-    background: hsl(var(--glass-hover));
+    background: hsl(var(--muted) / 0.5);
+  }
+
+  /* Glass com blur apenas para elementos pequenos (popovers, dropdowns) */
+  .glass-blur {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--glass-border));
   }
 
   /* Gradient utilities for dashboard cards */
