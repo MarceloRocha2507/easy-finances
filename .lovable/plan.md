@@ -1,166 +1,199 @@
 
-# Plano: Correção de Responsividade na Página de Transações
+# Plano: Correção de Responsividade no Header e Filtros da Página de Transações
 
 ## Problemas Identificados (baseado na screenshot)
 
-### 1. TransactionRow - Linha de Detalhes Cortando
-**Problema**: A linha inferior com "Ontem, 09:06 • D..." está sendo cortada porque há muita informação horizontal:
-- Data/hora
-- Separador "•"
-- Categoria
-- Vencimento (se pendente)
-- Saldo (já escondido em mobile)
+### 1. Header com Filtro de Datas
+O título "Transações" e o filtro de datas estão na mesma linha com `flex items-center gap-4`, fazendo os elementos ficarem espalhados verticalmente em mobile:
+- Os botões de calendário empilham
+- O texto "até" fica solto entre eles
+- Os atalhos (Hoje, Mês) ficam em linha separada
 
-O separador "•" entre a data e a categoria está ocupando espaço desnecessário em mobile, e a categoria está truncando de forma estranha.
+### 2. FiltroDataRange
+Os botões de data têm `min-w-[130px]` que força largura mesmo em telas pequenas, e o layout não é otimizado para mobile.
 
-### 2. Badges de Status/Parcelas
-**Problema**: Os badges "Pendente", "1/12", etc. podem estar empurrando o conteúdo e causando overflow.
+### 3. Card de Saldo Inicial
+O card mostra informações espalhadas com o layout `flex-col sm:flex-row`, mas os elementos internos não estão bem organizados em mobile.
 
 ---
 
-## Alterações Detalhadas
+## Alterações Propostas
 
-### Arquivo: `src/pages/Transactions.tsx`
-
-#### 1. Simplificar linha de detalhes em mobile (linhas 990-1002)
+### 1. Transactions.tsx - Reorganizar Header (linhas 354-365)
 
 **Antes:**
 ```tsx
-<div className="flex items-center gap-2">
-  <p className="text-sm text-muted-foreground">
-    {formatTransactionDay(transaction.date, transaction.created_at)}
-  </p>
-  <span className="text-muted-foreground/50">•</span>
-  <p className="text-sm text-muted-foreground truncate">
-    {transaction.category?.name || 'Sem categoria'}
-  </p>
-  {transaction.due_date && isPending && (
-    <span className="text-xs text-muted-foreground">
-      • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
-    </span>
-  )}
-  ...
+<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex items-center gap-4">
+    <h1 className="text-xl font-semibold text-foreground">Transações</h1>
+    <FiltroDataRange ... />
+  </div>
+  <div className="flex gap-2">
+    <Button>Cartão</Button>
+    <Button>Nova</Button>
+  </div>
 </div>
 ```
 
 **Depois:**
 ```tsx
-<div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-  <span>
-    {formatTransactionDay(transaction.date, transaction.created_at)}
-  </span>
-  {/* Categoria - esconder em mobile, mostrar em sm+ */}
-  <span className="hidden sm:contents">
-    <span className="text-muted-foreground/50">•</span>
-    <span className="truncate max-w-[100px]">
-      {transaction.category?.name || 'Sem categoria'}
-    </span>
-  </span>
-  {/* Vencimento - esconder em mobile */}
-  {transaction.due_date && isPending && (
-    <span className="hidden sm:inline">
-      • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
-    </span>
-  )}
-  ...saldo...
+{/* Header - título e botões na mesma linha */}
+<div className="flex items-center justify-between gap-2">
+  <h1 className="text-xl font-semibold text-foreground">Transações</h1>
+  <div className="flex gap-2">
+    <Button variant="outline" size="sm" onClick={() => setCartaoDialogOpen(true)}>
+      <CreditCard className="w-4 h-4 sm:mr-2" />
+      <span className="hidden sm:inline">Cartão</span>
+    </Button>
+    <Button size="sm" className="gradient-primary">
+      <Plus className="w-4 h-4 sm:mr-2" />
+      <span className="hidden sm:inline">Nova</span>
+    </Button>
+  </div>
+</div>
+
+{/* Filtro de datas em linha separada */}
+<FiltroDataRange ... />
+```
+
+### 2. FiltroDataRange.tsx - Layout Compacto para Mobile
+
+**Mudanças principais:**
+- Reduzir `min-w-[130px]` para `min-w-[110px]`
+- Esconder o texto "até" em mobile, usar apenas ícone ou linha
+- Mover calendários para layout vertical em mobile
+- Agrupar atalhos de forma mais compacta
+
+```tsx
+// Linha 49 - Container principal
+<div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2">
+  {/* Linha de datas */}
+  <div className="flex items-center gap-2 w-full sm:w-auto">
+    {/* Data Inicial - botão menor em mobile */}
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            "justify-start text-left font-normal flex-1 sm:flex-none min-w-0 sm:min-w-[130px]",
+            !startDate && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">
+            {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      ...
+    </Popover>
+
+    <span className="text-muted-foreground text-xs sm:text-sm shrink-0">até</span>
+
+    {/* Data Final - mesmo padrão */}
+    <Popover>
+      ...
+    </Popover>
+  </div>
+
+  {/* Atalhos + Refresh na mesma linha */}
+  <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-start">
+    <div className="flex gap-1">
+      <Button variant="ghost" size="sm" onClick={handleHoje} className="text-xs px-2 h-8">
+        Hoje
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleEsteMes} className="text-xs px-2 h-8">
+        Mês
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleEstaSemana} className="text-xs px-2 h-8 hidden sm:inline-flex">
+        Semana
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleUltimos30Dias} className="text-xs px-2 h-8 hidden sm:inline-flex">
+        30 dias
+      </Button>
+    </div>
+    
+    {onRefresh && (
+      <Button variant="ghost" size="icon" onClick={onRefresh} disabled={isLoading} className="h-8 w-8">
+        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+      </Button>
+    )}
+  </div>
 </div>
 ```
 
-#### 2. Limitar badges na linha principal (linhas 965-988)
+### 3. Transactions.tsx - Card de Saldo Inicial Compacto (linhas 702-733)
 
 **Mudanças:**
-- Esconder badge "Pendente/Vencido" em mobile (já está visível pelo ícone amarelo/vermelho)
-- Manter apenas badge de parcela em mobile pois é informação essencial
+- Layout mais horizontal em mobile
+- Esconder label "Saldo Inicial" em mobile, usar apenas o ícone
+- "Em Metas" e "Configurar" mais compactos
 
 ```tsx
-{/* Badge de Parcela - manter visível */}
-{transaction.tipo_lancamento === 'parcelada' && transaction.numero_parcela && transaction.total_parcelas && (
-  <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
-    {transaction.numero_parcela}/{transaction.total_parcelas}
-  </span>
-)}
-
-{/* Badge de Status - esconder em mobile pois o ícone colorido já indica */}
-{isPending && (
-  <span className={cn(
-    "text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline",
-    isOverdue 
-      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
-      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-  )}>
-    {isOverdue ? 'Vencido' : 'Pendente'}
-  </span>
-)}
-```
-
-#### 3. Reduzir padding e tamanho em mobile (linha 939)
-
-```tsx
-// Antes
-<div className="group flex items-center py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors">
-
-// Depois
-<div className="group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors">
-```
-
-#### 4. Reduzir tamanho do ícone da categoria em mobile (linhas 941-950)
-
-```tsx
-// Antes
-<div className={cn(
-  "w-9 h-9 rounded-lg flex items-center justify-center mr-3 shrink-0",
-  ...
-)}>
-
-// Depois  
-<div className={cn(
-  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
-  ...
-)}>
-  <IconComponent className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", ...)} />
-```
-
-#### 5. Valor com fonte menor em mobile (linhas 1042-1050)
-
-```tsx
-// Antes
-<span className={cn(
-  "font-semibold tabular-nums ml-4",
-  ...
-)}>
-
-// Depois
-<span className={cn(
-  "font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base",
-  ...
-)}>
+<div className="flex items-center justify-between p-2 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50">
+  {/* Saldo Inicial */}
+  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+    <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
+      <Wallet className="w-4 h-4 text-primary" />
+    </div>
+    <div className="min-w-0">
+      <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Saldo Inicial</span>
+      <p className="font-semibold text-sm sm:text-base truncate">
+        {formatCurrency(stats?.saldoInicial || 0)}
+      </p>
+    </div>
+  </div>
+  
+  {/* Em Metas + Botão */}
+  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+    {(stats?.totalMetas || 0) > 0 && (
+      <div className="text-right">
+        <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
+        <p className="font-semibold text-primary text-sm sm:text-base">
+          {formatCurrency(stats?.totalMetas || 0)}
+        </p>
+      </div>
+    )}
+    <Button 
+      variant="ghost" 
+      size="icon"
+      onClick={() => setEditarSaldoOpen(true)}
+      className="h-8 w-8"
+    >
+      <Settings className="w-4 h-4" />
+    </Button>
+  </div>
+</div>
 ```
 
 ---
 
 ## Resumo das Alterações
 
-| Localização | Alteração |
-|-------------|-----------|
-| TransactionRow padding | `py-2 sm:py-3 px-2 sm:px-4` |
-| Ícone categoria | `w-8 h-8 sm:w-9 sm:h-9` |
-| Badge parcela | `text-[10px] sm:text-xs px-1 sm:px-1.5` |
-| Badge status | `hidden sm:inline` (esconder em mobile) |
-| Linha detalhes | Esconder categoria e vencimento em mobile |
-| Valor | `text-sm sm:text-base ml-2 sm:ml-4` |
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/Transactions.tsx` (linhas 354-381) | Separar título/botões do filtro, esconder texto dos botões em mobile |
+| `src/pages/Transactions.tsx` (linhas 702-733) | Card de saldo compacto, botão icon-only em mobile |
+| `src/components/FiltroDataRange.tsx` | Layout responsivo, datas com formato curto (dd/MM/yy), atalhos compactos |
+
+## Resultado Esperado em Mobile
+
+```
++---------------------------+
+| Transações       [📦] [+] |  <- título + botões icon-only
++---------------------------+
+| [📅 01/01/26] até [📅 31/01/26] |
+| [Hoje] [Mês]           [🔄] |
++---------------------------+
+| 💳 -R$ 1.175,45    [⚙️] |  <- saldo compacto
+|    Em Metas R$ 1.332,33  |
++---------------------------+
+```
 
 ## Padrões Utilizados
 
-1. **`hidden sm:contents/inline`**: Esconder info secundária em mobile
-2. **Tamanhos adaptativos**: `text-xs sm:text-sm`, `w-8 sm:w-9`
-3. **Indicadores visuais**: Usar cor do ícone ao invés de badges em mobile
-4. **Padding reduzido**: Menos espaço lateral em telas pequenas
-
-## Resultado Esperado
-
-- Data/hora sempre visível
-- Categoria oculta em mobile (info secundária)
-- Badge de parcela compacto
-- Badge de status oculto (ícone colorido é suficiente)
-- Mais espaço horizontal para o valor
-- Nenhum texto cortado ou sobreposto
+1. **Icon-only buttons em mobile**: `<span className="hidden sm:inline">`
+2. **Formato de data curto**: `dd/MM/yy` em vez de `dd/MM/yyyy`
+3. **Padding adaptativo**: `p-2 sm:p-3`
+4. **Flex com shrink**: `shrink-0` para elementos que não devem encolher
