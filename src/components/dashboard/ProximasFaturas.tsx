@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Clock } from "lucide-react";
 import { ProximaFatura } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CORES_BANDEIRA: Record<string, string> = {
   mastercard: "#eb001b",
@@ -19,8 +20,10 @@ interface Props {
 }
 
 export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
+  const isMobile = useIsMobile();
   // Filtrar apenas faturas com valor pendente (> 0)
   const faturasPendentes = faturas.filter(f => f.valor > 0);
+  const limite = isMobile ? 3 : 4;
 
   if (faturasPendentes.length === 0) {
     return (
@@ -50,7 +53,7 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {faturasPendentes.slice(0, 4).map((fatura) => {
+        {faturasPendentes.slice(0, limite).map((fatura) => {
           const cor = CORES_BANDEIRA[fatura.bandeira?.toLowerCase() || "default"] || CORES_BANDEIRA.default;
           const urgente = fatura.diasRestantes <= 3;
 

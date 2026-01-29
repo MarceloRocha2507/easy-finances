@@ -183,7 +183,7 @@ export default function Dashboard() {
           icon={TrendingUp}
           type="income"
           delay={0.1}
-          subInfo={<p className="text-xs text-muted-foreground">recebidas</p>}
+          subInfo={<p className="text-xs text-muted-foreground hidden sm:block">recebidas</p>}
         />
 
         <StatCardPrimary
@@ -192,7 +192,7 @@ export default function Dashboard() {
           icon={TrendingDown}
           type="expense"
           delay={0.15}
-          subInfo={<p className="text-xs text-muted-foreground">pagas</p>}
+          subInfo={<p className="text-xs text-muted-foreground hidden sm:block">pagas</p>}
         />
       </div>
 
@@ -203,7 +203,7 @@ export default function Dashboard() {
           value={completeStats?.pendingIncome || 0}
           icon={Clock}
           status="pending"
-          subInfo="pendentes"
+          subInfo={<span className="hidden sm:inline">pendentes</span>}
           delay={0.2}
           prefix="+"
         />
@@ -227,7 +227,7 @@ export default function Dashboard() {
           value={completeStats?.faturaCartao || 0}
           icon={CreditCard}
           status="info"
-          subInfo="titular do mês"
+          subInfo={<span className="hidden sm:inline">titular do mês</span>}
           delay={0.3}
           prefix="-"
         />
@@ -237,7 +237,7 @@ export default function Dashboard() {
           value={(completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0)}
           icon={Wallet}
           status="danger"
-          subInfo="contas + cartão"
+          subInfo={<span className="hidden sm:inline">contas + cartão</span>}
           delay={0.35}
           prefix="-"
           onClick={() => setDespesasDialogOpen(true)}
@@ -318,7 +318,9 @@ export default function Dashboard() {
       {/* Comparativo + Gastos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {dashboardData?.comparativo && (
-          <ComparativoMensal comparativo={dashboardData.comparativo} />
+          <div className="hidden sm:block">
+            <ComparativoMensal comparativo={dashboardData.comparativo} />
+          </div>
         )}
         {dashboardData?.gastosDiarios && (
           <GastosDiarios dados={dashboardData.gastosDiarios} />

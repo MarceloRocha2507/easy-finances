@@ -91,50 +91,50 @@ export default function Metas() {
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-500/20 flex items-center justify-center">
-                  <Target className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-slate-500/20 flex items-center justify-center">
+                  <Target className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600 dark:text-slate-400" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Total</p>
-              <p className="text-2xl sm:text-3xl font-bold mt-1">{metas.length}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total</p>
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1">{metas.length}</p>
             </CardContent>
           </Card>
 
           <Card className="shadow-sm rounded-xl border-l-4 border-l-amber-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-amber-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Em andamento</p>
-              <p className="text-2xl sm:text-3xl font-bold mt-1">{metasAtivas.length}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Em andamento</p>
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1">{metasAtivas.length}</p>
             </CardContent>
           </Card>
 
           <Card className="gradient-income shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Check className="h-6 w-6 text-emerald-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Check className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Concluídos</p>
-              <p className="text-2xl sm:text-3xl font-bold text-income mt-1">{metasConcluidas.length}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Concluídos</p>
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold text-income mt-0.5 sm:mt-1">{metasConcluidas.length}</p>
             </CardContent>
           </Card>
 
           <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Wallet className="h-6 w-6 text-purple-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Valor acumulado</p>
-              <p className="text-2xl sm:text-3xl font-bold mt-1 value-display">
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Valor acumulado</p>
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 value-display truncate">
                 {formatCurrency(totalAtual)}
               </p>
             </CardContent>
@@ -293,7 +293,7 @@ function MetaCard({
             <div>
               <p className="font-semibold">{meta.titulo}</p>
               {diasRestantes !== null && diasRestantes > 0 && !meta.concluida && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <p className="text-xs text-muted-foreground items-center gap-1 mt-0.5 hidden sm:flex">
                   <Calendar className="h-3 w-3" />
                   {diasRestantes} dias restantes
                 </p>
@@ -325,7 +325,7 @@ function MetaCard({
           </div>
 
           {!meta.concluida && faltando > 0 && (
-            <p className="text-xs text-muted-foreground text-right pt-1">
+            <p className="text-xs text-muted-foreground text-right pt-1 hidden sm:block">
               Faltam {formatCurrency(faltando)}
             </p>
           )}

@@ -121,8 +121,8 @@ export function InvestimentoCard({
               </div>
             </div>
 
-            {/* Info adicional */}
-            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+            {/* Info adicional - esconder em mobile */}
+            <div className="items-center gap-4 mt-3 text-xs text-muted-foreground hidden sm:flex">
               {investimento.rentabilidadeAnual && (
                 <span className="flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
@@ -144,29 +144,31 @@ export function InvestimentoCard({
 
             {/* Botões */}
             {investimento.ativo && (
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-3 sm:mt-4">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAportar();
                   }}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Aportar
+                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                  <span className="hidden sm:inline">Aportar</span>
+                  <span className="sm:hidden">+</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDetalhes();
                   }}
                 >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Detalhes
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                  <span className="hidden sm:inline">Detalhes</span>
                 </Button>
               </div>
             )}
