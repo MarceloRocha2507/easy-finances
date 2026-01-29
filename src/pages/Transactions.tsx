@@ -350,34 +350,24 @@ export default function Transactions() {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header com Navegação por Mês */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-foreground">Transações</h1>
-            <FiltroDataRange
-              startDate={dataInicial}
-              endDate={dataFinal}
-              onStartDateChange={setDataInicial}
-              onEndDateChange={setDataFinal}
-              onRefresh={handleRefresh}
-              isLoading={isFetching}
-            />
-          </div>
+        {/* Header - título e botões na mesma linha */}
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-semibold text-foreground">Transações</h1>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => setCartaoDialogOpen(true)}
             >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Cartão
+              <CreditCard className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Cartão</span>
             </Button>
 
             <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gradient-primary">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova
+                  <Plus className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nova</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
@@ -696,38 +686,50 @@ export default function Transactions() {
           </div>
         </div>
 
+        {/* Filtro de datas em linha separada */}
+        <FiltroDataRange
+          startDate={dataInicial}
+          endDate={dataFinal}
+          onStartDateChange={setDataInicial}
+          onEndDateChange={setDataFinal}
+          onRefresh={handleRefresh}
+          isLoading={isFetching}
+        />
+
         {/* Saldo Inicial + Resumo Completo */}
         <div className="space-y-3">
           {/* Card de Saldo Inicial e Metas */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 bg-muted/30 rounded-lg border border-border/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+          <div className="flex items-center justify-between p-2 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50">
+            {/* Saldo Inicial */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
                 <Wallet className="w-4 h-4 text-primary" />
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Saldo Inicial</span>
-                <p className="font-semibold">
+              <div className="min-w-0">
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Saldo Inicial</span>
+                <p className="font-semibold text-sm sm:text-base truncate">
                   {formatCurrency(stats?.saldoInicial || 0)}
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 sm:gap-4 flex-wrap">
+            
+            {/* Em Metas + Botão */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {(stats?.totalMetas || 0) > 0 && (
                 <div className="text-right">
-                  <span className="text-xs text-muted-foreground">Em Metas</span>
-                  <p className="font-semibold text-primary">
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
+                  <p className="font-semibold text-primary text-sm sm:text-base">
                     {formatCurrency(stats?.totalMetas || 0)}
                   </p>
                 </div>
               )}
               <Button 
                 variant="ghost" 
-                size="sm" 
+                size="icon"
                 onClick={() => setEditarSaldoOpen(true)}
-                className="gap-1.5"
+                className="h-8 w-8"
               >
                 <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Configurar</span>
               </Button>
             </div>
           </div>
