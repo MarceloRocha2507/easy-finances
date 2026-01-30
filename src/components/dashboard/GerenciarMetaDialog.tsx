@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +47,7 @@ import {
   Target,
   Sparkles,
   CheckCircle,
+  Lightbulb,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -52,6 +61,10 @@ import {
   useExcluirMeta,
 } from "@/hooks/useMetas";
 import { useCompleteStats } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   meta: Meta | null;
@@ -87,6 +100,16 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   );
   const [cor, setCor] = useState(meta?.cor || "#6366f1");
 
+  // Estado para modo "Registrar receita e depositar"
+  const [modoReceitaEDeposito, setModoReceitaEDeposito] = useState(false);
+  const [descricaoReceita, setDescricaoReceita] = useState("");
+  const [categoriaReceita, setCategoriaReceita] = useState("");
+
+  // Hooks
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   // Mutations
   const atualizarMeta = useAtualizarMeta();
   const adicionarValor = useAdicionarValorMeta();
@@ -96,6 +119,10 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   // Buscar saldo disponível para validação
   const { data: completeStats } = useCompleteStats();
   const saldoDisponivel = completeStats?.saldoDisponivel ?? 0;
+
+  // Buscar categorias de receita
+  const { data: categories } = useCategories();
+  const incomeCategories = categories?.filter(c => c.type === 'income') || [];
 
   // Atualizar estado quando a meta mudar
   if (meta && titulo !== meta.titulo) {
@@ -112,6 +139,64 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   const valorDepositoNum = parseFloat(valorDeposito) || 0;
   // Usar toFixed(2) para evitar problemas de precisão de ponto flutuante
   const depositoExcedeSaldo = parseFloat(valorDepositoNum.toFixed(2)) > parseFloat(saldoDisponivel.toFixed(2));
+
+  // Mutation combinada: Registrar receita + depositar na meta
+  const registrarReceitaEDepositar = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const valorNum = parseFloat(valorDeposito);
+      if (!valorNum || valorNum <= 0) throw new Error("Valor inválido");
+
+      // 1. Criar transação de receita
+      const { error: txError } = await supabase.from("transactions").insert({
+        user_id: user.id,
+        type: "income" as const,
+        amount: valorNum,
+        description: descricaoReceita || `Receita para meta: ${meta.titulo}`,
+        category_id: categoriaReceita,
+        status: "completed",
+        date: new Date().toISOString().split("T")[0],
+      });
+      if (txError) throw txError;
+
+      // 2. Depositar na meta (a receita foi criada, agora o saldo é suficiente)
+      // Precisamos buscar o novo saldo para validação
+      const novoSaldo = saldoDisponivel + valorNum;
+
+      await adicionarValor.mutateAsync({
+        id: meta.id,
+        valor: valorNum,
+        valorAtualAnterior: meta.valorAtual,
+        valorAlvo: meta.valorAlvo,
+        metaTitulo: meta.titulo,
+        saldoDisponivel: novoSaldo,
+      });
+    },
+    onSuccess: () => {
+      const valorNum = parseFloat(valorDeposito);
+      toast({
+        title: "Receita registrada e depositada!",
+        description: `${formatCurrency(valorNum)} foi registrado e adicionado à meta.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["metas"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      setModoReceitaEDeposito(false);
+      setValorDeposito("");
+      setDescricaoReceita("");
+      setCategoriaReceita("");
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao registrar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   function handleDepositar() {
     const valor = parseFloat(valorDeposito);
@@ -299,6 +384,82 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
                 </Button>
               ))}
             </div>
+
+            {/* Botão alternativo: Registrar receita e depositar */}
+            {depositoExcedeSaldo && valorDepositoNum > 0 && !modoReceitaEDeposito && (
+              <Button
+                variant="outline"
+                className="w-full gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                onClick={() => setModoReceitaEDeposito(true)}
+              >
+                <Lightbulb className="w-4 h-4" />
+                Registrar receita e depositar na meta
+              </Button>
+            )}
+
+            {/* Formulário inline: Registrar receita e depositar */}
+            {modoReceitaEDeposito && (
+              <div className="space-y-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <Lightbulb className="w-4 h-4" />
+                  Registrar receita e depositar na meta
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Uma receita de {formatCurrency(valorDepositoNum)} será registrada e 
+                  automaticamente adicionada à meta.
+                </p>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Descrição (opcional)</Label>
+                  <Input
+                    placeholder="Ex: Freelance, Pix recebido..."
+                    value={descricaoReceita}
+                    onChange={(e) => setDescricaoReceita(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Categoria</Label>
+                  <Select value={categoriaReceita} onValueChange={setCategoriaReceita}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {incomeCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setModoReceitaEDeposito(false);
+                      setDescricaoReceita("");
+                      setCategoriaReceita("");
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 gradient-income"
+                    disabled={!categoriaReceita || registrarReceitaEDepositar.isPending}
+                    onClick={() => registrarReceitaEDepositar.mutate()}
+                  >
+                    {registrarReceitaEDepositar.isPending
+                      ? "Registrando..."
+                      : "Registrar e depositar"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Button
               className="w-full gradient-primary"
