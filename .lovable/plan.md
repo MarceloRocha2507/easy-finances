@@ -1,245 +1,256 @@
 
-# Plano: Registrar Receita e Depositar na Meta (Automaticamente)
+# Plano: Histórico Completo de Alterações nas Metas
 
-## Problema Identificado
+## Visão Geral
 
-Quando o usuário tenta depositar um valor na meta, mas o saldo disponível é insuficiente, o botão "Adicionar à meta" fica desabilitado e aparece a mensagem "Saldo insuficiente! Disponível: R$ 0,00".
-
-O usuário precisa de uma opção que permita:
-1. Registrar uma receita (income) no sistema
-2. Automaticamente adicionar esse valor à meta
-
-## Solução Proposta
-
-Adicionar um botão alternativo que aparece **apenas quando o saldo é insuficiente**. Este botão vai:
-1. Abrir um mini-formulário inline para registrar a receita
-2. Selecionar categoria de receita
-3. Ao confirmar: criar a transação de receita + depositar na meta automaticamente
+Implementar um sistema de histórico que mostra todas as movimentações (depósitos, retiradas, criação, edição) de cada meta, permitindo ao usuário acompanhar a evolução do seu objetivo ao longo do tempo.
 
 ```text
-┌────────────────────────────────────────────────┐
-│  Valor do depósito (R$)                        │
-│  ┌──────────────────────────────┐              │
-│  │ 30,40                     ↕  │              │
-│  └──────────────────────────────┘              │
-│  🔴 Saldo insuficiente! Disponível: R$ 0,00    │
-│                                                │
-│  ╭────────────────────────────────────────────╮│
-│  │ 💡 Registrar receita e depositar na meta  ││  ← NOVO
-│  ╰────────────────────────────────────────────╯│
-│                                                │
-│  [■■■■■■■■■■ Adicionar à meta ■■■■■■■■■■■■■]   │  ← Desabilitado
-│                                                │
-└────────────────────────────────────────────────┘
-```
-
-Ao clicar no botão alternativo:
-
-```text
-┌────────────────────────────────────────────────┐
-│  💡 Registrar receita e depositar na meta      │
-│                                                │
-│  Valor: R$ 30,40                               │
-│                                                │
-│  Descrição (opcional)                          │
-│  ┌──────────────────────────────────────────┐  │
-│  │ Freelance, Pix recebido...               │  │
-│  └──────────────────────────────────────────┘  │
-│                                                │
-│  Categoria                                     │
-│  ┌──────────────────────────────────────────┐  │
-│  │ Salário                              ▼   │  │
-│  └──────────────────────────────────────────┘  │
-│                                                │
-│  [Cancelar]    [✓ Registrar e depositar]       │
-│                                                │
-└────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  📊 Gerenciar Meta: Viagem                                  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│  [Depositar] [Retirar] [Editar] [Histórico]  ← NOVA ABA     │
+│                                                              │
+│  📜 Histórico de Movimentações                              │
+│  ──────────────────────────────────────────────────────────  │
+│                                                              │
+│  📅 Janeiro 2025                                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ 30/01 15:42  ✅ Depósito          +R$ 100,00         │  │
+│  │              Saldo: R$ 500,00 → R$ 600,00            │  │
+│  ├───────────────────────────────────────────────────────┤  │
+│  │ 25/01 10:15  🔴 Retirada          -R$ 50,00          │  │
+│  │              Saldo: R$ 550,00 → R$ 500,00            │  │
+│  ├───────────────────────────────────────────────────────┤  │
+│  │ 20/01 09:30  💰 Receita+Depósito  +R$ 200,00         │  │
+│  │              Salário · Saldo: R$ 350,00 → R$ 550,00  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  📅 Dezembro 2024                                           │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ 15/12 14:00  🎯 Meta criada                          │  │
+│  │              Objetivo: R$ 5.000,00                    │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Fluxo de Funcionamento
+## Estratégia de Implementação
 
-1. **Detecção de Saldo Insuficiente**
-   - Quando `depositoExcedeSaldo === true`, mostrar o botão alternativo
+O sistema atual já cria transações automaticamente para cada depósito/retirada nas metas com descrições padronizadas:
+- `"Depósito na meta: {titulo}"`
+- `"Retirada da meta: {titulo}"`
 
-2. **Clique no Botão "Registrar receita e depositar na meta"**
-   - Mostrar campos inline (ou expandir seção) com:
-     - Descrição (opcional)
-     - Categoria de receita (obrigatória)
-
-3. **Ao Confirmar**
-   - Criar transação de income com o valor do depósito
-   - Esperar a transação ser criada
-   - Adicionar o mesmo valor à meta
-   - Invalidar queries para atualizar saldo
-
-4. **Resultado**
-   - Saldo aumenta (receita registrada)
-   - Meta recebe o depósito
-   - Patrimônio total permanece igual (receita + depósito se anulam no saldo disponível)
+A abordagem será buscar essas transações existentes pelo padrão de descrição, sem necessidade de criar uma nova tabela de auditoria.
 
 ---
 
 ## Alterações Técnicas
 
-### 1. Atualizar `GerenciarMetaDialog.tsx`
+### 1. Criar Hook `useHistoricoMeta`
 
-**Novos estados:**
+Novo hook em `src/hooks/useHistoricoMeta.ts` para buscar o histórico de movimentações de uma meta específica:
+
 ```tsx
-const [modoReceitaEDeposito, setModoReceitaEDeposito] = useState(false);
-const [descricaoReceita, setDescricaoReceita] = useState("");
-const [categoriaReceita, setCategoriaReceita] = useState("");
+export interface MovimentacaoMeta {
+  id: string;
+  tipo: 'deposito' | 'retirada' | 'criacao' | 'receita_deposito';
+  valor: number;
+  data: Date;
+  descricao: string | null;
+  categoria: string | null;
+}
+
+export function useHistoricoMeta(metaId: string, metaTitulo: string) {
+  return useQuery({
+    queryKey: ["historico-meta", metaId],
+    queryFn: async () => {
+      // Buscar transações relacionadas à meta pela descrição
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(`*, category:categories(name)`)
+        .or(`description.ilike.%Depósito na meta: ${metaTitulo}%,description.ilike.%Retirada da meta: ${metaTitulo}%`)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+
+      // Mapear para o formato de movimentação
+      return (data || []).map(tx => ({
+        id: tx.id,
+        tipo: tx.type === 'expense' ? 'deposito' : 'retirada',
+        valor: tx.amount,
+        data: new Date(tx.date),
+        descricao: tx.description,
+        categoria: tx.category?.name || null,
+      }));
+    },
+  });
+}
 ```
 
-**Buscar categorias de receita:**
+### 2. Adicionar Tab "Histórico" no GerenciarMetaDialog
+
+Atualizar `src/components/dashboard/GerenciarMetaDialog.tsx`:
+
+**Novo TabsTrigger:**
 ```tsx
-const { data: categories } = useCategories();
-const incomeCategories = categories?.filter(c => c.type === 'income') || [];
+<TabsList className="grid w-full grid-cols-4">
+  <TabsTrigger value="depositar">Depositar</TabsTrigger>
+  <TabsTrigger value="retirar">Retirar</TabsTrigger>
+  <TabsTrigger value="editar">Editar</TabsTrigger>
+  <TabsTrigger value="historico">Histórico</TabsTrigger>
+</TabsList>
 ```
 
-**Nova mutation combinada:**
+**Nova TabsContent para Histórico:**
 ```tsx
-const registrarReceitaEDepositar = useMutation({
-  mutationFn: async () => {
-    // 1. Criar transação de receita
-    const { error: txError } = await supabase.from("transactions").insert({
-      user_id: user.id,
-      type: "income",
-      amount: valorDepositoNum,
-      description: descricaoReceita || `Receita para meta: ${meta.titulo}`,
-      category_id: categoriaReceita,
-      status: "completed",
-      date: new Date().toISOString().split("T")[0],
-    });
-    if (txError) throw txError;
-
-    // 2. Depositar na meta (sem validar saldo, pois acabamos de criar a receita)
-    await adicionarValor.mutateAsync({
-      id: meta.id,
-      valor: valorDepositoNum,
-      valorAtualAnterior: meta.valorAtual,
-      valorAlvo: meta.valorAlvo,
-      metaTitulo: meta.titulo,
-      // Não passar saldoDisponivel para pular validação
-    });
-  },
-  onSuccess: () => {
-    toast({
-      title: "Receita registrada e depositada!",
-      description: `R$ ${valorDepositoNum.toFixed(2)} foi registrado e adicionado à meta.`,
-    });
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
-    queryClient.invalidateQueries({ queryKey: ["metas"] });
-    setModoReceitaEDeposito(false);
-    setValorDeposito("");
-    setDescricaoReceita("");
-    setCategoriaReceita("");
-    onSuccess?.();
-  },
-});
+<TabsContent value="historico" className="space-y-4 mt-4">
+  <HistoricoMetaTab metaId={meta.id} metaTitulo={meta.titulo} />
+</TabsContent>
 ```
 
-**UI condicional:**
+### 3. Criar Componente `HistoricoMetaTab`
+
+Novo componente em `src/components/dashboard/HistoricoMetaTab.tsx`:
+
 ```tsx
-{depositoExcedeSaldo && !modoReceitaEDeposito && (
-  <Button
-    variant="outline"
-    className="w-full gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
-    onClick={() => setModoReceitaEDeposito(true)}
-  >
-    <Lightbulb className="w-4 h-4" />
-    Registrar receita e depositar na meta
-  </Button>
-)}
+function HistoricoMetaTab({ metaId, metaTitulo }: Props) {
+  const { data: movimentacoes, isLoading } = useHistoricoMeta(metaId, metaTitulo);
 
-{modoReceitaEDeposito && (
-  <div className="space-y-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-      <Lightbulb className="w-4 h-4" />
-      Registrar receita e depositar na meta
+  // Agrupar por mês
+  const movimentacoesPorMes = useMemo(() => {
+    const grupos = new Map<string, MovimentacaoMeta[]>();
+    movimentacoes?.forEach(mov => {
+      const chave = format(mov.data, "MMMM yyyy", { locale: ptBR });
+      if (!grupos.has(chave)) grupos.set(chave, []);
+      grupos.get(chave)!.push(mov);
+    });
+    return grupos;
+  }, [movimentacoes]);
+
+  return (
+    <ScrollArea className="h-[300px]">
+      {movimentacoesPorMes.size === 0 ? (
+        <EmptyState />
+      ) : (
+        Array.from(movimentacoesPorMes.entries()).map(([mes, items]) => (
+          <div key={mes} className="mb-4">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">{mes}</h4>
+            <div className="space-y-2">
+              {items.map(item => <MovimentacaoItem key={item.id} item={item} />)}
+            </div>
+          </div>
+        ))
+      )}
+    </ScrollArea>
+  );
+}
+```
+
+### 4. Componente `MovimentacaoItem`
+
+Renderiza cada movimentação com ícone, cor e valor formatado:
+
+```tsx
+function MovimentacaoItem({ item }: { item: MovimentacaoMeta }) {
+  const config = {
+    deposito: { 
+      icon: Plus, 
+      label: "Depósito", 
+      className: "text-income bg-income/10" 
+    },
+    retirada: { 
+      icon: Minus, 
+      label: "Retirada", 
+      className: "text-expense bg-expense/10" 
+    },
+  };
+
+  const cfg = config[item.tipo];
+  const Icon = cfg.icon;
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+      <div className="flex items-center gap-3">
+        <div className={cn("p-2 rounded-lg", cfg.className)}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">{cfg.label}</p>
+          <p className="text-xs text-muted-foreground">
+            {format(item.data, "dd/MM/yyyy HH:mm")}
+          </p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className={cn("font-semibold", 
+          item.tipo === 'deposito' ? "text-income" : "text-expense"
+        )}>
+          {item.tipo === 'deposito' ? '+' : '-'}{formatCurrency(item.valor)}
+        </p>
+      </div>
     </div>
-
-    <p className="text-xs text-muted-foreground">
-      Uma receita de {formatCurrency(valorDepositoNum)} será registrada e 
-      automaticamente adicionada à meta.
-    </p>
-
-    <div className="space-y-2">
-      <Label className="text-xs">Descrição (opcional)</Label>
-      <Input
-        placeholder="Ex: Freelance, Pix recebido..."
-        value={descricaoReceita}
-        onChange={(e) => setDescricaoReceita(e.target.value)}
-      />
-    </div>
-
-    <div className="space-y-2">
-      <Label className="text-xs">Categoria</Label>
-      <Select value={categoriaReceita} onValueChange={setCategoriaReceita}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione a categoria" />
-        </SelectTrigger>
-        <SelectContent>
-          {incomeCategories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
-              {cat.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-
-    <div className="flex gap-2 pt-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setModoReceitaEDeposito(false)}
-      >
-        Cancelar
-      </Button>
-      <Button
-        size="sm"
-        className="flex-1 gradient-income"
-        disabled={!categoriaReceita || registrarReceitaEDepositar.isPending}
-        onClick={() => registrarReceitaEDepositar.mutate()}
-      >
-        {registrarReceitaEDepositar.isPending
-          ? "Registrando..."
-          : "Registrar e depositar"}
-      </Button>
-    </div>
-  </div>
-)}
+  );
+}
 ```
 
 ---
 
-## Resumo das Alterações
+## Fluxo de Dados
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/dashboard/GerenciarMetaDialog.tsx` | Adicionar estados para modo receita + depósito, formulário inline, mutation combinada |
+```text
++----------------+
+| Meta           |
+|  - id          |
+|  - titulo      |
++-------+--------+
+        |
+        v
++-------+--------+
+| useHistoricoMeta() 
+|  Busca em transactions
+|  WHERE description LIKE
+|  "Depósito na meta: {titulo}"
+|  OR "Retirada da meta: {titulo}"
++-------+--------+
+        |
+        v
++-------+--------+
+| HistoricoMetaTab
+|  - Agrupa por mês
+|  - Renderiza timeline
++----------------+
+```
+
+---
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/hooks/useHistoricoMeta.ts` | **Criar** | Hook para buscar movimentações da meta |
+| `src/components/dashboard/HistoricoMetaTab.tsx` | **Criar** | Componente da aba de histórico |
+| `src/components/dashboard/GerenciarMetaDialog.tsx` | **Modificar** | Adicionar nova aba "Histórico" |
 
 ---
 
 ## Resultado Esperado
 
-1. **Saldo insuficiente** → Botão "Registrar receita e depositar" aparece
-2. **Usuário clica** → Formulário inline aparece com descrição e categoria
-3. **Usuário confirma** → 
-   - Receita é criada (aumenta saldo disponível)
-   - Depósito é feito na meta (diminui saldo disponível, aumenta meta)
-   - Resultado final: meta aumenta, saldo líquido permanece igual
-4. **Fluxo transparente** → Sem necessidade de ir para outra tela
+1. **Nova aba "Histórico"** no dialog de gerenciar meta
+2. **Timeline visual** agrupada por mês
+3. **Depósitos em verde** com ícone de "+"
+4. **Retiradas em vermelho** com ícone de "-"
+5. **Data e hora** de cada movimentação
+6. **Estado vazio** quando não há movimentações
+7. **Scroll** para históricos longos
 
 ---
 
-## Considerações de UX
+## Considerações
 
-- O botão alternativo só aparece quando realmente há saldo insuficiente
-- O valor já está preenchido (o mesmo que o usuário digitou)
-- A categoria é obrigatória para manter consistência contábil
-- A descrição é opcional, mas pré-preenchida com sugestão
-- Feedback claro com toast após sucesso
+- **Sem nova tabela no banco**: Usa as transações já existentes
+- **Busca por título**: As movimentações são encontradas pelo padrão de descrição
+- **Performance**: Query filtrada por descrição ILIKE
+- **Retroatividade**: Funciona para metas existentes que já têm transações
