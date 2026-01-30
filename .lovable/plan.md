@@ -1,52 +1,99 @@
 
-# Correção: Botão "Registrar e depositar" Ilegível
+# Correção: Sidebar Mobile Ocupando Tela Inteira
 
 ## Problema Identificado
 
-O botão "Registrar e depositar" está usando a classe `gradient-income` que foi projetada para cards de fundo, não para botões:
+O sidebar mobile atual está configurado assim (linha 66):
 
-```css
-.gradient-income {
-  @apply bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30;
-}
+```tsx
+className="lg:hidden fixed top-16 left-3 right-3 bottom-3 ..."
 ```
 
-Esse gradiente é muito claro (emerald-50, green-50), o que torna o texto praticamente invisível porque não há contraste suficiente.
+Com `left-3` e `right-3`, o sidebar se estica de uma margem à outra, ocupando quase toda a largura da tela.
+
+```text
+COMPORTAMENTO ATUAL (errado):
+┌──────────────────────────────────┐
+│ Header                       [X] │
+├──────────────────────────────────┤
+│ ╔══════════════════════════════╗ │
+│ ║ Dashboard                    ║ │
+│ ║ Categorias                   ║ │
+│ ║ Transações                   ║ │
+│ ║ Cartões                      ║ │
+│ ║ ...                          ║ │
+│ ║                              ║ │
+│ ║ [User Section]               ║ │
+│ ╚══════════════════════════════╝ │
+└──────────────────────────────────┘
+     ↑ Sidebar ocupa tela toda ↑
+```
 
 ## Solução
 
-Substituir a classe `gradient-income` por classes que garantam bom contraste:
+Alterar o sidebar mobile para ter largura fixa (~72% da tela ou 280px) e animação de deslizar da esquerda:
 
-**Opção recomendada:** Usar um fundo sólido de cor emerald com texto branco.
+```text
+COMPORTAMENTO ESPERADO (lateral):
+┌──────────────────────────────────┐
+│ Header                       [X] │
+├──────────────────────────────────┤
+│ ╔════════════════╗░░░░░░░░░░░░░░ │
+│ ║ Dashboard      ║░░░░░░░░░░░░░░ │
+│ ║ Categorias     ║░░░░░░░░░░░░░░ │
+│ ║ Transações     ║░░░░░░░░░░░░░░ │
+│ ║ Cartões        ║░░ (overlay) ░░ │
+│ ║ ...            ║░░░░░░░░░░░░░░ │
+│ ║                ║░░░░░░░░░░░░░░ │
+│ ║ [User]         ║░░░░░░░░░░░░░░ │
+│ ╚════════════════╝░░░░░░░░░░░░░░ │
+└──────────────────────────────────┘
+ ↑ Sidebar lateral ↑  ↑ Conteúdo visível
+```
 
+## Alteração Técnica
+
+**Arquivo:** `src/components/Layout.tsx`
+
+**Antes (linha 64-70):**
 ```tsx
-// ANTES (ilegível)
-<Button
-  size="sm"
-  className="flex-1 gradient-income"
-  ...
->
-
-// DEPOIS (legível)
-<Button
-  size="sm"
-  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
-  ...
+<aside
+  className={cn(
+    "lg:hidden fixed top-16 left-3 right-3 bottom-3 sidebar-floating z-40 flex flex-col overflow-hidden transition-all duration-300",
+    sidebarOpen 
+      ? "translate-y-0 opacity-100" 
+      : "translate-y-4 opacity-0 pointer-events-none"
+  )}
 >
 ```
 
-## Alteração
+**Depois:**
+```tsx
+<aside
+  className={cn(
+    "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-floating z-40 flex flex-col overflow-hidden transition-transform duration-300 ease-out rounded-l-none",
+    sidebarOpen 
+      ? "translate-x-0" 
+      : "-translate-x-full"
+  )}
+>
+```
 
-| Arquivo | Linha | Alteração |
-|---------|-------|-----------|
-| `src/components/dashboard/GerenciarMetaDialog.tsx` | 457 | Substituir `gradient-income` por `bg-emerald-500 hover:bg-emerald-600 text-white` |
+## Mudanças Detalhadas
+
+| Propriedade | Antes | Depois | Motivo |
+|-------------|-------|--------|--------|
+| Posição | `left-3 right-3` | `left-0` | Fixar na borda esquerda |
+| Largura | Esticada | `w-[280px] max-w-[75vw]` | Largura fixa, mas responsiva |
+| Cantos | Todos arredondados | `rounded-l-none` | Remove arredondamento à esquerda (colado na borda) |
+| Animação | `translate-y` + `opacity` | `translate-x` | Desliza da esquerda horizontalmente |
+| Estado fechado | `translate-y-4 opacity-0` | `-translate-x-full` | Escondido para fora da tela |
+| Bottom | `bottom-3` | `bottom-0` | Vai até o fim da tela |
 
 ## Resultado Visual
 
-```text
-ANTES:                          DEPOIS:
-┌──────────────────────┐        ┌──────────────────────┐
-│ [texto invisível]    │   →    │ Registrar e depositar│
-│ (fundo verde claro)  │        │ (fundo verde, branco)│
-└──────────────────────┘        └──────────────────────┘
-```
+O sidebar vai:
+1. Aparecer deslizando da esquerda
+2. Ocupar apenas ~280px ou 75% da tela (o que for menor)
+3. Deixar parte do conteúdo visível atrás do overlay
+4. Fechar deslizando de volta para a esquerda
