@@ -713,13 +713,33 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Total guardado = Investimentos + Metas
       const totalGuardado = totalInvestido + totalMetas;
 
-      // Buscar transações: todas concluídas + pendentes apenas do mês atual
-      const { data, error } = await supabase
+      // 1. Buscar TODAS transações completed para saldo disponível (acumulado histórico)
+      const { data: allCompleted, error: allCompletedError } = await supabase
         .from('transactions')
-        .select('type, amount, status, due_date')
-        .or(`status.eq.completed,and(status.eq.pending,due_date.gte.${inicioMes},due_date.lte.${fimMes})`);
+        .select('type, amount')
+        .eq('status', 'completed');
 
-      if (error) throw error;
+      if (allCompletedError) throw allCompletedError;
+
+      // 2. Buscar transações completed DO MÊS para receitas/despesas exibidas
+      const { data: completedDoMes, error: completedDoMesError } = await supabase
+        .from('transactions')
+        .select('type, amount')
+        .eq('status', 'completed')
+        .gte('date', inicioMes)
+        .lte('date', fimMes);
+
+      if (completedDoMesError) throw completedDoMesError;
+
+      // 3. Buscar pending DO MÊS para A Receber/A Pagar
+      const { data: pendingDoMes, error: pendingDoMesError } = await supabase
+        .from('transactions')
+        .select('type, amount, due_date')
+        .eq('status', 'pending')
+        .gte('due_date', inicioMes)
+        .lte('due_date', fimMes);
+
+      if (pendingDoMesError) throw pendingDoMesError;
 
       const { data: parcelasCartao } = await supabase
         .from('parcelas_cartao')
@@ -745,35 +765,50 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       const today = new Date().toISOString().split('T')[0];
       
+      // Calcular saldo acumulado usando TODAS as transações completed
+      let allCompletedIncome = 0;
+      let allCompletedExpense = 0;
+      (allCompleted || []).forEach((t) => {
+        const amount = Number(t.amount);
+        if (t.type === 'income') allCompletedIncome += amount;
+        else allCompletedExpense += amount;
+      });
+
+      // Calcular receitas/despesas DO MÊS SELECIONADO
       const stats = {
         saldoInicial,
-        completedIncome: 0,
-        completedExpense: 0,
+        completedIncome: 0,  // Receitas do mês
+        completedExpense: 0, // Despesas do mês
         pendingIncome: 0,
         pendingExpense: 0,
         overdueCount: 0,
         pendingCount: 0,
         faturaCartao: faturaCartaoTitular,
         totalInvestido,
+        // Valores acumulados para cálculo do saldo
+        allCompletedIncome,
+        allCompletedExpense,
       };
 
-      data?.forEach((t) => {
+      // Receitas e Despesas apenas do mês selecionado
+      (completedDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
-        
-        if (t.status === 'completed') {
-          if (t.type === 'income') stats.completedIncome += amount;
-          else stats.completedExpense += amount;
-        } else if (t.status === 'pending') {
-          stats.pendingCount++;
-          if (t.type === 'income') stats.pendingIncome += amount;
-          else stats.pendingExpense += amount;
-          if (t.due_date && t.due_date < today) stats.overdueCount++;
-        }
+        if (t.type === 'income') stats.completedIncome += amount;
+        else stats.completedExpense += amount;
       });
 
-      // Saldo Disponível = Saldo Inicial + Receitas Recebidas - Despesas Pagas
-      // (dinheiro "livre" que você pode gastar)
-      const saldoDisponivel = saldoInicial + stats.completedIncome - stats.completedExpense;
+      // Pendentes do mês
+      (pendingDoMes || []).forEach((t) => {
+        const amount = Number(t.amount);
+        stats.pendingCount++;
+        if (t.type === 'income') stats.pendingIncome += amount;
+        else stats.pendingExpense += amount;
+        if (t.due_date && t.due_date < today) stats.overdueCount++;
+      });
+
+      // Saldo Disponível = Saldo Inicial + Receitas Acumuladas - Despesas Acumuladas
+      // (dinheiro "livre" que você pode gastar - usa histórico completo)
+      const saldoDisponivel = saldoInicial + allCompletedIncome - allCompletedExpense;
       
       // Patrimônio Total = Saldo Disponível + Metas + Investimentos
       // (toda sua riqueza, incluindo reservas)
@@ -782,7 +817,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Saldo Real = Saldo Disponível (o que realmente está "livre")
       const realBalance = saldoDisponivel;
       
-      // Saldo Estimado = Disponível + A Receber - A Pagar - Fatura do Cartão
+      // Saldo Estimado = Disponível + A Receber do mês - A Pagar do mês - Fatura do Cartão
       const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
 
       return {
