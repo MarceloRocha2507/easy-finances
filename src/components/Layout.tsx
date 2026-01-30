@@ -63,10 +63,10 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Sidebar - Floating Drawer */}
       <aside
         className={cn(
-          "lg:hidden fixed top-16 left-3 right-3 bottom-3 sidebar-floating z-40 flex flex-col overflow-hidden transition-all duration-300",
+          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-floating z-40 flex flex-col overflow-hidden transition-transform duration-300 ease-out rounded-l-none",
           sidebarOpen 
-            ? "translate-y-0 opacity-100" 
-            : "translate-y-4 opacity-0 pointer-events-none"
+            ? "translate-x-0" 
+            : "-translate-x-full"
         )}
       >
         {/* Navigation */}
