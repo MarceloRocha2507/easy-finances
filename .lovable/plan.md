@@ -1,257 +1,245 @@
 
+# Plano: Registrar Receita e Depositar na Meta (Automaticamente)
 
-# Plano: Sidebar Floating/Detached (Discord/Figma)
+## Problema Identificado
 
-## Visão Geral do Estilo
+Quando o usuário tenta depositar um valor na meta, mas o saldo disponível é insuficiente, o botão "Adicionar à meta" fica desabilitado e aparece a mensagem "Saldo insuficiente! Disponível: R$ 0,00".
 
-O estilo **Floating/Detached** é inspirado no Discord e Figma, com:
+O usuário precisa de uma opção que permita:
+1. Registrar uma receita (income) no sistema
+2. Automaticamente adicionar esse valor à meta
 
-- **Container "flutuante"** com margem da borda da tela
-- **Cantos arredondados** em toda a sidebar (rounded-2xl)
-- **Sombra suave** dando efeito de elevação
-- **Background sólido** que se destaca do fundo
-- **Items com pills arredondados** quando ativos
-- **Espaçamento interno generoso**
+## Solução Proposta
+
+Adicionar um botão alternativo que aparece **apenas quando o saldo é insuficiente**. Este botão vai:
+1. Abrir um mini-formulário inline para registrar a receita
+2. Selecionar categoria de receita
+3. Ao confirmar: criar a transação de receita + depositar na meta automaticamente
 
 ```text
-    ┌──────────────────────────────────────────────┐
-    │                                              │
-    │   ╭────────────────────────╮                 │
-    │   │  🎵 Fina               │                 │
-    │   ├────────────────────────┤                 │
-    │   │                        │                 │
-    │   │  ╭──────────────────╮  │                 │
-    │   │  │ 📊 Dashboard     │  │  ← Pill ativo   │
-    │   │  ╰──────────────────╯  │                 │
-    │   │                        │                 │
-    │   │    🏷️ Categorias       │                 │
-    │   │                        │                 │
-    │   │    ↔️ Transações    ▼  │                 │
-    │   │       ├─ Visão Geral   │                 │
-    │   │       ├─ Recorrentes   │                 │
-    │   │       └─ Importar      │                 │
-    │   │                        │                 │
-    │   │    💳 Cartões       ▼  │                 │
-    │   │    🐷 Economia      ▼  │                 │
-    │   │    📈 Relatórios    ▼  │                 │
-    │   │                        │                 │
-    │   ├────────────────────────┤                 │
-    │   │  👤 João · 🔔 · 🚪     │                 │
-    │   ╰────────────────────────╯                 │
-    │                                              │
-    └──────────────────────────────────────────────┘
-          ↑ Margem                   ↑ Content
+┌────────────────────────────────────────────────┐
+│  Valor do depósito (R$)                        │
+│  ┌──────────────────────────────┐              │
+│  │ 30,40                     ↕  │              │
+│  └──────────────────────────────┘              │
+│  🔴 Saldo insuficiente! Disponível: R$ 0,00    │
+│                                                │
+│  ╭────────────────────────────────────────────╮│
+│  │ 💡 Registrar receita e depositar na meta  ││  ← NOVO
+│  ╰────────────────────────────────────────────╯│
+│                                                │
+│  [■■■■■■■■■■ Adicionar à meta ■■■■■■■■■■■■■]   │  ← Desabilitado
+│                                                │
+└────────────────────────────────────────────────┘
+```
+
+Ao clicar no botão alternativo:
+
+```text
+┌────────────────────────────────────────────────┐
+│  💡 Registrar receita e depositar na meta      │
+│                                                │
+│  Valor: R$ 30,40                               │
+│                                                │
+│  Descrição (opcional)                          │
+│  ┌──────────────────────────────────────────┐  │
+│  │ Freelance, Pix recebido...               │  │
+│  └──────────────────────────────────────────┘  │
+│                                                │
+│  Categoria                                     │
+│  ┌──────────────────────────────────────────┐  │
+│  │ Salário                              ▼   │  │
+│  └──────────────────────────────────────────┘  │
+│                                                │
+│  [Cancelar]    [✓ Registrar e depositar]       │
+│                                                │
+└────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Características Visuais
+## Fluxo de Funcionamento
 
-| Elemento | Estilo Atual (Gradient) | Novo Estilo (Floating) |
-|----------|------------------------|------------------------|
-| Container | Fixo na borda, `border-r` | Margem 12px, `rounded-2xl`, sombra |
-| Background | Gradiente vertical | Sólido com borda sutil |
-| Item Ativo | Gradiente + barra lateral | Pill arredondado, sem barra |
-| Item Hover | Gradiente horizontal | Pill transparente suave |
-| Ícone Ativo | Glow colorido | Círculo sólido suave |
-| Submenus | Linha gradiente lateral | Indentação simples |
-| Footer | Borda superior | Separador suave, arredondado |
+1. **Detecção de Saldo Insuficiente**
+   - Quando `depositoExcedeSaldo === true`, mostrar o botão alternativo
+
+2. **Clique no Botão "Registrar receita e depositar na meta"**
+   - Mostrar campos inline (ou expandir seção) com:
+     - Descrição (opcional)
+     - Categoria de receita (obrigatória)
+
+3. **Ao Confirmar**
+   - Criar transação de income com o valor do depósito
+   - Esperar a transação ser criada
+   - Adicionar o mesmo valor à meta
+   - Invalidar queries para atualizar saldo
+
+4. **Resultado**
+   - Saldo aumenta (receita registrada)
+   - Meta recebe o depósito
+   - Patrimônio total permanece igual (receita + depósito se anulam no saldo disponível)
 
 ---
 
-## Alterações Detalhadas
+## Alterações Técnicas
 
-### 1. Atualizar CSS (index.css)
+### 1. Atualizar `GerenciarMetaDialog.tsx`
 
-**Substituir** as classes do Gradient Accent por classes do Floating:
-
-```css
-/* Floating Sidebar Container */
-.sidebar-floating {
-  background: hsl(var(--card));
-  border-radius: 1rem;
-  box-shadow: 
-    0 4px 6px -1px hsl(0 0% 0% / 0.05),
-    0 10px 15px -3px hsl(0 0% 0% / 0.08),
-    0 0 0 1px hsl(var(--border) / 0.5);
-}
-
-.dark .sidebar-floating {
-  background: hsl(220 15% 13%);
-  box-shadow: 
-    0 4px 6px -1px hsl(0 0% 0% / 0.2),
-    0 10px 15px -3px hsl(0 0% 0% / 0.3),
-    0 0 0 1px hsl(0 0% 100% / 0.05);
-}
-
-/* Menu item ativo - pill style */
-.menu-item-floating-active {
-  background: hsl(var(--primary) / 0.1);
-  border-radius: 0.75rem;
-}
-
-/* Menu item hover */
-.menu-item-floating-hover:hover {
-  background: hsl(var(--muted) / 0.5);
-  border-radius: 0.75rem;
-}
-
-/* Submenu ativo */
-.submenu-item-floating-active {
-  background: hsl(var(--primary) / 0.08);
-  border-radius: 0.5rem;
-}
-```
-
-### 2. Atualizar Layout.tsx
-
-**Mudanças principais:**
-- Adicionar wrapper com padding para o efeito "flutuante"
-- Sidebar com `rounded-2xl` e margem
-- Remover `border-r`, usar sombra
-- Ajustar posicionamento do main content
-
+**Novos estados:**
 ```tsx
-{/* Sidebar Floating */}
-<div className="hidden lg:block fixed top-0 left-0 h-full w-64 p-3 z-40">
-  <aside className="h-full sidebar-floating flex flex-col overflow-hidden">
-    {/* Logo */}
-    <div className="h-14 flex items-center px-4 border-b border-border/30">
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Wallet className="h-4 w-4 text-primary" />
-        </div>
-        <span className="text-xl font-bold text-foreground">Fina</span>
-      </div>
+const [modoReceitaEDeposito, setModoReceitaEDeposito] = useState(false);
+const [descricaoReceita, setDescricaoReceita] = useState("");
+const [categoriaReceita, setCategoriaReceita] = useState("");
+```
+
+**Buscar categorias de receita:**
+```tsx
+const { data: categories } = useCategories();
+const incomeCategories = categories?.filter(c => c.type === 'income') || [];
+```
+
+**Nova mutation combinada:**
+```tsx
+const registrarReceitaEDepositar = useMutation({
+  mutationFn: async () => {
+    // 1. Criar transação de receita
+    const { error: txError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "income",
+      amount: valorDepositoNum,
+      description: descricaoReceita || `Receita para meta: ${meta.titulo}`,
+      category_id: categoriaReceita,
+      status: "completed",
+      date: new Date().toISOString().split("T")[0],
+    });
+    if (txError) throw txError;
+
+    // 2. Depositar na meta (sem validar saldo, pois acabamos de criar a receita)
+    await adicionarValor.mutateAsync({
+      id: meta.id,
+      valor: valorDepositoNum,
+      valorAtualAnterior: meta.valorAtual,
+      valorAlvo: meta.valorAlvo,
+      metaTitulo: meta.titulo,
+      // Não passar saldoDisponivel para pular validação
+    });
+  },
+  onSuccess: () => {
+    toast({
+      title: "Receita registrada e depositada!",
+      description: `R$ ${valorDepositoNum.toFixed(2)} foi registrado e adicionado à meta.`,
+    });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["metas"] });
+    setModoReceitaEDeposito(false);
+    setValorDeposito("");
+    setDescricaoReceita("");
+    setCategoriaReceita("");
+    onSuccess?.();
+  },
+});
+```
+
+**UI condicional:**
+```tsx
+{depositoExcedeSaldo && !modoReceitaEDeposito && (
+  <Button
+    variant="outline"
+    className="w-full gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
+    onClick={() => setModoReceitaEDeposito(true)}
+  >
+    <Lightbulb className="w-4 h-4" />
+    Registrar receita e depositar na meta
+  </Button>
+)}
+
+{modoReceitaEDeposito && (
+  <div className="space-y-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+    <div className="flex items-center gap-2 text-sm font-medium text-primary">
+      <Lightbulb className="w-4 h-4" />
+      Registrar receita e depositar na meta
     </div>
 
-    {/* Navigation */}
-    <SidebarNav isAdmin={!isCheckingRole && isAdmin} onItemClick={closeSidebar} />
+    <p className="text-xs text-muted-foreground">
+      Uma receita de {formatCurrency(valorDepositoNum)} será registrada e 
+      automaticamente adicionada à meta.
+    </p>
 
-    {/* User section */}
-    <SidebarUserSection user={user} onClose={closeSidebar} onSignOut={signOut} />
-  </aside>
-</div>
+    <div className="space-y-2">
+      <Label className="text-xs">Descrição (opcional)</Label>
+      <Input
+        placeholder="Ex: Freelance, Pix recebido..."
+        value={descricaoReceita}
+        onChange={(e) => setDescricaoReceita(e.target.value)}
+      />
+    </div>
 
-{/* Main content com offset para sidebar flutuante */}
-<main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen">
-```
+    <div className="space-y-2">
+      <Label className="text-xs">Categoria</Label>
+      <Select value={categoriaReceita} onValueChange={setCategoriaReceita}>
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione a categoria" />
+        </SelectTrigger>
+        <SelectContent>
+          {incomeCategories.map((cat) => (
+            <SelectItem key={cat.id} value={cat.id}>
+              {cat.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
 
-### 3. Atualizar SidebarNav.tsx
-
-**Mudanças nos items:**
-- Usar `menu-item-floating-active` para items ativos
-- Remover ícone com glow, usar background sólido suave
-- Pills totalmente arredondados
-
-```tsx
-<Link
-  className={cn(
-    "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
-    isActive(item.href)
-      ? "menu-item-floating-active text-foreground font-medium"
-      : "text-muted-foreground menu-item-floating-hover"
-  )}
->
-  <div className={cn(
-    "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-    isActive(item.href)
-      ? "bg-primary/15 text-primary"
-      : "text-muted-foreground group-hover:text-foreground"
-  )}>
-    <item.icon className="h-4 w-4" />
+    <div className="flex gap-2 pt-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setModoReceitaEDeposito(false)}
+      >
+        Cancelar
+      </Button>
+      <Button
+        size="sm"
+        className="flex-1 gradient-income"
+        disabled={!categoriaReceita || registrarReceitaEDepositar.isPending}
+        onClick={() => registrarReceitaEDepositar.mutate()}
+      >
+        {registrarReceitaEDepositar.isPending
+          ? "Registrando..."
+          : "Registrar e depositar"}
+      </Button>
+    </div>
   </div>
-  {item.label}
-</Link>
-```
-
-### 4. Atualizar MenuCollapsible.tsx
-
-**Mudanças:**
-- Trigger com estilo pill arredondado
-- Remover linha gradiente lateral nos submenus
-- Submenus com indentação simples e pills menores
-
-```tsx
-{/* Trigger */}
-<button
-  className={cn(
-    "group w-full flex items-center justify-between px-3 py-2.5 text-sm transition-all duration-150",
-    open || isMenuActive
-      ? "menu-item-floating-active text-foreground font-medium"
-      : "text-muted-foreground menu-item-floating-hover"
-  )}
->
-
-{/* Submenus - sem linha lateral */}
-<CollapsibleContent className="mt-1 ml-11 space-y-0.5">
-  {subItems.map((subItem) => (
-    <Link
-      className={cn(
-        "flex items-center gap-2.5 px-3 py-2 text-sm transition-all duration-150",
-        isItemActive(subItem.href)
-          ? "submenu-item-floating-active text-primary font-medium"
-          : "text-muted-foreground hover:text-foreground menu-item-floating-hover"
-      )}
-    >
+)}
 ```
 
 ---
 
-## Comparação Visual
-
-**ANTES (Gradient Accent):**
-```text
-│▌ 📊 Dashboard        │  ← Barra lateral + gradiente
-│                      │
-│   └─ Sub item        │  ← Linha gradiente lateral
-```
-
-**DEPOIS (Floating):**
-```text
-│  ╭──────────────╮    │
-│  │ 📊 Dashboard │    │  ← Pill arredondado completo
-│  ╰──────────────╯    │
-│      Sub item        │  ← Indentação simples
-```
-
----
-
-## Mobile Experience
-
-Para mobile, manter o comportamento de drawer mas com visual arredondado:
-
-```tsx
-{/* Mobile Sidebar - aparece como drawer com cantos arredondados */}
-<aside
-  className={cn(
-    "lg:hidden fixed top-16 left-3 right-3 bottom-3 sidebar-floating z-40 transition-all duration-300",
-    sidebarOpen 
-      ? "translate-y-0 opacity-100" 
-      : "translate-y-4 opacity-0 pointer-events-none"
-  )}
->
-```
-
----
-
-## Resumo dos Arquivos
+## Resumo das Alterações
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/index.css` | Substituir classes gradient por floating (.sidebar-floating, .menu-item-floating-active, etc) |
-| `src/components/Layout.tsx` | Wrapper com padding, sidebar arredondada, ajustar offset do main |
-| `src/components/sidebar/SidebarNav.tsx` | Aplicar estilos pill nos items |
-| `src/components/sidebar/MenuCollapsible.tsx` | Remover linha gradiente, pills arredondados |
+| `src/components/dashboard/GerenciarMetaDialog.tsx` | Adicionar estados para modo receita + depósito, formulário inline, mutation combinada |
 
 ---
 
 ## Resultado Esperado
 
-1. **Sidebar destacada** - Efeito de elevação com sombra
-2. **Visual moderno** - Cantos arredondados em todo lugar
-3. **Respiro visual** - Margem da borda cria sensação de "app dentro do app"
-4. **Items suaves** - Pills arredondados sem elementos agressivos
-5. **Dark mode elegante** - Sombras mais intensas, background diferenciado
-6. **Performance mantida** - Sem backdrop-filter, transições rápidas (150ms)
+1. **Saldo insuficiente** → Botão "Registrar receita e depositar" aparece
+2. **Usuário clica** → Formulário inline aparece com descrição e categoria
+3. **Usuário confirma** → 
+   - Receita é criada (aumenta saldo disponível)
+   - Depósito é feito na meta (diminui saldo disponível, aumenta meta)
+   - Resultado final: meta aumenta, saldo líquido permanece igual
+4. **Fluxo transparente** → Sem necessidade de ir para outra tela
 
+---
+
+## Considerações de UX
+
+- O botão alternativo só aparece quando realmente há saldo insuficiente
+- O valor já está preenchido (o mesmo que o usuário digitou)
+- A categoria é obrigatória para manter consistência contábil
+- A descrição é opcional, mas pré-preenchida com sugestão
+- Feedback claro com toast após sucesso
