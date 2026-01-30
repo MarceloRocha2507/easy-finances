@@ -454,7 +454,7 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
                   </Button>
                   <Button
                     size="sm"
-                    className="flex-1 gradient-income"
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
                     disabled={!categoriaReceita || registrarReceitaEDepositar.isPending}
                     onClick={() => registrarReceitaEDepositar.mutate()}
                   >
