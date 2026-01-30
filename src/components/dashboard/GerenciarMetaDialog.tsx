@@ -44,10 +44,10 @@ import {
   Trash2,
   Calendar as CalendarIcon,
   PiggyBank,
-  Target,
   Sparkles,
   CheckCircle,
   Lightbulb,
+  History,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -65,6 +65,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { HistoricoMetaTab } from "./HistoricoMetaTab";
 
 interface Props {
   meta: Meta | null;
@@ -332,7 +333,7 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="depositar" className="gap-1">
               <Plus className="w-4 h-4" />
               Depositar
@@ -344,6 +345,10 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
             <TabsTrigger value="editar" className="gap-1">
               <Pencil className="w-4 h-4" />
               Editar
+            </TabsTrigger>
+            <TabsTrigger value="historico" className="gap-1">
+              <History className="w-4 h-4" />
+              Histórico
             </TabsTrigger>
           </TabsList>
 
@@ -598,6 +603,11 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
                 {atualizarMeta.isPending ? "Salvando..." : "Salvar Alterações"}
               </Button>
             </div>
+          </TabsContent>
+
+          {/* Tab: Histórico */}
+          <TabsContent value="historico" className="mt-4">
+            <HistoricoMetaTab metaId={meta.id} metaTitulo={meta.titulo} />
           </TabsContent>
         </Tabs>
 
