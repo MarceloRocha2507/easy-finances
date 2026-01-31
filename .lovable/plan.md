@@ -1,73 +1,83 @@
 
-# Correção: Bloquear Scroll Horizontal nos Modais
+# Correção: ScrollArea no Modal de Despesas a Pagar
 
 ## Problema Identificado
 
-Os modais do sistema permitem scroll horizontal (arrastar para o lado), mostrando espaço em branco indesejado em dispositivos mobile. Isso acontece porque:
+O modal "Despesas a Pagar" não permite scroll completo em meses futuros quando há muitas despesas. Olhando a screenshot de março 2026, a lista parece cortada/incompleta visualmente, embora os dados estejam sendo buscados corretamente.
 
-1. **DialogContent**: Tem `overflow-y-auto` mas não tem `overflow-x-hidden`
-2. **AlertDialogContent**: Não tem nenhuma configuração de overflow explícita
+### Causa Raiz
 
-Quando o conteúdo interno do modal é ligeiramente maior que a largura do modal, ou quando o usuário tenta arrastar, o modal permite movimento horizontal.
+O `ScrollArea` está dentro de um container flexbox com `flex-1`, mas sem a propriedade `min-h-0`. Em layouts flexbox, elementos filhos com `flex-1` não encolhem abaixo do tamanho do seu conteúdo por padrão, o que impede o scroll de funcionar corretamente.
+
+```text
+ESTRUTURA ATUAL:
+┌─────────────────────────────────────┐
+│ SheetContent (h-full flex flex-col) │
+├─────────────────────────────────────┤
+│ Header (flex-shrink-0)              │ <- fixo
+├─────────────────────────────────────┤
+│ div (flex-1 overflow-hidden)        │ <- PROBLEMA: sem min-h-0
+│   └─ ScrollArea (h-full)            │ <- não encolhe corretamente
+│        └─ conteúdo longo...         │
+├─────────────────────────────────────┤
+│ Footer (flex-shrink-0)              │ <- fixo
+└─────────────────────────────────────┘
+```
 
 ## Solução
 
-Adicionar `overflow-x-hidden` aos componentes base de modal para garantir que:
-- Scroll **vertical** continue funcionando normalmente (cima/baixo)
-- Scroll **horizontal** seja bloqueado (sem arrastar para os lados)
+Adicionar `min-h-0` ao container do ScrollArea. Essa propriedade permite que o elemento flex encolha para caber no espaço disponível, permitindo que o ScrollArea funcione corretamente.
 
-## Alterações Técnicas
+## Alteração Técnica
 
-### 1. DialogContent (`src/components/ui/dialog.tsx`)
+**Arquivo:** `src/components/dashboard/DetalhesDespesasDialog.tsx`
 
-**Antes:**
+**Linha 183 - Antes:**
 ```tsx
-className="... max-h-[90vh] overflow-y-auto ..."
+<div className="flex-1 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
 ```
 
 **Depois:**
 ```tsx
-className="... max-h-[90vh] overflow-y-auto overflow-x-hidden ..."
+<div className="flex-1 min-h-0 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
 ```
 
-### 2. AlertDialogContent (`src/components/ui/alert-dialog.tsx`)
+## Por que `min-h-0` funciona?
 
-**Antes:**
-```tsx
-className="... duration-200 ..."
+No flexbox, o `min-height` padrão de um item é `auto`, que significa "não encolha menor que o conteúdo". Isso impede o scroll porque o container tenta expandir para caber todo o conteúdo.
+
+Com `min-h-0`:
+- O container pode encolher para caber no espaço disponível
+- O ScrollArea com `h-full` herda essa altura limitada
+- O overflow do conteúdo ativa o scroll
+
+```text
+APÓS CORREÇÃO:
+┌─────────────────────────────────────┐
+│ Header                              │ ~60px
+├─────────────────────────────────────┤
+│ Container (flex-1 min-h-0)          │ ← pode encolher
+│ ┌─────────────────────────────────┐ │
+│ │ ScrollArea (h-full)           ↕ │ │ ← scroll funciona
+│ │ ├─ Contas Pendentes            │ │
+│ │ ├─ Parcelas Nubank             │ │
+│ │ ├─ Parcelas Inter              │ │
+│ │ └─ ... mais itens (scroll)     │ │
+│ └─────────────────────────────────┘ │
+├─────────────────────────────────────┤
+│ Footer - Total a Pagar              │ ~100px
+└─────────────────────────────────────┘
 ```
 
-**Depois:**
-```tsx
-className="... duration-200 max-h-[90vh] overflow-y-auto overflow-x-hidden ..."
-```
+## Resultado Esperado
+
+- Todas as despesas serão visíveis através do scroll
+- O footer "Total a Pagar" permanece fixo na parte inferior
+- O scroll funciona suavemente com a scrollbar visível
+- Os fade indicators (gradientes) indicam que há mais conteúdo
 
 ## Arquivos a Modificar
 
 | Arquivo | Linha | Alteração |
 |---------|-------|-----------|
-| `src/components/ui/dialog.tsx` | 39 | Adicionar `overflow-x-hidden` |
-| `src/components/ui/alert-dialog.tsx` | 37 | Adicionar `max-h-[90vh] overflow-y-auto overflow-x-hidden` |
-
-## Comportamento Após Correção
-
-```text
-ANTES (problema):              DEPOIS (corrigido):
-┌─────────────────┐──────      ┌─────────────────┐
-│                 │ espaço     │                 │
-│   Conteúdo do   │ branco     │   Conteúdo do   │
-│      Modal      │←arrastar   │      Modal      │ ← fixo
-│                 │            │                 │
-│   [Botões]      │            │   [Botões]      │
-└─────────────────┘──────      └─────────────────┘
-      ↕ scroll vertical              ↕ somente vertical
-      ↔ scroll horizontal            ✕ bloqueado
-```
-
-## Impacto
-
-Esta correção afeta **todos os modais do sistema** que usam esses componentes base, garantindo comportamento consistente em:
-- Dialogs de edição (EditarCartaoDialog, EditarBancoDialog, etc.)
-- Dialogs de confirmação (AlertDialog)
-- Dialogs de formulário (NovaCompraDialog, etc.)
-- Qualquer outro componente que use Dialog ou AlertDialog
+| `src/components/dashboard/DetalhesDespesasDialog.tsx` | 183 | Adicionar `min-h-0` à classe do container |
