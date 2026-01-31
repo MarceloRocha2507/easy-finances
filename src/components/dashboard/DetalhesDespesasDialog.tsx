@@ -180,7 +180,7 @@ export function DetalhesDespesasDialog({
           <p className="text-sm text-muted-foreground capitalize">{mesFormatado}</p>
         </SheetHeader>
 
-        <div className="flex-1 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="flex-1 min-h-0 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Fade indicator no topo */}
           <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
           
