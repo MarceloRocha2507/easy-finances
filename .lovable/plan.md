@@ -1,96 +1,214 @@
 
-# Correção: Saldo Duplicado nas Transações
+# Regras de Categorização Automática
 
-## Problema Identificado
+## Visao Geral
 
-O saldo exibido na lista de transações está mostrando **-R$ 1.294,43** quando deveria mostrar **R$ 0,00** (conforme o card "Saldo Real").
+Sistema inteligente que categoriza transacoes automaticamente com base em palavras-chave definidas pelo usuario. Quando uma nova transacao e criada (ou importada), o sistema verifica se a descricao corresponde a alguma regra e aplica a categoria automaticamente.
 
-### Causa Raiz
-
-Na lógica do `useTransactionsWithBalance`, o sistema:
-
-1. Calcula o saldo progressivo (patrimônio bruto): `saldo_inicial + receitas - despesas`
-2. Para a **última transação**, subtrai o `totalGuardado` (metas + investimentos)
-
-**O erro**: Quando o usuário deposita dinheiro em uma meta, o sistema já cria uma transação de despesa (categoria "Deposito em Meta"). Portanto, esse valor **já está descontado** no cálculo do saldo progressivo.
-
-Ao subtrair novamente o `totalGuardado`, ocorre **dupla subtração**:
-- 1a vez: transação de despesa "Deposito em Meta" diminui o saldo
-- 2a vez: linhas 619-622 subtraem novamente o mesmo valor
-
-### Exemplo Visual
+## Funcionamento
 
 ```text
-Saldo inicial: R$ 0
-+ Retirada da meta (income): R$ 72,00
-- Despesas: R$ 72,00
-= Saldo bruto: R$ 0
-
-Total em metas: R$ 1.294,43
-
-Cálculo atual (errado):
-  R$ 0 - R$ 1.294,43 = -R$ 1.294,43 ❌
-
-Cálculo correto:
-  R$ 0 (sem subtrair novamente) = R$ 0,00 ✓
+Usuario cria transacao
+        |
+        v
++-------------------+
+| Buscar regras do  |
+| usuario           |
++-------------------+
+        |
+        v
++-------------------+
+| Descricao contem  |-----> NAO ----> Deixar sem categoria
+| palavra-chave?    |                 ou categoria padrao
++-------------------+
+        |
+       SIM
+        |
+        v
++-------------------+
+| Aplicar categoria |
+| da regra          |
++-------------------+
+        |
+        v
+   Transacao salva
+   com categoria
 ```
 
-## Solucao
+## Exemplos de Uso
 
-Remover as linhas que subtraem o `totalGuardado` da última transação, pois os depositos em metas já são contabilizados como despesas.
+| Palavra-chave | Categoria | Tipo |
+|---------------|-----------|------|
+| `uber` | Transporte | Despesa |
+| `ifood`, `rappi` | Alimentacao | Despesa |
+| `netflix`, `spotify` | Lazer | Despesa |
+| `salario`, `pagamento` | Salario | Receita |
+| `pix recebido` | Outros | Receita |
+| `farmacia`, `drogaria` | Saude | Despesa |
 
-## Alteracao Tecnica
+## Interface do Usuario
 
-**Arquivo:** `src/hooks/useTransactions.ts`
+A funcionalidade sera acessada atraves da pagina de Categorias existente, adicionando uma nova aba "Regras":
 
-### Remover linhas 618-622
+```text
++--------------------------------------------------+
+|  Categorias                                       |
++--------------------------------------------------+
+|  [Categorias]  [Regras de Categorizacao]         |
++--------------------------------------------------+
 
-**Codigo atual (linhas 613-622):**
+Aba "Regras de Categorizacao":
+
++--------------------------------------------------+
+|  Regras de Categorizacao              [+ Nova]   |
+|  Categorize transacoes automaticamente           |
++--------------------------------------------------+
+|                                                  |
+|  +--------------------------------------------+  |
+|  | Alimentacao                                |  |
+|  |   Palavras: ifood, rappi, uber eats        |  |
+|  |   [Editar] [Excluir]                       |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  +--------------------------------------------+  |
+|  | Transporte                                 |  |
+|  |   Palavras: uber, 99, cabify               |  |
+|  |   [Editar] [Excluir]                       |  |
+|  +--------------------------------------------+  |
+|                                                  |
++--------------------------------------------------+
+```
+
+### Dialog de Nova Regra
+
+```text
++------------------------------------------+
+|  Nova Regra de Categorizacao         [X] |
++------------------------------------------+
+|                                          |
+|  Categoria *                             |
+|  [Selecione uma categoria        v]     |
+|                                          |
+|  Palavras-chave *                        |
+|  [ifood, rappi, uber eats          ]    |
+|  Separe por virgula                      |
+|                                          |
+|  [] Ignorar maiusculas/minusculas        |
+|                                          |
+|                [Cancelar] [Salvar]        |
++------------------------------------------+
+```
+
+## Estrutura do Banco de Dados
+
+### Nova Tabela: `category_rules`
+
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | Identificador unico |
+| user_id | uuid | Referencia ao usuario |
+| category_id | uuid | Referencia a categoria |
+| keywords | text[] | Array de palavras-chave |
+| case_insensitive | boolean | Ignorar maiusculas (padrao: true) |
+| is_active | boolean | Regra ativa (padrao: true) |
+| priority | integer | Prioridade (menor = maior) |
+| created_at | timestamp | Data de criacao |
+| updated_at | timestamp | Data de atualizacao |
+
+### Politicas RLS
+
+- SELECT: Usuarios veem apenas suas regras
+- INSERT: Usuarios criam regras com seu user_id
+- UPDATE: Usuarios atualizam apenas suas regras
+- DELETE: Usuarios excluem apenas suas regras
+
+## Alteracoes Tecnicas
+
+### 1. Banco de Dados
+
+Criar migracao SQL para:
+- Tabela `category_rules`
+- Indice em `user_id`
+- Indice em `category_id`
+- Politicas RLS
+
+### 2. Novos Arquivos
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/hooks/useCategoryRules.ts` | Hook com CRUD para regras |
+| `src/services/category-rules.ts` | Funcao de matching de regras |
+| `src/components/categories/RulesList.tsx` | Lista de regras |
+| `src/components/categories/RuleDialog.tsx` | Dialog criar/editar |
+
+### 3. Arquivos Modificados
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/pages/Categories.tsx` | Adicionar sistema de abas (Categorias / Regras) |
+| `src/hooks/useTransactions.ts` | Integrar auto-categorizacao no `useCreateTransaction` |
+
+### 4. Hook useCategoryRules
+
 ```typescript
-// Identificar a última transação (mais recente por created_at)
-const ultimaTransacaoId = allCompleted && allCompleted.length > 0 
-  ? allCompleted[allCompleted.length - 1].id 
-  : undefined;
+// Operacoes:
+// - useCategoryRules() - listar regras do usuario
+// - useCreateCategoryRule() - criar nova regra
+// - useUpdateCategoryRule() - atualizar regra
+// - useDeleteCategoryRule() - excluir regra
+```
 
-// Ajustar APENAS a última transação para mostrar saldo disponível
-if (ultimaTransacaoId) {
-  const patrimonioAtual = saldoMap.get(ultimaTransacaoId) || 0;
-  saldoMap.set(ultimaTransacaoId, patrimonioAtual - totalGuardado);
+### 5. Funcao de Matching
+
+```typescript
+// services/category-rules.ts
+export async function findMatchingCategory(
+  userId: string, 
+  description: string
+): Promise<string | null> {
+  // 1. Buscar todas as regras ativas do usuario
+  // 2. Para cada regra, verificar se alguma keyword esta na descricao
+  // 3. Retornar category_id da primeira regra que der match
+  // 4. Se nenhuma der match, retornar null
 }
 ```
 
-**Codigo corrigido:**
-```typescript
-// Identificar a última transação (mais recente por created_at)
-const ultimaTransacaoId = allCompleted && allCompleted.length > 0 
-  ? allCompleted[allCompleted.length - 1].id 
-  : undefined;
+### 6. Integracao na Criacao de Transacao
 
-// Nota: NÃO subtrair totalGuardado aqui porque depósitos em metas
-// já são registrados como transações de despesa, evitando dupla contagem
-```
+O `useCreateTransaction` sera modificado para:
+1. Antes de inserir, chamar `findMatchingCategory` se `category_id` nao foi informado
+2. Se encontrar match, usar a categoria da regra
+3. Caso contrario, deixar sem categoria
 
-## Resumo das Modificacoes
-
-| Arquivo | Linhas | Alteracao |
-|---------|--------|-----------|
-| `src/hooks/useTransactions.ts` | 618-622 | Remover subtração de `totalGuardado` |
-
-## Fluxo Apos Correcao
+## Fluxo de Dados
 
 ```text
-Transação concluída
-       ↓
-Calcular saldo: inicial + receitas - despesas
-       ↓
-Exibir saldo na lista (sem ajuste adicional)
-       ↓
-Saldo final = Saldo Real ✓
+1. Usuario acessa /categories
+2. Clica na aba "Regras"
+3. Ve lista de regras existentes
+4. Clica em "+ Nova Regra"
+5. Seleciona categoria e adiciona palavras-chave
+6. Salva a regra
+
+Ao criar transacao:
+1. Usuario digita "Pagamento Uber"
+2. Sistema busca regras
+3. Encontra regra com keyword "uber" -> Transporte
+4. Aplica categoria automaticamente
 ```
+
+## Limites do Plano
+
+A funcionalidade respeitara os limites do plano do usuario:
+- Plano gratuito: 5 regras
+- Plano premium: ilimitado
+
+Sera adicionado `regras_categorizacao` no hook `usePlanLimits`.
 
 ## Resultado Esperado
 
-- O saldo exibido na lista de transações será igual ao "Saldo Real"
-- Não haverá mais valores negativos incorretos
-- A última transação mostrará o saldo real após sua execução
-- O tooltip ainda pode mostrar informações sobre patrimônio e valores guardados se necessário
+- Usuario pode criar regras de categorizacao baseadas em palavras-chave
+- Novas transacoes sao categorizadas automaticamente
+- Economia de tempo ao registrar gastos recorrentes
+- Menos transacoes "sem categoria"
+- Interface integrada na pagina de Categorias existente
