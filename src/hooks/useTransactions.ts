@@ -251,6 +251,7 @@ export function useCreateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
@@ -366,6 +367,7 @@ export function useCreateInstallmentTransaction() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
@@ -411,6 +413,7 @@ export function useUpdateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
@@ -446,6 +449,7 @@ export function useDeleteTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
@@ -488,6 +492,7 @@ export function useMarkAsPaid() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
