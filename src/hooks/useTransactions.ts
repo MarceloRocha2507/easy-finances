@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { Category } from './useCategories';
+import { findMatchingCategory } from '@/services/category-rules';
 
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 
@@ -237,10 +238,21 @@ export function useCreateTransaction() {
 
   return useMutation({
     mutationFn: async (transaction: TransactionInsert) => {
+      let categoryId = transaction.category_id;
+
+      // Auto-categorização: se não tem categoria e tem descrição, buscar regra
+      if (!categoryId && transaction.description && user?.id) {
+        const matchedCategoryId = await findMatchingCategory(user.id, transaction.description);
+        if (matchedCategoryId) {
+          categoryId = matchedCategoryId;
+        }
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           ...transaction,
+          category_id: categoryId,
           user_id: user!.id,
         })
         .select()
@@ -287,12 +299,23 @@ export function useCreateInstallmentTransaction() {
       const { baseTransaction, totalParcelas, tipoLancamento } = params;
       const userId = user!.id;
 
+      // Auto-categorização: se não tem categoria e tem descrição, buscar regra
+      let categoryId = baseTransaction.category_id;
+      if (!categoryId && baseTransaction.description) {
+        const matchedCategoryId = await findMatchingCategory(userId, baseTransaction.description);
+        if (matchedCategoryId) {
+          categoryId = matchedCategoryId;
+        }
+      }
+
+      const transactionWithCategory = { ...baseTransaction, category_id: categoryId };
+
       if (tipoLancamento === 'unica') {
         // Transação única - comportamento padrão
         const { data, error } = await supabase
           .from('transactions')
           .insert({
-            ...baseTransaction,
+            ...transactionWithCategory,
             user_id: userId,
             tipo_lancamento: 'unica',
             total_parcelas: 1,
@@ -307,22 +330,22 @@ export function useCreateInstallmentTransaction() {
 
       // Parcelada ou Fixa - criar múltiplas transações
       const parcelas = tipoLancamento === 'fixa' ? 12 : totalParcelas;
-      const valorParcela = baseTransaction.amount! / (tipoLancamento === 'parcelada' ? parcelas : 1);
-      const baseDate = baseTransaction.date ? new Date(baseTransaction.date) : new Date();
+      const valorParcela = transactionWithCategory.amount! / (tipoLancamento === 'parcelada' ? parcelas : 1);
+      const baseDate = transactionWithCategory.date ? new Date(transactionWithCategory.date) : new Date();
 
       // Criar transação pai primeiro
       const { data: parentTransaction, error: parentError } = await supabase
         .from('transactions')
         .insert({
-          ...baseTransaction,
+          ...transactionWithCategory,
           user_id: userId,
           tipo_lancamento: tipoLancamento,
           total_parcelas: parcelas,
           numero_parcela: 1,
           amount: valorParcela,
           description: tipoLancamento === 'parcelada' 
-            ? `${baseTransaction.description || 'Parcela'} (1/${parcelas})`
-            : baseTransaction.description,
+            ? `${transactionWithCategory.description || 'Parcela'} (1/${parcelas})`
+            : transactionWithCategory.description,
           is_recurring: tipoLancamento === 'fixa',
         })
         .select()
@@ -337,7 +360,7 @@ export function useCreateInstallmentTransaction() {
         parcelaDate.setMonth(parcelaDate.getMonth() + (i - 1));
         
         parcelasToInsert.push({
-          ...baseTransaction,
+          ...transactionWithCategory,
           user_id: userId,
           tipo_lancamento: tipoLancamento,
           total_parcelas: parcelas,
@@ -349,8 +372,8 @@ export function useCreateInstallmentTransaction() {
           status: 'pending' as TransactionStatus,
           paid_date: null,
           description: tipoLancamento === 'parcelada'
-            ? `${baseTransaction.description || 'Parcela'} (${i}/${parcelas})`
-            : baseTransaction.description,
+            ? `${transactionWithCategory.description || 'Parcela'} (${i}/${parcelas})`
+            : transactionWithCategory.description,
           is_recurring: tipoLancamento === 'fixa',
         });
       }
