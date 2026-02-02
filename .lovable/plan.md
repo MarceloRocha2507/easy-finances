@@ -1,83 +1,61 @@
 
-# Correção: ScrollArea no Modal de Despesas a Pagar
+# Bloquear Zoom em Dispositivos Mobile
 
 ## Problema Identificado
 
-O modal "Despesas a Pagar" não permite scroll completo em meses futuros quando há muitas despesas. Olhando a screenshot de março 2026, a lista parece cortada/incompleta visualmente, embora os dados estejam sendo buscados corretamente.
+Atualmente, a meta tag viewport no `index.html` permite zoom:
 
-### Causa Raiz
-
-O `ScrollArea` está dentro de um container flexbox com `flex-1`, mas sem a propriedade `min-h-0`. Em layouts flexbox, elementos filhos com `flex-1` não encolhem abaixo do tamanho do seu conteúdo por padrão, o que impede o scroll de funcionar corretamente.
-
-```text
-ESTRUTURA ATUAL:
-┌─────────────────────────────────────┐
-│ SheetContent (h-full flex flex-col) │
-├─────────────────────────────────────┤
-│ Header (flex-shrink-0)              │ <- fixo
-├─────────────────────────────────────┤
-│ div (flex-1 overflow-hidden)        │ <- PROBLEMA: sem min-h-0
-│   └─ ScrollArea (h-full)            │ <- não encolhe corretamente
-│        └─ conteúdo longo...         │
-├─────────────────────────────────────┤
-│ Footer (flex-shrink-0)              │ <- fixo
-└─────────────────────────────────────┘
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 ```
 
-## Solução
+Isso permite que o usuario:
+- Faca pinch-to-zoom (gesto de dois dedos)
+- De double-tap para ampliar
+- Isso pode causar comportamentos inesperados em um PWA
 
-Adicionar `min-h-0` ao container do ScrollArea. Essa propriedade permite que o elemento flex encolha para caber no espaço disponível, permitindo que o ScrollArea funcione corretamente.
+## Solucao
 
-## Alteração Técnica
+Adicionar atributos a meta tag viewport para desabilitar o zoom:
 
-**Arquivo:** `src/components/dashboard/DetalhesDespesasDialog.tsx`
+- `maximum-scale=1.0` - Limita o zoom maximo a 100%
+- `user-scalable=no` - Desabilita o controle de zoom pelo usuario
 
-**Linha 183 - Antes:**
-```tsx
-<div className="flex-1 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
+## Alteracao Tecnica
+
+**Arquivo:** `index.html`
+
+**Linha 5 - Antes:**
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 ```
 
 **Depois:**
-```tsx
-<div className="flex-1 min-h-0 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 ```
 
-## Por que `min-h-0` funciona?
+## Comportamento Apos Correcao
 
-No flexbox, o `min-height` padrão de um item é `auto`, que significa "não encolha menor que o conteúdo". Isso impede o scroll porque o container tenta expandir para caber todo o conteúdo.
+| Gesto | Antes | Depois |
+|-------|-------|--------|
+| Pinch-to-zoom | Permitido | Bloqueado |
+| Double-tap zoom | Permitido | Bloqueado |
+| Scroll normal | Funciona | Funciona |
+| Inputs de texto | Zoom automatico | Sem zoom |
 
-Com `min-h-0`:
-- O container pode encolher para caber no espaço disponível
-- O ScrollArea com `h-full` herda essa altura limitada
-- O overflow do conteúdo ativa o scroll
+## Consideracao sobre Acessibilidade
 
-```text
-APÓS CORREÇÃO:
-┌─────────────────────────────────────┐
-│ Header                              │ ~60px
-├─────────────────────────────────────┤
-│ Container (flex-1 min-h-0)          │ ← pode encolher
-│ ┌─────────────────────────────────┐ │
-│ │ ScrollArea (h-full)           ↕ │ │ ← scroll funciona
-│ │ ├─ Contas Pendentes            │ │
-│ │ ├─ Parcelas Nubank             │ │
-│ │ ├─ Parcelas Inter              │ │
-│ │ └─ ... mais itens (scroll)     │ │
-│ └─────────────────────────────────┘ │
-├─────────────────────────────────────┤
-│ Footer - Total a Pagar              │ ~100px
-└─────────────────────────────────────┘
-```
-
-## Resultado Esperado
-
-- Todas as despesas serão visíveis através do scroll
-- O footer "Total a Pagar" permanece fixo na parte inferior
-- O scroll funciona suavemente com a scrollbar visível
-- Os fade indicators (gradientes) indicam que há mais conteúdo
+Bloquear zoom pode afetar usuarios com deficiencia visual. Porem, como o AppFinance e um PWA focado em usabilidade mobile e ja possui fontes legíveis, essa restricao e aceitavel para garantir a estabilidade do sistema.
 
 ## Arquivos a Modificar
 
-| Arquivo | Linha | Alteração |
+| Arquivo | Linha | Alteracao |
 |---------|-------|-----------|
-| `src/components/dashboard/DetalhesDespesasDialog.tsx` | 183 | Adicionar `min-h-0` à classe do container |
+| `index.html` | 5 | Adicionar `maximum-scale=1.0, user-scalable=no` |
+
+## Resultado Esperado
+
+- O zoom fica completamente bloqueado em dispositivos mobile
+- O sistema nao "buga" mais por zoom acidental
+- A experiencia fica mais proxima de um app nativo
