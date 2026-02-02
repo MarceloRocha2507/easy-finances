@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag, Wand2, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { PlanLimitAlert, PlanLimitBadge } from '@/components/ui/plan-limit-alert';
+import { RulesList } from '@/components/categories/RulesList';
 
 const ICON_OPTIONS = [
   { value: 'dollar-sign', label: 'Dinheiro', icon: DollarSign },
@@ -198,199 +200,225 @@ export default function Categories() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
-              <PlanLimitBadge usado={usage.categorias} limite={limits.categorias} />
-            </div>
-            <p className="text-sm text-muted-foreground">Organize suas transações</p>
-          </div>
-
-          <Button onClick={handleOpenDialog} disabled={limiteCategoriasAtingido}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Categoria
-          </Button>
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
+          <p className="text-sm text-muted-foreground">Gerencie suas categorias e regras de categorização</p>
         </div>
 
-        {limiteCategoriasAtingido && (
-          <PlanLimitAlert
-            recurso="categorias"
-            usado={usage.categorias}
-            limite={limits.categorias}
-            onUpgrade={() => toast.info("Contate o administrador para fazer upgrade do seu plano")}
-          />
-        )}
+        {/* Tabs */}
+        <Tabs defaultValue="categories" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid">
+            <TabsTrigger value="categories" className="gap-2">
+              <FolderOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">Categorias</span>
+              <span className="sm:hidden">Cats</span>
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="gap-2">
+              <Wand2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Regras</span>
+              <span className="sm:hidden">Auto</span>
+            </TabsTrigger>
+          </TabsList>
 
+          {/* Categories Tab */}
+          <TabsContent value="categories" className="space-y-4">
+            {/* Categories Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <PlanLimitBadge usado={usage.categorias} limite={limits.categorias} />
+              </div>
+              <Button onClick={handleOpenDialog} disabled={limiteCategoriasAtingido}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Categoria
+              </Button>
+            </div>
+
+            {limiteCategoriasAtingido && (
+              <PlanLimitAlert
+                recurso="categorias"
+                usado={usage.categorias}
+                limite={limits.categorias}
+                onUpgrade={() => toast.info("Contate o administrador para fazer upgrade do seu plano")}
+              />
+            )}
+
+            {/* Categories Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[...Array(2)].map((_, i) => (
+                  <Card key={i} className="border animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="h-40 bg-muted rounded" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Income Categories */}
+                <Card className="border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2 text-income">
+                      <TrendingUp className="w-4 h-4" />
+                      Receitas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {incomeCategories.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
+                    ) : (
+                      incomeCategories.map((category) => (
+                        <CategoryCard key={category.id} category={category} />
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Expense Categories */}
+                <Card className="border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2 text-expense">
+                      <TrendingDown className="w-4 h-4" />
+                      Despesas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {expenseCategories.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
+                    ) : (
+                      expenseCategories.map((category) => (
+                        <CategoryCard key={category.id} category={category} />
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Rules Tab */}
+          <TabsContent value="rules">
+            <RulesList />
+          </TabsContent>
+        </Tabs>
+
+        {/* Category Dialog */}
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-base font-medium">
-                  {editingId ? 'Editar Categoria' : 'Nova Categoria'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                {/* Type Toggle */}
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={formData.type === 'income' ? 'default' : 'outline'}
-                    className="flex-1"
-                    onClick={() => setFormData({ ...formData, type: 'income' })}
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Receita
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={formData.type === 'expense' ? 'default' : 'outline'}
-                    className="flex-1"
-                    onClick={() => setFormData({ ...formData, type: 'expense' })}
-                  >
-                    <TrendingDown className="w-4 h-4 mr-2" />
-                    Despesa
-                  </Button>
-                </div>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base font-medium">
+                {editingId ? 'Editar Categoria' : 'Nova Categoria'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Type Toggle */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={formData.type === 'income' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setFormData({ ...formData, type: 'income' })}
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Receita
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.type === 'expense' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setFormData({ ...formData, type: 'expense' })}
+                >
+                  <TrendingDown className="w-4 h-4 mr-2" />
+                  Despesa
+                </Button>
+              </div>
 
-                {/* Name */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Nome</Label>
-                  <Input
-                    placeholder="Ex: Alimentação"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
+              {/* Name */}
+              <div className="space-y-2">
+                <Label className="text-sm">Nome</Label>
+                <Input
+                  placeholder="Ex: Alimentação"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
 
-                {/* Icon Picker */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Ícone</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {ICON_OPTIONS.map((item) => {
-                      const IconComp = item.icon;
-                      return (
-                        <button
-                          key={item.value}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, icon: item.value })}
-                          className={cn(
-                            "w-9 h-9 rounded-md flex items-center justify-center border transition-all",
-                            formData.icon === item.value 
-                              ? 'border-primary bg-primary/10' 
-                              : 'border-border hover:border-primary/50'
-                          )}
-                          title={item.label}
-                        >
-                          <IconComp className="w-4 h-4" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Color Picker */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Cor</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {COLOR_OPTIONS.map((color) => (
+              {/* Icon Picker */}
+              <div className="space-y-2">
+                <Label className="text-sm">Ícone</Label>
+                <div className="flex flex-wrap gap-2">
+                  {ICON_OPTIONS.map((item) => {
+                    const IconComp = item.icon;
+                    return (
                       <button
-                        key={color}
+                        key={item.value}
                         type="button"
-                        onClick={() => setFormData({ ...formData, color })}
+                        onClick={() => setFormData({ ...formData, icon: item.value })}
                         className={cn(
-                          "w-7 h-7 rounded-full transition-all",
-                          formData.color === color ? 'ring-2 ring-primary ring-offset-2' : ''
+                          "w-9 h-9 rounded-md flex items-center justify-center border transition-all",
+                          formData.icon === item.value 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50'
                         )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Preview */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Prévia</Label>
-                  <div className="flex items-center gap-3 p-3 rounded-md bg-secondary/50">
-                    <div 
-                      className="w-8 h-8 rounded-md flex items-center justify-center"
-                      style={{ backgroundColor: `${formData.color}15` }}
-                    >
-                      <SelectedIcon className="w-4 h-4" style={{ color: formData.color }} />
-                    </div>
-                    <span className="text-sm font-medium">{formData.name || 'Nome da categoria'}</span>
-                    <div 
-                      className="w-3 h-3 rounded-full ml-auto" 
-                      style={{ backgroundColor: formData.color }}
-                    />
-                  </div>
+                        title={item.label}
+                      >
+                        <IconComp className="w-4 h-4" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancelar</Button>
-                </DialogClose>
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={!formData.name || createMutation.isPending || updateMutation.isPending}
-                >
-                  {editingId ? 'Salvar' : 'Criar'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
-        {/* Categories Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(2)].map((_, i) => (
-              <Card key={i} className="border animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-40 bg-muted rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Income Categories */}
-            <Card className="border">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium flex items-center gap-2 text-income">
-                  <TrendingUp className="w-4 h-4" />
-                  Receitas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {incomeCategories.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
-                ) : (
-                  incomeCategories.map((category) => (
-                    <CategoryCard key={category.id} category={category} />
-                  ))
-                )}
-              </CardContent>
-            </Card>
+              {/* Color Picker */}
+              <div className="space-y-2">
+                <Label className="text-sm">Cor</Label>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, color })}
+                      className={cn(
+                        "w-7 h-7 rounded-full transition-all",
+                        formData.color === color ? 'ring-2 ring-primary ring-offset-2' : ''
+                      )}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
 
-            {/* Expense Categories */}
-            <Card className="border">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium flex items-center gap-2 text-expense">
-                  <TrendingDown className="w-4 h-4" />
-                  Despesas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {expenseCategories.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
-                ) : (
-                  expenseCategories.map((category) => (
-                    <CategoryCard key={category.id} category={category} />
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              {/* Preview */}
+              <div className="space-y-2">
+                <Label className="text-sm">Prévia</Label>
+                <div className="flex items-center gap-3 p-3 rounded-md bg-secondary/50">
+                  <div 
+                    className="w-8 h-8 rounded-md flex items-center justify-center"
+                    style={{ backgroundColor: `${formData.color}15` }}
+                  >
+                    <SelectedIcon className="w-4 h-4" style={{ color: formData.color }} />
+                  </div>
+                  <span className="text-sm font-medium">{formData.name || 'Nome da categoria'}</span>
+                  <div 
+                    className="w-3 h-3 rounded-full ml-auto" 
+                    style={{ backgroundColor: formData.color }}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={!formData.name || createMutation.isPending || updateMutation.isPending}
+              >
+                {editingId ? 'Salvar' : 'Criar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

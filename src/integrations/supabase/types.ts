@@ -238,6 +238,50 @@ export type Database = {
         }
         Relationships: []
       }
+      category_rules: {
+        Row: {
+          case_insensitive: boolean
+          category_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          priority: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_insensitive?: boolean
+          category_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_insensitive?: boolean
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compras_cartao: {
         Row: {
           ativo: boolean

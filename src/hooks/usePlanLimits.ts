@@ -11,6 +11,7 @@ export interface PlanLimits {
   categorias: number;
   transacoesMes: number;
   responsaveis: number;
+  regrasCategorizacao: number;
 }
 
 const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
@@ -20,6 +21,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     categorias: 10,
     transacoesMes: 50,
     responsaveis: 1,
+    regrasCategorizacao: 5,
   },
   mensal: {
     cartoes: 5,
@@ -27,6 +29,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     categorias: 20,
     transacoesMes: 200,
     responsaveis: 5,
+    regrasCategorizacao: 15,
   },
   anual: {
     cartoes: 10,
@@ -34,6 +37,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     categorias: 50,
     transacoesMes: 500,
     responsaveis: 10,
+    regrasCategorizacao: 50,
   },
   ilimitado: {
     cartoes: Infinity,
@@ -41,6 +45,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     categorias: Infinity,
     transacoesMes: Infinity,
     responsaveis: Infinity,
+    regrasCategorizacao: Infinity,
   },
 };
 
@@ -50,6 +55,7 @@ export interface ResourceUsage {
   categorias: number;
   transacoesMes: number;
   responsaveis: number;
+  regrasCategorizacao: number;
 }
 
 export function usePlanLimits() {
@@ -63,14 +69,14 @@ export function usePlanLimits() {
     queryKey: ["resource-usage", user?.id],
     queryFn: async (): Promise<ResourceUsage> => {
       if (!user?.id) {
-        return { cartoes: 0, metas: 0, categorias: 0, transacoesMes: 0, responsaveis: 0 };
+        return { cartoes: 0, metas: 0, categorias: 0, transacoesMes: 0, responsaveis: 0, regrasCategorizacao: 0 };
       }
 
       const currentMonth = new Date();
       const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-      const [cartoesRes, metasRes, categoriasRes, transacoesRes, responsaveisRes] = await Promise.all([
+      const [cartoesRes, metasRes, categoriasRes, transacoesRes, responsaveisRes, regrasRes] = await Promise.all([
         supabase.from("cartoes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("metas").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("categories").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -81,6 +87,7 @@ export function usePlanLimits() {
           .gte("date", startOfMonth.toISOString().split("T")[0])
           .lte("date", endOfMonth.toISOString().split("T")[0]),
         supabase.from("responsaveis").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("category_rules").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       ]);
 
       return {
@@ -89,6 +96,7 @@ export function usePlanLimits() {
         categorias: categoriasRes.count ?? 0,
         transacoesMes: transacoesRes.count ?? 0,
         responsaveis: responsaveisRes.count ?? 0,
+        regrasCategorizacao: regrasRes.count ?? 0,
       };
     },
     enabled: !!user?.id,
@@ -100,6 +108,7 @@ export function usePlanLimits() {
     categorias: 0,
     transacoesMes: 0,
     responsaveis: 0,
+    regrasCategorizacao: 0,
   };
 
   const canCreate = (resource: keyof PlanLimits): boolean => {
