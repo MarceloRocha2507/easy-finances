@@ -1,61 +1,99 @@
 
-# Bloquear Zoom em Dispositivos Mobile
+# Correção: Atualização Automática da Lista de Transações
 
 ## Problema Identificado
 
-Atualmente, a meta tag viewport no `index.html` permite zoom:
-
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+A página de Transações usa o hook `useTransactionsWithBalance` que tem a query key:
+```typescript
+queryKey: ['transactions-with-balance', user?.id, filters]
 ```
 
-Isso permite que o usuario:
-- Faca pinch-to-zoom (gesto de dois dedos)
-- De double-tap para ampliar
-- Isso pode causar comportamentos inesperados em um PWA
-
-## Solucao
-
-Adicionar atributos a meta tag viewport para desabilitar o zoom:
-
-- `maximum-scale=1.0` - Limita o zoom maximo a 100%
-- `user-scalable=no` - Desabilita o controle de zoom pelo usuario
-
-## Alteracao Tecnica
-
-**Arquivo:** `index.html`
-
-**Linha 5 - Antes:**
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+Porém, as mutations (`useCreateTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, `useMarkAsPaid`) invalidam apenas:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions'] });
 ```
 
-**Depois:**
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+Isso **não** invalida `['transactions-with-balance']`, fazendo com que a lista não atualize automaticamente após criar/editar/deletar transações.
+
+## Solução
+
+Adicionar `['transactions-with-balance']` na lista de query keys invalidadas em todas as mutations de transação.
+
+## Alterações Técnicas
+
+**Arquivo:** `src/hooks/useTransactions.ts`
+
+### 1. useCreateTransaction (linha 253)
+
+Adicionar após a linha 253:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
 ```
 
-## Comportamento Apos Correcao
+### 2. useCreateInstallmentTransaction (linha 368)
 
-| Gesto | Antes | Depois |
-|-------|-------|--------|
-| Pinch-to-zoom | Permitido | Bloqueado |
-| Double-tap zoom | Permitido | Bloqueado |
-| Scroll normal | Funciona | Funciona |
-| Inputs de texto | Zoom automatico | Sem zoom |
+Adicionar após a linha 368:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+```
 
-## Consideracao sobre Acessibilidade
+### 3. useUpdateTransaction (linha 413)
 
-Bloquear zoom pode afetar usuarios com deficiencia visual. Porem, como o AppFinance e um PWA focado em usabilidade mobile e ja possui fontes legíveis, essa restricao e aceitavel para garantir a estabilidade do sistema.
+Adicionar após a linha 413:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+```
 
-## Arquivos a Modificar
+### 4. useDeleteTransaction (linha 448)
 
-| Arquivo | Linha | Alteracao |
-|---------|-------|-----------|
-| `index.html` | 5 | Adicionar `maximum-scale=1.0, user-scalable=no` |
+Adicionar após a linha 448:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+```
+
+### 5. useMarkAsPaid (linha 490)
+
+Adicionar após a linha 490:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+```
+
+## Resumo das Modificações
+
+| Hook | Linha | Alteração |
+|------|-------|-----------|
+| `useCreateTransaction` | 253 | Adicionar invalidação de `transactions-with-balance` |
+| `useCreateInstallmentTransaction` | 368 | Adicionar invalidação de `transactions-with-balance` |
+| `useUpdateTransaction` | 413 | Adicionar invalidação de `transactions-with-balance` |
+| `useDeleteTransaction` | 448 | Adicionar invalidação de `transactions-with-balance` |
+| `useMarkAsPaid` | 490 | Adicionar invalidação de `transactions-with-balance` |
+
+## Fluxo Após Correção
+
+```text
+Usuário adiciona transação
+         ↓
+  Mutation executa
+         ↓
+  onSuccess dispara
+         ↓
+  Invalidar queries:
+  ├─ ['transactions']
+  ├─ ['transactions-with-balance'] ← NOVO
+  ├─ ['transaction-stats']
+  ├─ ['expenses-by-category']
+  ├─ ['monthly-data']
+  ├─ ['complete-stats']
+  └─ ['dashboard-completo']
+         ↓
+  React Query refetch automático
+         ↓
+  Lista atualiza instantaneamente ✓
+```
 
 ## Resultado Esperado
 
-- O zoom fica completamente bloqueado em dispositivos mobile
-- O sistema nao "buga" mais por zoom acidental
-- A experiencia fica mais proxima de um app nativo
+- Ao adicionar receita/despesa: lista atualiza automaticamente
+- Ao editar transação: lista reflete mudanças imediatamente  
+- Ao excluir transação: item some da lista sem recarregar
+- Ao marcar como pago: status atualiza em tempo real
