@@ -615,11 +615,8 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
         ? allCompleted[allCompleted.length - 1].id 
         : undefined;
 
-      // Ajustar APENAS a última transação para mostrar saldo disponível
-      if (ultimaTransacaoId) {
-        const patrimonioAtual = saldoMap.get(ultimaTransacaoId) || 0;
-        saldoMap.set(ultimaTransacaoId, patrimonioAtual - totalGuardado);
-      }
+      // Nota: NÃO subtrair totalGuardado aqui porque depósitos em metas
+      // já são registrados como transações de despesa, evitando dupla contagem
 
       // Buscar transações filtradas para exibição
       let query = supabase
