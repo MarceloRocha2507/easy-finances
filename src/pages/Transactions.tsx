@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye } from 'lucide-react';
+import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -119,6 +120,7 @@ export default function Transactions() {
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
+  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
 
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
@@ -879,6 +881,7 @@ export default function Transactions() {
                 onDelete={handleDelete}
                 onMarkAsPaid={handleMarkAsPaid}
                 onDuplicate={handleDuplicate}
+                onView={setViewingTransaction}
                 saldoApos={saldoMap?.get(transaction.id)}
                 isUltimaTransacao={transaction.id === ultimaTransacaoId}
                 totalGuardado={totalGuardado}
@@ -914,6 +917,14 @@ export default function Transactions() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog Ver Detalhes */}
+        <TransactionDetailsDialog
+          transaction={viewingTransaction}
+          open={!!viewingTransaction}
+          onOpenChange={(open) => !open && setViewingTransaction(null)}
+          onEdit={handleEdit}
+        />
       </div>
     </Layout>
   );
@@ -926,12 +937,13 @@ interface TransactionRowProps {
   onDelete: (id: string) => void;
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
+  onView: (transaction: Transaction) => void;
   saldoApos?: number;
   isUltimaTransacao?: boolean;
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const IconComponent = getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
@@ -1068,6 +1080,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onView(transaction)}>
+                <Eye className="w-4 h-4 mr-2" />
+                Ver detalhes
+              </DropdownMenuItem>
               {isPending && (
                 <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)}>
                   <Check className="w-4 h-4 mr-2 text-emerald-600" />
@@ -1092,6 +1108,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         
         {/* Desktop hover buttons */}
         <div className="hidden md:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => onView(transaction)}
+            title="Ver detalhes"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </Button>
           {isPending && (
             <Button 
               variant="ghost" 
