@@ -1,99 +1,102 @@
 
-# Correção: Atualização Automática da Lista de Transações
+# Adicionar Botão "Ver Detalhes" nas Transações
 
-## Problema Identificado
+## Objetivo
 
-A página de Transações usa o hook `useTransactionsWithBalance` que tem a query key:
-```typescript
-queryKey: ['transactions-with-balance', user?.id, filters]
+Adicionar uma opção "Ver detalhes" em cada transação que abre um modal com todas as informações detalhadas do registro.
+
+## Onde Será Adicionado
+
+O botão será incluído nos dois locais de ações:
+1. **Mobile**: Menu dropdown (DropdownMenu) - nova opção no início
+2. **Desktop**: Botões que aparecem no hover - novo botão com ícone de olho
+
+## Modal de Detalhes
+
+O modal exibirá todas as informações da transação de forma organizada:
+
+```text
+┌─────────────────────────────────────────────────┐
+│  Detalhes da Transação                      [X] │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  [Ícone Categoria]                              │
+│  Descrição da Transação                         │
+│  Categoria: Alimentação                         │
+│                                                 │
+│  +R$ 1.500,00  ou  -R$ 150,00                   │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  Informações                                    │
+│  ┌─────────────────┬──────────────────────────┐ │
+│  │ Tipo            │ Receita / Despesa        │ │
+│  │ Data            │ 02/02/2026               │ │
+│  │ Status          │ Concluída / Pendente     │ │
+│  │ Vencimento      │ 05/02/2026 (se houver)   │ │
+│  │ Data Pagamento  │ 02/02/2026 (se paga)     │ │
+│  └─────────────────┴──────────────────────────┘ │
+│                                                 │
+│  (Se parcelada/fixa/recorrente)                 │
+│  ┌─────────────────┬──────────────────────────┐ │
+│  │ Tipo Lançamento │ Parcelada / Fixa         │ │
+│  │ Parcela         │ 3 de 12                  │ │
+│  │ Dia Recorrência │ 10 (se recorrente)       │ │
+│  └─────────────────┴──────────────────────────┘ │
+│                                                 │
+│  Registro                                       │
+│  ┌─────────────────┬──────────────────────────┐ │
+│  │ Criado em       │ 01/02/2026 às 14:30      │ │
+│  │ Atualizado em   │ 02/02/2026 às 10:15      │ │
+│  │ ID              │ abc123...                │ │
+│  └─────────────────┴──────────────────────────┘ │
+│                                                 │
+│                         [Editar]    [Fechar]    │
+└─────────────────────────────────────────────────┘
 ```
-
-Porém, as mutations (`useCreateTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, `useMarkAsPaid`) invalidam apenas:
-```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions'] });
-```
-
-Isso **não** invalida `['transactions-with-balance']`, fazendo com que a lista não atualize automaticamente após criar/editar/deletar transações.
-
-## Solução
-
-Adicionar `['transactions-with-balance']` na lista de query keys invalidadas em todas as mutations de transação.
 
 ## Alterações Técnicas
 
-**Arquivo:** `src/hooks/useTransactions.ts`
+**Arquivo:** `src/pages/Transactions.tsx`
 
-### 1. useCreateTransaction (linha 253)
+### 1. Adicionar Estado para Controlar Modal
 
-Adicionar após a linha 253:
+Criar estado para armazenar a transação selecionada para visualização:
+
 ```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
 ```
 
-### 2. useCreateInstallmentTransaction (linha 368)
+### 2. Criar Componente TransactionDetailsDialog
 
-Adicionar após a linha 368:
-```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-```
+Novo componente interno que renderiza o modal de detalhes com todas as informações organizadas em seções.
 
-### 3. useUpdateTransaction (linha 413)
+### 3. Atualizar TransactionRow
 
-Adicionar após a linha 413:
-```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-```
+Adicionar callback `onView` e incluir botão/opção "Ver detalhes":
 
-### 4. useDeleteTransaction (linha 448)
+- **Mobile (DropdownMenu)**: Adicionar item no início do menu
+- **Desktop**: Adicionar botão com ícone `Eye` antes dos outros botões
 
-Adicionar após a linha 448:
-```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-```
+### 4. Ícone a Utilizar
 
-### 5. useMarkAsPaid (linha 490)
-
-Adicionar após a linha 490:
-```typescript
-queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-```
+Importar e usar o ícone `Eye` do lucide-react para a ação de visualizar.
 
 ## Resumo das Modificações
 
-| Hook | Linha | Alteração |
-|------|-------|-----------|
-| `useCreateTransaction` | 253 | Adicionar invalidação de `transactions-with-balance` |
-| `useCreateInstallmentTransaction` | 368 | Adicionar invalidação de `transactions-with-balance` |
-| `useUpdateTransaction` | 413 | Adicionar invalidação de `transactions-with-balance` |
-| `useDeleteTransaction` | 448 | Adicionar invalidação de `transactions-with-balance` |
-| `useMarkAsPaid` | 490 | Adicionar invalidação de `transactions-with-balance` |
-
-## Fluxo Após Correção
-
-```text
-Usuário adiciona transação
-         ↓
-  Mutation executa
-         ↓
-  onSuccess dispara
-         ↓
-  Invalidar queries:
-  ├─ ['transactions']
-  ├─ ['transactions-with-balance'] ← NOVO
-  ├─ ['transaction-stats']
-  ├─ ['expenses-by-category']
-  ├─ ['monthly-data']
-  ├─ ['complete-stats']
-  └─ ['dashboard-completo']
-         ↓
-  React Query refetch automático
-         ↓
-  Lista atualiza instantaneamente ✓
-```
+| Local | Alteração |
+|-------|-----------|
+| Importações | Adicionar `Eye` do lucide-react |
+| Estado | Novo state `viewingTransaction` |
+| TransactionRowProps | Adicionar prop `onView` |
+| TransactionRow (Mobile) | Nova opção "Ver detalhes" no dropdown |
+| TransactionRow (Desktop) | Novo botão com ícone Eye |
+| Novo Componente | `TransactionDetailsDialog` |
+| Renderização | Incluir o dialog na página |
 
 ## Resultado Esperado
 
-- Ao adicionar receita/despesa: lista atualiza automaticamente
-- Ao editar transação: lista reflete mudanças imediatamente  
-- Ao excluir transação: item some da lista sem recarregar
-- Ao marcar como pago: status atualiza em tempo real
+- Usuário clica em "Ver detalhes" (mobile) ou no ícone de olho (desktop)
+- Modal abre com todas as informações da transação organizadas
+- Botão "Editar" no modal permite ir direto para edição
+- Informações sensíveis como ID são mostradas de forma discreta
+- Layout responsivo e consistente com o design system atual
