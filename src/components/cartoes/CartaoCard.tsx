@@ -108,7 +108,28 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
 
   const { dataFechamento, dataVencimento, diasFechamento, diasVencimento } = useMemo(() => {
     const fechamento = proximaOcorrenciaDia(cartao.dia_fechamento);
-    const vencimento = proximaOcorrenciaDia(cartao.dia_vencimento);
+    
+    // Calcular vencimento baseado na data de fechamento
+    let vencimento: Date;
+    
+    if (cartao.dia_vencimento > cartao.dia_fechamento) {
+      // Vencimento no mesmo mês do fechamento
+      const diaVenc = clampDiaNoMes(
+        fechamento.getFullYear(), 
+        fechamento.getMonth(), 
+        cartao.dia_vencimento
+      );
+      vencimento = new Date(fechamento.getFullYear(), fechamento.getMonth(), diaVenc);
+    } else {
+      // Vencimento no mês seguinte ao fechamento
+      const proxMes = new Date(fechamento.getFullYear(), fechamento.getMonth() + 1, 1);
+      const diaVenc = clampDiaNoMes(
+        proxMes.getFullYear(), 
+        proxMes.getMonth(), 
+        cartao.dia_vencimento
+      );
+      vencimento = new Date(proxMes.getFullYear(), proxMes.getMonth(), diaVenc);
+    }
 
     return {
       dataFechamento: fechamento,
