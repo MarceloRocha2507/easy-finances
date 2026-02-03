@@ -1,214 +1,125 @@
 
-# Regras de Categorização Automática
+# Correção: Data de Vencimento do Cartão
 
-## Visao Geral
+## Problema Identificado
 
-Sistema inteligente que categoriza transacoes automaticamente com base em palavras-chave definidas pelo usuario. Quando uma nova transacao e criada (ou importada), o sistema verifica se a descricao corresponde a alguma regra e aplica a categoria automaticamente.
+O cartão "Mercado Pago" está configurado com:
+- Fechamento: dia 2
+- Vencimento: dia 9
 
-## Funcionamento
+O sistema está mostrando:
+- Fechamento: 02/03/2026 (correto)
+- Vencimento: 09/02/2026 (incorreto - deveria ser 09/03/2026)
 
-```text
-Usuario cria transacao
-        |
-        v
-+-------------------+
-| Buscar regras do  |
-| usuario           |
-+-------------------+
-        |
-        v
-+-------------------+
-| Descricao contem  |-----> NAO ----> Deixar sem categoria
-| palavra-chave?    |                 ou categoria padrao
-+-------------------+
-        |
-       SIM
-        |
-        v
-+-------------------+
-| Aplicar categoria |
-| da regra          |
-+-------------------+
-        |
-        v
-   Transacao salva
-   com categoria
-```
+### Causa Raiz
 
-## Exemplos de Uso
-
-| Palavra-chave | Categoria | Tipo |
-|---------------|-----------|------|
-| `uber` | Transporte | Despesa |
-| `ifood`, `rappi` | Alimentacao | Despesa |
-| `netflix`, `spotify` | Lazer | Despesa |
-| `salario`, `pagamento` | Salario | Receita |
-| `pix recebido` | Outros | Receita |
-| `farmacia`, `drogaria` | Saude | Despesa |
-
-## Interface do Usuario
-
-A funcionalidade sera acessada atraves da pagina de Categorias existente, adicionando uma nova aba "Regras":
+A função `proximaOcorrenciaDia` calcula cada data de forma independente:
 
 ```text
-+--------------------------------------------------+
-|  Categorias                                       |
-+--------------------------------------------------+
-|  [Categorias]  [Regras de Categorizacao]         |
-+--------------------------------------------------+
+Hoje: 03/02/2026
 
-Aba "Regras de Categorizacao":
+Fechamento (dia 2):
+  - Dia 2 já passou em fevereiro
+  - Próxima ocorrência: 02/03/2026 ✓
 
-+--------------------------------------------------+
-|  Regras de Categorizacao              [+ Nova]   |
-|  Categorize transacoes automaticamente           |
-+--------------------------------------------------+
-|                                                  |
-|  +--------------------------------------------+  |
-|  | Alimentacao                                |  |
-|  |   Palavras: ifood, rappi, uber eats        |  |
-|  |   [Editar] [Excluir]                       |  |
-|  +--------------------------------------------+  |
-|                                                  |
-|  +--------------------------------------------+  |
-|  | Transporte                                 |  |
-|  |   Palavras: uber, 99, cabify               |  |
-|  |   [Editar] [Excluir]                       |  |
-|  +--------------------------------------------+  |
-|                                                  |
-+--------------------------------------------------+
+Vencimento (dia 9):
+  - Dia 9 ainda não passou em fevereiro
+  - Próxima ocorrência: 09/02/2026 ✗
 ```
 
-### Dialog de Nova Regra
+O problema é que o vencimento está sendo calculado sem considerar que ele deve vir **após** o fechamento. Se a fatura fecha dia 2 de março, o vencimento dia 9 deve ser em março também.
+
+## Solucao
+
+Modificar a lógica para garantir que o vencimento sempre ocorra **no mesmo mês ou após** o fechamento.
+
+### Lógica Corrigida
 
 ```text
-+------------------------------------------+
-|  Nova Regra de Categorizacao         [X] |
-+------------------------------------------+
-|                                          |
-|  Categoria *                             |
-|  [Selecione uma categoria        v]     |
-|                                          |
-|  Palavras-chave *                        |
-|  [ifood, rappi, uber eats          ]    |
-|  Separe por virgula                      |
-|                                          |
-|  [] Ignorar maiusculas/minusculas        |
-|                                          |
-|                [Cancelar] [Salvar]        |
-+------------------------------------------+
+1. Calcular próxima data de fechamento
+2. Calcular data de vencimento:
+   - Se dia_vencimento > dia_fechamento:
+     → Vencimento no mesmo mês do fechamento
+   - Se dia_vencimento <= dia_fechamento:
+     → Vencimento no mês seguinte ao fechamento
 ```
 
-## Estrutura do Banco de Dados
+### Exemplos
 
-### Nova Tabela: `category_rules`
+| Fechamento | Vencimento | Hoje | Resultado |
+|------------|------------|------|-----------|
+| Dia 2 | Dia 9 | 03/02 | Fecha 02/03, Vence 09/03 |
+| Dia 15 | Dia 5 | 03/02 | Fecha 15/02, Vence 05/03 |
+| Dia 25 | Dia 10 | 03/02 | Fecha 25/02, Vence 10/03 |
+| Dia 5 | Dia 12 | 03/02 | Fecha 05/02, Vence 12/02 |
 
-| Coluna | Tipo | Descricao |
-|--------|------|-----------|
-| id | uuid | Identificador unico |
-| user_id | uuid | Referencia ao usuario |
-| category_id | uuid | Referencia a categoria |
-| keywords | text[] | Array de palavras-chave |
-| case_insensitive | boolean | Ignorar maiusculas (padrao: true) |
-| is_active | boolean | Regra ativa (padrao: true) |
-| priority | integer | Prioridade (menor = maior) |
-| created_at | timestamp | Data de criacao |
-| updated_at | timestamp | Data de atualizacao |
+## Alteracao Tecnica
 
-### Politicas RLS
+**Arquivo:** `src/components/cartoes/CartaoCard.tsx`
 
-- SELECT: Usuarios veem apenas suas regras
-- INSERT: Usuarios criam regras com seu user_id
-- UPDATE: Usuarios atualizam apenas suas regras
-- DELETE: Usuarios excluem apenas suas regras
+### Modificar o useMemo (linhas 109-119)
 
-## Alteracoes Tecnicas
-
-### 1. Banco de Dados
-
-Criar migracao SQL para:
-- Tabela `category_rules`
-- Indice em `user_id`
-- Indice em `category_id`
-- Politicas RLS
-
-### 2. Novos Arquivos
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/hooks/useCategoryRules.ts` | Hook com CRUD para regras |
-| `src/services/category-rules.ts` | Funcao de matching de regras |
-| `src/components/categories/RulesList.tsx` | Lista de regras |
-| `src/components/categories/RuleDialog.tsx` | Dialog criar/editar |
-
-### 3. Arquivos Modificados
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/pages/Categories.tsx` | Adicionar sistema de abas (Categorias / Regras) |
-| `src/hooks/useTransactions.ts` | Integrar auto-categorizacao no `useCreateTransaction` |
-
-### 4. Hook useCategoryRules
-
+**Codigo atual:**
 ```typescript
-// Operacoes:
-// - useCategoryRules() - listar regras do usuario
-// - useCreateCategoryRule() - criar nova regra
-// - useUpdateCategoryRule() - atualizar regra
-// - useDeleteCategoryRule() - excluir regra
+const { dataFechamento, dataVencimento, diasFechamento, diasVencimento } = useMemo(() => {
+  const fechamento = proximaOcorrenciaDia(cartao.dia_fechamento);
+  const vencimento = proximaOcorrenciaDia(cartao.dia_vencimento);
+
+  return {
+    dataFechamento: fechamento,
+    dataVencimento: vencimento,
+    diasFechamento: diasAte(fechamento),
+    diasVencimento: diasAte(vencimento),
+  };
+}, [cartao.dia_fechamento, cartao.dia_vencimento]);
 ```
 
-### 5. Funcao de Matching
-
+**Codigo corrigido:**
 ```typescript
-// services/category-rules.ts
-export async function findMatchingCategory(
-  userId: string, 
-  description: string
-): Promise<string | null> {
-  // 1. Buscar todas as regras ativas do usuario
-  // 2. Para cada regra, verificar se alguma keyword esta na descricao
-  // 3. Retornar category_id da primeira regra que der match
-  // 4. Se nenhuma der match, retornar null
-}
+const { dataFechamento, dataVencimento, diasFechamento, diasVencimento } = useMemo(() => {
+  const fechamento = proximaOcorrenciaDia(cartao.dia_fechamento);
+  
+  // Calcular vencimento baseado na data de fechamento
+  let vencimento: Date;
+  
+  if (cartao.dia_vencimento > cartao.dia_fechamento) {
+    // Vencimento no mesmo mês do fechamento
+    const diaVenc = clampDiaNoMes(
+      fechamento.getFullYear(), 
+      fechamento.getMonth(), 
+      cartao.dia_vencimento
+    );
+    vencimento = new Date(fechamento.getFullYear(), fechamento.getMonth(), diaVenc);
+  } else {
+    // Vencimento no mês seguinte ao fechamento
+    const proxMes = new Date(fechamento.getFullYear(), fechamento.getMonth() + 1, 1);
+    const diaVenc = clampDiaNoMes(
+      proxMes.getFullYear(), 
+      proxMes.getMonth(), 
+      cartao.dia_vencimento
+    );
+    vencimento = new Date(proxMes.getFullYear(), proxMes.getMonth(), diaVenc);
+  }
+
+  return {
+    dataFechamento: fechamento,
+    dataVencimento: vencimento,
+    diasFechamento: diasAte(fechamento),
+    diasVencimento: diasAte(vencimento),
+  };
+}, [cartao.dia_fechamento, cartao.dia_vencimento]);
 ```
 
-### 6. Integracao na Criacao de Transacao
+## Resumo das Modificacoes
 
-O `useCreateTransaction` sera modificado para:
-1. Antes de inserir, chamar `findMatchingCategory` se `category_id` nao foi informado
-2. Se encontrar match, usar a categoria da regra
-3. Caso contrario, deixar sem categoria
-
-## Fluxo de Dados
-
-```text
-1. Usuario acessa /categories
-2. Clica na aba "Regras"
-3. Ve lista de regras existentes
-4. Clica em "+ Nova Regra"
-5. Seleciona categoria e adiciona palavras-chave
-6. Salva a regra
-
-Ao criar transacao:
-1. Usuario digita "Pagamento Uber"
-2. Sistema busca regras
-3. Encontra regra com keyword "uber" -> Transporte
-4. Aplica categoria automaticamente
-```
-
-## Limites do Plano
-
-A funcionalidade respeitara os limites do plano do usuario:
-- Plano gratuito: 5 regras
-- Plano premium: ilimitado
-
-Sera adicionado `regras_categorizacao` no hook `usePlanLimits`.
+| Arquivo | Linhas | Alteracao |
+|---------|--------|-----------|
+| `src/components/cartoes/CartaoCard.tsx` | 109-119 | Corrigir cálculo de vencimento baseado no fechamento |
 
 ## Resultado Esperado
 
-- Usuario pode criar regras de categorizacao baseadas em palavras-chave
-- Novas transacoes sao categorizadas automaticamente
-- Economia de tempo ao registrar gastos recorrentes
-- Menos transacoes "sem categoria"
-- Interface integrada na pagina de Categorias existente
+Para o cartão Mercado Pago (fecha dia 2, vence dia 9):
+- Fechamento: 02/03/2026 ✓
+- Vencimento: 09/03/2026 ✓ (corrigido)
+
+O vencimento agora sempre será calculado em relação à data de fechamento, garantindo que a fatura vença após fechar.
