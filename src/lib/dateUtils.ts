@@ -50,6 +50,94 @@ export function calcularMesFaturaCartaoStr(
 }
 
 /* ======================================================
+   CÁLCULO DE CICLO DE CARTÃO (FECHAMENTO E VENCIMENTO)
+====================================================== */
+
+/**
+ * Garante que o dia do mês não exceda o último dia do mês.
+ * Ex: dia 31 em fevereiro → dia 28 ou 29
+ */
+export function clampDiaNoMes(ano: number, mesIndex: number, dia: number): number {
+  const ultimoDia = new Date(ano, mesIndex + 1, 0).getDate();
+  return Math.min(Math.max(dia, 1), ultimoDia);
+}
+
+/**
+ * Calcula a próxima ocorrência de um dia específico do mês.
+ * Se o dia já passou no mês atual, retorna o próximo mês.
+ * @param dia - Dia do mês (1-31)
+ * @param base - Data base para o cálculo (default: hoje)
+ */
+export function calcularProximaOcorrenciaDia(dia: number, base = new Date()): Date {
+  const ano = base.getFullYear();
+  const mes = base.getMonth();
+  const hoje = base.getDate();
+
+  const diaAtual = clampDiaNoMes(ano, mes, dia);
+  const dataAtual = new Date(ano, mes, diaAtual);
+
+  // Se o dia já passou neste mês, vai para o próximo
+  if (dataAtual < new Date(ano, mes, hoje)) {
+    const prox = new Date(ano, mes + 1, 1);
+    const diaProx = clampDiaNoMes(prox.getFullYear(), prox.getMonth(), dia);
+    return new Date(prox.getFullYear(), prox.getMonth(), diaProx);
+  }
+
+  return dataAtual;
+}
+
+/**
+ * Calcula a data de vencimento baseada na data de fechamento.
+ * 
+ * REGRA IMPORTANTE:
+ * - Se dia_vencimento > dia_fechamento: vencimento no MESMO mês do fechamento
+ * - Se dia_vencimento <= dia_fechamento: vencimento no MÊS SEGUINTE ao fechamento
+ * 
+ * Exemplos (com fechamento dia 2):
+ * - Vencimento dia 9: mesmo mês que fechamento (fecha 02/03, vence 09/03)
+ * - Vencimento dia 1: mês seguinte ao fechamento (fecha 02/03, vence 01/04)
+ * 
+ * @param dataFechamento - Data calculada de fechamento
+ * @param diaFechamento - Dia do mês que o cartão fecha
+ * @param diaVencimento - Dia do mês que a fatura vence
+ */
+export function calcularDataVencimentoCartao(
+  dataFechamento: Date,
+  diaFechamento: number,
+  diaVencimento: number
+): Date {
+  if (diaVencimento > diaFechamento) {
+    // Vencimento no mesmo mês do fechamento
+    const diaVenc = clampDiaNoMes(
+      dataFechamento.getFullYear(),
+      dataFechamento.getMonth(),
+      diaVencimento
+    );
+    return new Date(dataFechamento.getFullYear(), dataFechamento.getMonth(), diaVenc);
+  } else {
+    // Vencimento no mês seguinte ao fechamento
+    const proxMes = new Date(dataFechamento.getFullYear(), dataFechamento.getMonth() + 1, 1);
+    const diaVenc = clampDiaNoMes(
+      proxMes.getFullYear(),
+      proxMes.getMonth(),
+      diaVencimento
+    );
+    return new Date(proxMes.getFullYear(), proxMes.getMonth(), diaVenc);
+  }
+}
+
+/**
+ * Calcula os dias até uma data específica a partir de hoje.
+ * @param data - Data alvo
+ */
+export function calcularDiasAte(data: Date): number {
+  const hoje = new Date();
+  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const diff = data.getTime() - inicioHoje.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+/* ======================================================
    UTILITÁRIOS GERAIS DE DATA
 ====================================================== */
 

@@ -1,6 +1,12 @@
 import { CreditCard, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { listarParcelasDaFatura } from "@/services/compras-cartao";
+import {
+  calcularProximaOcorrenciaDia,
+  calcularDataVencimentoCartao,
+  calcularDiasAte,
+  clampDiaNoMes,
+} from "@/lib/dateUtils";
 
 type StatusFatura = "ABERTA" | "FECHADA";
 
@@ -16,35 +22,6 @@ interface CartaoCardProps {
   };
   statusFatura: StatusFatura;
   onClick?: (mesSelecionado: Date) => void;
-}
-
-function clampDiaNoMes(ano: number, mesIndex: number, dia: number) {
-  const ultimoDia = new Date(ano, mesIndex + 1, 0).getDate();
-  return Math.min(Math.max(dia, 1), ultimoDia);
-}
-
-function proximaOcorrenciaDia(dia: number, base = new Date()) {
-  const ano = base.getFullYear();
-  const mes = base.getMonth();
-  const hoje = base.getDate();
-
-  const diaAtual = clampDiaNoMes(ano, mes, dia);
-  const dataAtual = new Date(ano, mes, diaAtual);
-
-  if (dataAtual < new Date(ano, mes, hoje)) {
-    const prox = new Date(ano, mes + 1, 1);
-    const diaProx = clampDiaNoMes(prox.getFullYear(), prox.getMonth(), dia);
-    return new Date(prox.getFullYear(), prox.getMonth(), diaProx);
-  }
-
-  return dataAtual;
-}
-
-function diasAte(data: Date) {
-  const hoje = new Date();
-  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  const diff = data.getTime() - inicioHoje.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 function formatarDataBR(d: Date) {
@@ -107,35 +84,18 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
       : "hsl(0, 65%, 51%)";
 
   const { dataFechamento, dataVencimento, diasFechamento, diasVencimento } = useMemo(() => {
-    const fechamento = proximaOcorrenciaDia(cartao.dia_fechamento);
-    
-    // Calcular vencimento baseado na data de fechamento
-    let vencimento: Date;
-    
-    if (cartao.dia_vencimento > cartao.dia_fechamento) {
-      // Vencimento no mesmo mês do fechamento
-      const diaVenc = clampDiaNoMes(
-        fechamento.getFullYear(), 
-        fechamento.getMonth(), 
-        cartao.dia_vencimento
-      );
-      vencimento = new Date(fechamento.getFullYear(), fechamento.getMonth(), diaVenc);
-    } else {
-      // Vencimento no mês seguinte ao fechamento
-      const proxMes = new Date(fechamento.getFullYear(), fechamento.getMonth() + 1, 1);
-      const diaVenc = clampDiaNoMes(
-        proxMes.getFullYear(), 
-        proxMes.getMonth(), 
-        cartao.dia_vencimento
-      );
-      vencimento = new Date(proxMes.getFullYear(), proxMes.getMonth(), diaVenc);
-    }
+    const fechamento = calcularProximaOcorrenciaDia(cartao.dia_fechamento);
+    const vencimento = calcularDataVencimentoCartao(
+      fechamento,
+      cartao.dia_fechamento,
+      cartao.dia_vencimento
+    );
 
     return {
       dataFechamento: fechamento,
       dataVencimento: vencimento,
-      diasFechamento: diasAte(fechamento),
-      diasVencimento: diasAte(vencimento),
+      diasFechamento: calcularDiasAte(fechamento),
+      diasVencimento: calcularDiasAte(vencimento),
     };
   }, [cartao.dia_fechamento, cartao.dia_vencimento]);
 
