@@ -28,6 +28,11 @@ import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { DesfazerAlteracaoDialog } from "@/components/cartoes/DesfazerAlteracaoDialog";
 import { cn } from "@/lib/utils";
+import {
+  calcularProximaOcorrenciaDia,
+  calcularDataVencimentoCartao,
+  calcularDiasAte,
+} from "@/lib/dateUtils";
 
 export default function Cartoes() {
   const [mesReferencia, setMesReferencia] = useState(new Date());
@@ -295,28 +300,15 @@ interface CartaoCardProps {
 }
 
 function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) {
-  // Calcular dias até fechamento e vencimento
-  const hoje = new Date();
-  const anoAtual = hoje.getFullYear();
-  const mesAtual = hoje.getMonth();
-
-  // Data de fechamento
-  let dataFechamento = new Date(anoAtual, mesAtual, cartao.dia_fechamento);
-  if (dataFechamento < hoje) {
-    dataFechamento = new Date(anoAtual, mesAtual + 1, cartao.dia_fechamento);
-  }
-  const diasAteFechamento = Math.ceil(
-    (dataFechamento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
+  // Calcular datas usando helpers centralizados
+  const dataFechamento = calcularProximaOcorrenciaDia(cartao.dia_fechamento);
+  const dataVencimento = calcularDataVencimentoCartao(
+    dataFechamento,
+    cartao.dia_fechamento,
+    cartao.dia_vencimento
   );
-
-  // Data de vencimento
-  let dataVencimento = new Date(anoAtual, mesAtual, cartao.dia_vencimento);
-  if (dataVencimento < hoje) {
-    dataVencimento = new Date(anoAtual, mesAtual + 1, cartao.dia_vencimento);
-  }
-  const diasAteVencimento = Math.ceil(
-    (dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const diasAteFechamento = calcularDiasAte(dataFechamento);
+  const diasAteVencimento = calcularDiasAte(dataVencimento);
 
   // Usar o mês que deve ser exibido (atual ou próximo se pago)
   const mesParaExibir = cartao.mesExibicao || mesReferencia;
