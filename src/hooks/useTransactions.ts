@@ -742,6 +742,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const { data: allCompleted, error: allCompletedError } = await supabase
         .from('transactions')
         .select('type, amount')
+        .eq('user_id', user!.id)
         .eq('status', 'completed');
 
       if (allCompletedError) throw allCompletedError;
@@ -750,6 +751,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const { data: completedDoMes, error: completedDoMesError } = await supabase
         .from('transactions')
         .select('type, amount')
+        .eq('user_id', user!.id)
         .eq('status', 'completed')
         .gte('date', inicioMes)
         .lte('date', fimMes);
@@ -760,6 +762,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const { data: pendingDoMes, error: pendingDoMesError } = await supabase
         .from('transactions')
         .select('type, amount, due_date')
+        .eq('user_id', user!.id)
         .eq('status', 'pending')
         .gte('due_date', inicioMes)
         .lte('due_date', fimMes);
