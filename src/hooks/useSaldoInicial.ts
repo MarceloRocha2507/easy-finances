@@ -24,9 +24,10 @@ export function useSaldoInicial() {
 
   const { mutateAsync: atualizarSaldo, isPending: isUpdating } = useMutation({
     mutationFn: async (novoSaldo: number) => {
+      const valorArredondado = parseFloat(novoSaldo.toFixed(2));
       const { error } = await supabase
         .from('profiles')
-        .update({ saldo_inicial: novoSaldo })
+        .update({ saldo_inicial: valorArredondado })
         .eq('user_id', user!.id);
       
       if (error) throw error;
