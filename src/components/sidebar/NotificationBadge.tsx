@@ -9,7 +9,14 @@ interface NotificationBadgeProps {
 }
 
 export const NotificationBadge = memo(function NotificationBadge({ onClick }: NotificationBadgeProps) {
-  const { importantes: alertasCount, hasDanger } = useAlertasCount();
+  const { total: alertasCount, hasDanger, hasWarning } = useAlertasCount();
+
+  // Determina a cor do badge baseado na prioridade: danger > warning > info/success
+  const badgeColor = hasDanger 
+    ? "bg-destructive" 
+    : hasWarning 
+      ? "bg-amber-500" 
+      : "bg-primary";
 
   return (
     <Link 
@@ -22,7 +29,7 @@ export const NotificationBadge = memo(function NotificationBadge({ onClick }: No
         <span 
           className={cn(
             "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full text-[9px] font-bold text-white px-1",
-            hasDanger ? "bg-destructive" : "bg-primary"
+            badgeColor
           )}
         >
           {alertasCount > 9 ? "9+" : alertasCount}
