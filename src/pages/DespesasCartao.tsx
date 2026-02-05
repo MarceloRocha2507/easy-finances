@@ -84,6 +84,7 @@ import { AjustarFaturaDialog } from "@/components/cartoes/AjustarFaturaDialog";
 import { AdiantarFaturaDialog } from "@/components/cartoes/AdiantarFaturaDialog";
 import { EstornarCompraDialog } from "@/components/cartoes/EstornarCompraDialog";
 import { ExcluirFaturaDialog } from "@/components/cartoes/ExcluirFaturaDialog";
+import { DetalhesCompraCartaoDialog } from "@/components/cartoes/DetalhesCompraCartaoDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 /* ======================================================
@@ -155,6 +156,7 @@ export default function DespesasCartao() {
   const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
   const [adiantarFaturaOpen, setAdiantarFaturaOpen] = useState(false);
   const [excluirFaturaOpen, setExcluirFaturaOpen] = useState(false);
+  const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Hooks
@@ -735,7 +737,17 @@ export default function DespesasCartao() {
                   parcelasFiltradas.map((p) => (
                     <TableRow
                       key={p.id}
-                      className={cn(p.paga && "opacity-50 bg-emerald-500/5")}
+                      className={cn(
+                        "cursor-pointer",
+                        p.paga && "opacity-50 bg-emerald-500/5"
+                      )}
+                      onClick={(e) => {
+                        // Não abrir detalhes se clicou no checkbox ou nas ações
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button, [role="checkbox"], [data-action-cell]')) return;
+                        setParcelaSelecionada(p);
+                        setDetalhesCompraOpen(true);
+                      }}
                     >
                       <TableCell>
                         <Checkbox
@@ -832,7 +844,7 @@ export default function DespesasCartao() {
                         </span>
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell data-action-cell>
                         <div className="flex items-center justify-end gap-0.5">
                           <TooltipProvider>
                             <Tooltip>
@@ -1001,6 +1013,20 @@ export default function DespesasCartao() {
           />
         </>
       )}
+
+      <DetalhesCompraCartaoDialog
+        parcela={parcelaSelecionada}
+        open={detalhesCompraOpen}
+        onOpenChange={(open) => {
+          setDetalhesCompraOpen(open);
+          if (!open) setParcelaSelecionada(null);
+        }}
+        onEdit={(p) => {
+          setDetalhesCompraOpen(false);
+          setParcelaSelecionada(p);
+          setEditarCompraOpen(true);
+        }}
+      />
     </Layout>
   );
 }
