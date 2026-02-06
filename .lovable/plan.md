@@ -1,64 +1,59 @@
 
-# Detalhes de Compra do Cartao de Credito
 
-## Objetivo
+# Correção: Receitas/Despesas Infladas por Movimentações de Metas
 
-Criar um modal de detalhes para compras do cartao de credito, similar ao `TransactionDetailsDialog` ja existente para transacoes, mas adaptado para o tipo `ParcelaFatura`.
+## Problema
 
-## Abordagem
+Quando o usuário deposita e retira valores de metas, o sistema cria transações internas ("Depósito em Meta" como despesa, "Retirada de Meta" como receita). Essas transações sao necessarias para o calculo do saldo, mas estao sendo contabilizadas nos cards de **Receitas** e **Despesas** do Dashboard, inflando os valores exibidos.
 
-Criar um novo componente `DetalhesCompraCartaoDialog` que exibe todas as informacoes da compra/parcela ao clicar na linha da tabela, seguindo o mesmo design system do `TransactionDetailsDialog`.
+**Exemplo concreto:**
+- Depositar R$20 na meta -> cria expense R$20
+- Retirar R$20 da meta -> cria income R$20
+- Depositar R$20 -> cria expense R$20
+- Retirar R$20 -> cria income R$20
 
-## Componente: `DetalhesCompraCartaoDialog`
+O card "Receitas" mostra R$40 (2 retiradas), mas o usuario nao recebeu nenhum dinheiro real.
 
-**Arquivo:** `src/components/cartoes/DetalhesCompraCartaoDialog.tsx`
+## Solucao
 
-**Dados exibidos (hierarquia visual):**
+Filtrar transacoes das categorias "Deposito em Meta" e "Retirada de Meta" dos calculos de receitas/despesas **exibidas**, mantendo-as no calculo do **saldo disponivel** (que precisa delas para ficar correto).
 
-1. **Cabecalho** - Icone da categoria + descricao + badge de tipo (Estorno/Ajuste)
-2. **Valor em destaque** - Valor da parcela com fundo colorido (vermelho para debito, verde para credito/estorno)
-3. **Secao: Informacoes da Parcela**
-   - Status (Paga / Pendente) com badge colorido
-   - Parcela atual (ex: "3 de 12") com badge
-   - Valor unitario da parcela
-   - Mes de referencia
-4. **Secao: Informacoes da Compra**
-   - Data da compra
-   - Valor total da compra (calculado: valor parcela x total parcelas)
-   - Tipo de lancamento (Unica / Parcelada / Fixa)
-   - Categoria (com cor e nome)
-   - Responsavel
-5. **Secao: Registro**
-   - Ultima alteracao (tempo relativo)
-   - ID da parcela
+## Arquivos a Modificar
 
-**Botoes de acao (rodape):**
-- Fechar
-- Editar (abre `EditarCompraDialog`)
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/hooks/useTransactions.ts` | Filtrar categorias de meta nos calculos de `completedIncome` e `completedExpense` do `useCompleteStats` |
 
-## Integracao na Tabela (DespesasCartao.tsx)
+## Detalhes Tecnicos
 
-- Adicionar estado `detalhesCompraOpen` e reutilizar `parcelaSelecionada`
-- Tornar a linha da tabela (ou a celula de descricao) clicavel para abrir os detalhes
-- No mobile, adicionar opcao "Ver detalhes" no menu de acoes (DropdownMenu)
-- No desktop, ao clicar na linha abre o dialog diretamente
+### `useCompleteStats` (src/hooks/useTransactions.ts)
 
-## Arquivos a Criar/Modificar
+**Consulta do mes** (linhas 751-757): Adicionar join com `categories` para identificar o nome da categoria, e excluir "Deposito em Meta" / "Retirada de Meta" dos totais de receitas/despesas mensais.
 
-| Arquivo | Acao |
-|---------|------|
-| `src/components/cartoes/DetalhesCompraCartaoDialog.tsx` | **Criar** - Novo componente de detalhes |
-| `src/pages/DespesasCartao.tsx` | **Modificar** - Adicionar estado, tornar linhas clicaveis, importar dialog |
+Alternativa mais simples: buscar os IDs das categorias de meta do usuario e filtrar no calculo client-side.
 
-## Design
+```text
+Antes:
+  completedDoMes -> soma TODAS income como completedIncome
+                 -> soma TODAS expense como completedExpense
 
-- Seguir o padrao visual do `TransactionDetailsDialog`: icone com fundo colorido, valor em destaque centralizado, secoes com separadores, layout de chave-valor
-- Dialog com `sm:max-w-md`, `overflow-y-auto`, `max-h-[90vh]`, `overflow-x-hidden` (padrao global de modais)
-- Cores: vermelho para valores positivos (despesa no cartao), verde para estornos/creditos
-- Responsivo: funciona igualmente em mobile e desktop
+Depois:
+  completedDoMes -> soma income EXCETO "Retirada de Meta" como completedIncome
+                 -> soma expense EXCETO "Deposito em Meta" como completedExpense
+```
 
-## Interacao na Tabela
+**O calculo do saldo (allCompletedIncome/allCompletedExpense) continua incluindo tudo**, pois as movimentacoes de meta precisam afetar o saldo disponivel.
 
-- Desktop: clicar na linha abre detalhes (exceto nas colunas de checkbox e acoes)
-- Mobile: a linha inteira sera clicavel, substituindo a necessidade de botoes individuais que nao cabem na tela
-- Os botoes de acao (editar, estornar, excluir) continuam disponiveis dentro do dialog ou via menu contextual
+### Implementacao
+
+1. Na query `completedDoMes`, incluir `category_id` no select
+2. Buscar IDs das categorias "Deposito em Meta" e "Retirada de Meta" do usuario
+3. No loop que calcula `stats.completedIncome` e `stats.completedExpense`, pular transacoes cujo `category_id` corresponde a essas categorias
+
+### Resultado Esperado
+
+- Card "Receitas": mostra apenas receitas reais (salario, vendas, etc.)
+- Card "Despesas": mostra apenas despesas reais (compras, contas, etc.)
+- Saldo Disponivel: continua correto (inclui movimentacoes de meta no calculo)
+- Patrimonio Total: inalterado
+
