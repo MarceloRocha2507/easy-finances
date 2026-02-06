@@ -747,10 +747,19 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       if (allCompletedError) throw allCompletedError;
 
-      // 2. Buscar transações completed DO MÊS para receitas/despesas exibidas
+      // 2. Buscar IDs das categorias de meta para filtrar dos totais exibidos
+      const { data: metaCategories } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', user!.id)
+        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+
+      const metaCategoryIds = new Set((metaCategories || []).map(c => c.id));
+
+      // 3. Buscar transações completed DO MÊS para receitas/despesas exibidas
       const { data: completedDoMes, error: completedDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount')
+        .select('type, amount, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .gte('date', inicioMes)
@@ -818,11 +827,14 @@ export function useCompleteStats(mesReferencia?: Date) {
         allCompletedExpense,
       };
 
-      // Receitas e Despesas apenas do mês selecionado
+      // Receitas e Despesas apenas do mês selecionado (excluindo movimentações de meta)
       (completedDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
-        if (t.type === 'income') stats.completedIncome += amount;
-        else stats.completedExpense += amount;
+        const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
+        if (!isMetaCategory) {
+          if (t.type === 'income') stats.completedIncome += amount;
+          else stats.completedExpense += amount;
+        }
       });
 
       // Pendentes do mês
