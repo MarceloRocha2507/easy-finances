@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        if (event === 'SIGNED_IN' && session?.user && !registeredRef.current) {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !registeredRef.current) {
           registeredRef.current = true;
           setTimeout(() => {
             registerDeviceSession(session.user.id);
