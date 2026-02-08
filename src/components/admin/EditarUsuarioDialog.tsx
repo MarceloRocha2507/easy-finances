@@ -24,8 +24,10 @@ interface EditarUsuarioDialogProps {
   user: AdminUser | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (user_id: string, data: { email?: string; full_name?: string; tipo_plano?: TipoPlano }) => Promise<void>;
+  onSave: (user_id: string, data: { email?: string; full_name?: string; tipo_plano?: TipoPlano; dispositivos_extras?: number }) => Promise<void>;
 }
+
+const MAX_DISPOSITIVOS_EXTRAS = 5;
 
 const PLANOS = {
   teste: { label: "Período de Teste", dias: 7 },
@@ -39,12 +41,14 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [tipoPlano, setTipoPlano] = useState<TipoPlano>("mensal");
+  const [dispositivosExtras, setDispositivosExtras] = useState(0);
 
   useEffect(() => {
     if (user) {
       setEmail(user.email || "");
       setFullName(user.full_name || "");
       setTipoPlano(user.tipo_plano || "mensal");
+      setDispositivosExtras((user as any).dispositivos_extras ?? 0);
     }
   }, [user]);
 
@@ -57,7 +61,8 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
       await onSave(user.id, {
         email,
         full_name: fullName,
-        tipo_plano: tipoPlano
+        tipo_plano: tipoPlano,
+        dispositivos_extras: dispositivosExtras,
       });
       onOpenChange(false);
     } finally {
@@ -138,6 +143,21 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
             
             <p className="text-sm text-muted-foreground">
               Nova expiração: <strong>{getNovaExpiracao()}</strong>
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-dispositivos">Dispositivos Extras</Label>
+            <Input
+              id="edit-dispositivos"
+              type="number"
+              min={0}
+              max={MAX_DISPOSITIVOS_EXTRAS}
+              value={dispositivosExtras}
+              onChange={(e) => setDispositivosExtras(Math.min(MAX_DISPOSITIVOS_EXTRAS, Math.max(0, parseInt(e.target.value) || 0)))}
+            />
+            <p className="text-sm text-muted-foreground">
+              Limite total: <strong>base do plano + {dispositivosExtras} extra(s)</strong>
             </p>
           </div>
 

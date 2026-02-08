@@ -368,6 +368,42 @@ export type Database = {
           },
         ]
       }
+      device_sessions: {
+        Row: {
+          created_at: string
+          device_name: string
+          device_type: string
+          id: string
+          ip_address: string | null
+          is_active: boolean
+          last_active_at: string
+          session_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_name: string
+          device_type: string
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_active_at?: string
+          session_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_name?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_active_at?: string
+          session_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       historico_ajustes_saldo: {
         Row: {
           created_at: string
@@ -719,6 +755,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           data_expiracao: string | null
+          dispositivos_extras: number
           full_name: string | null
           id: string
           motivo_desativacao: string | null
@@ -732,6 +769,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           data_expiracao?: string | null
+          dispositivos_extras?: number
           full_name?: string | null
           id?: string
           motivo_desativacao?: string | null
@@ -745,6 +783,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           data_expiracao?: string | null
+          dispositivos_extras?: number
           full_name?: string | null
           id?: string
           motivo_desativacao?: string | null

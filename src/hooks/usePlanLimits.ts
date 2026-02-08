@@ -12,6 +12,7 @@ export interface PlanLimits {
   transacoesMes: number;
   responsaveis: number;
   regrasCategorizacao: number;
+  dispositivos: number;
 }
 
 const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
@@ -22,6 +23,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     transacoesMes: 50,
     responsaveis: 1,
     regrasCategorizacao: 5,
+    dispositivos: 1,
   },
   mensal: {
     cartoes: 5,
@@ -30,6 +32,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     transacoesMes: 200,
     responsaveis: 5,
     regrasCategorizacao: 15,
+    dispositivos: 1,
   },
   anual: {
     cartoes: 10,
@@ -38,6 +41,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     transacoesMes: 500,
     responsaveis: 10,
     regrasCategorizacao: 50,
+    dispositivos: 2,
   },
   ilimitado: {
     cartoes: Infinity,
@@ -46,6 +50,7 @@ const PLAN_LIMITS: Record<TipoPlano, PlanLimits> = {
     transacoesMes: Infinity,
     responsaveis: Infinity,
     regrasCategorizacao: Infinity,
+    dispositivos: Infinity,
   },
 };
 
@@ -56,6 +61,7 @@ export interface ResourceUsage {
   transacoesMes: number;
   responsaveis: number;
   regrasCategorizacao: number;
+  dispositivos: number;
 }
 
 export function usePlanLimits() {
@@ -63,20 +69,25 @@ export function usePlanLimits() {
   const { data: profile } = useProfile();
 
   const tipoPlano = (profile?.tipo_plano as TipoPlano) || "teste";
-  const limits = PLAN_LIMITS[tipoPlano] || PLAN_LIMITS.teste;
+  const dispositivosExtras = (profile as any)?.dispositivos_extras ?? 0;
+  const baseLimits = PLAN_LIMITS[tipoPlano] || PLAN_LIMITS.teste;
+  const limits: PlanLimits = {
+    ...baseLimits,
+    dispositivos: baseLimits.dispositivos === Infinity ? Infinity : baseLimits.dispositivos + dispositivosExtras,
+  };
 
   const { data: usage, isLoading } = useQuery({
     queryKey: ["resource-usage", user?.id],
     queryFn: async (): Promise<ResourceUsage> => {
       if (!user?.id) {
-        return { cartoes: 0, metas: 0, categorias: 0, transacoesMes: 0, responsaveis: 0, regrasCategorizacao: 0 };
+        return { cartoes: 0, metas: 0, categorias: 0, transacoesMes: 0, responsaveis: 0, regrasCategorizacao: 0, dispositivos: 0 };
       }
 
       const currentMonth = new Date();
       const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-      const [cartoesRes, metasRes, categoriasRes, transacoesRes, responsaveisRes, regrasRes] = await Promise.all([
+      const [cartoesRes, metasRes, categoriasRes, transacoesRes, responsaveisRes, regrasRes, dispositivosRes] = await Promise.all([
         supabase.from("cartoes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("metas").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("categories").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -88,6 +99,7 @@ export function usePlanLimits() {
           .lte("date", endOfMonth.toISOString().split("T")[0]),
         supabase.from("responsaveis").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("category_rules").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("device_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("is_active", true),
       ]);
 
       return {
@@ -97,6 +109,7 @@ export function usePlanLimits() {
         transacoesMes: transacoesRes.count ?? 0,
         responsaveis: responsaveisRes.count ?? 0,
         regrasCategorizacao: regrasRes.count ?? 0,
+        dispositivos: dispositivosRes.count ?? 0,
       };
     },
     enabled: !!user?.id,
@@ -109,6 +122,7 @@ export function usePlanLimits() {
     transacoesMes: 0,
     responsaveis: 0,
     regrasCategorizacao: 0,
+    dispositivos: 0,
   };
 
   const canCreate = (resource: keyof PlanLimits): boolean => {
