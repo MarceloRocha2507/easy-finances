@@ -195,16 +195,19 @@ export function useDeviceSessions() {
           table: 'device_sessions',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           const updated = payload.new as DeviceSession;
-          // If our session was deactivated by another device
+          // If our session was deactivated by another device (not by our own logout)
           if (updated.session_token === currentToken && !updated.is_active) {
+            // Check if user is still authenticated — if not, this was our own logout
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession) return; // Already logging out, ignore
+
             toast({
               title: 'Sessão encerrada',
               description: `Este dispositivo foi desconectado. Outro dispositivo pode ter atingido o limite. Verifique a segurança da sua conta.`,
               variant: 'destructive',
             });
-            // Sign out after a short delay
             setTimeout(() => {
               clearSessionToken();
               supabase.auth.signOut();
