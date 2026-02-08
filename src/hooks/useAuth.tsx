@@ -151,14 +151,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    if (user) {
-      try {
-        await deactivateCurrentSession(user.id);
-      } catch (e) {
-        console.warn('Erro ao desativar sessao do dispositivo:', e);
+    try {
+      if (user) {
+        try {
+          await deactivateCurrentSession(user.id);
+        } catch (e) {
+          console.warn('Erro ao desativar sessao do dispositivo:', e);
+        }
       }
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Erro ao fazer signOut:', e);
+    } finally {
+      setUser(null);
+      setSession(null);
+      clearSessionToken();
+      registeredRef.current = false;
     }
-    await supabase.auth.signOut();
   };
 
   return (
