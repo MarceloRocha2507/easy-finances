@@ -4,10 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Key, Mail, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useDeviceSessions } from '@/hooks/useDeviceSessions';
+import { Shield, Key, Mail, LogOut, CheckCircle2, AlertCircle, Monitor, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { 
   Dialog,
   DialogContent,
@@ -21,64 +26,53 @@ import {
 export default function Seguranca() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const {
+    sessions,
+    activeSessions,
+    isLoading: isLoadingDevices,
+    currentToken,
+    deviceLimit,
+    disconnectDevice,
+    isDisconnecting,
+  } = useDeviceSessions();
+
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({
-        title: 'Erro',
-        description: 'As senhas não coincidem.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'As senhas não coincidem.', variant: 'destructive' });
       return;
     }
-
     if (newPassword.length < 6) {
-      toast({
-        title: 'Erro',
-        description: 'A nova senha deve ter pelo menos 6 caracteres.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'A nova senha deve ter pelo menos 6 caracteres.', variant: 'destructive' });
       return;
     }
-
     setIsChangingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-
-      toast({
-        title: 'Senha alterada!',
-        description: 'Sua senha foi atualizada com sucesso.',
-      });
+      toast({ title: 'Senha alterada!', description: 'Sua senha foi atualizada com sucesso.' });
       setIsPasswordDialogOpen(false);
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      toast({
-        title: 'Erro ao alterar senha',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao alterar senha', description: error.message, variant: 'destructive' });
     } finally {
       setIsChangingPassword(false);
     }
   };
 
   const isEmailVerified = user?.email_confirmed_at != null;
+  const activeCount = activeSessions.length;
+  const limitDisplay = deviceLimit === Infinity ? '∞' : deviceLimit;
+  const usagePercent = deviceLimit === Infinity ? 0 : Math.min(100, (activeCount / deviceLimit) * 100);
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-xl font-semibold text-foreground">Segurança</h1>
           <p className="text-muted-foreground">Gerencie a segurança da sua conta</p>
@@ -94,7 +88,7 @@ export default function Seguranca() {
             <CardDescription>Gerencie suas credenciais de acesso</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Email Verification */}
+            {/* Email */}
             <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-muted-foreground" />
@@ -118,7 +112,7 @@ export default function Seguranca() {
               </div>
             </div>
 
-            {/* Change Password */}
+            {/* Password */}
             <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
                 <Key className="w-5 h-5 text-muted-foreground" />
@@ -129,43 +123,25 @@ export default function Seguranca() {
               </div>
               <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Alterar Senha
-                  </Button>
+                  <Button variant="outline" size="sm">Alterar Senha</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Alterar Senha</DialogTitle>
-                    <DialogDescription>
-                      Digite sua nova senha abaixo
-                    </DialogDescription>
+                    <DialogDescription>Digite sua nova senha abaixo</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="new-password">Nova Senha</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                      />
+                      <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Repita a nova senha"
-                      />
+                      <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repita a nova senha" />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
-                      Cancelar
-                    </Button>
+                    <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancelar</Button>
                     <Button onClick={handleChangePassword} disabled={isChangingPassword}>
                       {isChangingPassword ? 'Alterando...' : 'Alterar Senha'}
                     </Button>
@@ -176,25 +152,79 @@ export default function Seguranca() {
           </CardContent>
         </Card>
 
-        {/* Session Management */}
+        {/* Dispositivos Conectados */}
         <Card className="border">
           <CardHeader>
-            <CardTitle>Sessão Ativa</CardTitle>
-            <CardDescription>Informações sobre sua sessão atual</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 rounded-lg bg-secondary/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Dispositivo Atual</p>
-                  <p className="text-sm text-muted-foreground">Navegador Web</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-income"></div>
-                  <span className="text-sm text-muted-foreground">Ativo agora</span>
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="w-5 h-5" />
+                  Dispositivos Conectados
+                </CardTitle>
+                <CardDescription>Gerencie os dispositivos com acesso à sua conta</CardDescription>
               </div>
+              <Badge variant="outline" className="text-sm">
+                {activeCount}/{limitDisplay} ativos
+              </Badge>
             </div>
+            <Progress value={usagePercent} className="h-2 mt-2" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isLoadingDevices ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">Carregando dispositivos...</div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">Nenhum dispositivo registrado</div>
+            ) : (
+              sessions.map((session) => {
+                const isCurrentDevice = session.session_token === currentToken;
+                const DeviceIcon = session.device_type === 'mobile' ? Smartphone : Monitor;
+                const StatusIcon = session.is_active ? Wifi : WifiOff;
+
+                return (
+                  <div
+                    key={session.id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      isCurrentDevice ? 'bg-primary/5 border border-primary/20' : 'bg-secondary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        session.is_active ? 'bg-income/10' : 'bg-muted'
+                      }`}>
+                        <DeviceIcon className={`w-5 h-5 ${session.is_active ? 'text-income' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{session.device_name}</p>
+                          {isCurrentDevice && (
+                            <Badge variant="secondary" className="text-xs">Este dispositivo</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <StatusIcon className={`w-3 h-3 ${session.is_active ? 'text-income' : 'text-muted-foreground'}`} />
+                          <span className="text-xs text-muted-foreground">
+                            {session.is_active ? 'Ativo' : 'Inativo'}
+                            {' · '}
+                            {formatDistanceToNow(new Date(session.last_active_at), { addSuffix: true, locale: ptBR })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {!isCurrentDevice && session.is_active && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive border-destructive/30 hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => disconnectDevice(session.id)}
+                        disabled={isDisconnecting}
+                      >
+                        Desconectar
+                      </Button>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
