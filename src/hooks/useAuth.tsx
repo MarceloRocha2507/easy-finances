@@ -152,7 +152,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (user) {
-      await deactivateCurrentSession(user.id);
+      try {
+        await deactivateCurrentSession(user.id);
+      } catch (e) {
+        console.warn('Erro ao desativar sessao do dispositivo:', e);
+      }
     }
     await supabase.auth.signOut();
   };
