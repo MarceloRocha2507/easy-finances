@@ -1,62 +1,19 @@
 
 
-# Mensagens em Lote -- Organizadas e Somente com Despesas
+# Corrigir Scroll do Dialog "Mensagens em Lote"
 
-## Problema Atual
+## Problema
 
-1. As mensagens sao geradas para TODOS os cartoes selecionados, mesmo quando nao ha despesas no mes -- resultando em mensagens vazias ou com "0 compras"
-2. A mensagem consolidada fica longa e desorganizada quando ha muitos cartoes
+O dialog tem dois mecanismos de scroll conflitantes: o `DialogContent` (com `overflow-y-auto max-h-[90vh]`) e o `ScrollArea` interno (com `max-h-[50vh]`). Isso impede a rolagem correta do conteudo.
 
 ## Solucao
 
-### 1. `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Filtrar cartoes sem despesas
+No arquivo `src/components/cartoes/GerarMensagensLoteDialog.tsx`:
 
-**Na etapa de geracao:**
-- Apos gerar as mensagens, filtrar os resultados que nao tem despesas (mensagem vazia ou total zerado)
-- Mostrar apenas cartoes que efetivamente possuem compras no mes
+- Remover o `ScrollArea` da etapa de resultado e deixar o proprio `DialogContent` controlar o scroll (que ja possui `overflow-y-auto` e `max-h-[90vh]`)
+- Manter o `ScrollArea` apenas na etapa de selecao (lista de checkboxes), onde funciona corretamente dentro de um espaco menor
 
-**Na etapa de selecao:**
-- Indicar visualmente quais cartoes tem despesas no mes (opcional, melhoria de UX)
+## Detalhe tecnico
 
-### 2. `src/services/compras-cartao.ts` -- Retornar indicador de "sem despesas"
-
-Modificar `gerarMensagemFatura` para retornar string vazia (`""`) quando nao ha parcelas no mes para o responsavel/cartao selecionado. Isso permite ao dialog de lote identificar e ocultar cartoes sem despesas.
-
-Atualmente, se nao ha parcelas, a funcao ainda retorna uma mensagem com "Total: R$ 0,00". A mudanca e:
-- Se `parcelasFiltradas.length === 0`, retornar `""` (string vazia)
-- O dialog de lote filtra resultados com mensagem vazia
-
-### 3. `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Mensagem consolidada mais organizada
-
-A mensagem consolidada (ao copiar tudo) sera formatada de forma mais limpa:
-- Separador visual mais curto entre cartoes
-- Remover cartoes sem despesas do resultado
-- Exibir contador de "X cartoes com despesas de Y selecionados" no resultado
-- Se nenhum cartao tiver despesas, exibir aviso informativo
-
-## Detalhes Tecnicos
-
-### compras-cartao.ts -- gerarMensagemFatura
-
-Adicionar verificacao no inicio da funcao apos filtrar parcelas:
-
-```text
-Se parcelasFiltradas.length === 0:
-  retornar "" (string vazia)
-```
-
-Isso vale para todos os formatos (todos, resumido, detalhado). No formato "todos", verificar se o resumo por responsavel esta vazio.
-
-### GerarMensagensLoteDialog.tsx
-
-- Filtrar `resultados` para remover itens com `mensagem === ""` ou `erro === true`
-- Mostrar badge informativo: "3 de 5 cartoes com despesas"
-- Se todos os cartoes retornarem vazio, exibir estado vazio com icone e mensagem "Nenhum cartao possui despesas neste mes"
-
-## Arquivos a Modificar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/services/compras-cartao.ts` | Retornar string vazia quando nao ha parcelas |
-| `src/components/cartoes/GerarMensagensLoteDialog.tsx` | Filtrar cartoes sem despesas e melhorar organizacao visual |
+A mudanca e simples: na etapa "resultado", substituir `<ScrollArea className="max-h-[50vh]"><div className="space-y-4 pr-3">` por apenas `<div className="space-y-4">`, removendo a restricao de altura que conflita com o scroll do dialog pai.
 
