@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { gerarMensagemFatura } from "@/services/compras-cartao";
+import { gerarMensagemLote } from "@/services/compras-cartao";
 import { CartaoComResumo } from "@/services/cartoes";
 import { useResponsaveis } from "@/services/responsaveis";
 import {
@@ -27,7 +27,6 @@ import {
   Check,
   FileText,
   MessageCircle,
-  CreditCard,
   AlertCircle,
   ArrowLeft,
   Users,
@@ -39,14 +38,6 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-type ResultadoCartao = {
-  cartaoId: string;
-  nomeCartao: string;
-  cor: string;
-  mensagem: string;
-  erro: boolean;
-};
 
 type Etapa = "selecao" | "resultado";
 
@@ -61,19 +52,17 @@ export function GerarMensagensLoteDialog({
   const [etapa, setEtapa] = useState<Etapa>("selecao");
   const [cartoesSelecionados, setCartoesSelecionados] = useState<Set<string>>(new Set());
   const [responsavelId, setResponsavelId] = useState("todos");
-  const [resultados, setResultados] = useState<ResultadoCartao[]>([]);
+  const [mensagemFinal, setMensagemFinal] = useState("");
   const [loading, setLoading] = useState(false);
-  const [copiadoTudo, setCopiadoTudo] = useState(false);
-  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   const resetState = useCallback(() => {
     setEtapa("selecao");
     setCartoesSelecionados(new Set());
     setResponsavelId("todos");
-    setResultados([]);
+    setMensagemFinal("");
     setLoading(false);
-    setCopiadoTudo(false);
-    setCopiadoId(null);
+    setCopiado(false);
   }, []);
 
   const handleOpenChange = (value: boolean) => {
@@ -101,69 +90,38 @@ export function GerarMensagensLoteDialog({
   const handleGerar = async () => {
     setEtapa("resultado");
     setLoading(true);
-    setResultados([]);
+    setMensagemFinal("");
 
-    const selecionados = cartoes.filter((c) => cartoesSelecionados.has(c.id));
+    const ids = cartoes.filter((c) => cartoesSelecionados.has(c.id)).map((c) => c.id);
     const respId = responsavelId === "todos" ? null : responsavelId;
-    const formato = responsavelId === "todos" ? "todos" : "detalhado";
 
-    const promises = selecionados.map(async (cartao) => {
-      try {
-        const msg = await gerarMensagemFatura(cartao.id, mesReferencia, respId, formato as any);
-        return { cartaoId: cartao.id, nomeCartao: cartao.nome, cor: cartao.cor || "#6366f1", mensagem: msg, erro: false } as ResultadoCartao;
-      } catch {
-        return { cartaoId: cartao.id, nomeCartao: cartao.nome, cor: cartao.cor || "#6366f1", mensagem: "Erro ao gerar mensagem", erro: true } as ResultadoCartao;
-      }
-    });
-
-    const results = await Promise.allSettled(promises);
-    const mapped = results.map((r) =>
-      r.status === "fulfilled" ? r.value : { cartaoId: "", nomeCartao: "Erro", cor: "#ef4444", mensagem: "Falha inesperada", erro: true } as ResultadoCartao
-    );
-
-    // Filtrar cartões sem despesas (mensagem vazia)
-    const comDespesas = mapped.filter((r) => !r.erro && r.mensagem.trim() !== "");
-    const semDespesas = mapped.filter((r) => !r.erro && r.mensagem.trim() === "");
-    // Manter apenas os com despesas + erros
-    setResultados([...comDespesas, ...mapped.filter((r) => r.erro)]);
-    setLoading(false);
-  };
-
-  const resultadosComMensagem = resultados.filter((r) => !r.erro && r.mensagem.trim() !== "");
-
-  const mensagemConsolidada = resultadosComMensagem
-    .map((r) => r.mensagem)
-    .join("\n\n---\n\n");
-
-  const handleCopiarTudo = async () => {
     try {
-      await navigator.clipboard.writeText(mensagemConsolidada);
-      setCopiadoTudo(true);
-      toast({ title: "Todas as mensagens copiadas!" });
-      setTimeout(() => setCopiadoTudo(false), 2000);
+      const msg = await gerarMensagemLote(ids, mesReferencia, respId);
+      setMensagemFinal(msg);
     } catch {
-      toast({ title: "Erro ao copiar", variant: "destructive" });
+      toast({ title: "Erro ao gerar mensagem", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCopiarIndividual = async (cartaoId: string, mensagem: string) => {
+  const handleCopiar = async () => {
     try {
-      await navigator.clipboard.writeText(mensagem);
-      setCopiadoId(cartaoId);
+      await navigator.clipboard.writeText(mensagemFinal);
+      setCopiado(true);
       toast({ title: "Mensagem copiada!" });
-      setTimeout(() => setCopiadoId(null), 2000);
+      setTimeout(() => setCopiado(false), 2000);
     } catch {
       toast({ title: "Erro ao copiar", variant: "destructive" });
     }
   };
 
   const handleWhatsApp = () => {
-    const encoded = encodeURIComponent(mensagemConsolidada);
+    const encoded = encodeURIComponent(mensagemFinal);
     window.open(`https://wa.me/?text=${encoded}`, "_blank");
   };
 
   const nomeMes = mesReferencia.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-  const sucessos = resultadosComMensagem.length;
   const todosChecked = cartoesSelecionados.size === cartoes.length && cartoes.length > 0;
   const algunsChecked = cartoesSelecionados.size > 0 && !todosChecked;
 
@@ -179,8 +137,10 @@ export function GerarMensagensLoteDialog({
             {etapa === "selecao"
               ? `Selecione os cartões e o responsável — ${nomeMes}`
               : loading
-                ? `Gerando mensagens de ${cartoesSelecionados.size} cartão(ões)...`
-                : `${sucessos} de ${cartoesSelecionados.size} cartão(ões) com despesas — ${nomeMes}`}
+                ? `Gerando mensagem de ${cartoesSelecionados.size} cartão(ões)...`
+                : mensagemFinal
+                  ? `Mensagem consolidada — ${nomeMes}`
+                  : `Nenhum cartão com despesas — ${nomeMes}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -262,20 +222,11 @@ export function GerarMensagensLoteDialog({
         ) : (
           <div className="space-y-4 py-2">
             {loading ? (
-              <div className="space-y-4">
-                {cartoes
-                  .filter((c) => cartoesSelecionados.has(c.id))
-                  .map((c) => (
-                    <div key={c.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: c.cor || "#6366f1" }} />
-                        <Skeleton className="h-4 w-32" />
-                      </div>
-                      <Skeleton className="h-24 w-full" />
-                    </div>
-                  ))}
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-40 w-full" />
               </div>
-            ) : resultados.length === 0 ? (
+            ) : !mensagemFinal ? (
               <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-3">
                 <AlertCircle className="h-10 w-10" />
                 <p className="text-sm font-medium">Nenhum cartão possui despesas neste mês</p>
@@ -285,55 +236,20 @@ export function GerarMensagensLoteDialog({
               </div>
             ) : (
               <>
-                <div className="space-y-4">
-                    {resultados.map((resultado) => (
-                      <div key={resultado.cartaoId} className="rounded-xl border overflow-hidden">
-                        <div
-                          className="flex items-center justify-between px-4 py-2.5"
-                          style={{ backgroundColor: `${resultado.cor}10` }}
-                        >
-                          <div className="flex items-center gap-2">
-                            {resultado.erro ? (
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                            ) : (
-                              <CreditCard className="h-4 w-4" style={{ color: resultado.cor }} />
-                            )}
-                            <span className="font-medium text-sm">{resultado.nomeCartao}</span>
-                          </div>
-                          {!resultado.erro && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 gap-1.5 text-xs"
-                              onClick={() => handleCopiarIndividual(resultado.cartaoId, resultado.mensagem)}
-                            >
-                              {copiadoId === resultado.cartaoId ? (
-                                <><Check className="h-3 w-3" /> Copiado</>
-                              ) : (
-                                <><Copy className="h-3 w-3" /> Copiar</>
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                        <Textarea
-                          value={resultado.mensagem}
-                          readOnly
-                          className="border-0 rounded-none font-mono text-xs resize-none min-h-[120px] focus-visible:ring-0"
-                        />
-                      </div>
-                    ))}
-                </div>
+                <Textarea
+                  value={mensagemFinal}
+                  readOnly
+                  className="font-mono text-xs resize-none min-h-[250px]"
+                />
 
-                {sucessos > 0 && (
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Button variant="outline" className="gap-2" onClick={handleCopiarTudo}>
-                      {copiadoTudo ? <><Check className="h-4 w-4" /> Copiado!</> : <><Copy className="h-4 w-4" /> Copiar Tudo</>}
-                    </Button>
-                    <Button className="gap-2" onClick={handleWhatsApp}>
-                      <MessageCircle className="h-4 w-4" /> Enviar WhatsApp
-                    </Button>
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="gap-2" onClick={handleCopiar}>
+                    {copiado ? <><Check className="h-4 w-4" /> Copiado!</> : <><Copy className="h-4 w-4" /> Copiar</>}
+                  </Button>
+                  <Button className="gap-2" onClick={handleWhatsApp}>
+                    <MessageCircle className="h-4 w-4" /> Enviar WhatsApp
+                  </Button>
+                </div>
 
                 <Button
                   variant="ghost"

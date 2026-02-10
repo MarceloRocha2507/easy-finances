@@ -394,6 +394,108 @@ export async function gerarMensagemFatura(
 }
 
 /* ======================================================
+   GERAR MENSAGEM EM LOTE (FORMATO COMPACTO)
+====================================================== */
+
+function abreviarNome(nome: string, max: number = 20): string {
+  if (nome.length <= max) return nome;
+  return nome.slice(0, max - 3).trimEnd() + "...";
+}
+
+export async function gerarMensagemLote(
+  cartaoIds: string[],
+  mesReferencia: Date,
+  responsavelId: string | null
+): Promise<string> {
+  if (cartaoIds.length === 0) return "";
+
+  // Buscar info de todos os cartões
+  const { data: cartoes } = await (supabase as any)
+    .from("cartoes")
+    .select("id, nome, dia_vencimento")
+    .in("id", cartaoIds);
+
+  if (!cartoes || cartoes.length === 0) return "";
+
+  // Buscar parcelas de cada cartão em paralelo
+  const resultados = await Promise.all(
+    cartaoIds.map(async (cartaoId) => {
+      const parcelas = await listarParcelasDaFatura(cartaoId, mesReferencia);
+      const cartao = cartoes.find((c: any) => c.id === cartaoId);
+      return { cartaoId, cartao, parcelas };
+    })
+  );
+
+  // Filtrar por responsável e remover cartões sem despesas
+  let nomeResponsavel = "";
+  const cartoesComDespesas = resultados
+    .map(({ cartao, parcelas }) => {
+      let filtradas = parcelas;
+      if (responsavelId) {
+        filtradas = parcelas.filter((p) => p.responsavel_id === responsavelId);
+      }
+      if (filtradas.length > 0 && responsavelId && !nomeResponsavel) {
+        nomeResponsavel = filtradas[0].responsavel_apelido || filtradas[0].responsavel_nome || "";
+      }
+      return { cartao, parcelas: filtradas };
+    })
+    .filter(({ parcelas }) => parcelas.length > 0);
+
+  if (cartoesComDespesas.length === 0) return "";
+
+  // Cabeçalho
+  const meses = [
+    "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
+    "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO",
+  ];
+  const nomeMes = meses[mesReferencia.getMonth()];
+  const ano = mesReferencia.getFullYear();
+  let msg = `📊 FATURAS - ${nomeMes}/${ano}\n`;
+
+  let totalGeral = 0;
+
+  for (const { cartao, parcelas } of cartoesComDespesas) {
+    const totalCartao = parcelas.reduce((sum, p) => sum + Math.abs(p.valor), 0);
+    totalGeral += totalCartao;
+
+    // Data vencimento DD/MM
+    const diaVenc = cartao?.dia_vencimento || 10;
+    const mesVenc = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, diaVenc);
+    const ddmm = `${String(mesVenc.getDate()).padStart(2, "0")}/${String(mesVenc.getMonth() + 1).padStart(2, "0")}`;
+
+    msg += `\n💳 ${cartao?.nome || "Cartão"} [${ddmm}]: ${formatarMoeda(totalCartao)}\n`;
+
+    // Agrupar compras em pares de 2 por linha
+    const comprasOrdenadas = [...parcelas].sort(
+      (a, b) => new Date(a.data_compra).getTime() - new Date(b.data_compra).getTime()
+    );
+
+    for (let i = 0; i < comprasOrdenadas.length; i += 2) {
+      const c1 = comprasOrdenadas[i];
+      const item1 = `${abreviarNome(c1.descricao)}: ${formatarMoeda(c1.valor)}`;
+
+      if (i + 1 < comprasOrdenadas.length) {
+        const c2 = comprasOrdenadas[i + 1];
+        const item2 = `${abreviarNome(c2.descricao)}: ${formatarMoeda(c2.valor)}`;
+        msg += `   • ${item1} | ${item2}\n`;
+      } else {
+        msg += `   • ${item1}\n`;
+      }
+    }
+  }
+
+  // Rodapé
+  msg += `\n`;
+  if (responsavelId && nomeResponsavel) {
+    msg += `Responsável: ${nomeResponsavel} | Total: ${formatarMoeda(totalGeral)}`;
+  } else {
+    msg += `Total: ${formatarMoeda(totalGeral)}`;
+  }
+
+  return msg;
+}
+
+/* ======================================================
    EDITAR COMPRA
 ====================================================== */
 
