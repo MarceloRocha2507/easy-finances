@@ -1,50 +1,61 @@
 
 
-# Corrigir Validacao do Modo "Dividir Valores"
+# Corrigir Total Informado para Mostrar Valor Real da Fatura
 
 ## Problema
 
-O `totalDividido` soma apenas os valores dos responsaveis com total positivo (ignora ajustes negativos). Porem, a validacao (`dividirValido`) compara esse total com `totalFatura`, que inclui os ajustes negativos.
+O "Total informado" mostra R$ 912,32 como alvo, que e a soma apenas dos valores positivos. Porem o valor correto da fatura e R$ 906,17 (que ja inclui o ajuste negativo de -R$ 6,15). O usuario espera ver R$ 906,17 como alvo.
 
-```
-totalDividido = 726,69 + 182,48 + 48,40 = 957,57 (ou qualquer soma dos positivos)
-totalFatura   = 798,79 + 65,13 + 48,40 + (-6,15) = 906,17
+## Causa
 
-Nunca vao bater porque um inclui -6,15 e o outro nao.
-```
+Na correcao anterior, separamos os negativos do calculo e comparamos contra `totalPositivos` (912,32). Mas o correto e incluir os negativos no `totalDividido` e comparar contra `totalFatura` (906,17).
+
+Verificacao com valores padrao:
+- Positivos editaveis: 798,79 + 65,13 + 48,40 = 912,32
+- Ajuste fixo: -6,15
+- totalDividido = 912,32 + (-6,15) = 906,17 = totalFatura
 
 ## Solucao
 
-Criar um `totalPositivos` (soma dos `r.total` onde `r.total > 0`) e usar esse valor como alvo da validacao, em vez de `totalFatura`.
+Duas alteracoes no arquivo `src/components/cartoes/PagarFaturaDialog.tsx`:
 
-### Arquivo: `src/components/cartoes/PagarFaturaDialog.tsx`
+### 1. Voltar a incluir negativos no `totalDividido`
 
-**1. Adicionar `totalPositivos`:**
-
+Linha ~117, de:
 ```typescript
-const totalPositivos = useMemo(() => {
-  return responsaveis
-    .filter(r => r.total > 0)
-    .reduce((sum, r) => sum + r.total, 0);
-}, [responsaveis]);
+if (r.total <= 0) return sum; // ajuste já refletido no totalFatura
+```
+Para:
+```typescript
+if (r.total <= 0) return sum + r.total; // ajuste fixo incluído na soma
 ```
 
-**2. Alterar `dividirValido` para comparar com `totalPositivos`:**
+### 2. Comparar `dividirValido` contra `totalFatura` (nao `totalPositivos`)
 
+Linha ~126, de:
 ```typescript
-const dividirValido = useMemo(() => {
-  if (modo !== "dividir_valores") return true;
-  return Math.abs(totalDividido - totalPositivos) < 0.01;
+return Math.abs(totalDividido - totalPositivos) < 0.01;
 }, [modo, totalDividido, totalPositivos]);
 ```
-
-**3. Atualizar o totalizador visual** para mostrar `totalPositivos` em vez de `totalFatura`:
-
+Para:
+```typescript
+return Math.abs(totalDividido - totalFatura) < 0.01;
+}, [modo, totalDividido, totalFatura]);
 ```
-Total informado: R$ 957,57 / R$ 912,32
+
+### 3. Mostrar `totalFatura` no totalizador visual
+
+Linha ~407, de:
+```typescript
+{formatCurrency(totalDividido)} / {formatCurrency(totalPositivos)}
+```
+Para:
+```typescript
+{formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
 ```
 
-Assim o usuario distribui apenas a parte positiva entre os responsaveis, e os ajustes negativos ficam separados (ja refletidos no `totalFatura` para o resumo final).
+## Resultado
 
-**4. O resumo final ("Valor que eu pago")** continua usando `totalFatura` normalmente -- a unica mudanca e no alvo de validacao do modo dividir.
+Com valores padrao: "R$ 906,17 / R$ 906,17" -- bate e permite confirmar.
+Se o usuario alterar os valores editaveis, a soma (com ajuste) precisa continuar batendo com R$ 906,17.
 
