@@ -99,6 +99,13 @@ export function PagarFaturaDialog({
     return responsaveis.reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis]);
 
+  // Total apenas dos responsáveis com valor positivo (alvo do modo dividir)
+  const totalPositivos = useMemo(() => {
+    return responsaveis
+      .filter(r => r.total > 0)
+      .reduce((sum, r) => sum + r.total, 0);
+  }, [responsaveis]);
+
   // Total que terceiros pagaram (quando "cada um pagou sua parte")
   const totalRecebido = useMemo(() => {
     if (modo === "eu_pago_tudo") return 0;
@@ -119,8 +126,8 @@ export function PagarFaturaDialog({
 
   const dividirValido = useMemo(() => {
     if (modo !== "dividir_valores") return true;
-    return Math.abs(totalDividido - totalFatura) < 0.01;
-  }, [modo, totalDividido, totalFatura]);
+    return Math.abs(totalDividido - totalPositivos) < 0.01;
+  }, [modo, totalDividido, totalPositivos]);
 
   // Valor que EU (titular) vou pagar ao banco
   const valorQueEuPago = useMemo(() => {
@@ -397,7 +404,7 @@ export function PagarFaturaDialog({
                     Total informado
                   </span>
                   <span className="font-semibold">
-                    {formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
+                    {formatCurrency(totalDividido)} / {formatCurrency(totalPositivos)}
                   </span>
                 </div>
               </div>
