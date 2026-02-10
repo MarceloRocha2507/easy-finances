@@ -118,7 +118,7 @@ export function PagarFaturaDialog({
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
     return responsaveis.reduce((sum, r) => {
-      if (r.total <= 0) return sum + r.total; // ajuste fixo incluído na soma
+      if (r.total <= 0) return sum; // ajuste já incluído no totalFatura
       const val = parseBrazilianCurrency(r.valorCustom);
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
