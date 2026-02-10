@@ -1565,3 +1565,46 @@ export async function desfazerAdiantamento(result: AdiantarFaturaResult): Promis
     .delete()
     .eq("id", result.transactionId);
 }
+
+/* ======================================================
+   Desmarcar todas as parcelas pagas de uma fatura
+====================================================== */
+
+export async function desmarcarTodasParcelas(cartaoId: string, mesReferencia: Date) {
+  const mesKey = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
+
+  // Buscar IDs das parcelas pagas do mês
+  const { data: parcelas, error: fetchError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .select("id, compra_id")
+    .eq("paga", true)
+    .eq("mes_referencia", mesKey)
+    .eq("ativo", true);
+
+  if (fetchError) throw fetchError;
+  if (!parcelas || parcelas.length === 0) return 0;
+
+  // Filtrar apenas parcelas do cartão correto
+  const compraIds = [...new Set(parcelas.map((p: any) => p.compra_id))];
+  const { data: compras, error: comprasError } = await (supabase as any)
+    .from("compras_cartao")
+    .select("id")
+    .in("id", compraIds)
+    .eq("cartao_id", cartaoId);
+
+  if (comprasError) throw comprasError;
+  const comprasDoCartao = new Set((compras || []).map((c: any) => c.id));
+  const parcelasDoCartao = parcelas.filter((p: any) => comprasDoCartao.has(p.compra_id));
+
+  if (parcelasDoCartao.length === 0) return 0;
+
+  const ids = parcelasDoCartao.map((p: any) => p.id);
+  const { error: updateError } = await (supabase as any)
+    .from("parcelas_cartao")
+    .update({ paga: false })
+    .in("id", ids);
+
+  if (updateError) throw updateError;
+
+  return ids.length;
+}

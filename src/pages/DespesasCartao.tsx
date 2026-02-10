@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ import {
   marcarParcelaComoPaga,
   calcularResumoPorResponsavel,
   ResumoResponsavel,
+  desmarcarTodasParcelas,
 } from "@/services/compras-cartao";
 import { useResponsaveis } from "@/services/responsaveis";
 import { Cartao } from "@/services/cartoes";
@@ -85,7 +86,18 @@ import { AdiantarFaturaDialog } from "@/components/cartoes/AdiantarFaturaDialog"
 import { EstornarCompraDialog } from "@/components/cartoes/EstornarCompraDialog";
 import { ExcluirFaturaDialog } from "@/components/cartoes/ExcluirFaturaDialog";
 import { DetalhesCompraCartaoDialog } from "@/components/cartoes/DetalhesCompraCartaoDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 /* ======================================================
    Utils
@@ -157,6 +169,7 @@ export default function DespesasCartao() {
   const [adiantarFaturaOpen, setAdiantarFaturaOpen] = useState(false);
   const [excluirFaturaOpen, setExcluirFaturaOpen] = useState(false);
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
+  const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
 
   // Hooks
@@ -209,6 +222,20 @@ export default function DespesasCartao() {
       setLoading(false);
     }
   }
+
+  const handleDesmarcarPagas = useCallback(async () => {
+    if (!id) return;
+    try {
+      const count = await desmarcarTodasParcelas(id, mesRef);
+      toast.success(`${count} compra(s) desmarcada(s) como paga(s)`);
+      carregarFatura();
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao desmarcar compras pagas");
+    } finally {
+      setDesmarcarPagasOpen(false);
+    }
+  }, [id, mesRef]);
 
   useEffect(() => {
     if (!id) return;
@@ -373,6 +400,13 @@ export default function DespesasCartao() {
                     Adiantar pagamento
                   </DropdownMenuItem>
                   <DropdownMenuItem 
+                    onClick={() => setDesmarcarPagasOpen(true)} 
+                    disabled={totalPago === 0}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Desmarcar pagas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
                     onClick={() => setExcluirFaturaOpen(true)} 
                     disabled={parcelas.length === 0}
                     className="text-destructive"
@@ -411,6 +445,22 @@ export default function DespesasCartao() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Adicionar crédito ou débito avulso</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => setDesmarcarPagasOpen(true)} 
+                      className="gap-1"
+                      disabled={totalPago === 0}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Desmarcar todas as compras pagas</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <TooltipProvider>
@@ -1027,6 +1077,21 @@ export default function DespesasCartao() {
           setEditarCompraOpen(true);
         }}
       />
+
+      <AlertDialog open={desmarcarPagasOpen} onOpenChange={setDesmarcarPagasOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desmarcar todas as compras pagas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as compras marcadas como pagas neste mês serão desmarcadas. Essa ação não pode ser desfeita automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDesmarcarPagas}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
