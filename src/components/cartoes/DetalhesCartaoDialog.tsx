@@ -4,9 +4,11 @@ import {
   listarParcelasDaFatura,
   ParcelaFatura,
   marcarParcelaComoPaga,
+  desmarcarTodasParcelas,
 } from "@/services/compras-cartao";
 import { useAcertosMes } from "@/services/acertos";
 import { useResponsaveis } from "@/services/responsaveis";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -15,6 +17,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,6 +132,7 @@ export function DetalhesCartaoDialog({
   const [pagarFaturaOpen, setPagarFaturaOpen] = useState(false);
   const [registrarAcertoOpen, setRegistrarAcertoOpen] = useState(false);
   const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
+  const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
 
   // Dialogs da compra
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
@@ -154,6 +167,20 @@ export function DetalhesCartaoDialog({
       setErro("Não foi possível carregar a fatura.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDesmarcarPagas() {
+    if (!cartao) return;
+    try {
+      const count = await desmarcarTodasParcelas(cartao.id, mesRef);
+      toast.success(`${count} compra(s) desmarcada(s)`);
+      carregarFatura();
+      refetchAcertos();
+      onUpdated();
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao desmarcar parcelas pagas");
     }
   }
 
@@ -301,6 +328,13 @@ export function DetalhesCartaoDialog({
                         <Upload className="h-4 w-4 mr-2" />
                         Importar compras
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={totalPago === 0}
+                        onClick={() => setDesmarcarPagasOpen(true)}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Desmarcar pagas
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -353,6 +387,22 @@ export function DetalhesCartaoDialog({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Importar compras</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          disabled={totalPago === 0}
+                          onClick={() => setDesmarcarPagasOpen(true)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Desmarcar pagas</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
@@ -675,6 +725,24 @@ export function DetalhesCartaoDialog({
           onUpdated();
         }}
       />
+
+      {/* AlertDialog desmarcar pagas */}
+      <AlertDialog open={desmarcarPagasOpen} onOpenChange={setDesmarcarPagasOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desmarcar todas as pagas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as compras marcadas como pagas neste mês ({formatCurrency(totalPago)}) serão desmarcadas. Esta ação pode ser revertida marcando-as novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDesmarcarPagas}>
+              Desmarcar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
