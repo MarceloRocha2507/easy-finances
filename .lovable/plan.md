@@ -1,50 +1,53 @@
 
-
-# Corrigir Soma no Modo "Dividir Valores"
+# Incluir Ajustes de Fatura (valores negativos) no modo "Dividir Valores"
 
 ## Problema
 
-A funcao `calcularResumoPorResponsavel` pode retornar responsaveis com **total negativo** (causado por estornos ou creditos). Esses registros:
-
-1. Tem seu `valorCustom` inicializado com valor negativo (ex: "-6,15")
-2. Podem ficar ocultos na ScrollArea (o usuario nao percebe que existem)
-3. Sao incluidos na soma do `totalDividido`, reduzindo o total de forma inesperada
-
-Exemplo: 726,68 + 182,49 + 0 + (-6,15) = 903,02 (em vez de 909,17)
+Ao filtrar responsaveis com `total <= 0`, eles deixam de aparecer na lista e seus valores negativos nao sao somados no `totalDividido`. Porem, o `totalFatura` inclui esses negativos (ex: 906,17). Resultado: a soma dos valores positivos (ex: 909,17) nunca bate com o total da fatura (906,17), porque falta o ajuste de -3,00 (ou qualquer valor negativo).
 
 ## Solucao
 
-### `src/components/cartoes/PagarFaturaDialog.tsx`
+Em vez de esconder os responsaveis com total negativo, **mostrar todos** no modo `dividir_valores`. Responsaveis com `total <= 0` serao exibidos como **"Ajuste de fatura"** com valor fixo (nao editavel) e somados automaticamente no total.
 
-Duas mudancas:
+## Alteracoes em `src/components/cartoes/PagarFaturaDialog.tsx`
 
-**1. Filtrar responsaveis com total <= 0 no modo dividir_valores:**
+### 1. Remover `responsaveisDividir`
 
-Na inicializacao dos responsaveis (useEffect), manter todos os responsaveis no estado (para os outros modos funcionarem), mas adicionar um `useMemo` separado que filtra apenas os que tem `total > 0` para exibicao e calculo no modo `dividir_valores`.
+Nao sera mais necessario filtrar. Todos os responsaveis participam do calculo e da exibicao.
+
+### 2. Atualizar `totalDividido`
+
+Somar todos os responsaveis: para os que tem `total > 0`, usar o `valorCustom` digitado; para os que tem `total <= 0`, usar o valor fixo (`r.total`).
 
 ```
-const responsaveisDividir = useMemo(() => {
-  return responsaveis.filter(r => r.total > 0);
-}, [responsaveis]);
+const totalDividido = useMemo(() => {
+  if (modo !== "dividir_valores") return 0;
+  return responsaveis.reduce((sum, r) => {
+    if (r.total <= 0) return sum + r.total; // ajuste fixo
+    const val = parseBrazilianCurrency(r.valorCustom);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+}, [responsaveis, modo]);
 ```
 
-**2. Usar `responsaveisDividir` no calculo do totalDividido e na renderizacao:**
+### 3. Atualizar a lista de inputs
 
-- O `totalDividido` deve somar apenas `responsaveisDividir`
-- A lista de inputs no modo `dividir_valores` deve iterar `responsaveisDividir`
-- O `totalFatura` permanece usando todos os responsaveis (para manter o valor correto da fatura)
+Voltar a iterar `responsaveis` (todos). Para cada um:
+- Se `total > 0`: exibir Input editavel (como hoje)
+- Se `total <= 0`: exibir o valor fixo (sem Input), com label "Ajuste de fatura" e estilo diferenciado (ex: texto em azul/verde, fundo diferente)
 
-**3. Ajustar validacao:**
+### 4. Logica de salvamento
 
-O `totalDividido` deve ser comparado com `totalFatura` (que ja inclui estornos), entao a validacao `dividirValido` precisa comparar com o total real da fatura.
+Nenhuma mudanca necessaria -- responsaveis com valor negativo nao geram acerto (o filtro `a.valor > 0` no `handleConfirmar` ja os exclui).
 
-Mas como estamos ignorando os responsaveis negativos na soma, precisamos comparar `totalDividido` com a soma apenas dos positivos, OU comparar com o `totalFatura` e ajustar.
+## Resultado esperado
 
-A abordagem mais simples: o `totalFatura` ja reflete o valor correto da fatura (com estornos descontados = 906,17). A validacao compara `totalDividido` com `totalFatura`. O usuario distribui o valor total da fatura entre os responsaveis com saldo positivo.
+| Responsavel | Deve | Valor digitado | Editavel |
+|---|---|---|---|
+| Eu (titular) | R$ 798,79 | 726,68 | Sim |
+| Mae | R$ 65,13 | 182,49 | Sim |
+| Pai | R$ 48,40 | 48,40 | Sim |
+| Ajuste de fatura | -R$ 6,15 | -6,15 | Nao |
+| **Total** | | **951,42 + (-6,15) = ...** | |
 
-## Arquivo a modificar
-
-| Arquivo | Alteracao |
-|---|---|
-| `src/components/cartoes/PagarFaturaDialog.tsx` | Filtrar responsaveis com total <= 0 no modo dividir_valores para calculo e exibicao |
-
+Assim a soma sempre bate com o `totalFatura` que ja inclui os ajustes negativos.
