@@ -1,62 +1,46 @@
 
 
-# Registrar Pagamento por Quantidade/Pessoa
+# Corrigir Calculo de Valores no "Dividir Valores"
 
-## Objetivo
+## Problema Identificado
 
-Adicionar um novo modo de pagamento no dialog "Pagar Fatura" onde o usuario pode informar quanto cada pessoa pagou. Exemplo: "Eu paguei R$ 500, mae pagou R$ 300, irmao pagou R$ 200".
+A funcao `calcularResumoPorResponsavel` em `src/services/compras-cartao.ts` sempre define `is_titular: false` (linha 219), ignorando o campo `is_titular` que ja vem do banco de dados atraves do JOIN com a tabela `responsaveis`.
 
-## O que muda
+Isso causa dois problemas:
 
-### `src/components/cartoes/PagarFaturaDialog.tsx`
+1. **O titular nunca e identificado** -- a variavel `titular` no dialog e sempre `undefined`
+2. **O calculo "Valor que eu pago"** no modo `dividir_valores` retorna 0 (porque tenta ler `titular.valorCustom` de um objeto inexistente)
+3. **A secao "Eu (titular)"** nos modos normais tambem nao aparece
 
-Adicionar um terceiro modo de pagamento alem dos dois existentes:
+## Causa Raiz
 
-| Modo atual | Descricao |
-|---|---|
-| Eu pago tudo | Titular paga o valor integral ao banco |
-| Cada um pagou sua parte | Marca quem ja devolveu (valor fixo = total da pessoa) |
-| **Dividir valores (NOVO)** | **Permite digitar quanto cada pessoa pagou** |
+Em `listarParcelasDaFatura`, o campo `is_titular` e buscado do banco (linha 159: `responsavel:responsaveis(id, nome, apelido, is_titular)`) mas **nunca e mapeado** no retorno (linhas 182-184 so mapeiam `id`, `nome`, `apelido`).
 
-**No novo modo "Dividir valores":**
-- Para cada responsavel (incluindo titular), exibir um campo de valor editavel (Input)
-- Pre-preencher com o valor devido de cada pessoa
-- Mostrar um totalizador em tempo real: "Total informado: R$ X / R$ Y da fatura"
-- Validar que a soma dos valores informados == total da fatura antes de confirmar
-- Se alguem pagou R$ 0, nao registrar acerto para essa pessoa
+Depois, em `calcularResumoPorResponsavel`, a propriedade `is_titular` e sempre `false`.
 
-**Logica de salvamento:**
-- O valor que o titular informou = valor da transacao de despesa no saldo real
-- Para cada outro responsavel com valor > 0, registrar acerto como "quitado" com o valor informado
-- Marcar todas as parcelas como pagas (igual ja funciona)
+## Solucao
 
-### Tipo `ModoPagamento`
+### 1. `src/services/compras-cartao.ts` -- Propagar `is_titular` nos dados
 
-Adicionar novo valor:
+**ParcelaFatura type**: Adicionar campo `is_titular?: boolean`
 
-```text
-"eu_pago_tudo" | "cada_um_pagou" | "dividir_valores"
+**listarParcelasDaFatura**: Mapear `is_titular` do responsavel no retorno:
+```
+is_titular: p.compra?.responsavel?.is_titular || false,
 ```
 
-### Interface do novo modo
+**calcularResumoPorResponsavel**: Usar o valor real vindo da parcela em vez de `false`:
+```
+is_titular: parcelas que pertencem a esse responsavel -> pegar is_titular da primeira parcela
+```
 
-Dentro da secao de responsaveis, quando o modo for "dividir_valores":
-- Cada responsavel tera um campo Input ao lado do nome
-- O campo tera inputMode="decimal" e placeholder com o valor devido
-- Um card totalizador mostra a soma vs o total da fatura
-- Se a soma nao bater, o botao de confirmar fica desabilitado com mensagem de aviso
+### 2. Nenhuma alteracao necessaria no dialog
 
-### Chamada a `pagarFaturaComTransacao`
-
-No modo "dividir_valores":
-- `valorTotal` = valor digitado para o titular
-- `acertosRecebidos` = array com cada responsavel nao-titular que teve valor > 0
+O `PagarFaturaDialog.tsx` ja usa `is_titular` corretamente para separar titular dos outros. O problema e apenas que o dado nunca chegava com o valor correto.
 
 ## Arquivos a modificar
 
 | Arquivo | Alteracao |
 |---|---|
-| `src/components/cartoes/PagarFaturaDialog.tsx` | Adicionar modo "dividir_valores" com campos de valor por pessoa |
-
-Nenhuma alteracao no backend e necessaria -- a funcao `pagarFaturaComTransacao` ja suporta acertos parciais.
+| `src/services/compras-cartao.ts` | Mapear `is_titular` em `listarParcelasDaFatura` e usa-lo em `calcularResumoPorResponsavel` |
 
