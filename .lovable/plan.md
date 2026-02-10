@@ -1,42 +1,62 @@
 
 
-# Gerar Mensagens em Lote -- Selecao de Cartoes e Responsavel
+# Mensagens em Lote -- Organizadas e Somente com Despesas
 
-## Objetivo
+## Problema Atual
 
-Transformar o dialog de "Gerar Mensagens em Lote" em um fluxo de 2 etapas: primeiro o usuario seleciona quais cartoes e o responsavel, depois confirma e gera.
+1. As mensagens sao geradas para TODOS os cartoes selecionados, mesmo quando nao ha despesas no mes -- resultando em mensagens vazias ou com "0 compras"
+2. A mensagem consolidada fica longa e desorganizada quando ha muitos cartoes
 
-## Alteracao
+## Solucao
 
-### `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Reescrever com fluxo em 2 etapas
+### 1. `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Filtrar cartoes sem despesas
 
-**Etapa 1 -- Selecao (tela inicial ao abrir)**
-- Lista de cartoes com checkboxes individuais + checkbox "Selecionar todos" no topo
-- Cada item mostra o indicador de cor do cartao e o nome
-- Dropdown de responsavel usando `useResponsaveis()` (opcoes: "Todos" + lista de responsaveis ativos), similar ao `GerarMensagemDialog`
-- Botao "Gerar Mensagens" (desabilitado se nenhum cartao selecionado)
-- Exibir contagem: "X cartao(oes) selecionado(s)"
+**Na etapa de geracao:**
+- Apos gerar as mensagens, filtrar os resultados que nao tem despesas (mensagem vazia ou total zerado)
+- Mostrar apenas cartoes que efetivamente possuem compras no mes
 
-**Etapa 2 -- Confirmacao e Resultado**
-- Ao clicar "Gerar", exibe loading e processa `gerarMensagemFatura` para cada cartao selecionado com o responsavel escolhido (usando `Promise.allSettled`)
-- Passa `responsavelId` (null se "todos") e formato adequado para a funcao existente
-- Exibe resultados consolidados exatamente como ja funciona hoje (ScrollArea com blocos por cartao, copiar individual, copiar tudo, WhatsApp)
-- Botao "Voltar" para retornar a etapa de selecao
+**Na etapa de selecao:**
+- Indicar visualmente quais cartoes tem despesas no mes (opcional, melhoria de UX)
+
+### 2. `src/services/compras-cartao.ts` -- Retornar indicador de "sem despesas"
+
+Modificar `gerarMensagemFatura` para retornar string vazia (`""`) quando nao ha parcelas no mes para o responsavel/cartao selecionado. Isso permite ao dialog de lote identificar e ocultar cartoes sem despesas.
+
+Atualmente, se nao ha parcelas, a funcao ainda retorna uma mensagem com "Total: R$ 0,00". A mudanca e:
+- Se `parcelasFiltradas.length === 0`, retornar `""` (string vazia)
+- O dialog de lote filtra resultados com mensagem vazia
+
+### 3. `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Mensagem consolidada mais organizada
+
+A mensagem consolidada (ao copiar tudo) sera formatada de forma mais limpa:
+- Separador visual mais curto entre cartoes
+- Remover cartoes sem despesas do resultado
+- Exibir contador de "X cartoes com despesas de Y selecionados" no resultado
+- Se nenhum cartao tiver despesas, exibir aviso informativo
 
 ## Detalhes Tecnicos
 
-- Estado `etapa`: "selecao" | "resultado"
-- Estado `cartoesSelecionados`: `Set<string>` com os IDs marcados
-- Estado `responsavelId`: string ("todos" ou ID do responsavel)
-- Reutiliza `useResponsaveis()` de `src/services/responsaveis.ts`
-- Usa componente `Checkbox` de `src/components/ui/checkbox.tsx`
-- Usa `Select/SelectContent/SelectItem` para o dropdown de responsavel
-- A geracao so dispara ao clicar o botao (nao mais no useEffect ao abrir)
-- Ao fechar o dialog, reseta para etapa "selecao"
+### compras-cartao.ts -- gerarMensagemFatura
 
-## Arquivo a Modificar
+Adicionar verificacao no inicio da funcao apos filtrar parcelas:
+
+```text
+Se parcelasFiltradas.length === 0:
+  retornar "" (string vazia)
+```
+
+Isso vale para todos os formatos (todos, resumido, detalhado). No formato "todos", verificar se o resumo por responsavel esta vazio.
+
+### GerarMensagensLoteDialog.tsx
+
+- Filtrar `resultados` para remover itens com `mensagem === ""` ou `erro === true`
+- Mostrar badge informativo: "3 de 5 cartoes com despesas"
+- Se todos os cartoes retornarem vazio, exibir estado vazio com icone e mensagem "Nenhum cartao possui despesas neste mes"
+
+## Arquivos a Modificar
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `src/components/cartoes/GerarMensagensLoteDialog.tsx` | Adicionar fluxo de 2 etapas com selecao de cartoes (checkboxes) e responsavel (dropdown) |
+| `src/services/compras-cartao.ts` | Retornar string vazia quando nao ha parcelas |
+| `src/components/cartoes/GerarMensagensLoteDialog.tsx` | Filtrar cartoes sem despesas e melhorar organizacao visual |
 
