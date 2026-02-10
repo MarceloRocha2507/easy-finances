@@ -24,6 +24,7 @@ export type ParcelaFatura = {
   responsavel_id?: string;
   responsavel_nome?: string;
   responsavel_apelido?: string;
+  is_titular?: boolean;
   // Campos de categoria
   categoria_id?: string;
   categoria_nome?: string;
@@ -182,6 +183,7 @@ export async function listarParcelasDaFatura(
     responsavel_id: p.compra?.responsavel?.id || null,
     responsavel_nome: p.compra?.responsavel?.nome || null,
     responsavel_apelido: p.compra?.responsavel?.apelido || null,
+    is_titular: p.compra?.responsavel?.is_titular || false,
     categoria_id: p.compra?.categoria?.id || null,
     categoria_nome: p.compra?.categoria?.name || null,
     categoria_cor: p.compra?.categoria?.color || null,
@@ -216,7 +218,7 @@ export async function calcularResumoPorResponsavel(
         responsavel_id: respId,
         responsavel_nome: p.responsavel_nome || "Sem responsável",
         responsavel_apelido: p.responsavel_apelido || null,
-        is_titular: false,
+        is_titular: p.is_titular || false,
         total: 0,
         qtd_compras: 0,
         percentual: 0,
