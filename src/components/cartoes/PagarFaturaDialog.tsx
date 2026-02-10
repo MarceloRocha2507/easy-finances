@@ -93,10 +93,6 @@ export function PagarFaturaDialog({
     return responsaveis.filter((r) => !r.is_titular);
   }, [responsaveis]);
 
-  // Responsáveis com total positivo (para modo dividir_valores)
-  const responsaveisDividir = useMemo(() => {
-    return responsaveis.filter((r) => r.total > 0);
-  }, [responsaveis]);
 
   // Total geral da fatura
   const totalFatura = useMemo(() => {
@@ -114,11 +110,12 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveisDividir.reduce((sum, r) => {
+    return responsaveis.reduce((sum, r) => {
+      if (r.total <= 0) return sum + r.total; // ajuste fixo
       const val = parseBrazilianCurrency(r.valorCustom);
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
-  }, [responsaveisDividir, modo]);
+  }, [responsaveis, modo]);
 
   const dividirValido = useMemo(() => {
     if (modo !== "dividir_valores") return true;
@@ -335,15 +332,22 @@ export function PagarFaturaDialog({
                 </Label>
                 <ScrollArea className="max-h-[200px]">
                   <div className="space-y-2">
-                    {responsaveisDividir.map((r) => (
+                    {responsaveis.map((r) => (
                       <div
                         key={r.responsavel_id}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border",
+                          r.total <= 0
+                            ? "bg-blue-500/10 border-blue-500/30"
+                            : "bg-muted/30"
+                        )}
                       >
                         <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: r.is_titular ? "hsl(var(--primary) / 0.2)" : "hsl(var(--primary) / 0.1)" }}
+                          style={{ backgroundColor: r.total <= 0 ? "hsl(210 100% 50% / 0.15)" : r.is_titular ? "hsl(var(--primary) / 0.2)" : "hsl(var(--primary) / 0.1)" }}
                         >
-                          {r.is_titular ? (
+                          {r.total <= 0 ? (
+                            <AlertCircle className="h-4 w-4 text-blue-600" />
+                          ) : r.is_titular ? (
                             <Wallet className="h-4 w-4 text-primary" />
                           ) : (
                             <User className="h-4 w-4 text-primary" />
@@ -351,20 +355,30 @@ export function PagarFaturaDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {r.is_titular ? `Eu (${r.responsavel_apelido || r.responsavel_nome})` : (r.responsavel_apelido || r.responsavel_nome)}
+                            {r.total <= 0
+                              ? "Ajuste de fatura"
+                              : r.is_titular
+                                ? `Eu (${r.responsavel_apelido || r.responsavel_nome})`
+                                : (r.responsavel_apelido || r.responsavel_nome)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Deve: {formatCurrency(r.total)}
+                            {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
                           </p>
                         </div>
                         <div className="w-28 shrink-0">
-                          <Input
-                            inputMode="decimal"
-                            placeholder={r.total.toFixed(2).replace(".", ",")}
-                            value={r.valorCustom}
-                            onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
-                            className="h-8 text-sm text-right"
-                          />
+                          {r.total <= 0 ? (
+                            <p className="text-sm text-right font-semibold text-blue-600">
+                              {formatCurrency(r.total)}
+                            </p>
+                          ) : (
+                            <Input
+                              inputMode="decimal"
+                              placeholder={r.total.toFixed(2).replace(".", ",")}
+                              value={r.valorCustom}
+                              onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
+                              className="h-8 text-sm text-right"
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
