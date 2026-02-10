@@ -1,42 +1,33 @@
 
+# Adicionar "Desmarcar pagas" ao Dialog de Detalhes do Cartao
 
-# Desmarcar Todas as Compras Pagas
+## Problema
 
-## O que sera feito
+A opcao "Desmarcar pagas" foi implementada apenas na pagina de despesas (`/cartoes/:id/despesas`), mas o usuario acessa as compras pelo dialog de detalhes na pagina `/cartoes` (`DetalhesCartaoDialog`), onde a opcao nao existe.
 
-Adicionar uma opcao "Desmarcar pagas" no menu de acoes da fatura, que remove a marcacao de "paga" de todas as compras do mes selecionado. Util quando o usuario marcou parcelas como pagas por engano ou precisa reverter o status de toda a fatura.
+## Solucao
 
-## Onde aparece
+Adicionar a opcao "Desmarcar pagas" no `DetalhesCartaoDialog.tsx`, no mesmo local onde ficam as outras acoes (dropdown mobile e botoes desktop).
 
-- **Mobile**: novo item no dropdown (menu de 3 pontinhos) junto com "Ajustar fatura", "Adiantar pagamento" e "Excluir fatura"
-- **Desktop**: novo botao com tooltip na barra de acoes, ao lado dos botoes existentes
+### Alteracoes em `src/components/cartoes/DetalhesCartaoDialog.tsx`
 
-A opcao so fica habilitada quando existem parcelas marcadas como pagas no mes.
+1. **Importar** `desmarcarTodasParcelas` do servico `compras-cartao`
+2. **Importar** `AlertDialog` e componentes relacionados
+3. **Importar** `toast` do sonner
+4. **Adicionar estado** `desmarcarPagasOpen` para controlar o AlertDialog de confirmacao
+5. **Adicionar handler** `handleDesmarcarPagas` que chama o servico e recarrega a fatura
+6. **Mobile (dropdown)**: novo item "Desmarcar pagas" com icone `RotateCcw`, desabilitado quando `totalPago === 0`
+7. **Desktop (tooltips)**: novo botao com tooltip ao lado dos existentes, tambem desabilitado quando `totalPago === 0`
+8. **AlertDialog** de confirmacao antes de executar a acao
 
-## Detalhes tecnicos
-
-### 1. Nova funcao no servico (`src/services/compras-cartao.ts`)
-
-Criar `desmarcarTodasParcelas(cartaoId, mesReferencia)` que:
-- Lista parcelas da fatura
-- Filtra as que estao com `paga = true`
-- Atualiza todas para `paga = false` em uma unica query
-
-### 2. Botao e menu na pagina (`src/pages/DespesasCartao.tsx`)
-
-- Adicionar item "Desmarcar pagas" no dropdown mobile (com icone `RotateCcw`)
-- Adicionar botao com tooltip no desktop
-- Desabilitado quando nao ha parcelas pagas (`totalPago === 0`)
-- Ao clicar: chamar a funcao, recarregar fatura e exibir toast de confirmacao
-- Usar `AlertDialog` para confirmar a acao antes de executar, evitando cliques acidentais
-
-### 3. Fluxo
+### Fluxo
 
 ```text
-Usuario clica "Desmarcar pagas"
-  -> AlertDialog de confirmacao ("Tem certeza?")
+Usuario abre detalhes do cartao em /cartoes
+  -> Clica em "Desmarcar pagas" (menu mobile ou botao desktop)
+  -> AlertDialog pergunta "Tem certeza?"
   -> Confirma
-  -> Chama desmarcarTodasParcelas()
-  -> Recarrega fatura
-  -> Toast: "Todas as compras foram desmarcadas"
+  -> Chama desmarcarTodasParcelas(cartao.id, mesRef)
+  -> Recarrega fatura e atualiza lista
+  -> Toast: "X compra(s) desmarcada(s)"
 ```
