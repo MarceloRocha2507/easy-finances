@@ -1,61 +1,43 @@
 
 
-# Corrigir Total Informado para Mostrar Valor Real da Fatura
+# Correcao: Excluir ajustes negativos do totalDividido
 
 ## Problema
 
-O "Total informado" mostra R$ 912,32 como alvo, que e a soma apenas dos valores positivos. Porem o valor correto da fatura e R$ 906,17 (que ja inclui o ajuste negativo de -R$ 6,15). O usuario espera ver R$ 906,17 como alvo.
+O `totalDividido` inclui o ajuste negativo (-3,15), mas o alvo (`totalFatura`) tambem ja inclui esse ajuste. Resultado:
 
-## Causa
+```text
+Inputs editaveis: 726,68 + 182,49 + 0 = 909,17
+Ajuste negativo: -3,15
+totalDividido = 909,17 + (-3,15) = 906,02
+totalFatura = 912,32 - 3,15 = 909,17
 
-Na correcao anterior, separamos os negativos do calculo e comparamos contra `totalPositivos` (912,32). Mas o correto e incluir os negativos no `totalDividido` e comparar contra `totalFatura` (906,17).
+906,02 != 909,17 --> nunca valida!
+```
 
-Verificacao com valores padrao:
-- Positivos editaveis: 798,79 + 65,13 + 48,40 = 912,32
-- Ajuste fixo: -6,15
-- totalDividido = 912,32 + (-6,15) = 906,17 = totalFatura
+Para que a soma dos inputs editaveis bata com totalFatura, o ajuste negativo NAO deve ser somado no totalDividido (pois ja esta no totalFatura).
 
 ## Solucao
 
-Duas alteracoes no arquivo `src/components/cartoes/PagarFaturaDialog.tsx`:
+Uma unica alteracao no arquivo `src/components/cartoes/PagarFaturaDialog.tsx`, linha 121:
 
-### 1. Voltar a incluir negativos no `totalDividido`
-
-Linha ~117, de:
-```typescript
-if (r.total <= 0) return sum; // ajuste já refletido no totalFatura
-```
-Para:
+**De:**
 ```typescript
 if (r.total <= 0) return sum + r.total; // ajuste fixo incluído na soma
 ```
 
-### 2. Comparar `dividirValido` contra `totalFatura` (nao `totalPositivos`)
-
-Linha ~126, de:
+**Para:**
 ```typescript
-return Math.abs(totalDividido - totalPositivos) < 0.01;
-}, [modo, totalDividido, totalPositivos]);
-```
-Para:
-```typescript
-return Math.abs(totalDividido - totalFatura) < 0.01;
-}, [modo, totalDividido, totalFatura]);
+if (r.total <= 0) return sum; // ajuste já incluído no totalFatura
 ```
 
-### 3. Mostrar `totalFatura` no totalizador visual
+## Resultado esperado
 
-Linha ~407, de:
-```typescript
-{formatCurrency(totalDividido)} / {formatCurrency(totalPositivos)}
-```
-Para:
-```typescript
-{formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
+```text
+totalDividido = 726,68 + 182,49 + 0 = 909,17 (so editaveis)
+totalFatura = 909,17
+909,17 == 909,17 --> valida e permite pagar
 ```
 
-## Resultado
-
-Com valores padrao: "R$ 906,17 / R$ 906,17" -- bate e permite confirmar.
-Se o usuario alterar os valores editaveis, a soma (com ajuste) precisa continuar batendo com R$ 906,17.
+O totalizador mostrara "R$ 909,17 / R$ 909,17" e o botao de confirmar ficara habilitado.
 
