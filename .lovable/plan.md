@@ -1,43 +1,42 @@
 
 
-# Correcao: Excluir ajustes negativos do totalDividido
+# Desmarcar Todas as Compras Pagas
 
-## Problema
+## O que sera feito
 
-O `totalDividido` inclui o ajuste negativo (-3,15), mas o alvo (`totalFatura`) tambem ja inclui esse ajuste. Resultado:
+Adicionar uma opcao "Desmarcar pagas" no menu de acoes da fatura, que remove a marcacao de "paga" de todas as compras do mes selecionado. Util quando o usuario marcou parcelas como pagas por engano ou precisa reverter o status de toda a fatura.
+
+## Onde aparece
+
+- **Mobile**: novo item no dropdown (menu de 3 pontinhos) junto com "Ajustar fatura", "Adiantar pagamento" e "Excluir fatura"
+- **Desktop**: novo botao com tooltip na barra de acoes, ao lado dos botoes existentes
+
+A opcao so fica habilitada quando existem parcelas marcadas como pagas no mes.
+
+## Detalhes tecnicos
+
+### 1. Nova funcao no servico (`src/services/compras-cartao.ts`)
+
+Criar `desmarcarTodasParcelas(cartaoId, mesReferencia)` que:
+- Lista parcelas da fatura
+- Filtra as que estao com `paga = true`
+- Atualiza todas para `paga = false` em uma unica query
+
+### 2. Botao e menu na pagina (`src/pages/DespesasCartao.tsx`)
+
+- Adicionar item "Desmarcar pagas" no dropdown mobile (com icone `RotateCcw`)
+- Adicionar botao com tooltip no desktop
+- Desabilitado quando nao ha parcelas pagas (`totalPago === 0`)
+- Ao clicar: chamar a funcao, recarregar fatura e exibir toast de confirmacao
+- Usar `AlertDialog` para confirmar a acao antes de executar, evitando cliques acidentais
+
+### 3. Fluxo
 
 ```text
-Inputs editaveis: 726,68 + 182,49 + 0 = 909,17
-Ajuste negativo: -3,15
-totalDividido = 909,17 + (-3,15) = 906,02
-totalFatura = 912,32 - 3,15 = 909,17
-
-906,02 != 909,17 --> nunca valida!
+Usuario clica "Desmarcar pagas"
+  -> AlertDialog de confirmacao ("Tem certeza?")
+  -> Confirma
+  -> Chama desmarcarTodasParcelas()
+  -> Recarrega fatura
+  -> Toast: "Todas as compras foram desmarcadas"
 ```
-
-Para que a soma dos inputs editaveis bata com totalFatura, o ajuste negativo NAO deve ser somado no totalDividido (pois ja esta no totalFatura).
-
-## Solucao
-
-Uma unica alteracao no arquivo `src/components/cartoes/PagarFaturaDialog.tsx`, linha 121:
-
-**De:**
-```typescript
-if (r.total <= 0) return sum + r.total; // ajuste fixo incluído na soma
-```
-
-**Para:**
-```typescript
-if (r.total <= 0) return sum; // ajuste já incluído no totalFatura
-```
-
-## Resultado esperado
-
-```text
-totalDividido = 726,68 + 182,49 + 0 = 909,17 (so editaveis)
-totalFatura = 909,17
-909,17 == 909,17 --> valida e permite pagar
-```
-
-O totalizador mostrara "R$ 909,17 / R$ 909,17" e o botao de confirmar ficara habilitado.
-
