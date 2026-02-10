@@ -285,8 +285,7 @@ export function GerarMensagensLoteDialog({
               </div>
             ) : (
               <>
-                <ScrollArea className="max-h-[50vh]">
-                  <div className="space-y-4 pr-3">
+                <div className="space-y-4">
                     {resultados.map((resultado) => (
                       <div key={resultado.cartaoId} className="rounded-xl border overflow-hidden">
                         <div
@@ -323,8 +322,7 @@ export function GerarMensagensLoteDialog({
                         />
                       </div>
                     ))}
-                  </div>
-                </ScrollArea>
+                </div>
 
                 {sucessos > 0 && (
                   <div className="grid grid-cols-2 gap-3 pt-2">
