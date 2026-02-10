@@ -118,7 +118,7 @@ export function PagarFaturaDialog({
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
     return responsaveis.reduce((sum, r) => {
-      if (r.total <= 0) return sum; // ajuste já refletido no totalFatura
+      if (r.total <= 0) return sum + r.total; // ajuste fixo incluído na soma
       const val = parseBrazilianCurrency(r.valorCustom);
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
@@ -126,8 +126,8 @@ export function PagarFaturaDialog({
 
   const dividirValido = useMemo(() => {
     if (modo !== "dividir_valores") return true;
-    return Math.abs(totalDividido - totalPositivos) < 0.01;
-  }, [modo, totalDividido, totalPositivos]);
+    return Math.abs(totalDividido - totalFatura) < 0.01;
+  }, [modo, totalDividido, totalFatura]);
 
   // Valor que EU (titular) vou pagar ao banco
   const valorQueEuPago = useMemo(() => {
@@ -404,7 +404,7 @@ export function PagarFaturaDialog({
                     Total informado
                   </span>
                   <span className="font-semibold">
-                    {formatCurrency(totalDividido)} / {formatCurrency(totalPositivos)}
+                    {formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
                   </span>
                 </div>
               </div>
