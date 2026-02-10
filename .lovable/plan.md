@@ -1,46 +1,50 @@
 
 
-# Corrigir Calculo de Valores no "Dividir Valores"
+# Corrigir Soma no Modo "Dividir Valores"
 
-## Problema Identificado
+## Problema
 
-A funcao `calcularResumoPorResponsavel` em `src/services/compras-cartao.ts` sempre define `is_titular: false` (linha 219), ignorando o campo `is_titular` que ja vem do banco de dados atraves do JOIN com a tabela `responsaveis`.
+A funcao `calcularResumoPorResponsavel` pode retornar responsaveis com **total negativo** (causado por estornos ou creditos). Esses registros:
 
-Isso causa dois problemas:
+1. Tem seu `valorCustom` inicializado com valor negativo (ex: "-6,15")
+2. Podem ficar ocultos na ScrollArea (o usuario nao percebe que existem)
+3. Sao incluidos na soma do `totalDividido`, reduzindo o total de forma inesperada
 
-1. **O titular nunca e identificado** -- a variavel `titular` no dialog e sempre `undefined`
-2. **O calculo "Valor que eu pago"** no modo `dividir_valores` retorna 0 (porque tenta ler `titular.valorCustom` de um objeto inexistente)
-3. **A secao "Eu (titular)"** nos modos normais tambem nao aparece
-
-## Causa Raiz
-
-Em `listarParcelasDaFatura`, o campo `is_titular` e buscado do banco (linha 159: `responsavel:responsaveis(id, nome, apelido, is_titular)`) mas **nunca e mapeado** no retorno (linhas 182-184 so mapeiam `id`, `nome`, `apelido`).
-
-Depois, em `calcularResumoPorResponsavel`, a propriedade `is_titular` e sempre `false`.
+Exemplo: 726,68 + 182,49 + 0 + (-6,15) = 903,02 (em vez de 909,17)
 
 ## Solucao
 
-### 1. `src/services/compras-cartao.ts` -- Propagar `is_titular` nos dados
+### `src/components/cartoes/PagarFaturaDialog.tsx`
 
-**ParcelaFatura type**: Adicionar campo `is_titular?: boolean`
+Duas mudancas:
 
-**listarParcelasDaFatura**: Mapear `is_titular` do responsavel no retorno:
+**1. Filtrar responsaveis com total <= 0 no modo dividir_valores:**
+
+Na inicializacao dos responsaveis (useEffect), manter todos os responsaveis no estado (para os outros modos funcionarem), mas adicionar um `useMemo` separado que filtra apenas os que tem `total > 0` para exibicao e calculo no modo `dividir_valores`.
+
 ```
-is_titular: p.compra?.responsavel?.is_titular || false,
+const responsaveisDividir = useMemo(() => {
+  return responsaveis.filter(r => r.total > 0);
+}, [responsaveis]);
 ```
 
-**calcularResumoPorResponsavel**: Usar o valor real vindo da parcela em vez de `false`:
-```
-is_titular: parcelas que pertencem a esse responsavel -> pegar is_titular da primeira parcela
-```
+**2. Usar `responsaveisDividir` no calculo do totalDividido e na renderizacao:**
 
-### 2. Nenhuma alteracao necessaria no dialog
+- O `totalDividido` deve somar apenas `responsaveisDividir`
+- A lista de inputs no modo `dividir_valores` deve iterar `responsaveisDividir`
+- O `totalFatura` permanece usando todos os responsaveis (para manter o valor correto da fatura)
 
-O `PagarFaturaDialog.tsx` ja usa `is_titular` corretamente para separar titular dos outros. O problema e apenas que o dado nunca chegava com o valor correto.
+**3. Ajustar validacao:**
 
-## Arquivos a modificar
+O `totalDividido` deve ser comparado com `totalFatura` (que ja inclui estornos), entao a validacao `dividirValido` precisa comparar com o total real da fatura.
+
+Mas como estamos ignorando os responsaveis negativos na soma, precisamos comparar `totalDividido` com a soma apenas dos positivos, OU comparar com o `totalFatura` e ajustar.
+
+A abordagem mais simples: o `totalFatura` ja reflete o valor correto da fatura (com estornos descontados = 906,17). A validacao compara `totalDividido` com `totalFatura`. O usuario distribui o valor total da fatura entre os responsaveis com saldo positivo.
+
+## Arquivo a modificar
 
 | Arquivo | Alteracao |
 |---|---|
-| `src/services/compras-cartao.ts` | Mapear `is_titular` em `listarParcelasDaFatura` e usa-lo em `calcularResumoPorResponsavel` |
+| `src/components/cartoes/PagarFaturaDialog.tsx` | Filtrar responsaveis com total <= 0 no modo dividir_valores para calculo e exibicao |
 
