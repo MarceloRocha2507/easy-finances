@@ -1,46 +1,42 @@
 
 
-# Gerar Mensagens em Lote para Todos os Cartoes
+# Gerar Mensagens em Lote -- Selecao de Cartoes e Responsavel
 
 ## Objetivo
 
-Adicionar um botao "Gerar Mensagens em Lote" na pagina de Cartoes que gera a mensagem de fatura de todos os cartoes ativos simultaneamente e exibe o resultado consolidado em um dialog.
+Transformar o dialog de "Gerar Mensagens em Lote" em um fluxo de 2 etapas: primeiro o usuario seleciona quais cartoes e o responsavel, depois confirma e gera.
 
-## Alteracoes
+## Alteracao
 
-### 1. Novo componente: `src/components/cartoes/GerarMensagensLoteDialog.tsx`
+### `src/components/cartoes/GerarMensagensLoteDialog.tsx` -- Reescrever com fluxo em 2 etapas
 
-Dialog que:
-- Recebe a lista de cartoes e o mes de referencia como props
-- Ao abrir, chama `gerarMensagemFatura(cartaoId, mesReferencia, null, "todos")` para cada cartao em paralelo
-- Exibe loading enquanto gera
-- Mostra as mensagens agrupadas por cartao, cada uma em um bloco com o nome do cartao como titulo
-- Botao "Copiar Tudo" que copia todas as mensagens concatenadas (separadas por linhas)
-- Botao "Enviar WhatsApp" que abre WhatsApp com a mensagem consolidada
-- Cada bloco individual tambem tera um botao de copiar individual
+**Etapa 1 -- Selecao (tela inicial ao abrir)**
+- Lista de cartoes com checkboxes individuais + checkbox "Selecionar todos" no topo
+- Cada item mostra o indicador de cor do cartao e o nome
+- Dropdown de responsavel usando `useResponsaveis()` (opcoes: "Todos" + lista de responsaveis ativos), similar ao `GerarMensagemDialog`
+- Botao "Gerar Mensagens" (desabilitado se nenhum cartao selecionado)
+- Exibir contagem: "X cartao(oes) selecionado(s)"
 
-### 2. Pagina `src/pages/Cartoes.tsx`
-
-- Importar o novo dialog
-- Adicionar estado `loteOpen` para controlar a abertura do dialog
-- Adicionar botao "Gerar Mensagens" no header (desktop: botao visivel, mobile: item no dropdown de acoes)
-- O botao so aparece se houver cartoes cadastrados
-- Passa `cartoes` e `mesReferencia` para o dialog
-
-## Fluxo do Usuario
-
-```text
-Pagina Cartoes -> Clica "Gerar Mensagens" -> Dialog abre
-  -> Mensagens sao geradas em paralelo (loading por cartao)
-  -> Resultado consolidado exibido
-  -> Usuario pode copiar tudo ou copiar individualmente
-  -> Usuario pode enviar via WhatsApp
-```
+**Etapa 2 -- Confirmacao e Resultado**
+- Ao clicar "Gerar", exibe loading e processa `gerarMensagemFatura` para cada cartao selecionado com o responsavel escolhido (usando `Promise.allSettled`)
+- Passa `responsavelId` (null se "todos") e formato adequado para a funcao existente
+- Exibe resultados consolidados exatamente como ja funciona hoje (ScrollArea com blocos por cartao, copiar individual, copiar tudo, WhatsApp)
+- Botao "Voltar" para retornar a etapa de selecao
 
 ## Detalhes Tecnicos
 
-- Reutiliza a funcao existente `gerarMensagemFatura` de `src/services/compras-cartao.ts` com formato "todos"
-- Usa `Promise.allSettled` para gerar todas em paralelo sem falhar se um cartao der erro
-- Segue os padroes visuais existentes do `GerarMensagemDialog` (Textarea readonly, botoes Copiar/WhatsApp)
-- Usa ScrollArea para quando houver muitos cartoes
+- Estado `etapa`: "selecao" | "resultado"
+- Estado `cartoesSelecionados`: `Set<string>` com os IDs marcados
+- Estado `responsavelId`: string ("todos" ou ID do responsavel)
+- Reutiliza `useResponsaveis()` de `src/services/responsaveis.ts`
+- Usa componente `Checkbox` de `src/components/ui/checkbox.tsx`
+- Usa `Select/SelectContent/SelectItem` para o dropdown de responsavel
+- A geracao so dispara ao clicar o botao (nao mais no useEffect ao abrir)
+- Ao fechar o dialog, reseta para etapa "selecao"
+
+## Arquivo a Modificar
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/components/cartoes/GerarMensagensLoteDialog.tsx` | Adicionar fluxo de 2 etapas com selecao de cartoes (checkboxes) e responsavel (dropdown) |
 
