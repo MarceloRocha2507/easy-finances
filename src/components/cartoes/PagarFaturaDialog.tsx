@@ -93,6 +93,11 @@ export function PagarFaturaDialog({
     return responsaveis.filter((r) => !r.is_titular);
   }, [responsaveis]);
 
+  // Responsáveis com total positivo (para modo dividir_valores)
+  const responsaveisDividir = useMemo(() => {
+    return responsaveis.filter((r) => r.total > 0);
+  }, [responsaveis]);
+
   // Total geral da fatura
   const totalFatura = useMemo(() => {
     return responsaveis.reduce((sum, r) => sum + r.total, 0);
@@ -109,11 +114,11 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveis.reduce((sum, r) => {
+    return responsaveisDividir.reduce((sum, r) => {
       const val = parseBrazilianCurrency(r.valorCustom);
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
-  }, [responsaveis, modo]);
+  }, [responsaveisDividir, modo]);
 
   const dividirValido = useMemo(() => {
     if (modo !== "dividir_valores") return true;
@@ -330,7 +335,7 @@ export function PagarFaturaDialog({
                 </Label>
                 <ScrollArea className="max-h-[200px]">
                   <div className="space-y-2">
-                    {responsaveis.map((r) => (
+                    {responsaveisDividir.map((r) => (
                       <div
                         key={r.responsavel_id}
                         className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
