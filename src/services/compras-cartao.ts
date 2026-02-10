@@ -324,10 +324,15 @@ export async function gerarMensagemFatura(
     parcelasFiltradas = parcelas.filter((p) => p.responsavel_id === responsavelId);
   }
 
+  // Se não há parcelas, retornar vazio para indicar "sem despesas"
+  if (parcelasFiltradas.length === 0) return "";
+
   // Formato: TODOS (resumo por responsável)
   if (formato === "todos") {
     const resumo = await calcularResumoPorResponsavel(cartaoId, mesReferencia);
+    if (resumo.length === 0) return "";
     const totalGeral = resumo.reduce((sum, r) => sum + r.total, 0);
+    if (totalGeral === 0) return "";
 
     let msg = `*${nomeCartao} - ${capitalizar(nomeMes)}*\n\n`;
     msg += `*Resumo por pessoa:*\n`;

@@ -121,14 +121,19 @@ export function GerarMensagensLoteDialog({
       r.status === "fulfilled" ? r.value : { cartaoId: "", nomeCartao: "Erro", cor: "#ef4444", mensagem: "Falha inesperada", erro: true } as ResultadoCartao
     );
 
-    setResultados(mapped);
+    // Filtrar cartões sem despesas (mensagem vazia)
+    const comDespesas = mapped.filter((r) => !r.erro && r.mensagem.trim() !== "");
+    const semDespesas = mapped.filter((r) => !r.erro && r.mensagem.trim() === "");
+    // Manter apenas os com despesas + erros
+    setResultados([...comDespesas, ...mapped.filter((r) => r.erro)]);
     setLoading(false);
   };
 
-  const mensagemConsolidada = resultados
-    .filter((r) => !r.erro)
+  const resultadosComMensagem = resultados.filter((r) => !r.erro && r.mensagem.trim() !== "");
+
+  const mensagemConsolidada = resultadosComMensagem
     .map((r) => r.mensagem)
-    .join("\n\n━━━━━━━━━━━━━━━━━━━━\n\n");
+    .join("\n\n---\n\n");
 
   const handleCopiarTudo = async () => {
     try {
@@ -158,7 +163,7 @@ export function GerarMensagensLoteDialog({
   };
 
   const nomeMes = mesReferencia.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-  const sucessos = resultados.filter((r) => !r.erro).length;
+  const sucessos = resultadosComMensagem.length;
   const todosChecked = cartoesSelecionados.size === cartoes.length && cartoes.length > 0;
   const algunsChecked = cartoesSelecionados.size > 0 && !todosChecked;
 
@@ -175,7 +180,7 @@ export function GerarMensagensLoteDialog({
               ? `Selecione os cartões e o responsável — ${nomeMes}`
               : loading
                 ? `Gerando mensagens de ${cartoesSelecionados.size} cartão(ões)...`
-                : `${sucessos} mensagem(ns) gerada(s) — ${nomeMes}`}
+                : `${sucessos} de ${cartoesSelecionados.size} cartão(ões) com despesas — ${nomeMes}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -269,6 +274,14 @@ export function GerarMensagensLoteDialog({
                       <Skeleton className="h-24 w-full" />
                     </div>
                   ))}
+              </div>
+            ) : resultados.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-3">
+                <AlertCircle className="h-10 w-10" />
+                <p className="text-sm font-medium">Nenhum cartão possui despesas neste mês</p>
+                <Button variant="ghost" className="gap-2" onClick={() => setEtapa("selecao")}>
+                  <ArrowLeft className="h-4 w-4" /> Voltar à seleção
+                </Button>
               </div>
             ) : (
               <>
