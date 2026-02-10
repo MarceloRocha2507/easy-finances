@@ -19,6 +19,7 @@ import {
   RefreshCw,
   MoreHorizontal,
   Undo2,
+  FileText,
 } from "lucide-react";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
@@ -27,6 +28,7 @@ import { useCartoes, usePrevisaoPorResponsavel, CartaoComResumo } from "@/servic
 import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { DesfazerAlteracaoDialog } from "@/components/cartoes/DesfazerAlteracaoDialog";
+import { GerarMensagensLoteDialog } from "@/components/cartoes/GerarMensagensLoteDialog";
 import { cn } from "@/lib/utils";
 import {
   calcularProximaOcorrenciaDia,
@@ -40,6 +42,7 @@ export default function Cartoes() {
   const { data: previsaoData } = usePrevisaoPorResponsavel(mesReferencia);
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoComResumo | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
+  const [loteOpen, setLoteOpen] = useState(false);
   const regenerarParcelas = useRegenerarParcelas();
   const verificacaoExecutada = useRef(false);
 
@@ -153,6 +156,12 @@ export default function Cartoes() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {cartoes.length > 0 && (
+                    <DropdownMenuItem onClick={() => setLoteOpen(true)}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Gerar Mensagens
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={async () => {
                       await regenerarParcelas.mutateAsync();
@@ -169,6 +178,16 @@ export default function Cartoes() {
             
             {/* Desktop: botões individuais */}
             <div className="hidden sm:flex items-center gap-2">
+              {cartoes.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLoteOpen(true)}
+                >
+                  <FileText className="h-4 w-4 mr-1.5" />
+                  Gerar Mensagens
+                </Button>
+              )}
               <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
               <Button
                 variant="outline"
@@ -284,6 +303,13 @@ export default function Cartoes() {
           onUpdated={() => refetch()}
         />
       )}
+
+      <GerarMensagensLoteDialog
+        cartoes={cartoes}
+        mesReferencia={mesReferencia}
+        open={loteOpen}
+        onOpenChange={setLoteOpen}
+      />
     </Layout>
   );
 }
