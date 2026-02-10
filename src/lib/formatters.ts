@@ -37,3 +37,8 @@ export function getYearRange(year: number = new Date().getFullYear()): { start: 
     end: `${year}-12-31`,
   };
 }
+
+export function parseBrazilianCurrency(value: string): number {
+  const cleaned = value.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+  return parseFloat(cleaned) || 0;
+}
