@@ -329,7 +329,7 @@ export function useCreateInstallmentTransaction() {
       }
 
       // Parcelada ou Fixa - criar múltiplas transações
-      const parcelas = tipoLancamento === 'fixa' ? 12 : totalParcelas;
+      const parcelas = totalParcelas;
       const valorParcela = transactionWithCategory.amount! / (tipoLancamento === 'parcelada' ? parcelas : 1);
       const baseDate = transactionWithCategory.date ? new Date(transactionWithCategory.date) : new Date();
 
@@ -400,7 +400,7 @@ export function useCreateInstallmentTransaction() {
       const msg = variables.tipoLancamento === 'parcelada'
         ? `${variables.totalParcelas} parcelas foram criadas.`
         : variables.tipoLancamento === 'fixa'
-        ? '12 lançamentos futuros foram criados.'
+        ? `${variables.totalParcelas} lançamentos futuros foram criados.`
         : 'O registro financeiro foi criado com sucesso.';
         
       toast({
@@ -487,6 +487,97 @@ export function useDeleteTransaction() {
       toast({
         title: 'Erro',
         description: 'Não foi possível remover o registro.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Hook para excluir transações recorrentes com opção de lote
+export function useDeleteRecurringTransactions() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, mode }: { transactionId: string; mode: 'single' | 'future' }) => {
+      if (mode === 'single') {
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transactionId);
+        if (error) throw error;
+        return;
+      }
+
+      // mode === 'future': delete this and all future transactions in the same group
+      const { data: transaction, error: fetchError } = await supabase
+        .from('transactions')
+        .select('id, parent_id, date')
+        .eq('id', transactionId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!transaction) throw new Error('Transação não encontrada');
+
+      const groupId = transaction.parent_id || transaction.id;
+      const transactionDate = transaction.date;
+
+      // Delete all in group with date >= selected date
+      // This includes: parent (if groupId === parent itself and date matches) + children
+      const { error: deleteChildrenError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('parent_id', groupId)
+        .gte('date', transactionDate);
+
+      if (deleteChildrenError) throw deleteChildrenError;
+
+      // Also delete the parent itself if it's in range
+      if (!transaction.parent_id) {
+        // The selected IS the parent, already handled above via children delete
+        // But we also need to delete the parent record itself
+        const { error: deleteParentError } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', groupId)
+          .gte('date', transactionDate);
+        if (deleteParentError) throw deleteParentError;
+      } else {
+        // Selected is a child; check if parent date is also >= and delete it too
+        const { data: parent } = await supabase
+          .from('transactions')
+          .select('id, date')
+          .eq('id', groupId)
+          .maybeSingle();
+        
+        if (parent && parent.date >= transactionDate) {
+          const { error: deleteParentError } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', parent.id);
+          if (deleteParentError) throw deleteParentError;
+        }
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      toast({
+        title: 'Registro(s) removido(s)',
+        description: variables.mode === 'single'
+          ? 'O lançamento foi removido.'
+          : 'Este e todos os lançamentos futuros foram removidos.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o(s) registro(s).',
         variant: 'destructive',
       });
     },

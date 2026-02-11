@@ -54,7 +54,7 @@ const initialFormData: TransactionFormData = {
   is_recurring: false,
   recurrence_day: 1,
   tipoLancamento: 'unica',
-  totalParcelas: 2,
+  totalParcelas: 12,
 };
 
 // Mapa de ícones para renderização
@@ -569,6 +569,28 @@ export default function Transactions() {
                         </div>
                       )}
 
+                      {/* Seletor de Meses - Fixa */}
+                      {formData.tipoLancamento === 'fixa' && (
+                        <div className="space-y-2">
+                          <Label>Quantos meses?</Label>
+                          <Select 
+                            value={formData.totalParcelas.toString()} 
+                            onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[3, 6, 12, 18, 24, 36, 48].map((num) => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} meses
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       {/* Resumo Visual */}
                       {formData.tipoLancamento !== 'unica' && formData.amount && (
                         <div className="p-3 bg-muted/50 rounded-lg space-y-1">
@@ -590,7 +612,7 @@ export default function Transactions() {
                           <p className="text-xs text-muted-foreground">
                             {formData.tipoLancamento === 'parcelada' 
                               ? `Serão criadas ${formData.totalParcelas} transações pendentes`
-                              : 'Serão criadas 12 transações mensais pendentes'
+                              : `Serão criadas ${formData.totalParcelas} transações mensais pendentes`
                             }
                           </p>
                         </div>
