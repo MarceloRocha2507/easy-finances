@@ -1571,14 +1571,19 @@ export async function desfazerAdiantamento(result: AdiantarFaturaResult): Promis
 ====================================================== */
 
 export async function desmarcarTodasParcelas(cartaoId: string, mesReferencia: Date) {
-  const mesKey = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
+  const ano = mesReferencia.getFullYear();
+  const mes = mesReferencia.getMonth();
+  const primeiroDia = `${ano}-${String(mes + 1).padStart(2, "0")}-01`;
+  const proximoMes = new Date(ano, mes + 1, 1);
+  const fimMes = `${proximoMes.getFullYear()}-${String(proximoMes.getMonth() + 1).padStart(2, "0")}-01`;
 
   // Buscar IDs das parcelas pagas do mês
   const { data: parcelas, error: fetchError } = await (supabase as any)
     .from("parcelas_cartao")
     .select("id, compra_id")
     .eq("paga", true)
-    .eq("mes_referencia", mesKey)
+    .gte("mes_referencia", primeiroDia)
+    .lt("mes_referencia", fimMes)
     .eq("ativo", true);
 
   if (fetchError) throw fetchError;
