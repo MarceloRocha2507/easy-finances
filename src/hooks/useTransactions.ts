@@ -741,7 +741,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 1. Buscar TODAS transações completed para saldo disponível (acumulado histórico)
       const { data: allCompleted, error: allCompletedError } = await supabase
         .from('transactions')
-        .select('type, amount')
+        .select('type, amount, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'completed');
 
@@ -752,7 +752,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Acerto de Fatura']);
 
       const metaCategoryIds = new Set((metaCategories || []).map(c => c.id));
 
@@ -807,6 +807,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       let allCompletedExpense = 0;
       (allCompleted || []).forEach((t) => {
         const amount = Number(t.amount);
+        if (t.category_id && metaCategoryIds.has(t.category_id)) return;
         if (t.type === 'income') allCompletedIncome += amount;
         else allCompletedExpense += amount;
       });
