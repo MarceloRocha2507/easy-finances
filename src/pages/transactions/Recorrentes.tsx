@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useTransactions, useUpdateTransaction } from "@/hooks/useTransactions";
+import { useTransactions, useUpdateTransaction, useDeleteRecurringTransactions, Transaction } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { formatCurrency } from "@/lib/formatters";
 import { toast } from "sonner";
@@ -14,10 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  Pause,
-  Play,
   MoreHorizontal,
-  Edit,
   Trash2,
 } from "lucide-react";
 import {
@@ -28,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -36,16 +32,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useDeleteTransaction, Transaction } from "@/hooks/useTransactions";
 
 export default function Recorrentes() {
   const { data: transactions, isLoading } = useTransactions({});
   const { data: categories } = useCategories();
   const updateTransaction = useUpdateTransaction();
-  const deleteTransaction = useDeleteTransaction();
+  const deleteRecurring = useDeleteRecurringTransactions();
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   // Filtrar apenas transações recorrentes (fixas)
   const recorrentes = transactions?.filter(t => t.tipo_lancamento === "fixa") || [];
@@ -77,11 +72,10 @@ export default function Recorrentes() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteSingle = async () => {
     if (!selectedTransaction) return;
     try {
-      await deleteTransaction.mutateAsync(selectedTransaction);
-      toast.success("Lançamento recorrente excluído");
+      await deleteRecurring.mutateAsync({ transactionId: selectedTransaction.id, mode: 'single' });
       setDeleteDialogOpen(false);
       setSelectedTransaction(null);
     } catch (error) {
@@ -89,9 +83,112 @@ export default function Recorrentes() {
     }
   };
 
+  const handleDeleteFuture = async () => {
+    if (!selectedTransaction) return;
+    try {
+      await deleteRecurring.mutateAsync({ transactionId: selectedTransaction.id, mode: 'future' });
+      setDeleteDialogOpen(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      toast.error("Erro ao excluir lançamentos");
+    }
+  };
+
   const formatDay = (day: number | null | undefined) => {
     if (!day) return "Todo mês";
     return `Dia ${day}`;
+  };
+
+  const renderTransactionList = (list: Transaction[], type: 'income' | 'expense') => {
+    if (list.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Nenhuma {type === 'income' ? 'receita' : 'despesa'} fixa cadastrada
+        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {list.map((transaction) => {
+          const category = getCategoryInfo(transaction.category_id);
+          const isActive = transaction.status === "completed";
+          
+          return (
+            <div
+              key={transaction.id}
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                  style={{ 
+                    backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--muted))',
+                    color: category?.color || 'hsl(var(--muted-foreground))'
+                  }}
+                >
+                  {category?.icon || (type === 'income' ? "💰" : "💸")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{transaction.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{formatDay(transaction.recurrence_day)}</span>
+                    {transaction.numero_parcela && transaction.total_parcelas && (
+                      <>
+                        <span>•</span>
+                        <span>{transaction.numero_parcela}/{transaction.total_parcelas}</span>
+                      </>
+                    )}
+                    {category && (
+                      <>
+                        <span>•</span>
+                        <span className="truncate">{category.name}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                <p className={`font-semibold ${type === 'income' ? 'text-income' : 'text-expense'}`}>
+                  {type === 'income' ? '+' : '-'}{formatCurrency(Number(transaction.amount))}
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={() => handleToggleActive(transaction.id, transaction.status)}
+                  />
+                  <span className="text-xs text-muted-foreground hidden sm:inline w-12">
+                    {isActive ? "Ativo" : "Pausado"}
+                  </span>
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => {
+                        setSelectedTransaction(transaction);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -198,85 +295,7 @@ export default function Recorrentes() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {receitasFixas.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhuma receita fixa cadastrada
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {receitasFixas.map((transaction) => {
-                  const category = getCategoryInfo(transaction.category_id);
-                  const isActive = transaction.status === "completed";
-                  
-                  return (
-                    <div
-                      key={transaction.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm shrink-0"
-                          style={{ 
-                            backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--muted))',
-                            color: category?.color || 'hsl(var(--muted-foreground))'
-                          }}
-                        >
-                          {category?.icon || "💰"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{transaction.description}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{formatDay(transaction.recurrence_day)}</span>
-                            {category && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate">{category.name}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-                        <p className="font-semibold text-income">
-                          +{formatCurrency(Number(transaction.amount))}
-                        </p>
-                        
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={isActive}
-                            onCheckedChange={() => handleToggleActive(transaction.id, transaction.status)}
-                          />
-                          <span className="text-xs text-muted-foreground hidden sm:inline w-12">
-                            {isActive ? "Ativo" : "Pausado"}
-                          </span>
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => {
-                                setSelectedTransaction(transaction.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {renderTransactionList(receitasFixas, 'income')}
           </CardContent>
         </Card>
 
@@ -292,85 +311,7 @@ export default function Recorrentes() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {despesasFixas.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhuma despesa fixa cadastrada
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {despesasFixas.map((transaction) => {
-                  const category = getCategoryInfo(transaction.category_id);
-                  const isActive = transaction.status === "completed";
-                  
-                  return (
-                    <div
-                      key={transaction.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 rounded-lg border bg-card hover:bg-secondary/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-8 w-8 rounded-full flex items-center justify-center text-sm shrink-0"
-                          style={{ 
-                            backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--muted))',
-                            color: category?.color || 'hsl(var(--muted-foreground))'
-                          }}
-                        >
-                          {category?.icon || "💸"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{transaction.description}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{formatDay(transaction.recurrence_day)}</span>
-                            {category && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate">{category.name}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-                        <p className="font-semibold text-expense">
-                          -{formatCurrency(Number(transaction.amount))}
-                        </p>
-                        
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={isActive}
-                            onCheckedChange={() => handleToggleActive(transaction.id, transaction.status)}
-                          />
-                          <span className="text-xs text-muted-foreground hidden sm:inline w-12">
-                            {isActive ? "Ativo" : "Pausado"}
-                          </span>
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => {
-                                setSelectedTransaction(transaction.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {renderTransactionList(despesasFixas, 'expense')}
           </CardContent>
         </Card>
 
@@ -391,24 +332,43 @@ export default function Recorrentes() {
         </Card>
       </div>
 
-      {/* Dialog de Confirmação de Exclusão */}
+      {/* Dialog de Exclusão com Opções */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir lançamento recorrente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O lançamento será removido permanentemente 
-              e não será mais gerado nos próximos meses.
+              Escolha como deseja excluir este lançamento:
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          <div className="space-y-3 py-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 text-left"
+              onClick={handleDeleteSingle}
+              disabled={deleteRecurring.isPending}
             >
-              Excluir
-            </AlertDialogAction>
+              <Trash2 className="h-4 w-4 text-destructive shrink-0" />
+              <div>
+                <p className="font-medium text-sm">Excluir apenas este mês</p>
+                <p className="text-xs text-muted-foreground">Remove somente este lançamento específico</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 text-left border-destructive/50"
+              onClick={handleDeleteFuture}
+              disabled={deleteRecurring.isPending}
+            >
+              <Trash2 className="h-4 w-4 text-destructive shrink-0" />
+              <div>
+                <p className="font-medium text-sm text-destructive">Excluir este e todos os meses seguintes</p>
+                <p className="text-xs text-muted-foreground">Remove este e todos os lançamentos futuros da série</p>
+              </div>
+            </Button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteRecurring.isPending}>Cancelar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
