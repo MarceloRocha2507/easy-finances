@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +51,7 @@ export function RegistrarAcertoDialog({
   onSaved,
 }: Props) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: responsaveis = [] } = useResponsaveis();
   const { data: acertosExistentes = [], refetch: refetchAcertos } = useAcertosMes(
     open ? cartao.id : null,
@@ -148,6 +151,61 @@ export function RegistrarAcertoDialog({
         valor_pago: valor,
         observacao: observacao || undefined,
       });
+
+      // Criar transação de receita para o acerto recebido
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Buscar ou criar categoria "Acerto de Fatura" tipo income
+        let incomeCategoryId: string | null = null;
+        const { data: catIncome } = await (supabase as any)
+          .from("categories")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("name", "Acerto de Fatura")
+          .eq("type", "income")
+          .single();
+
+        if (catIncome) {
+          incomeCategoryId = catIncome.id;
+        } else {
+          const { data: novaCat } = await (supabase as any)
+            .from("categories")
+            .insert({
+              user_id: user.id,
+              name: "Acerto de Fatura",
+              icon: "handshake",
+              color: "#10b981",
+              type: "income",
+              is_default: true,
+            })
+            .select("id")
+            .single();
+          incomeCategoryId = novaCat?.id || null;
+        }
+
+        const hoje = new Date().toISOString().split("T")[0];
+        await (supabase as any)
+          .from("transactions")
+          .insert({
+            user_id: user.id,
+            description: `Acerto ${cartao.nome} - ${dadosResponsavel.nome} - ${nomeMes}`,
+            amount: parseFloat(valor.toFixed(2)),
+            type: "income",
+            status: "completed",
+            date: hoje,
+            paid_date: hoje,
+            category_id: incomeCategoryId,
+            tipo_lancamento: "unica",
+          });
+
+        // Invalidar queries de transações
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["transactions-with-balance"] });
+        queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+        queryClient.invalidateQueries({ queryKey: ["monthly-data"] });
+      }
 
       toast({ title: "Acerto registrado!" });
       refetchAcertos();
