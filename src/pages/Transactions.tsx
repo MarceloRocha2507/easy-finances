@@ -813,8 +813,8 @@ export default function Transactions() {
           open={ajustarSaldoOpen} 
           onOpenChange={setAjustarSaldoOpen}
           saldoRealCalculado={stats?.realBalance || 0}
-          totalReceitas={stats?.completedIncome || 0}
-          totalDespesas={stats?.completedExpense || 0}
+          totalReceitas={stats?.allCompletedIncome || 0}
+          totalDespesas={stats?.allCompletedExpense || 0}
         />
 
         {/* Tabs + Busca Integrados */}
