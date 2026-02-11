@@ -1,33 +1,67 @@
 
-# Adicionar "Desmarcar pagas" ao Dialog de Detalhes do Cartao
 
-## Problema
+# Registrar Receitas dos Responsaveis ao Pagar Fatura
 
-A opcao "Desmarcar pagas" foi implementada apenas na pagina de despesas (`/cartoes/:id/despesas`), mas o usuario acessa as compras pelo dialog de detalhes na pagina `/cartoes` (`DetalhesCartaoDialog`), onde a opcao nao existe.
+## O que muda
 
-## Solucao
+Quando a fatura for paga nos modos "Cada um pagou sua parte" ou "Dividir valores", alem da despesa do titular, o sistema tambem registrara uma transacao de **receita** para cada valor recebido de outros responsaveis. Isso reflete corretamente que o dinheiro recebido de terceiros e uma entrada no seu caixa.
 
-Adicionar a opcao "Desmarcar pagas" no `DetalhesCartaoDialog.tsx`, no mesmo local onde ficam as outras acoes (dropdown mobile e botoes desktop).
+## Exemplo pratico
 
-### Alteracoes em `src/components/cartoes/DetalhesCartaoDialog.tsx`
+Fatura total: R$ 1.000
+- Eu (titular): R$ 400 (despesa)
+- Joao me pagou: R$ 350 (receita)
+- Maria me pagou: R$ 250 (receita)
 
-1. **Importar** `desmarcarTodasParcelas` do servico `compras-cartao`
-2. **Importar** `AlertDialog` e componentes relacionados
-3. **Importar** `toast` do sonner
-4. **Adicionar estado** `desmarcarPagasOpen` para controlar o AlertDialog de confirmacao
-5. **Adicionar handler** `handleDesmarcarPagas` que chama o servico e recarrega a fatura
-6. **Mobile (dropdown)**: novo item "Desmarcar pagas" com icone `RotateCcw`, desabilitado quando `totalPago === 0`
-7. **Desktop (tooltips)**: novo botao com tooltip ao lado dos existentes, tambem desabilitado quando `totalPago === 0`
-8. **AlertDialog** de confirmacao antes de executar a acao
+Transacoes criadas:
+1. Despesa: "Fatura Nubank - fevereiro 2026" = R$ 400
+2. Receita: "Acerto fatura Nubank - Joao" = R$ 350
+3. Receita: "Acerto fatura Nubank - Maria" = R$ 250
 
-### Fluxo
+## Detalhes tecnicos
+
+### 1. Alterar tipo `PagarFaturaInput` (`src/services/compras-cartao.ts`)
+
+Adicionar campo `nome` em cada item de `acertosRecebidos`:
 
 ```text
-Usuario abre detalhes do cartao em /cartoes
-  -> Clica em "Desmarcar pagas" (menu mobile ou botao desktop)
-  -> AlertDialog pergunta "Tem certeza?"
-  -> Confirma
-  -> Chama desmarcarTodasParcelas(cartao.id, mesRef)
-  -> Recarrega fatura e atualiza lista
-  -> Toast: "X compra(s) desmarcada(s)"
+acertosRecebidos: Array<{
+  responsavel_id: string;
+  valor: number;
+  nome: string;   // <-- novo
+}>
+```
+
+### 2. Criar transacoes de receita em `pagarFaturaComTransacao`
+
+Apos criar a despesa do titular (passo 2 existente), adicionar um passo 2.5:
+
+- Buscar ou criar categoria de receita "Acerto de Fatura" (tipo income)
+- Para cada acerto recebido com valor > 0, inserir uma transacao de receita:
+  - description: "Acerto fatura {nomeCartao} - {nomeResponsavel}"
+  - amount: valor do acerto
+  - type: "income"
+  - status: "completed"
+  - date e paid_date: data atual
+
+### 3. Atualizar `PagarFaturaDialog.tsx`
+
+Passar o nome do responsavel em cada item de `acertosRecebidos`:
+
+- No modo "cada_um_pagou": incluir `nome: r.responsavel_apelido || r.responsavel_nome`
+- No modo "dividir_valores": idem
+
+### 4. Atualizar `DespesasCartao.tsx` (se tambem chama o servico)
+
+Verificar se a pagina de despesas tambem usa `pagarFaturaComTransacao` e ajustar para passar nomes, se necessario.
+
+### Fluxo atualizado
+
+```text
+Usuario paga fatura (dividir valores ou cada um pagou)
+  -> Cria despesa do titular (valor que EU pago)
+  -> Para cada responsavel que me pagou:
+     -> Cria receita "Acerto fatura X - NomeResponsavel"
+  -> Registra acertos como quitados
+  -> Toast de confirmacao
 ```
