@@ -807,7 +807,6 @@ export function useCompleteStats(mesReferencia?: Date) {
       let allCompletedExpense = 0;
       (allCompleted || []).forEach((t) => {
         const amount = Number(t.amount);
-        if (t.category_id && metaCategoryIds.has(t.category_id)) return;
         if (t.type === 'income') allCompletedIncome += amount;
         else allCompletedExpense += amount;
       });
