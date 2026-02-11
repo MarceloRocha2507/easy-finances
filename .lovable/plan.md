@@ -1,42 +1,46 @@
 
-# Corrigir calculo do Ajustar Saldo Real
+# Excluir "Acerto de Fatura" dos totais de Despesas
 
 ## Problema
 
-O "Ajustar Saldo Real" usa a formula errada para calcular o novo saldo inicial. O saldo real e calculado com receitas e despesas de **todo o historico**, mas o dialog recebe apenas receitas e despesas **do mes atual**. Isso causa uma diferenca enorme no resultado.
+As transacoes de "Acerto de Fatura" (criadas ao pagar faturas com divisao entre responsaveis) estao sendo contabilizadas como despesas nos cards de Despesas do mes e no calculo do saldo. Essas transacoes representam dinheiro recebido de terceiros e nao devem inflar o total de despesas exibido.
 
-Formula atual (errada):
-```text
-novoSaldoInicial = valorInformado - receitasDoMes + despesasDoMes
-```
+## Solucao
 
-Formula correta:
-```text
-novoSaldoInicial = valorInformado - receitasAcumuladas + despesasAcumuladas
-```
-
-No seu caso: voce informou R$ 0,00 mas a formula subtraiu apenas as receitas do mes e somou apenas as despesas do mes, em vez de usar os totais acumulados. Isso gerou o saldo inicial errado, fazendo o saldo real pular para R$ 2.368,61.
+Filtrar as transacoes da categoria "Acerto de Fatura" da mesma forma que ja e feito com as categorias de meta ("Deposito em Meta" / "Retirada de Meta"). Elas continuarao existindo no banco e aparecendo na lista de transacoes, mas nao serao somadas nos cards de Receitas/Despesas.
 
 ## Alteracoes
 
-### 1. `src/pages/Transactions.tsx`
+### `src/hooks/useTransactions.ts`
 
-Passar `allCompletedIncome` e `allCompletedExpense` (acumulados) em vez de `completedIncome` e `completedExpense` (do mes):
+1. Na busca de categorias para filtro (linha ~751), adicionar "Acerto de Fatura" a lista de categorias excluidas:
 
 ```text
-<AjustarSaldoDialog 
-  ...
-  totalReceitas={stats?.allCompletedIncome || 0}
-  totalDespesas={stats?.allCompletedExpense || 0}
-/>
+.in('name', ['Depósito em Meta', 'Retirada de Meta', 'Acerto de Fatura']);
 ```
 
-### 2. Verificar se `allCompletedIncome` e `allCompletedExpense` estao expostos no retorno do hook
+2. A logica existente (linhas 833-837) ja exclui categorias do set `metaCategoryIds` dos totais de receitas/despesas do mes. Como "Acerto de Fatura" sera adicionada ao mesmo set, ela sera automaticamente excluida dos cards.
 
-O hook `useCompleteStats` ja calcula e retorna esses valores no objeto `stats`, entao basta referencia-los corretamente.
+3. Para o calculo acumulado (allCompletedIncome / allCompletedExpense nas linhas 805-812), tambem e necessario excluir essas transacoes. A query de allCompleted (linha 742) precisara incluir `category_id` no select e o loop precisara verificar se a categoria esta no set de exclusao:
 
-## Resultado
+```text
+// Query: adicionar category_id ao select
+.select('type, amount, category_id')
 
-Quando voce informar R$ 0,00 como saldo real, o sistema vai calcular:
-- novoSaldoInicial = 0 - todasReceitas + todasDespesas
-- Que e exatamente o inverso de: saldoReal = saldoInicial + todasReceitas - todasDespesas = 0
+// Loop: excluir categorias especiais
+(allCompleted || []).forEach((t) => {
+  const amount = Number(t.amount);
+  if (t.category_id && metaCategoryIds.has(t.category_id)) return;
+  if (t.type === 'income') allCompletedIncome += amount;
+  else allCompletedExpense += amount;
+});
+```
+
+**Importante**: a query de `metaCategories` precisa rodar ANTES do loop de `allCompleted`, o que ja acontece na ordem atual do codigo.
+
+### Resultado
+
+- Cards de "Despesas" no Dashboard e Transacoes: nao incluirao valores de "Acerto de Fatura"
+- Saldo disponivel: nao sera afetado por acertos (eles nao somam nem subtraem)
+- Lista de transacoes: os acertos continuam visiveis normalmente
+- Saldo real/ajuste de saldo: tambem nao sera impactado pelos acertos
