@@ -91,6 +91,8 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   const [activeTab, setActiveTab] = useState("depositar");
   const [valorDeposito, setValorDeposito] = useState("");
   const [valorRetirada, setValorRetirada] = useState("");
+  const [motivoDeposito, setMotivoDeposito] = useState("");
+  const [motivoRetirada, setMotivoRetirada] = useState("");
 
   // Estado para edição
   const [titulo, setTitulo] = useState(meta?.titulo || "");
@@ -211,10 +213,12 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
         valorAlvo: meta.valorAlvo,
         metaTitulo: meta.titulo,
         saldoDisponivel,
+        motivo: motivoDeposito || undefined,
       },
       {
         onSuccess: () => {
           setValorDeposito("");
+          setMotivoDeposito("");
           onSuccess?.();
         },
       }
@@ -231,10 +235,12 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
         valor,
         valorAtualAnterior: meta.valorAtual,
         metaTitulo: meta.titulo,
+        motivo: motivoRetirada || undefined,
       },
       {
         onSuccess: () => {
           setValorRetirada("");
+          setMotivoRetirada("");
           onSuccess?.();
         },
       }
@@ -376,6 +382,16 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
               </p>
             </div>
 
+            {/* Motivo/Descrição */}
+            <div className="space-y-2">
+              <Label>Motivo / Descrição (opcional)</Label>
+              <Input
+                placeholder="Ex: Poupança inicial, Salário..."
+                value={motivoDeposito}
+                onChange={(e) => setMotivoDeposito(e.target.value)}
+              />
+            </div>
+
             {/* Valores rápidos */}
             <div className="flex flex-wrap gap-2">
               {VALORES_RAPIDOS.filter(v => v <= saldoDisponivel).map((valor) => (
@@ -496,6 +512,16 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
               <p className="text-xs text-muted-foreground">
                 Disponível para retirada: {formatCurrency(meta.valorAtual)}
               </p>
+            </div>
+
+            {/* Motivo/Descrição */}
+            <div className="space-y-2">
+              <Label>Motivo / Descrição (opcional)</Label>
+              <Input
+                placeholder="Ex: Pagamento cartão, Compra emergencial..."
+                value={motivoRetirada}
+                onChange={(e) => setMotivoRetirada(e.target.value)}
+              />
             </div>
 
             <Button

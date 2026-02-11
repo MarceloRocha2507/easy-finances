@@ -580,6 +580,47 @@ export type Database = {
           },
         ]
       }
+      movimentacoes_meta: {
+        Row: {
+          created_at: string
+          id: string
+          meta_id: string
+          motivo: string | null
+          saldo_resultante: number
+          tipo: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta_id: string
+          motivo?: string | null
+          saldo_resultante: number
+          tipo: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta_id?: string
+          motivo?: string | null
+          saldo_resultante?: number
+          tipo?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_meta_meta_id_fkey"
+            columns: ["meta_id"]
+            isOneToOne: false
+            referencedRelation: "metas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes_lidas: {
         Row: {
           alerta_id: string

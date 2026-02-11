@@ -235,6 +235,7 @@ export function useAdicionarValorMeta() {
       valorAlvo: number;
       metaTitulo: string;
       saldoDisponivel?: number;
+      motivo?: string;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -279,11 +280,22 @@ export function useAdicionarValorMeta() {
 
       if (txError) throw txError;
 
+      // 4. Registrar movimentação detalhada
+      await (supabase as any).from("movimentacoes_meta").insert({
+        user_id: user.id,
+        meta_id: data.id,
+        tipo: "deposito",
+        valor: data.valor,
+        saldo_resultante: novoValor,
+        motivo: data.motivo || null,
+      });
+
       return { novoValor, concluida };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-meta"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
       queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
@@ -326,6 +338,7 @@ export function useRetirarValorMeta() {
       valor: number;
       valorAtualAnterior: number;
       metaTitulo: string;
+      motivo?: string;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -365,11 +378,22 @@ export function useRetirarValorMeta() {
 
       if (txError) throw txError;
 
+      // 4. Registrar movimentação detalhada
+      await (supabase as any).from("movimentacoes_meta").insert({
+        user_id: user.id,
+        meta_id: data.id,
+        tipo: "retirada",
+        valor: data.valor,
+        saldo_resultante: novoValor,
+        motivo: data.motivo || null,
+      });
+
       return { novoValor };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["metas"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-meta"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
       queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
