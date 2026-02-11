@@ -1,77 +1,72 @@
 
 
-# Historico Detalhado de Metas
+# Corrigir e Melhorar Despesas Recorrentes
 
-## Problema Atual
+## Problemas Identificados
 
-O historico de movimentacoes das metas e derivado da tabela `transactions` buscando por padroes de descricao ("Deposito na meta: X" / "Retirada da meta: X"). Isso tem limitacoes:
-- Nao registra o saldo resultante apos cada operacao
-- Nao tem campo de motivo/descricao especifico da movimentacao
-- A descricao e generica e fixa
+1. Ao criar uma despesa "Fixa", o sistema sempre cria exatamente 12 meses (hardcoded na linha 332 de `useTransactions.ts`)
+2. Nao ha campo para o usuario escolher quantos meses a despesa deve se repetir
+3. Ao deletar, so existe a opcao de remover uma unica transacao - nao ha opcao de deletar "esta e todas as futuras"
 
-## Solucao
+## Mudancas Necessarias
 
-Criar uma tabela dedicada `movimentacoes_meta` para registrar cada operacao com dados completos, e atualizar o historico visual para exibir todas as colunas solicitadas.
+### 1. Formulario de criacao - permitir escolher numero de repeticoes
 
-## 1. Nova tabela no banco de dados
+**Arquivo**: `src/pages/Transactions.tsx`
 
-Criar tabela `movimentacoes_meta` com as colunas:
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `meta_id` (uuid, NOT NULL, FK para metas)
-- `tipo` (text, NOT NULL - "deposito" ou "retirada")
-- `valor` (numeric, NOT NULL)
-- `saldo_resultante` (numeric, NOT NULL - saldo da meta apos a operacao)
-- `motivo` (text, nullable - descricao/motivo especifico)
-- `created_at` (timestamptz, default now())
+- Quando o usuario selecionar "Fixa", exibir um campo "Quantas vezes?" (similar ao campo de parcelas que ja existe para "Parcelada")
+- Valores sugeridos: 3, 6, 12, 24 meses, ou campo livre
+- O valor padrao sera 12
+- Renomear internamente: usar `totalParcelas` para ambos os casos (parcelada e fixa)
 
-Politicas RLS: CRUD restrito ao proprio usuario (auth.uid() = user_id).
+### 2. Logica de criacao - usar o numero escolhido
 
-## 2. Atualizar logica de deposito e retirada
+**Arquivo**: `src/hooks/useTransactions.ts`
 
-**Arquivo**: `src/hooks/useMetas.ts`
+- Remover o hardcode `tipoLancamento === 'fixa' ? 12 : totalParcelas` (linha 332)
+- Usar `totalParcelas` diretamente para ambos os tipos
+- Manter a diferenca: "parcelada" divide o valor total, "fixa" repete o valor cheio
 
-- Na funcao `useAdicionarValorMeta`: apos atualizar a meta e criar a transacao, inserir registro em `movimentacoes_meta` com tipo "deposito", valor, saldo_resultante (novoValor) e motivo.
-- Na funcao `useRetirarValorMeta`: idem com tipo "retirada".
-- Adicionar campo `motivo` opcional nos parametros de ambas as mutations.
+### 3. Dialog de exclusao com opcoes
 
-## 3. Atualizar formularios de deposito e retirada
+**Arquivo**: `src/pages/transactions/Recorrentes.tsx`
 
-**Arquivo**: `src/components/dashboard/GerenciarMetaDialog.tsx`
+- Substituir o AlertDialog simples por um com duas opcoes:
+  - "Excluir apenas este mes" - deleta so a transacao selecionada
+  - "Excluir este e todos os meses seguintes" - deleta a transacao selecionada + todas com mesmo `parent_id` (ou que sao filhas dela) com `date >= date da selecionada`
 
-- Adicionar campo de texto "Motivo/Descricao" nas tabs de Depositar e Retirar (ex: "Poupanca inicial", "Pagamento cartao credito").
-- Passar o motivo para as mutations.
+### 4. Hook de exclusao em lote
 
-## 4. Atualizar hook de historico
+**Arquivo**: `src/hooks/useTransactions.ts`
 
-**Arquivo**: `src/hooks/useHistoricoMeta.ts`
-
-- Buscar dados da nova tabela `movimentacoes_meta` em vez da `transactions`.
-- Incluir `saldo_resultante` e `motivo` no tipo `MovimentacaoMeta`.
-- Manter fallback para transacoes antigas (buscar de `transactions` para movimentacoes anteriores a criacao da tabela).
-
-## 5. Redesenhar componente de historico
-
-**Arquivo**: `src/components/dashboard/HistoricoMetaTab.tsx`
-
-Cada linha do historico exibira:
-
-```text
-[Data] [Tipo] [Motivo] [Valor] [Saldo apos]
-```
-
-Exemplo visual:
-- 20/01 | Deposito | Poupanca inicial | +R$ 5.000,00 | Saldo: R$ 5.000,00
-- 22/01 | Retirada | Pagamento cartao | -R$ 1.200,00 | Saldo: R$ 3.800,00
-
-Cores: depositos em verde, retiradas em vermelho (ja implementado, sera mantido).
-
-A ordenacao sera cronologica (mais recente primeiro), agrupada por mes como ja esta hoje.
+- Criar `useDeleteRecurringTransactions` que aceita um `transactionId` e um modo (`single` ou `future`)
+- Modo `single`: deleta apenas a transacao com aquele ID
+- Modo `future`: busca a transacao para obter `parent_id` e `date`, depois deleta todas as transacoes do mesmo grupo (mesmo `parent_id` ou onde `parent_id` = transacao selecionada) com data >= data da selecionada
 
 ## Detalhes Tecnicos
 
-- A tabela `movimentacoes_meta` precisa de FK para `metas(id)` com `ON DELETE CASCADE` para limpar automaticamente ao excluir uma meta.
-- O `saldo_resultante` e calculado no momento da operacao: para deposito = valorAtualAnterior + valor; para retirada = valorAtualAnterior - valor.
-- Movimentacoes antigas (antes da nova tabela) continuarao visiveis via fallback da tabela `transactions`, mas sem saldo_resultante e motivo.
-- Invalidar query `historico-meta` nas mutations de deposito e retirada.
+### Logica de agrupamento para exclusao em lote
+
+As transacoes recorrentes ja usam `parent_id` para vincular filhas a mae. Para deletar "este e futuros":
+
+```text
+1. Buscar a transacao selecionada (obter parent_id e date)
+2. Se tem parent_id: grupo = parent_id
+   Se nao tem (e a mae): grupo = proprio id
+3. Deletar todas do grupo com date >= date da selecionada
+```
+
+### Campo de repeticoes no formulario
+
+O campo de parcelas ja existe para tipo "parcelada". A mudanca e mostrar um campo similar para "fixa", com label "Quantos meses?" em vez de "Numero de parcelas".
+
+### Nenhuma mudanca no banco de dados
+
+A estrutura atual (campos `parent_id`, `tipo_lancamento`, `total_parcelas`, `numero_parcela`) ja suporta tudo que precisamos. Nenhuma migracao necessaria.
+
+### Arquivos modificados
+
+1. `src/hooks/useTransactions.ts` - Remover hardcode de 12 meses, criar hook `useDeleteRecurringTransactions`
+2. `src/pages/Transactions.tsx` - Mostrar campo "Quantos meses?" quando tipo = "fixa"
+3. `src/pages/transactions/Recorrentes.tsx` - Dialog de exclusao com duas opcoes
 
