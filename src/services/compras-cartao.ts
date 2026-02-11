@@ -832,6 +832,7 @@ export type PagarFaturaInput = {
   acertosRecebidos: Array<{
     responsavel_id: string;
     valor: number;
+    nome: string;
   }>;
 };
 
@@ -895,6 +896,64 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
       });
 
     if (transactionError) throw transactionError;
+  }
+
+  // 2.5. Criar transações de receita para cada acerto recebido
+  if (input.acertosRecebidos.length > 0) {
+    const mesLabel = input.mesReferencia.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    // Buscar ou criar categoria de receita "Acerto de Fatura"
+    let incomeCategoryId: string | null = null;
+
+    const { data: catReceita } = await (supabase as any)
+      .from("categories")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("name", "Acerto de Fatura")
+      .eq("type", "income")
+      .single();
+
+    if (catReceita) {
+      incomeCategoryId = catReceita.id;
+    } else {
+      const { data: novaCat } = await (supabase as any)
+        .from("categories")
+        .insert({
+          user_id: user.id,
+          name: "Acerto de Fatura",
+          icon: "handshake",
+          color: "#10b981",
+          type: "income",
+          is_default: true,
+        })
+        .select("id")
+        .single();
+
+      incomeCategoryId = novaCat?.id || null;
+    }
+
+    const hoje = new Date().toISOString().split("T")[0];
+
+    for (const acerto of input.acertosRecebidos) {
+      if (acerto.valor > 0) {
+        await (supabase as any)
+          .from("transactions")
+          .insert({
+            user_id: user.id,
+            description: `Acerto fatura ${input.nomeCartao} - ${acerto.nome}`,
+            amount: acerto.valor,
+            type: "income",
+            status: "completed",
+            date: hoje,
+            paid_date: hoje,
+            category_id: incomeCategoryId,
+            tipo_lancamento: "unica",
+          });
+      }
+    }
   }
 
   // 3. Registrar acertos para quem pagou sua parte
