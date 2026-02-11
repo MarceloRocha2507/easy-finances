@@ -898,64 +898,6 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
     if (transactionError) throw transactionError;
   }
 
-  // 2.5. Criar transações de despesa para cada acerto recebido
-  if (input.acertosRecebidos.length > 0) {
-    const mesLabel = input.mesReferencia.toLocaleDateString("pt-BR", {
-      month: "long",
-      year: "numeric",
-    });
-
-    // Buscar ou criar categoria de despesa "Acerto de Fatura"
-    let expenseCategoryId: string | null = null;
-
-    const { data: catDespesa } = await (supabase as any)
-      .from("categories")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("name", "Acerto de Fatura")
-      .eq("type", "expense")
-      .single();
-
-    if (catDespesa) {
-      expenseCategoryId = catDespesa.id;
-    } else {
-      const { data: novaCat } = await (supabase as any)
-        .from("categories")
-        .insert({
-          user_id: user.id,
-          name: "Acerto de Fatura",
-          icon: "handshake",
-          color: "#10b981",
-          type: "expense",
-          is_default: true,
-        })
-        .select("id")
-        .single();
-
-      expenseCategoryId = novaCat?.id || null;
-    }
-
-    const hoje = new Date().toISOString().split("T")[0];
-
-    for (const acerto of input.acertosRecebidos) {
-      if (acerto.valor > 0) {
-        await (supabase as any)
-          .from("transactions")
-          .insert({
-            user_id: user.id,
-            description: `Acerto fatura ${input.nomeCartao} - ${acerto.nome}`,
-            amount: acerto.valor,
-            type: "expense",
-            status: "completed",
-            date: hoje,
-            paid_date: hoje,
-            category_id: expenseCategoryId,
-            tipo_lancamento: "unica",
-          });
-      }
-    }
-  }
-
   // 3. Registrar acertos para quem pagou sua parte
   const mesStr = `${input.mesReferencia.getFullYear()}-${String(input.mesReferencia.getMonth() + 1).padStart(2, "0")}-01`;
 
