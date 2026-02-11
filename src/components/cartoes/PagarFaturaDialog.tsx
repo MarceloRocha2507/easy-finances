@@ -165,7 +165,7 @@ export function PagarFaturaDialog({
 
     setLoading(true);
     try {
-      let acertosRecebidos: { responsavel_id: string; valor: number }[] = [];
+      let acertosRecebidos: { responsavel_id: string; valor: number; nome: string }[] = [];
 
       if (modo === "cada_um_pagou") {
         acertosRecebidos = responsaveis
@@ -173,6 +173,7 @@ export function PagarFaturaDialog({
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: r.total,
+            nome: r.responsavel_apelido || r.responsavel_nome,
           }));
       } else if (modo === "dividir_valores") {
         acertosRecebidos = responsaveis
@@ -180,6 +181,7 @@ export function PagarFaturaDialog({
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: parseFloat(parseBrazilianCurrency(r.valorCustom).toFixed(2)),
+            nome: r.responsavel_apelido || r.responsavel_nome,
           }))
           .filter((a) => a.valor > 0);
       }
