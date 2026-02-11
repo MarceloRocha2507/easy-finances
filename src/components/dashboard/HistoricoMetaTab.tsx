@@ -37,22 +37,35 @@ function MovimentacaoItem({ item }: { item: MovimentacaoMeta }) {
   const Icon = cfg.icon;
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-      <div className="flex items-center gap-3">
-        <div className={cn("p-2 rounded-lg", cfg.bgClass)}>
+    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className={cn("p-2 rounded-lg shrink-0", cfg.bgClass)}>
           <Icon className={cn("h-4 w-4", cfg.iconClass)} />
         </div>
-        <div>
-          <p className="text-sm font-medium">{cfg.label}</p>
-          <p className="text-xs text-muted-foreground">
-            {format(item.data, "dd/MM/yyyy", { locale: ptBR })}
-          </p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{cfg.label}</span>
+            <span className="text-xs text-muted-foreground">
+              {format(item.data, "dd/MM/yyyy", { locale: ptBR })}
+            </span>
+          </div>
+          {item.motivo && (
+            <p className="text-xs text-muted-foreground truncate">{item.motivo}</p>
+          )}
+          {!item.motivo && item.descricao && (
+            <p className="text-xs text-muted-foreground truncate">{item.descricao}</p>
+          )}
         </div>
       </div>
-      <div className="text-right">
-        <p className={cn("font-semibold", cfg.valueClass)}>
+      <div className="text-right shrink-0">
+        <p className={cn("font-semibold text-sm", cfg.valueClass)}>
           {cfg.prefix}{formatCurrency(item.valor)}
         </p>
+        {item.saldo_resultante !== null && (
+          <p className="text-xs text-muted-foreground">
+            Saldo: {formatCurrency(item.saldo_resultante)}
+          </p>
+        )}
       </div>
     </div>
   );
