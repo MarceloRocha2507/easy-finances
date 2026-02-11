@@ -1,17 +1,42 @@
 
-# Corrigir tipo de transacao dos acertos de fatura: receita -> despesa
+# Corrigir calculo do Ajustar Saldo Real
 
 ## Problema
 
-As transacoes de acerto de fatura (ex: "Acerto fatura Nubank - Mae") estao sendo registradas como **receita** (income), mas devem ser registradas como **despesa** (expense).
+O "Ajustar Saldo Real" usa a formula errada para calcular o novo saldo inicial. O saldo real e calculado com receitas e despesas de **todo o historico**, mas o dialog recebe apenas receitas e despesas **do mes atual**. Isso causa uma diferenca enorme no resultado.
 
-## Alteracoes em `src/services/compras-cartao.ts`
+Formula atual (errada):
+```text
+novoSaldoInicial = valorInformado - receitasDoMes + despesasDoMes
+```
 
-Na funcao `pagarFaturaComTransacao`, no bloco que cria transacoes para cada acerto recebido (linhas ~901-957):
+Formula correta:
+```text
+novoSaldoInicial = valorInformado - receitasAcumuladas + despesasAcumuladas
+```
 
-1. Alterar a busca de categoria de `type: "income"` para `type: "expense"`
-2. Alterar a criacao de categoria (caso nao exista) de `type: "income"` para `type: "expense"`
-3. Alterar o insert da transacao de `type: "income"` para `type: "expense"`
-4. Renomear variaveis internas para refletir a mudanca (ex: `incomeCategoryId` -> `expenseCategoryId`)
+No seu caso: voce informou R$ 0,00 mas a formula subtraiu apenas as receitas do mes e somou apenas as despesas do mes, em vez de usar os totais acumulados. Isso gerou o saldo inicial errado, fazendo o saldo real pular para R$ 2.368,61.
 
-Resultado: o "Acerto fatura Nubank - Mae" aparecera como despesa (vermelho) ao inves de receita (verde).
+## Alteracoes
+
+### 1. `src/pages/Transactions.tsx`
+
+Passar `allCompletedIncome` e `allCompletedExpense` (acumulados) em vez de `completedIncome` e `completedExpense` (do mes):
+
+```text
+<AjustarSaldoDialog 
+  ...
+  totalReceitas={stats?.allCompletedIncome || 0}
+  totalDespesas={stats?.allCompletedExpense || 0}
+/>
+```
+
+### 2. Verificar se `allCompletedIncome` e `allCompletedExpense` estao expostos no retorno do hook
+
+O hook `useCompleteStats` ja calcula e retorna esses valores no objeto `stats`, entao basta referencia-los corretamente.
+
+## Resultado
+
+Quando voce informar R$ 0,00 como saldo real, o sistema vai calcular:
+- novoSaldoInicial = 0 - todasReceitas + todasDespesas
+- Que e exatamente o inverso de: saldoReal = saldoInicial + todasReceitas - todasDespesas = 0
