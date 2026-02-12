@@ -494,7 +494,7 @@ export function DetalhesCartaoDialog({
                         : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-3">
                       <div className="min-w-0 flex-1">
                         <p className={cn(
                           "text-sm font-medium truncate",
@@ -513,7 +513,7 @@ export function DetalhesCartaoDialog({
 
                     <div className="flex items-center gap-1 shrink-0">
                       <span className={cn(
-                        "text-sm font-semibold",
+                        "text-sm font-semibold min-w-[85px] text-right",
                         p.paga ? "line-through text-muted-foreground" : "text-destructive"
                       )}>
                         {formatCurrency(Math.abs(p.valor))}
