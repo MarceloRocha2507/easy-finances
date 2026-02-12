@@ -1,4 +1,4 @@
-import { ReactNode, useState, useCallback } from "react";
+import { ReactNode, useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -6,6 +6,8 @@ import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet } from "lucide-react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const SIDEBAR_WIDTH = 280;
 
 interface LayoutProps {
   children: ReactNode;
@@ -21,11 +23,34 @@ export function Layout({ children }: LayoutProps) {
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
 
-  useSwipeGesture({
+  const { dragOffset, isDragging } = useSwipeGesture({
     onSwipeRight: openSidebar,
     onSwipeLeft: closeSidebar,
     enabled: isMobile,
+    sidebarOpen,
+    sidebarWidth: SIDEBAR_WIDTH,
   });
+
+  // Compute sidebar transform and overlay opacity during drag
+  const sidebarStyle = useMemo(() => {
+    if (!isDragging) return undefined;
+    if (sidebarOpen) {
+      // Closing: sidebar moves from 0 to -100%
+      return { transform: `translateX(${-dragOffset}px)` };
+    }
+    // Opening: sidebar moves from -100% toward 0
+    return { transform: `translateX(calc(-100% + ${dragOffset}px))` };
+  }, [isDragging, sidebarOpen, dragOffset]);
+
+  const overlayOpacity = useMemo(() => {
+    if (!isDragging) return undefined;
+    if (sidebarOpen) {
+      return 1 - dragOffset / SIDEBAR_WIDTH;
+    }
+    return dragOffset / SIDEBAR_WIDTH;
+  }, [isDragging, sidebarOpen, dragOffset]);
+
+  const showOverlay = sidebarOpen || (isDragging && dragOffset > 0);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -45,7 +70,6 @@ export function Layout({ children }: LayoutProps) {
       {/* Desktop Sidebar - Floating */}
       <div className="hidden lg:block fixed top-0 left-0 h-full w-64 p-3 z-40">
         <aside className="h-full sidebar-floating flex flex-col overflow-hidden">
-          {/* Logo */}
           <div className="h-14 flex items-center px-4 border-b border-border/30">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -54,14 +78,10 @@ export function Layout({ children }: LayoutProps) {
               <span className="text-xl font-bold text-foreground">Fina</span>
             </div>
           </div>
-
-          {/* Navigation */}
           <SidebarNav 
             isAdmin={!isCheckingRole && isAdmin} 
             onItemClick={closeSidebar} 
           />
-
-          {/* User section */}
           <SidebarUserSection 
             user={user} 
             onClose={closeSidebar} 
@@ -73,19 +93,16 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Sidebar - Floating Drawer */}
       <aside
         className={cn(
-          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-floating z-40 flex flex-col overflow-hidden transition-transform duration-300 ease-out rounded-l-none",
-          sidebarOpen 
-            ? "translate-x-0" 
-            : "-translate-x-full"
+          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-floating z-40 flex flex-col overflow-hidden rounded-l-none",
+          !isDragging && "transition-transform duration-300 ease-out",
+          !isDragging && (sidebarOpen ? "translate-x-0" : "-translate-x-full")
         )}
+        style={sidebarStyle}
       >
-        {/* Navigation */}
         <SidebarNav 
           isAdmin={!isCheckingRole && isAdmin} 
           onItemClick={closeSidebar} 
         />
-
-        {/* User section */}
         <SidebarUserSection 
           user={user} 
           onClose={closeSidebar} 
@@ -94,9 +111,13 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Mobile overlay */}
-      {sidebarOpen && (
+      {showOverlay && (
         <div
-          className="lg:hidden fixed inset-0 bg-foreground/20 z-30"
+          className={cn(
+            "lg:hidden fixed inset-0 bg-foreground/20 z-30",
+            !isDragging && "transition-opacity duration-300 ease-out"
+          )}
+          style={overlayOpacity !== undefined ? { opacity: overlayOpacity } : undefined}
           onClick={closeSidebar}
         />
       )}
