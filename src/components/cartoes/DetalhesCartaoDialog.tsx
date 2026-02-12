@@ -494,15 +494,15 @@ export function DetalhesCartaoDialog({
                         : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                      <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className={cn(
                           "text-sm font-medium truncate",
                           p.paga && "line-through text-muted-foreground"
                         )}>
                           {p.descricao}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           {p.numero_parcela}/{p.total_parcelas}
                           {(p.responsavel_apelido || p.responsavel_nome) && (
                             <> · {p.responsavel_apelido || p.responsavel_nome}</>
