@@ -231,7 +231,7 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 overflow-hidden">
           {/* Header compacto */}
           <div
             className="px-5 py-4 text-white"
@@ -255,18 +255,18 @@ export function DetalhesCartaoDialog({
             </DialogHeader>
 
             {/* Métricas inline - responsivo */}
-            <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-3 text-xs sm:text-sm">
-              <div>
-                <span className="text-muted-foreground">Limite:</span>{" "}
-                <span className="font-medium text-foreground">{formatCurrency(limite)}</span>
+            <div className="grid grid-cols-3 gap-2 mt-3 text-[11px] sm:text-sm">
+              <div className="min-w-0">
+                <span className="text-muted-foreground">Limite</span>
+                <p className="font-medium text-foreground truncate">{formatCurrency(limite)}</p>
               </div>
-              <div>
-                <span className="text-muted-foreground">Fatura:</span>{" "}
-                <span className="font-medium text-destructive">{formatCurrency(totalMes)}</span>
+              <div className="min-w-0">
+                <span className="text-muted-foreground">Fatura</span>
+                <p className="font-medium text-destructive truncate">{formatCurrency(totalMes)}</p>
               </div>
-              <div>
-                <span className="text-muted-foreground">Disponível:</span>{" "}
-                <span className="font-medium text-emerald-500">{formatCurrency(disponivel)}</span>
+              <div className="min-w-0 text-right">
+                <span className="text-muted-foreground">Disponível</span>
+                <p className="font-medium text-emerald-500 truncate">{formatCurrency(disponivel)}</p>
               </div>
             </div>
 
