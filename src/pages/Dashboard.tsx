@@ -386,6 +386,7 @@ export default function Dashboard() {
           open={detalhesOpen}
           onOpenChange={setDetalhesOpen}
           onUpdated={() => refetch()}
+          mesInicial={mesReferencia}
         />
       )}
 
