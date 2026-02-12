@@ -511,13 +511,7 @@ export function DetalhesCartaoDialog({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className={cn(
-                        "text-sm font-semibold min-w-[90px] text-right",
-                        p.paga ? "line-through text-muted-foreground" : "text-destructive"
-                      )}>
-                        {formatCurrency(Math.abs(p.valor))}
-                      </span>
+                    <div className="flex items-center shrink-0">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7">
