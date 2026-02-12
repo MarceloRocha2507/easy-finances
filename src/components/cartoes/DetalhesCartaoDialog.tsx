@@ -106,6 +106,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
+  mesInicial?: Date;
 }
 
 export function DetalhesCartaoDialog({
@@ -113,11 +114,19 @@ export function DetalhesCartaoDialog({
   open,
   onOpenChange,
   onUpdated,
+  mesInicial,
 }: Props) {
   const navigate = useNavigate();
   const [mesRef, setMesRef] = useState(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    () => mesInicial ? new Date(mesInicial.getFullYear(), mesInicial.getMonth(), 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
+
+  // Reset mesRef when dialog opens with a new mesInicial
+  useEffect(() => {
+    if (open && mesInicial) {
+      setMesRef(new Date(mesInicial.getFullYear(), mesInicial.getMonth(), 1));
+    }
+  }, [open, mesInicial]);
 
   const [parcelas, setParcelas] = useState<ParcelaFatura[]>([]);
   const [loading, setLoading] = useState(false);
