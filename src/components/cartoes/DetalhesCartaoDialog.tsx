@@ -242,10 +242,7 @@ export function DetalhesCartaoDialog({
         <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
           {/* Header com cor sólida do cartão */}
           <div
-            className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden"
-            style={{
-              background: cartao.cor || "#6366f1",
-            }}
+            className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden bg-gradient-to-br from-violet-600 to-indigo-600"
           >
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
