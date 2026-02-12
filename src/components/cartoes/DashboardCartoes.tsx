@@ -197,6 +197,7 @@ export function DashboardCartoes() {
           open={detalhesOpen}
           onOpenChange={setDetalhesOpen}
           onUpdated={() => refetch()}
+          mesInicial={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
         />
       )}
     </>
