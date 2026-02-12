@@ -1,57 +1,59 @@
 
 
-# Corrigir Integração Telegram
+# Notificacoes de Despesas e Receitas no Telegram
 
-## Problemas Identificados
+## O que sera feito
+Quando voce registrar uma despesa ou receita, o sistema enviara automaticamente uma notificacao no Telegram com os detalhes do lancamento (tipo, valor, descricao, categoria).
 
-### 1. Webhook do Telegram nao esta registrado
-A backend function `telegram-webhook` existe e esta deployada, mas o Telegram nao sabe para onde enviar as mensagens. E preciso registrar a URL do webhook na API do Telegram usando o metodo `setWebhook`.
+## Como vai funcionar
 
-### 2. Logica de inserção com placeholder quebrada
-Quando o bot recebe `/start`, o codigo tenta fazer upsert com `user_id: "00000000-0000-0000-0000-000000000000"` e depois deleta e insere novamente. Isso causa conflitos quando multiplos usuarios tentam vincular (todos usam o mesmo placeholder UUID). A logica precisa ser simplificada.
+1. **Novos tipos de alerta nas configuracoes**: Dois novos toggles na categoria "Transacoes":
+   - "Nova despesa registrada" (ativado por padrao)
+   - "Nova receita registrada" (ativado por padrao)
 
-## Solucao
+2. **Envio automatico ao criar transacao**: Apos o registro ser salvo com sucesso, o sistema chamara a backend function `telegram-send` para enviar a notificacao ao grupo/chat vinculado.
 
-### Passo 1: Adicionar acao `setup-webhook` na backend function
-Adicionar uma acao na funcao `telegram-webhook` que, ao ser chamada pelo frontend, registra automaticamente a URL do webhook na API do Telegram. Assim o usuario nao precisa fazer isso manualmente.
-
-A URL do webhook sera:
-`https://vcpnairzcpljyartrafm.supabase.co/functions/v1/telegram-webhook`
-
-### Passo 2: Corrigir a logica do `/start`
-Simplificar a logica para:
-- Deletar qualquer registro pendente (nao ativo) com o mesmo `telegram_chat_id`
-- Inserir um novo registro com `user_id` nulo (mudar coluna para nullable) ou usar o placeholder
-- Remover o upsert redundante que causa conflito
-
-Como `user_id` nao pode ser nulo (NOT NULL), vou manter o placeholder mas corrigir a logica para evitar conflitos de unicidade:
-- Primeiro deletar registros pendentes com mesmo `chat_id`
-- Depois inserir o novo registro
-- Remover o upsert inicial que esta duplicado
-
-### Passo 3: Adicionar botao "Configurar Webhook" no frontend
-Na secao Telegram da pagina de configuracoes, antes de pedir o codigo, adicionar um botao que chama a acao `setup-webhook`. Isso garante que o bot esta pronto para receber mensagens.
-
-Alternativamente, chamar `setup-webhook` automaticamente ao carregar a pagina.
+3. **Respeita as preferencias**: So envia se o toggle correspondente estiver ativado nas configuracoes do Telegram.
 
 ## Detalhes Tecnicos
 
-### Arquivo: `supabase/functions/telegram-webhook/index.ts`
-- Adicionar handler para `body.action === "setup-webhook"` que chama `https://api.telegram.org/bot{token}/setWebhook` com a URL da funcao
-- Corrigir a logica do `/start`: remover o upsert inicial (linhas 34-44), manter apenas o delete + insert (linhas 48-60)
+### Arquivo: `src/hooks/usePreferenciasNotificacao.ts`
+- Adicionar dois novos alertas na categoria "transacao":
+  - `transacao_nova_despesa` - "Nova despesa registrada"
+  - `transacao_nova_receita` - "Nova receita registrada"
 
-### Arquivo: `src/hooks/useTelegram.ts`
-- Adicionar mutation `configurarWebhook` que chama a acao `setup-webhook`
-- Chamar automaticamente ao montar o hook (ou sob demanda)
+### Arquivo: `src/hooks/useTransactions.ts`
+- No `onSuccess` de `useCreateTransaction` e `useCreateInstallmentTransaction`, chamar a edge function `telegram-send` passando um alerta com:
+  - `tipo_alerta`: `transacao_nova_despesa` ou `transacao_nova_receita`
+  - `tipo`: `info`
+  - `mensagem`: formatada com descricao, valor e categoria
 
-### Arquivo: `src/pages/ConfiguracoesNotificacoes.tsx`
-- Adicionar botao "Ativar Bot" ou chamar configuracao automaticamente
-- Mostrar feedback de que o webhook foi configurado
+### Arquivo: `supabase/functions/telegram-send/index.ts`
+- Ajustar para aceitar tambem o campo `tipo_alerta` nos alertas, permitindo filtrar por preferencia individual (atualmente filtra por `tipo_alerta` que corresponde aos IDs das preferencias)
 
-## Sequencia
-1. Atualizar a backend function com a acao `setup-webhook` e corrigir logica do `/start`
-2. Deploy da funcao
-3. Atualizar o hook para configurar webhook automaticamente
-4. Atualizar a pagina de configuracoes se necessario
-5. Testar o fluxo completo
+### Formato da mensagem no Telegram
+```
+💸 Nova Despesa Registrada
 
+Descricao: Supermercado
+Valor: R$ 250,00
+Categoria: Alimentacao
+Data: 12/02/2026
+```
+
+ou
+
+```
+💰 Nova Receita Registrada
+
+Descricao: Salario
+Valor: R$ 5.000,00
+Categoria: Salario
+Data: 12/02/2026
+```
+
+### Sequencia de implementacao
+1. Adicionar os novos tipos de alerta em `usePreferenciasNotificacao.ts`
+2. Criar funcao auxiliar para enviar notificacao Telegram apos criacao de transacao
+3. Integrar no `onSuccess` dos hooks de criacao em `useTransactions.ts`
+4. Testar o fluxo completo
