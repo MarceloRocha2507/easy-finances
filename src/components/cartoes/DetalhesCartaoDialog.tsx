@@ -234,7 +234,7 @@ export function DetalhesCartaoDialog({
         <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 overflow-hidden">
           {/* Header compacto */}
           <div
-            className="px-5 py-4 text-white"
+            className="px-5 py-4 text-white overflow-hidden"
             style={{
               background: `linear-gradient(135deg, hsl(var(--background)) 0%, ${cartao.cor || "#6366f1"}40 100%)`,
             }}
@@ -274,7 +274,7 @@ export function DetalhesCartaoDialog({
           </div>
 
           {/* Conteúdo */}
-          <div className="px-5 py-4 space-y-4">
+          <div className="px-5 py-4 space-y-4 overflow-hidden">
             {/* Navegação + Ações compactas */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
@@ -584,24 +584,24 @@ export function DetalhesCartaoDialog({
             </Button>
 
             {/* Ações do cartão */}
-            <div className="flex gap-2 pt-2 border-t">
+            <div className="flex gap-2 pt-2 border-t min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-1.5 min-w-0"
                 onClick={() => setEditarCartaoOpen(true)}
               >
-                <Settings className="h-3.5 w-3.5" />
-                Editar
+                <Settings className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Editar</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-1 gap-1.5 text-destructive hover:text-destructive"
+                className="flex-1 gap-1.5 min-w-0 text-destructive hover:text-destructive"
                 onClick={() => setExcluirCartaoOpen(true)}
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Excluir
+                <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Excluir</span>
               </Button>
             </div>
           </div>
