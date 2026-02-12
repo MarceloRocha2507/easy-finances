@@ -1,110 +1,57 @@
 
 
-# Integracaoo com Telegram para Notificacoes
+# Corrigir Integração Telegram
 
-## Visao Geral
+## Problemas Identificados
 
-Integrar o sistema com um bot do Telegram para enviar notificacoes financeiras diretamente no celular do usuario. O sistema tera dois modos: alertas urgentes em tempo real e um resumo diario. O usuario podera escolher manualmente quais tipos de alerta deseja receber no Telegram.
+### 1. Webhook do Telegram nao esta registrado
+A backend function `telegram-webhook` existe e esta deployada, mas o Telegram nao sabe para onde enviar as mensagens. E preciso registrar a URL do webhook na API do Telegram usando o metodo `setWebhook`.
 
-## Pre-requisitos (o que voce precisa fazer)
+### 2. Logica de inserção com placeholder quebrada
+Quando o bot recebe `/start`, o codigo tenta fazer upsert com `user_id: "00000000-0000-0000-0000-000000000000"` e depois deleta e insere novamente. Isso causa conflitos quando multiplos usuarios tentam vincular (todos usam o mesmo placeholder UUID). A logica precisa ser simplificada.
 
-1. Criar um bot no Telegram abrindo o [@BotFather](https://t.me/BotFather) e enviando `/newbot`
-2. Copiar o **token do bot** que o BotFather vai gerar (algo como `123456:ABC-DEF...`)
-3. Colar esse token quando o sistema pedir
+## Solucao
 
-## Como vai funcionar
+### Passo 1: Adicionar acao `setup-webhook` na backend function
+Adicionar uma acao na funcao `telegram-webhook` que, ao ser chamada pelo frontend, registra automaticamente a URL do webhook na API do Telegram. Assim o usuario nao precisa fazer isso manualmente.
 
-1. Nas configuracoes de notificacoes, tera uma nova secao "Telegram"
-2. Voce clica em "Conectar Telegram" e recebe instrucoes para iniciar conversa com o bot
-3. Envia `/start` para o bot, que responde com um codigo de vinculacao
-4. Voce cola o codigo no sistema e pronto - esta conectado
-5. Na mesma pagina de configuracoes de notificacoes, cada tipo de alerta tera um toggle extra para "Enviar no Telegram"
-6. Alertas do tipo `danger` e `warning` sao enviados em tempo real
-7. Alertas do tipo `info` e `success` sao acumulados e enviados em um resumo diario
+A URL do webhook sera:
+`https://vcpnairzcpljyartrafm.supabase.co/functions/v1/telegram-webhook`
+
+### Passo 2: Corrigir a logica do `/start`
+Simplificar a logica para:
+- Deletar qualquer registro pendente (nao ativo) com o mesmo `telegram_chat_id`
+- Inserir um novo registro com `user_id` nulo (mudar coluna para nullable) ou usar o placeholder
+- Remover o upsert redundante que causa conflito
+
+Como `user_id` nao pode ser nulo (NOT NULL), vou manter o placeholder mas corrigir a logica para evitar conflitos de unicidade:
+- Primeiro deletar registros pendentes com mesmo `chat_id`
+- Depois inserir o novo registro
+- Remover o upsert inicial que esta duplicado
+
+### Passo 3: Adicionar botao "Configurar Webhook" no frontend
+Na secao Telegram da pagina de configuracoes, antes de pedir o codigo, adicionar um botao que chama a acao `setup-webhook`. Isso garante que o bot esta pronto para receber mensagens.
+
+Alternativamente, chamar `setup-webhook` automaticamente ao carregar a pagina.
 
 ## Detalhes Tecnicos
 
-### 1. Banco de dados - Nova tabela `telegram_config`
+### Arquivo: `supabase/functions/telegram-webhook/index.ts`
+- Adicionar handler para `body.action === "setup-webhook"` que chama `https://api.telegram.org/bot{token}/setWebhook` com a URL da funcao
+- Corrigir a logica do `/start`: remover o upsert inicial (linhas 34-44), manter apenas o delete + insert (linhas 48-60)
 
-```sql
-CREATE TABLE telegram_config (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL,
-  telegram_chat_id TEXT NOT NULL,
-  ativo BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
--- RLS: usuario so ve/edita o proprio registro
-```
+### Arquivo: `src/hooks/useTelegram.ts`
+- Adicionar mutation `configurarWebhook` que chama a acao `setup-webhook`
+- Chamar automaticamente ao montar o hook (ou sob demanda)
 
-### 2. Banco de dados - Nova tabela `preferencias_telegram`
+### Arquivo: `src/pages/ConfiguracoesNotificacoes.tsx`
+- Adicionar botao "Ativar Bot" ou chamar configuracao automaticamente
+- Mostrar feedback de que o webhook foi configurado
 
-```sql
-CREATE TABLE preferencias_telegram (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL,
-  tipo_alerta TEXT NOT NULL,
-  ativo BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, tipo_alerta)
-);
--- RLS: usuario so ve/edita o proprio registro
-```
-
-### 3. Backend function - `telegram-webhook`
-
-- Recebe mensagens do bot (quando o usuario envia `/start`)
-- Gera um codigo de vinculacao e salva o `chat_id` do Telegram
-- Responde ao usuario com mensagem de boas-vindas
-
-### 4. Backend function - `telegram-send`
-
-- Recebe `user_id` e lista de alertas
-- Consulta `telegram_config` para obter o `chat_id`
-- Consulta `preferencias_telegram` para filtrar alertas habilitados
-- Envia mensagem formatada via API do Telegram Bot (`sendMessage`)
-- Diferencia alertas urgentes (tempo real) de informativos (resumo)
-
-### 5. Backend function - `telegram-daily-summary`
-
-- Funcao agendada (cron) que roda 1x por dia (ex: 8h da manha)
-- Para cada usuario com Telegram ativo, coleta alertas do tipo `info`/`success` habilitados
-- Envia um resumo consolidado no Telegram
-
-### 6. Frontend - Modificacoes
-
-**Arquivo: `src/pages/ConfiguracoesNotificacoes.tsx`**
-- Adicionar secao "Telegram" no topo da pagina com:
-  - Status da conexao (conectado/desconectado)
-  - Botao "Conectar Telegram" / "Desconectar"
-  - Campo para colar o codigo de vinculacao
-- Para cada alerta nas categorias, adicionar icone do Telegram indicando se aquele alerta tambem vai pro Telegram
-
-**Arquivo: `src/hooks/useTelegram.ts` (novo)**
-- Hook para gerenciar a conexao com Telegram (consultar status, conectar, desconectar)
-- Hook para gerenciar preferencias de envio por Telegram
-
-**Arquivo: `src/pages/ConfiguracoesNotificacoes.tsx`**
-- Adicionar toggle por alerta para "Enviar no Telegram" ao lado do toggle existente
-
-### 7. Fluxo de envio em tempo real
-
-Quando o frontend detecta um alerta `danger` ou `warning`, chama a backend function `telegram-send` passando os alertas. A funcao verifica as preferencias do usuario e envia apenas os habilitados.
-
-### 8. Secret necessaria
-
-O token do bot do Telegram sera armazenado como secret do projeto (`TELEGRAM_BOT_TOKEN`).
-
-## Sequencia de implementacao
-
-1. Solicitar o token do bot Telegram (secret)
-2. Criar tabelas no banco de dados
-3. Criar backend function `telegram-webhook` (receber mensagens do bot)
-4. Criar backend function `telegram-send` (enviar alertas)
-5. Criar backend function `telegram-daily-summary` (resumo diario)
-6. Criar hook `useTelegram.ts`
-7. Atualizar pagina de configuracoes com secao Telegram
-8. Integrar envio de alertas urgentes no fluxo existente
+## Sequencia
+1. Atualizar a backend function com a acao `setup-webhook` e corrigir logica do `/start`
+2. Deploy da funcao
+3. Atualizar o hook para configurar webhook automaticamente
+4. Atualizar a pagina de configuracoes se necessario
+5. Testar o fluxo completo
 
