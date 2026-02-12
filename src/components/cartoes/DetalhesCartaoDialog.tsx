@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   listarParcelasDaFatura,
   ParcelaFatura,
-  marcarParcelaComoPaga,
   desmarcarTodasParcelas,
 } from "@/services/compras-cartao";
 import { useAcertosMes } from "@/services/acertos";
@@ -32,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -202,8 +201,8 @@ export function DetalhesCartaoDialog({
   }, [parcelas, busca]);
 
   // Limitar exibição a 6 itens no dialog compacto
-  const parcelasExibidas = parcelasFiltradas.slice(0, 6);
-  const temMais = parcelasFiltradas.length > 6;
+  const parcelasExibidas = parcelasFiltradas.slice(0, 5);
+  const temMais = parcelasFiltradas.length > 5;
 
   /* ======================================================
      Totais
@@ -496,15 +495,6 @@ export function DetalhesCartaoDialog({
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Checkbox
-                        checked={!!p.paga}
-                        className="h-4 w-4"
-                        onCheckedChange={async () => {
-                          await marcarParcelaComoPaga(p.id, !p.paga);
-                          carregarFatura();
-                          onUpdated();
-                        }}
-                      />
                       <div className="min-w-0 flex-1">
                         <p className={cn(
                           "text-sm font-medium truncate",
