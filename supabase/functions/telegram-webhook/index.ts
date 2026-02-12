@@ -21,6 +21,41 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
+    // Handle test message action
+    if (body.action === "test" && body.user_id) {
+      const { data: config } = await supabase
+        .from("telegram_config")
+        .select("telegram_chat_id")
+        .eq("user_id", body.user_id)
+        .eq("ativo", true)
+        .maybeSingle();
+
+      if (!config) {
+        return new Response(
+          JSON.stringify({ error: "Telegram não vinculado" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const res = await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: config.telegram_chat_id,
+            text: "🧪 *Alerta de Teste*\n\nEsta é uma mensagem de teste do sistema de notificações financeiras.\n\n✅ Se você recebeu esta mensagem, a integração está funcionando corretamente!",
+            parse_mode: "Markdown",
+          }),
+        }
+      );
+      const result = await res.json();
+      return new Response(
+        JSON.stringify({ success: result.ok, result }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle setup-webhook action from frontend
     if (body.action === "setup-webhook") {
       const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
