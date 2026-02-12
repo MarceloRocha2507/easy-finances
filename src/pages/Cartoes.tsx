@@ -301,6 +301,7 @@ export default function Cartoes() {
           open={detalhesOpen}
           onOpenChange={setDetalhesOpen}
           onUpdated={() => refetch()}
+          mesInicial={mesReferencia}
         />
       )}
 
