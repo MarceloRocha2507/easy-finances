@@ -1,75 +1,99 @@
 
 
-# Adicionar Comando /despesas no Bot do Telegram
+# Assistente IA no Telegram - Perguntar Sobre Seus Dados
 
-## Objetivo
+## O que sera feito
 
-Permitir que o usuario envie um comando no Telegram (ex: `/despesas` ou `/despesas 3`) para receber uma lista formatada das despesas futuras dos proximos N meses.
+Adicionar um assistente inteligente no bot do Telegram onde voce pode enviar qualquer pergunta em linguagem natural sobre seus dados financeiros e receber uma resposta completa.
+
+**Exemplos de perguntas:**
+- "Qual meu saldo atual?"
+- "Quanto gastei este mes?"
+- "Quais meus cartoes e seus limites?"
+- "Quanto tenho investido?"
+- "Qual categoria tem mais gastos?"
+- "Como estao minhas metas?"
 
 ## Como vai funcionar
 
-1. O usuario envia `/despesas` no chat do Telegram (padrao: 3 meses)
-2. Ou `/despesas 6` para ver 6 meses
-3. O bot identifica o usuario pelo `chat_id`, busca parcelas de cartao nao pagas e transacoes pendentes no periodo
-4. Envia uma mensagem formatada agrupada por mes com o total
-
-### Exemplo de mensagem enviada pelo bot:
-
-```text
-📋 Despesas Futuras (3 meses)
-
-📅 Fevereiro/2026
-  • Netflix - R$ 55,90 (Nubank)
-  • Mercado - R$ 320,00 (2/5)
-  • Aluguel - R$ 1.500,00
-  Subtotal: R$ 1.875,90
-
-📅 Marco/2026
-  • Netflix - R$ 55,90 (Nubank)
-  • Mercado - R$ 320,00 (3/5)
-  Subtotal: R$ 375,90
-
-Total geral: R$ 2.251,80
-```
+1. Voce envia qualquer mensagem que nao seja um comando (ex: nao comeca com `/`)
+2. O bot busca todos os seus dados financeiros do sistema (transacoes, cartoes, investimentos, metas, bancos, etc.)
+3. Envia esses dados como contexto para um modelo de IA (Gemini 2.5 Flash, via Lovable AI)
+4. A IA analisa e responde sua pergunta de forma clara e formatada
+5. A resposta e enviada de volta no Telegram
 
 ## Detalhes Tecnicos
 
 ### Arquivo modificado: `supabase/functions/telegram-webhook/index.ts`
 
-Dentro do bloco `if (body.message)`, alem do `/start` existente, adicionar tratamento para `/despesas`:
+### Nova funcao: `handlePergunta`
 
-1. **Parsear o comando**: extrair numero de meses do texto (padrao 3, maximo 12)
-2. **Buscar user_id pelo chat_id**: consultar `telegram_config` onde `telegram_chat_id = chatId` e `ativo = true`
-3. **Se nao vinculado**: responder pedindo para vincular a conta primeiro
-4. **Buscar parcelas de cartao** (`parcelas_cartao` com join em `compras_cartao` e `cartoes`): parcelas nao pagas no periodo
-5. **Buscar transacoes pendentes** (`transactions`): despesas com status `pending` no periodo
-6. **Formatar mensagem**: agrupar por mes, listar itens com valor e info de parcela/cartao, incluir subtotais e total geral
-7. **Enviar via API do Telegram**
+1. **Identificar usuario**: Buscar `user_id` pelo `chat_id` na `telegram_config`
+2. **Buscar dados do usuario** (todas as queries em paralelo para performance):
+   - `transactions` - ultimas 100 transacoes (receitas e despesas)
+   - `cartoes` - todos os cartoes com limite, fechamento, vencimento
+   - `parcelas_cartao` com join em `compras_cartao` - parcelas nao pagas
+   - `bancos` - contas bancarias e saldos
+   - `metas` - metas de economia
+   - `investimentos` - investimentos ativos
+   - `profiles` - saldo inicial
+   - `categories` - categorias do usuario
+   - `orcamentos` - orcamentos do mes atual
+3. **Montar contexto**: Criar um resumo estruturado dos dados em texto
+4. **Chamar IA**: Enviar a pergunta + contexto para `google/gemini-2.5-flash` via Lovable AI API
+5. **Responder**: Enviar resposta formatada no Telegram
 
-### Queries utilizadas
+### Chamada a IA (usando LOVABLE_API_KEY ja configurado)
 
-Parcelas de cartao:
-```sql
--- parcelas_cartao join compras_cartao join cartoes
--- Filtros: paga = false, ativo = true, mes_referencia entre hoje e N meses
--- user_id vem de compras_cartao.user_id
+```typescript
+const response = await fetch("https://lovable.dev/api/chat/completions", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: "Voce e um assistente financeiro..." },
+      { role: "user", content: perguntaComContexto },
+    ],
+  }),
+});
 ```
 
-Transacoes pendentes:
-```sql
--- transactions
--- Filtros: type = 'expense', status = 'pending', due_date no periodo
--- user_id direto
+### Fluxo no webhook
+
+Mensagens que nao sao comandos (`/start`, `/despesas`) serao tratadas como perguntas para a IA:
+
+```typescript
+if (text.startsWith("/start")) { ... }
+else if (text.startsWith("/despesas")) { ... }
+else {
+  // Qualquer outra mensagem -> pergunta para IA
+  await handlePergunta(supabase, TELEGRAM_BOT_TOKEN, chatId, text);
+}
+```
+
+### Indicador de "digitando"
+
+Antes de processar, o bot enviara a acao "typing" para o usuario ver que esta processando:
+
+```typescript
+await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
+  body: JSON.stringify({ chat_id: chatId, action: "typing" }),
+});
 ```
 
 ### Limites e seguranca
 
-- Maximo de 12 meses para evitar mensagens muito longas
-- Limitar a 50 itens por mes na exibicao (com indicacao de "+X itens")
-- Se a mensagem ficar muito longa (>4000 chars), dividir em multiplas mensagens
-- Somente usuarios vinculados (com `telegram_config` ativo) podem usar o comando
+- Maximo de 100 transacoes no contexto (para nao exceder limites de tokens)
+- Timeout de resposta da IA tratado com mensagem de erro amigavel
+- Apenas usuarios vinculados podem usar
+- Resposta limitada a 4000 chars (dividida se necessario)
+- System prompt instruindo a IA a responder apenas sobre financas e nao inventar dados
 
 ### Nenhuma mudanca no banco de dados
 
-Todas as tabelas necessarias ja existem (`parcelas_cartao`, `compras_cartao`, `cartoes`, `transactions`, `telegram_config`). A edge function usa `SERVICE_ROLE_KEY` que ja tem acesso total.
+Nenhuma tabela nova ou alteracao. Usa apenas dados existentes e o `LOVABLE_API_KEY` ja configurado.
 
