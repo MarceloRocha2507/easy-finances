@@ -1,65 +1,123 @@
 
+# Treinar a IA para Entender o Sistema Financeiro
 
-# Assistente IA no Sistema Web
+## Problema Atual
+
+A IA tem um entendimento superficial do sistema e pode enviar informacoes erradas porque:
+
+1. **Calculo de saldo errado**: O codigo atual calcula `saldoBancos + receitas - despesas` usando apenas as ultimas 100 transacoes, mas o sistema real usa TODAS as transacoes completed acumuladas
+2. **Conceitos financeiros ausentes**: A IA nao conhece Patrimonio Total, Saldo Estimado, Saldo Disponivel, diferenca entre titular e terceiros nos cartoes
+3. **Dados incompletos**: Falta informacao sobre responsaveis (quem deve o que), acertos de fatura, movimentacoes de metas/investimentos, categorias de meta que devem ser excluidas
+4. **System prompt generico**: Nao explica como o sistema funciona, quais sao as regras de negocio
 
 ## O que sera feito
 
-Adicionar um botao flutuante de chat com IA no canto inferior direito do sistema. Ao clicar, abre um painel de chat onde voce pode fazer perguntas sobre suas financas em linguagem natural, igual ao bot do Telegram, mas direto no sistema.
+Reescrever a logica de contexto e o system prompt da edge function `ai-chat` para que a IA entenda 100% como o sistema funciona.
 
-## Como vai funcionar
+## Mudancas Detalhadas
 
-1. Um botao flutuante com icone de chat aparece no canto inferior direito de todas as paginas (quando logado)
-2. Ao clicar, abre um painel de chat compacto
-3. Voce digita uma pergunta (ex: "Quanto gastei este mes?", "Como estao minhas metas?")
-4. A resposta aparece em tempo real com streaming (token por token)
-5. O historico da conversa e mantido durante a sessao
+### 1. Corrigir o calculo de saldo (critico)
+
+**Antes (errado):**
+```
+saldoReal = somaSaldoInicialBancos + receitas100ultimas - despesas100ultimas
+```
+
+**Depois (correto, igual ao sistema):**
+```
+saldoInicial = somaSaldoInicialBancos (ou profile.saldo_inicial se nao tem bancos)
+saldoDisponivel = saldoInicial + TODAS receitas completed - TODAS despesas completed
+patrimonioTotal = saldoDisponivel + totalMetas + totalInvestimentos
+saldoEstimado = saldoDisponivel + aReceber - aPagar - faturaCartaoTitular
+```
+
+### 2. Buscar dados completos
+
+Adicionar queries que faltam:
+- **Todas transacoes completed** (sem limite de 100) para calculo de saldo correto
+- **Responsaveis** ativos para contexto de cartoes (titular vs terceiros)
+- **Acertos de fatura** pendentes
+- **Movimentacoes de metas** recentes
+- **Movimentacoes de investimentos** recentes
+- **Categorias de meta** ("Deposito em Meta", "Retirada de Meta") para excluir dos totais exibidos
+- **Parcelas do cartao** com filtro por responsavel titular
+- **Transacoes pending** do mes (a receber e a pagar)
+
+### 3. Reescrever o system prompt com conhecimento completo
+
+O novo prompt vai ensinar a IA:
+
+- **Estrutura do sistema**: Bancos, Cartoes, Transacoes, Metas, Investimentos, Responsaveis, Orcamentos
+- **Regras de calculo**:
+  - Saldo Disponivel = saldo_inicial_bancos + receitas_completed - despesas_completed (historico completo)
+  - Patrimonio Total = Saldo Disponivel + Metas + Investimentos
+  - Saldo Estimado = Saldo Disponivel + A Receber - A Pagar - Fatura Titular
+  - Fatura do cartao: separar titular de terceiros
+  - Limite usado do cartao = todas parcelas nao pagas (nao apenas do mes)
+- **Status de transacoes**: completed = efetivada, pending = pendente/agendada
+- **Cartoes**: dia_fechamento, dia_vencimento, parcelas, compras com responsaveis
+- **Metas**: depositos e retiradas geram transacoes com categorias especiais que NAO contam como receita/despesa real
+- **Responsaveis**: titular (EU) vs terceiros que usam meu cartao e me devem
+
+### 4. Melhorar formatacao do contexto
+
+- Separar claramente "dados do mes atual" vs "dados acumulados"
+- Mostrar transacoes pending do mes (a receber/a pagar) com datas
+- Mostrar fatura do titular vs total da fatura
+- Incluir acertos pendentes por responsavel
+
+## Arquivos modificados
+
+- `supabase/functions/ai-chat/index.ts` - Reescrever queries, calculo de saldo e system prompt
 
 ## Detalhes Tecnicos
 
-### 1. Nova Edge Function: `supabase/functions/ai-chat/index.ts`
+### Queries adicionais
 
-- Recebe as mensagens do usuario + auth token
-- Identifica o usuario pelo token JWT
-- Busca todos os dados financeiros (mesma logica do Telegram: transacoes, cartoes, parcelas, bancos, metas, investimentos, orcamentos)
-- Monta o contexto e envia para o Lovable AI Gateway com streaming habilitado
-- Retorna o stream SSE diretamente para o frontend
-- Trata erros 429 (rate limit) e 402 (creditos)
+```sql
+-- Todas transacoes completed (para saldo real)
+SELECT type, amount FROM transactions WHERE user_id = X AND status = 'completed'
 
-### 2. Novo componente: `src/components/AiChat.tsx`
+-- Categorias de meta (para excluir dos totais)
+SELECT id FROM categories WHERE user_id = X AND name IN ('Deposito em Meta', 'Retirada de Meta')
 
-- Botao flutuante fixo no canto inferior direito (z-index alto para ficar acima de tudo)
-- Painel de chat que abre/fecha com animacao
-- Campo de input para digitar perguntas
-- Area de mensagens com scroll automatico
-- Renderizacao de markdown nas respostas usando texto simples formatado
-- Indicador de "digitando" enquanto a IA processa
-- Tratamento de erros com mensagens amigaveis
+-- Transacoes pending do mes (a receber/a pagar)
+SELECT * FROM transactions WHERE user_id = X AND status = 'pending' AND due_date BETWEEN inicioMes AND fimMes
 
-### 3. Integracao no Layout
+-- Responsaveis ativos
+SELECT * FROM responsaveis WHERE user_id = X AND ativo = true
 
-- O componente `AiChat` sera adicionado dentro do `Layout.tsx`, apos o `main`, para aparecer em todas as paginas protegidas
-- Nao sera necessario criar rota nova
+-- Parcelas com responsavel para separar titular
+SELECT parcelas_cartao.*, compras_cartao(responsavel_id, responsavel:responsaveis(nome, is_titular))
 
-### 4. Streaming no frontend
+-- Acertos pendentes
+SELECT * FROM acertos_fatura WHERE user_id = X AND status = 'pendente'
 
-- Usa fetch com leitura de stream SSE
-- Tokens aparecem um a um na tela conforme chegam
-- Historico de mensagens mantido em estado React (sem persistencia no banco)
+-- Movimentacoes de metas recentes
+SELECT * FROM movimentacoes_meta WHERE user_id = X ORDER BY created_at DESC LIMIT 20
 
-### 5. Configuracao
+-- Movimentacoes de investimentos recentes
+SELECT * FROM movimentacoes_investimento WHERE user_id = X ORDER BY data DESC LIMIT 20
+```
 
-- Adicionar `ai-chat` no `supabase/config.toml` com `verify_jwt = true` (requer autenticacao)
-- Usar `LOVABLE_API_KEY` ja configurado
-- Modelo: `google/gemini-3-flash-preview`
+### Estrutura do novo system prompt
 
-### Arquivos criados/modificados
+```
+Voce e o Fina, assistente financeiro pessoal.
 
-- **Criar**: `supabase/functions/ai-chat/index.ts` - Edge function com streaming
-- **Criar**: `src/components/AiChat.tsx` - Componente do chat flutuante
-- **Modificar**: `src/components/Layout.tsx` - Adicionar o componente AiChat
-- **Modificar**: `supabase/config.toml` - Registrar a nova function
+COMO O SISTEMA FUNCIONA:
+[explicacao detalhada de cada modulo]
 
-### Nenhuma mudanca no banco de dados
+REGRAS DE CALCULO:
+[formulas exatas usadas pelo sistema]
 
-Usa apenas dados existentes. O historico do chat vive apenas na sessao do navegador.
+CONCEITOS IMPORTANTES:
+[titular vs terceiros, status de transacoes, etc]
 
+DADOS DO USUARIO:
+[contexto formatado com todos os dados]
+```
+
+## Nenhuma mudanca no banco de dados
+
+Usa apenas tabelas e dados existentes.
