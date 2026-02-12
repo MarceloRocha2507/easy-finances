@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet } from "lucide-react";
+import { AiChat } from "@/components/AiChat";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -126,6 +127,9 @@ export function Layout({ children }: LayoutProps) {
       <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
         <div className="p-6 flex-1">{children}</div>
       </main>
+
+      {/* AI Chat */}
+      <AiChat />
     </div>
   );
 }

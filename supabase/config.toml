@@ -1,5 +1,8 @@
 project_id = "vcpnairzcpljyartrafm"
 
+[functions.ai-chat]
+verify_jwt = false
+
 [functions.admin-create-user]
 verify_jwt = false
 
