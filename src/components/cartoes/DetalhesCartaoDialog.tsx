@@ -521,7 +521,7 @@ export function DetalhesCartaoDialog({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <span className={cn(
                         "text-sm font-semibold",
                         p.paga ? "line-through text-muted-foreground" : "text-destructive"
