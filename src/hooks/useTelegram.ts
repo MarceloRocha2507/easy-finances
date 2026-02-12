@@ -6,6 +6,17 @@ export function useTelegram() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Configurar webhook automaticamente (idempotente)
+  const configurarWebhook = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("telegram-webhook", {
+        body: { action: "setup-webhook" },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Buscar configuração do Telegram
   const { data: config, isLoading: isLoadingConfig } = useQuery({
     queryKey: ["telegram-config", user?.id],
@@ -111,5 +122,6 @@ export function useTelegram() {
     salvarPreferencia,
     getPreferenciaTelegram,
     preferencias,
+    configurarWebhook,
   };
 }

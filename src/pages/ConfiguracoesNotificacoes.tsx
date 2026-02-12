@@ -38,7 +38,10 @@ export default function ConfiguracoesNotificacoes() {
     desvincular,
     salvarPreferencia: salvarPrefTelegram,
     getPreferenciaTelegram,
+    configurarWebhook,
   } = useTelegram();
+
+  const [webhookConfigurado, setWebhookConfigurado] = useState(false);
 
   const handleToggle = async (tipoAlerta: string, novoValor: boolean) => {
     try {
@@ -170,32 +173,62 @@ export default function ConfiguracoesNotificacoes() {
           {!isConectado && (
             <>
               <Separator />
-              <CardContent className="pt-4 space-y-3">
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p>1. Abra o Telegram e procure pelo seu bot</p>
-                  <p>2. Envie <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">/start</code> para o bot</p>
-                  <p>3. Cole o código de vinculação abaixo:</p>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ex: ABC123"
-                    value={codigoTelegram}
-                    onChange={(e) => setCodigoTelegram(e.target.value.toUpperCase())}
-                    className="font-mono uppercase"
-                    maxLength={6}
-                  />
-                  <Button
-                    onClick={handleVincularTelegram}
-                    disabled={vincular.isPending || !codigoTelegram.trim()}
-                  >
-                    {vincular.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Link className="h-4 w-4 mr-2" />
-                    )}
-                    Vincular
-                  </Button>
-                </div>
+              <CardContent className="pt-4 space-y-4">
+                {!webhookConfigurado ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Primeiro, clique no botão abaixo para ativar o bot do Telegram:
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await configurarWebhook.mutateAsync();
+                          setWebhookConfigurado(true);
+                          toast.success("Bot ativado com sucesso!");
+                        } catch {
+                          toast.error("Erro ao ativar o bot");
+                        }
+                      }}
+                      disabled={configurarWebhook.isPending}
+                      className="w-full"
+                    >
+                      {configurarWebhook.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Ativar Bot do Telegram
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>1. Abra o Telegram e procure pelo seu bot</p>
+                      <p>2. Envie <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">/start</code> para o bot (ou no grupo)</p>
+                      <p>3. Cole o código de vinculação abaixo:</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ex: ABC123"
+                        value={codigoTelegram}
+                        onChange={(e) => setCodigoTelegram(e.target.value.toUpperCase())}
+                        className="font-mono uppercase"
+                        maxLength={6}
+                      />
+                      <Button
+                        onClick={handleVincularTelegram}
+                        disabled={vincular.isPending || !codigoTelegram.trim()}
+                      >
+                        {vincular.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Link className="h-4 w-4 mr-2" />
+                        )}
+                        Vincular
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </>
           )}
