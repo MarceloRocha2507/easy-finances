@@ -4,6 +4,47 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { Category } from './useCategories';
 import { findMatchingCategory } from '@/services/category-rules';
+import { formatCurrency, formatDate } from '@/lib/formatters';
+
+// Helper to send Telegram notification after transaction creation
+async function enviarNotificacaoTelegram(params: {
+  userId: string;
+  type: 'income' | 'expense';
+  amount: number;
+  description?: string | null;
+  categoryName?: string | null;
+  date?: string;
+}) {
+  try {
+    const { userId, type, amount, description, categoryName, date } = params;
+    const isExpense = type === 'expense';
+    const emoji = isExpense ? '💸' : '💰';
+    const titulo = isExpense ? 'Nova Despesa Registrada' : 'Nova Receita Registrada';
+    const tipoAlerta = isExpense ? 'transacao_nova_despesa' : 'transacao_nova_receita';
+
+    const linhas = [
+      `${emoji} *${titulo}*`,
+      '',
+      `📝 Descrição: ${description || 'Sem descrição'}`,
+      `💵 Valor: ${formatCurrency(amount)}`,
+      `📂 Categoria: ${categoryName || 'Sem categoria'}`,
+      `📅 Data: ${formatDate(date || new Date().toISOString())}`,
+    ];
+
+    await supabase.functions.invoke('telegram-send', {
+      body: {
+        user_id: userId,
+        alertas: [{
+          tipo_alerta: tipoAlerta,
+          tipo: 'info',
+          mensagem: linhas.join('\n'),
+        }],
+      },
+    });
+  } catch (e) {
+    console.error('Erro ao enviar notificação Telegram:', e);
+  }
+}
 
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 
@@ -255,13 +296,13 @@ export function useCreateTransaction() {
           category_id: categoryId,
           user_id: user!.id,
         })
-        .select()
+        .select(`*, category:categories(name)`)
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
@@ -273,6 +314,19 @@ export function useCreateTransaction() {
         title: 'Registro criado',
         description: 'O registro financeiro foi criado com sucesso.',
       });
+
+      // Enviar notificação Telegram (fire-and-forget)
+      if (user?.id) {
+        const cat = data.category as unknown as { name: string } | null;
+        enviarNotificacaoTelegram({
+          userId: user.id,
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          categoryName: cat?.name,
+          date: data.date,
+        });
+      }
     },
     onError: () => {
       toast({
@@ -388,7 +442,7 @@ export function useCreateInstallmentTransaction() {
 
       return [parentTransaction];
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
@@ -407,6 +461,32 @@ export function useCreateInstallmentTransaction() {
         title: 'Registro criado',
         description: msg,
       });
+
+      // Enviar notificação Telegram para a primeira transação (fire-and-forget)
+      if (user?.id && data && data.length > 0) {
+        const base = variables.baseTransaction;
+        // Buscar nome da categoria
+        const fetchCatAndNotify = async () => {
+          let catName: string | null = null;
+          if (base.category_id) {
+            const { data: cat } = await supabase
+              .from('categories')
+              .select('name')
+              .eq('id', base.category_id)
+              .maybeSingle();
+            catName = cat?.name || null;
+          }
+          enviarNotificacaoTelegram({
+            userId: user!.id,
+            type: base.type,
+            amount: base.amount,
+            description: base.description,
+            categoryName: catName,
+            date: base.date,
+          });
+        };
+        fetchCatAndNotify();
+      }
     },
     onError: () => {
       toast({
