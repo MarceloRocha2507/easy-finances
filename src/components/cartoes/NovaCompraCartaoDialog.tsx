@@ -219,6 +219,34 @@ export function NovaCompraCartaoDialog({
         responsavelId: form.responsavelId,
       });
 
+      // Notificação Telegram (fire-and-forget)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const valor = parseFloat(form.valor.replace(",", "."));
+        const categoriaNome = categorias.find(c => c.id === form.categoriaId)?.name;
+        const dataFormatada = new Date(form.dataCompra + "T12:00:00").toLocaleDateString("pt-BR");
+        
+        let mensagem = `🛒 *Nova Compra no Cartão*\n\n📝 Descrição: ${form.descricao}\n💳 Cartão: ${cartao.nome}\n💵 Valor: R$ ${valor.toFixed(2).replace(".", ",")}`;
+        
+        if (form.tipoLancamento === "parcelada") {
+          const numParcelas = parseInt(form.parcelas);
+          const valorParcela = valor / numParcelas;
+          mensagem += `\n🔢 Parcelas: ${numParcelas}x de R$ ${valorParcela.toFixed(2).replace(".", ",")}`;
+        }
+        
+        if (categoriaNome) {
+          mensagem += `\n📂 Categoria: ${categoriaNome}`;
+        }
+        mensagem += `\n📅 Data: ${dataFormatada}`;
+
+        supabase.functions.invoke("telegram-send", {
+          body: {
+            user_id: user.id,
+            alertas: [{ tipo_alerta: "cartao_nova_compra", tipo: "info", mensagem }],
+          },
+        }).catch(() => {}); // silencioso
+      }
+
       toast({ title: "Compra registrada!" });
       onSaved();
     } catch (error) {

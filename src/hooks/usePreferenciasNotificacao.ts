@@ -29,6 +29,7 @@ export const CATEGORIAS_ALERTAS: CategoriaAlertas[] = [
       { id: "cartao_fatura_proxima", label: "Fatura vence em 1-3 dias", padrao: true },
       { id: "cartao_fatura_semana", label: "Fatura vence em 4-7 dias", padrao: false },
       { id: "cartao_fatura_quinzena", label: "Fatura vence em 8-15 dias", padrao: false },
+      { id: "cartao_nova_compra", label: "Nova compra registrada", padrao: true },
     ],
   },
   {
