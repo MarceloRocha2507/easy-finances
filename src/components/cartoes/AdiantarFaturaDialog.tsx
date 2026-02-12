@@ -127,16 +127,14 @@ export function AdiantarFaturaDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
-        <div
-          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
-        >
+      <DialogContent className="max-w-md p-0 gap-0 border-0 overflow-hidden">
+        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Banknote className="h-5 w-5 text-white/80" />
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-muted-foreground" />
               Adiantar Fatura
             </DialogTitle>
-            <DialogDescription className="text-white/70 capitalize">
+            <DialogDescription className="capitalize">
               {cartao.nome} - {mesLabel}
             </DialogDescription>
           </DialogHeader>

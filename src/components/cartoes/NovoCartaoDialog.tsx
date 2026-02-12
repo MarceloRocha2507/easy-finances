@@ -304,12 +304,12 @@ export function NovoCartaoDialog({ onSaved }: NovoCartaoDialogProps) {
 
             {/* Preview do card */}
             <div
-              className="p-4 rounded-lg text-white text-center bg-gradient-to-br from-slate-900 via-slate-900 to-violet-900/50"
+              className="p-4 rounded-lg text-center bg-muted border"
             >
-              <p className="text-xs opacity-70 mb-1">Preview</p>
+              <p className="text-xs text-muted-foreground mb-1">Preview</p>
               <p className="font-semibold">{displayNome || "Nome do Cartão"}</p>
               {form.bandeira && (
-                <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
+                <p className="text-xs text-muted-foreground uppercase mt-1">{form.bandeira}</p>
               )}
             </div>
 

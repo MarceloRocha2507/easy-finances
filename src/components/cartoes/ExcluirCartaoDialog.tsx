@@ -36,17 +36,15 @@ export function ExcluirCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
-        <div
-          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
-        >
+      <DialogContent className="p-0 gap-0 border-0 overflow-hidden">
+        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
-            <DialogTitle className="text-white">Excluir cartão</DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogTitle>Excluir cartão</DialogTitle>
+            <DialogDescription>
               {cartao ? (
                 <>
                   Tem certeza que deseja excluir o cartão{" "}
-                  <strong className="text-white">{cartao.nome}</strong>?
+                  <strong>{cartao.nome}</strong>?
                 </>
               ) : (
                 "Nenhum cartão selecionado."

@@ -239,18 +239,16 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
-          {/* Header com cor sólida do cartão */}
-          <div
-            className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden bg-gradient-to-br from-violet-600 to-indigo-600"
-          >
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 border-0 overflow-hidden">
+          {/* Header neutro */}
+          <div className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden bg-muted border-b">
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
-                <DialogTitle className="flex items-center gap-2 text-white text-base sm:text-lg">
-                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-white/80" />
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                   <span className="truncate">{cartao.nome}</span>
                 </DialogTitle>
-                <Badge className="text-[10px] sm:text-xs bg-white/20 text-white border-white/30 shrink-0">
+                <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
                   {cartao.bandeira || "Crédito"}
                 </Badge>
               </div>
@@ -259,29 +257,29 @@ export function DetalhesCartaoDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Métricas glassmorphism */}
+            {/* Métricas */}
             <div className="grid grid-cols-3 gap-2 mt-3">
-              <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-0">
-                <span className="text-white/70 text-[10px] sm:text-xs block">Limite</span>
-                <p className="font-semibold text-white text-xs sm:text-sm truncate">{formatCurrency(limite)}</p>
+              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 border">
+                <span className="text-muted-foreground text-[10px] sm:text-xs block">Limite</span>
+                <p className="font-semibold text-xs sm:text-sm truncate">{formatCurrency(limite)}</p>
               </div>
-              <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-0">
-                <span className="text-white/70 text-[10px] sm:text-xs block">Fatura</span>
-                <p className="font-semibold text-red-200 text-xs sm:text-sm truncate">{formatCurrency(totalMes)}</p>
+              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 border">
+                <span className="text-muted-foreground text-[10px] sm:text-xs block">Fatura</span>
+                <p className="font-semibold text-destructive text-xs sm:text-sm truncate">{formatCurrency(totalMes)}</p>
               </div>
-              <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-0 text-right">
-                <span className="text-white/70 text-[10px] sm:text-xs block">Disponível</span>
-                <p className="font-semibold text-emerald-200 text-xs sm:text-sm truncate">{formatCurrency(disponivel)}</p>
+              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 text-right border">
+                <span className="text-muted-foreground text-[10px] sm:text-xs block">Disponível</span>
+                <p className="font-semibold text-income text-xs sm:text-sm truncate">{formatCurrency(disponivel)}</p>
               </div>
             </div>
 
             {/* Progress bar com porcentagem */}
             <div className="mt-3 space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs text-white/70">
+              <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
                 <span>Uso do limite</span>
-                <span className="font-medium text-white">{usoPct.toFixed(0)}%</span>
+                <span className="font-medium text-foreground">{usoPct.toFixed(0)}%</span>
               </div>
-              <Progress value={usoPct} className="h-2 bg-white/20 [&>div]:bg-white/90" />
+              <Progress value={usoPct} className="h-2" />
             </div>
           </div>
 
