@@ -254,7 +254,7 @@ export function DetalhesCartaoDialog({
             </DialogHeader>
 
             {/* Métricas inline - responsivo */}
-            <div className="grid grid-cols-3 gap-2 mt-3 text-[10px] sm:text-sm">
+            <div className="grid grid-cols-3 gap-2 mt-3 text-xs sm:text-sm">
               <div className="min-w-0">
                 <span className="text-muted-foreground">Limite</span>
                 <p className="font-medium text-foreground truncate">{formatCurrency(limite)}</p>
@@ -494,7 +494,7 @@ export function DetalhesCartaoDialog({
                         : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                       <div className="min-w-0 flex-1">
                         <p className={cn(
                           "text-sm font-medium truncate",
@@ -513,7 +513,7 @@ export function DetalhesCartaoDialog({
 
                     <div className="flex items-center gap-1 shrink-0">
                       <span className={cn(
-                        "text-xs sm:text-sm font-semibold min-w-[70px] text-right",
+                        "text-sm font-semibold min-w-[90px] text-right",
                         p.paga ? "line-through text-muted-foreground" : "text-destructive"
                       )}>
                         {formatCurrency(Math.abs(p.valor))}
