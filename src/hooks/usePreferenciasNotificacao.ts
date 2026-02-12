@@ -40,6 +40,8 @@ export const CATEGORIAS_ALERTAS: CategoriaAlertas[] = [
       { id: "transacao_hoje", label: "Conta vence hoje", padrao: true },
       { id: "transacao_proxima", label: "Conta próxima do vencimento", padrao: true },
       { id: "transacao_receita", label: "Receita pendente a receber", padrao: true },
+      { id: "transacao_nova_despesa", label: "Nova despesa registrada", padrao: true },
+      { id: "transacao_nova_receita", label: "Nova receita registrada", padrao: true },
     ],
   },
   {
