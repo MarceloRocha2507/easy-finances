@@ -435,20 +435,16 @@ export function DetalhesCartaoDialog({
               )}
             </div>
 
-            {/* Resumo pendente/pago com chips */}
+            {/* Resumo pendente/pago inline */}
             {parcelas.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                <div className="flex items-center gap-1.5 bg-destructive/10 px-2.5 py-1 rounded-full">
-                  <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                  <span className="font-medium text-destructive">
-                    Pendente: {formatCurrency(totalMes)}
-                  </span>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  <span>Pendente: {formatCurrency(totalMes)}</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-income/10 px-2.5 py-1 rounded-full">
-                  <div className="w-1.5 h-1.5 rounded-full bg-income" />
-                  <span className="font-medium text-income">
-                    Pago: {formatCurrency(totalPago)}
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-income" />
+                  <span>Pago: {formatCurrency(totalPago)}</span>
                 </div>
                 {podePagarFatura && (
                   <Button
@@ -487,32 +483,37 @@ export function DetalhesCartaoDialog({
                 </div>
               )}
 
-              <div className="divide-y divide-border/50 overflow-hidden">
+              <div className="space-y-1 overflow-hidden">
                 {!loading && !erro && parcelasExibidas.map((p) => (
                   <div
                     key={p.id}
                     className={cn(
-                      "flex items-center justify-between py-2.5 px-2 transition-colors",
+                      "flex items-center justify-between py-2 px-2 rounded-lg transition-colors",
                       p.paga
                         ? "opacity-50 bg-income/5"
                         : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="min-w-0 flex-1 mr-2">
-                      <p className={cn(
-                        "text-sm font-medium truncate",
-                        p.paga && "line-through text-muted-foreground"
-                      )}>
-                        {p.descricao} – {p.numero_parcela}/{p.total_parcelas}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {p.responsavel_apelido || p.responsavel_nome || 'Eu'}
-                      </p>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="min-w-0 flex-1">
+                        <p className={cn(
+                          "text-sm font-medium truncate",
+                          p.paga && "line-through text-muted-foreground"
+                        )}>
+                          {p.descricao}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.numero_parcela}/{p.total_parcelas}
+                          {(p.responsavel_apelido || p.responsavel_nome) && (
+                            <> · {p.responsavel_apelido || p.responsavel_nome}</>
+                          )}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
                       <span className={cn(
-                        "text-sm font-semibold min-w-[75px] text-right",
+                        "text-sm font-semibold",
                         p.paga ? "line-through text-muted-foreground" : "text-destructive"
                       )}>
                         {formatCurrency(Math.abs(p.valor))}
