@@ -1,31 +1,35 @@
 
-# Remover Valores Monetarios da Lista de Compras
+# Swipe para Abrir a Sidebar no Mobile
 
 ## Objetivo
 
-Remover o valor (ex: "R$ 15") de cada linha de compra na lista do dialog de detalhes do cartao. A linha ficara apenas com a descricao e a info de parcela/responsavel, sem o valor monetario.
+Permitir que o usuario arraste da borda esquerda da tela para abrir a sidebar no celular, igual ao comportamento padrao de apps nativos (Gmail, WhatsApp, etc).
 
-## Alteracao
+## Como funciona
 
-### Arquivo: `src/components/cartoes/DetalhesCartaoDialog.tsx`
+- Ao tocar na borda esquerda da tela (primeiros 30px) e arrastar para a direita, a sidebar abre
+- Ao arrastar a sidebar para a esquerda (ou o overlay), ela fecha
+- O comportamento do botao hamburger continua funcionando normalmente
+- Funciona apenas no mobile (telas menores que `lg`)
 
-**Linhas 514-520** - Remover o `<span>` que exibe o valor formatado (`formatCurrency`), mantendo apenas o botao de menu (tres pontos).
+## Detalhes Tecnicos
 
-Antes:
-```
-<div className="flex items-center gap-1 shrink-0">
-  <span className="text-sm font-semibold min-w-[90px] text-right ...">
-    {formatCurrency(Math.abs(p.valor))}
-  </span>
-  <DropdownMenu>...</DropdownMenu>
-</div>
-```
+### Arquivo: `src/hooks/useSwipeGesture.ts` (novo)
 
-Depois:
-```
-<div className="flex items-center shrink-0">
-  <DropdownMenu>...</DropdownMenu>
-</div>
-```
+Criar um hook customizado que detecta gestos de swipe usando Touch Events:
 
-Isso libera todo o espaco horizontal para a descricao e elimina definitivamente o problema de corte em telas estreitas.
+- `touchstart`: Registra a posicao inicial do toque. So ativa se o toque comeca nos primeiros 30px da borda esquerda (para abrir) ou em qualquer lugar (para fechar, quando a sidebar esta aberta)
+- `touchmove`: Calcula o delta horizontal do arraste
+- `touchend`: Se o delta for maior que 50px para a direita, abre a sidebar. Se for maior que 50px para a esquerda, fecha
+
+O hook recebe:
+- `onSwipeRight`: callback para abrir a sidebar
+- `onSwipeLeft`: callback para fechar a sidebar
+- `enabled`: boolean para ativar apenas no mobile
+
+### Arquivo: `src/components/Layout.tsx` (modificar)
+
+- Importar e usar o hook `useSwipeGesture` no componente Layout
+- Passar `setSidebarOpen(true)` como `onSwipeRight` e `setSidebarOpen(false)` como `onSwipeLeft`
+- Usar `useIsMobile()` ou media query para ativar apenas em telas pequenas
+- Anexar os event listeners ao elemento raiz do Layout (a div `min-h-screen`)
