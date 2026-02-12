@@ -188,7 +188,7 @@ export function EditarCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 overflow-y-auto overflow-x-hidden">
         <div
           className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
           style={{ background: form.cor || "#6366f1" }}

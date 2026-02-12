@@ -239,7 +239,7 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 overflow-hidden">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 overflow-y-auto overflow-x-hidden">
           {/* Header com cor sólida do cartão */}
           <div
             className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden rounded-t-lg"
@@ -289,7 +289,7 @@ export function DetalhesCartaoDialog({
           </div>
 
           {/* Conteúdo */}
-          <div className="px-4 sm:px-5 py-4 space-y-3 overflow-hidden">
+          <div className="px-4 sm:px-5 py-4 space-y-3">
             {/* Navegação + Ações compactas */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-0.5 sm:gap-1">
