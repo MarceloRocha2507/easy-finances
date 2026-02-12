@@ -52,6 +52,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEstornado: () => void;
+  corCartao?: string;
 }
 
 export function EstornarCompraDialog({
@@ -59,6 +60,7 @@ export function EstornarCompraDialog({
   open,
   onOpenChange,
   onEstornado,
+  corCartao,
 }: Props) {
   const [loading, setLoading] = useState(false);
 
@@ -144,18 +146,23 @@ export function EstornarCompraDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RotateCcw className="h-5 w-5" />
-            Estornar Compra
-          </DialogTitle>
-          <DialogDescription>
-            Registre um estorno para esta compra
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: corCartao || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <RotateCcw className="h-5 w-5 text-white/80" />
+              Estornar Compra
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Registre um estorno para esta compra
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 sm:px-5 pb-4 pt-4">
           {/* Info da compra */}
           <div className="p-3 rounded-lg bg-muted/50 space-y-1">
             <p className="font-medium">{parcela.descricao}</p>

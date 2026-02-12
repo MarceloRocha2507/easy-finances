@@ -683,6 +683,7 @@ export function DetalhesCartaoDialog({
         mesReferencia={mesRef}
         open={ajustarFaturaOpen}
         onOpenChange={setAjustarFaturaOpen}
+        corCartao={cartao.cor}
         onSuccess={() => {
           carregarFatura();
           refetchAcertos();
@@ -694,6 +695,7 @@ export function DetalhesCartaoDialog({
       <EditarCompraDialog
         parcela={parcelaSelecionada}
         open={editarCompraOpen}
+        corCartao={cartao.cor}
         onOpenChange={(open) => {
           setEditarCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
@@ -710,6 +712,7 @@ export function DetalhesCartaoDialog({
       <ExcluirCompraDialog
         parcela={parcelaSelecionada}
         open={excluirCompraOpen}
+        corCartao={cartao.cor}
         onOpenChange={(open) => {
           setExcluirCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
@@ -726,6 +729,7 @@ export function DetalhesCartaoDialog({
       <EstornarCompraDialog
         parcela={parcelaSelecionada}
         open={estornarCompraOpen}
+        corCartao={cartao.cor}
         onOpenChange={(open) => {
           setEstornarCompraOpen(open);
           if (!open) setParcelaSelecionada(null);

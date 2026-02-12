@@ -20,6 +20,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void;
+  corCartao?: string;
 }
 
 export function ExcluirCompraDialog({
@@ -27,6 +28,7 @@ export function ExcluirCompraDialog({
   open,
   onOpenChange,
   onDeleted,
+  corCartao,
 }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -90,10 +92,14 @@ export function ExcluirCompraDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: corCartao || "#6366f1" }}
+        >
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-destructive" />
+          <AlertDialogTitle className="flex items-center gap-2 text-white">
+            <Trash2 className="h-5 w-5 text-white/80" />
             Excluir compra?
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -196,7 +202,8 @@ export function ExcluirCompraDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        </div>
+        <AlertDialogFooter className="px-4 sm:px-5 pb-4">
           {etapaConfirmacao ? (
             <>
               <Button

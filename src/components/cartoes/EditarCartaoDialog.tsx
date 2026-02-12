@@ -188,15 +188,20 @@ export function EditarCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Editar cartão</DialogTitle>
-          <DialogDescription>
-            Atualize as informações do cartão
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: form.cor || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar cartão</DialogTitle>
+            <DialogDescription className="text-white/70">
+              Atualize as informações do cartão
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-2">
           {/* Seletor de Cartão */}
           <div className="space-y-2">
             <Label>Cartão</Label>

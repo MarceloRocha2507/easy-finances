@@ -27,6 +27,7 @@ interface DetalhesCompraCartaoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (parcela: ParcelaFatura) => void;
+  corCartao?: string;
 }
 
 export function DetalhesCompraCartaoDialog({
@@ -34,6 +35,7 @@ export function DetalhesCompraCartaoDialog({
   open,
   onOpenChange,
   onEdit,
+  corCartao,
 }: DetalhesCompraCartaoDialogProps) {
   if (!parcela) return null;
 
@@ -66,12 +68,17 @@ export function DetalhesCompraCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Detalhes da Compra</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: corCartao || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Detalhes da Compra</DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4">
           {/* Cabeçalho com ícone e descrição */}
           <div className="flex items-start gap-3">
             <div
@@ -333,7 +340,7 @@ export function DetalhesCompraCartaoDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 px-4 sm:px-5 pb-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
