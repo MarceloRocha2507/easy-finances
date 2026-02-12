@@ -40,7 +40,7 @@ function monthLabel(d: Date) {
 }
 
 export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
-  const corCartao = "#7c3aed"; // violet-600 padrao
+  const corCartao = "hsl(var(--muted-foreground))";
 
   const [mesRef, setMesRef] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)

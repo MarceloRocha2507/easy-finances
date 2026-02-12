@@ -173,13 +173,11 @@ export function EditarCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
-        <div
-          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
-        >
+      <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden">
+        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
-            <DialogTitle className="text-white">Editar cartão</DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogTitle>Editar cartão</DialogTitle>
+            <DialogDescription>
               Atualize as informações do cartão
             </DialogDescription>
           </DialogHeader>
@@ -282,12 +280,12 @@ export function EditarCartaoDialog({
 
           {/* Preview do card */}
           <div
-            className="p-4 rounded-lg text-white text-center bg-gradient-to-br from-slate-900 via-slate-900 to-violet-900/50"
+            className="p-4 rounded-lg text-center bg-muted border"
           >
-            <p className="text-xs opacity-70 mb-1">Preview</p>
+            <p className="text-xs text-muted-foreground mb-1">Preview</p>
             <p className="font-semibold">{displayNome || "Nome do Cartão"}</p>
             {form.bandeira && (
-              <p className="text-xs opacity-70 uppercase mt-1">{form.bandeira}</p>
+              <p className="text-xs text-muted-foreground uppercase mt-1">{form.bandeira}</p>
             )}
           </div>
 

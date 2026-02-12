@@ -146,16 +146,14 @@ export function EstornarCompraDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
-        <div
-          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
-        >
+      <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden">
+        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <RotateCcw className="h-5 w-5 text-white/80" />
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-muted-foreground" />
               Estornar Compra
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription>
               Registre um estorno para esta compra
             </DialogDescription>
           </DialogHeader>
