@@ -294,18 +294,23 @@ export function NovaCompraCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Nova Compra
-          </DialogTitle>
-          <DialogDescription>
-            Registre uma compra no cartão {cartao.nome}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-0">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: cartao.cor || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <CreditCard className="h-5 w-5 text-white/80" />
+              Nova Compra
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Registre uma compra no cartão {cartao.nome}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-2">
           {/* Descrição */}
           <div className="space-y-2">
             <Label htmlFor="descricao">Descrição</Label>

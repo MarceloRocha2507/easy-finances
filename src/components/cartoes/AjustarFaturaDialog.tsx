@@ -53,6 +53,7 @@ interface AjustarFaturaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  corCartao?: string;
 }
 
 export function AjustarFaturaDialog({
@@ -61,6 +62,7 @@ export function AjustarFaturaDialog({
   open,
   onOpenChange,
   onSuccess,
+  corCartao,
 }: AjustarFaturaDialogProps) {
   const [loading, setLoading] = useState(false);
   const { data: categories = [] } = useCategories();
@@ -130,15 +132,20 @@ export function AjustarFaturaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            Ajustar Fatura
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: corCartao || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Scale className="h-5 w-5 text-white/80" />
+              Ajustar Fatura
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 sm:px-5 pb-4 pt-4">
           {/* Tipo de ajuste */}
           <div className="space-y-2">
             <Label>Tipo de ajuste</Label>

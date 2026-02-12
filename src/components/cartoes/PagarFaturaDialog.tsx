@@ -241,17 +241,23 @@ export function PagarFaturaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" style={{ color: cartao.cor }} />
-            Pagar Fatura - {cartao.nome}
-          </DialogTitle>
-          <DialogDescription className="capitalize">
-            {mesLabel}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: cartao.cor || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <CreditCard className="h-5 w-5 text-white/80" />
+              Pagar Fatura - {cartao.nome}
+            </DialogTitle>
+            <DialogDescription className="text-white/70 capitalize">
+              {mesLabel}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
+        <div className="px-4 sm:px-5 pb-4 pt-4">
         {carregandoResumo ? (
           <div className="py-8 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -572,6 +578,7 @@ export function PagarFaturaDialog({
             )}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

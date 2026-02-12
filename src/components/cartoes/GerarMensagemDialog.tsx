@@ -111,18 +111,23 @@ export function GerarMensagemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Gerar Mensagem da Fatura
-          </DialogTitle>
-          <DialogDescription>
-            {cartao.nome} - {nomeMes}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: cartao.cor || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileText className="h-5 w-5 text-white/80" />
+              Gerar Mensagem da Fatura
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              {cartao.nome} - {nomeMes}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-2">
           {/* Seletor de responsável */}
           <div className="space-y-2">
             <Label>Responsável</Label>

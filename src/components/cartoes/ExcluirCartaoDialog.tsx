@@ -36,25 +36,32 @@ export function ExcluirCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Excluir cartão</DialogTitle>
-          <DialogDescription>
-            {cartao ? (
-              <>
-                Tem certeza que deseja excluir o cartão{" "}
-                <strong>{cartao.nome}</strong>?
-                <br />
-                <span className="text-destructive font-semibold">
-                  Essa ação não pode ser desfeita.
-                </span>
-              </>
-            ) : (
-              "Nenhum cartão selecionado."
-            )}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="p-0 overflow-hidden">
+        <div
+          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          style={{ background: cartao?.cor || "#6366f1" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Excluir cartão</DialogTitle>
+            <DialogDescription className="text-white/70">
+              {cartao ? (
+                <>
+                  Tem certeza que deseja excluir o cartão{" "}
+                  <strong className="text-white">{cartao.nome}</strong>?
+                </>
+              ) : (
+                "Nenhum cartão selecionado."
+              )}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
+        <div className="px-4 sm:px-5 pb-4 pt-2">
+          {cartao && (
+            <p className="text-destructive font-semibold text-sm mb-4">
+              Essa ação não pode ser desfeita.
+            </p>
+          )}
         <DialogFooter className="flex gap-2">
           <Button
             variant="ghost"
@@ -71,6 +78,7 @@ export function ExcluirCartaoDialog({
             Excluir
           </Button>
         </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

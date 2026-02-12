@@ -75,6 +75,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
+  corCartao?: string;
 }
 
 /* ======================================================
@@ -85,6 +86,7 @@ export function EditarCompraDialog({
   open,
   onOpenChange,
   onSaved,
+  corCartao,
 }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -254,20 +256,25 @@ export function EditarCompraDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar compra</DialogTitle>
-            <DialogDescription>
-              Parcela {parcela.numero_parcela}/{parcela.total_parcelas}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-0">
+          <div
+            className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+            style={{ background: corCartao || "#6366f1" }}
+          >
+            <DialogHeader>
+              <DialogTitle className="text-white">Editar compra</DialogTitle>
+              <DialogDescription className="text-white/70">
+                Parcela {parcela.numero_parcela}/{parcela.total_parcelas}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8 px-4 sm:px-5">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4">
               {/* Descrição */}
               <div className="space-y-2">
                 <Label htmlFor="descricao">Descrição</Label>

@@ -987,6 +987,7 @@ export default function DespesasCartao() {
       <EditarCompraDialog
         parcela={parcelaSelecionada}
         open={editarCompraOpen}
+        corCartao={cartao?.cor}
         onOpenChange={(open) => {
           setEditarCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
@@ -1001,6 +1002,7 @@ export default function DespesasCartao() {
       <ExcluirCompraDialog
         parcela={parcelaSelecionada}
         open={excluirCompraOpen}
+        corCartao={cartao?.cor}
         onOpenChange={(open) => {
           setExcluirCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
@@ -1015,6 +1017,7 @@ export default function DespesasCartao() {
       <EstornarCompraDialog
         parcela={parcelaSelecionada}
         open={estornarCompraOpen}
+        corCartao={cartao?.cor}
         onOpenChange={(open) => {
           setEstornarCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
@@ -1032,6 +1035,7 @@ export default function DespesasCartao() {
           mesReferencia={mesRef}
           open={ajustarFaturaOpen}
           onOpenChange={setAjustarFaturaOpen}
+          corCartao={cartao?.cor}
           onSuccess={() => {
             carregarFatura();
           }}
@@ -1067,6 +1071,7 @@ export default function DespesasCartao() {
       <DetalhesCompraCartaoDialog
         parcela={parcelaSelecionada}
         open={detalhesCompraOpen}
+        corCartao={cartao?.cor}
         onOpenChange={(open) => {
           setDetalhesCompraOpen(open);
           if (!open) setParcelaSelecionada(null);
