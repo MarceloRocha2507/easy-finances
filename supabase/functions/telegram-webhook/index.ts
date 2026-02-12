@@ -21,29 +21,33 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
+    // Handle setup-webhook action from frontend
+    if (body.action === "setup-webhook") {
+      const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
+      const res = await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: webhookUrl }),
+        }
+      );
+      const result = await res.json();
+      console.log("setWebhook result:", result);
+      return new Response(
+        JSON.stringify({ success: result.ok, result }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle Telegram webhook update
     if (body.message) {
       const chatId = String(body.message.chat.id);
       const text = body.message.text || "";
 
       if (text.startsWith("/start")) {
-        // Generate a 6-digit linking code
         const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        // Store the pending link
-        const { error } = await supabase
-          .from("telegram_config")
-          .upsert(
-            {
-              user_id: "00000000-0000-0000-0000-000000000000", // placeholder, will be updated when user links
-              telegram_chat_id: chatId,
-              codigo_vinculacao: codigo,
-              ativo: false,
-            },
-            { onConflict: "user_id" }
-          );
-
-        // Since we can't upsert on chat_id, just insert or update by chat_id
         // Delete any existing pending config for this chat
         await supabase
           .from("telegram_config")
@@ -51,9 +55,8 @@ Deno.serve(async (req) => {
           .eq("telegram_chat_id", chatId)
           .eq("ativo", false);
 
-        // Insert new pending config
+        // Insert new pending config (user_id is null until linked)
         await supabase.from("telegram_config").insert({
-          user_id: "00000000-0000-0000-0000-000000000000",
           telegram_chat_id: chatId,
           codigo_vinculacao: codigo,
           ativo: false,
@@ -104,7 +107,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Delete any existing config for this user
+      // Delete any existing active config for this user
       await supabase.from("telegram_config").delete().eq("user_id", user_id);
 
       // Update the pending config with the real user_id
