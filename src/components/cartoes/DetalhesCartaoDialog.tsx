@@ -462,7 +462,7 @@ export function DetalhesCartaoDialog({
             )}
 
             {/* Lista de parcelas */}
-            <ScrollArea className="h-[200px]">
+            <ScrollArea className="h-[200px] [&>div]:!overflow-x-hidden">
               {loading && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
                   Carregando...
@@ -484,7 +484,7 @@ export function DetalhesCartaoDialog({
                 </div>
               )}
 
-              <div className="space-y-1">
+              <div className="space-y-1 overflow-hidden">
                 {!loading && !erro && parcelasExibidas.map((p) => (
                   <div
                     key={p.id}
