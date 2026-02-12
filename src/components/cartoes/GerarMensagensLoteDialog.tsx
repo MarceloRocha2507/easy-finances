@@ -200,8 +200,7 @@ export function GerarMensagensLoteDialog({
                       onCheckedChange={() => toggleCartao(cartao.id)}
                     />
                     <div
-                      className="h-3 w-3 rounded-full shrink-0"
-                      style={{ backgroundColor: cartao.cor || "#6366f1" }}
+                      className="h-3 w-3 rounded-full shrink-0 bg-violet-600"
                     />
                     <span className="text-sm">{cartao.nome}</span>
                   </label>

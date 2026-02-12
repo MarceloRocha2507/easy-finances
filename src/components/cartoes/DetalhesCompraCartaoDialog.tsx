@@ -70,8 +70,7 @@ export function DetalhesCompraCartaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
-          className="px-4 sm:px-5 pt-4 pb-4"
-          style={{ background: corCartao || "#6366f1" }}
+          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
         >
           <DialogHeader>
             <DialogTitle className="text-white">Detalhes da Compra</DialogTitle>

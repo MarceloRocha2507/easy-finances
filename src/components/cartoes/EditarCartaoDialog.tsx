@@ -19,7 +19,7 @@ import {
 import { Cartao, atualizarCartao } from "@/services/cartoes";
 import { useToast } from "@/components/ui/use-toast";
 import { DaySelector } from "@/components/ui/day-selector";
-import { Check } from "lucide-react";
+// lucide icons removed: Check no longer needed
 import { BancoSelector } from "@/components/bancos";
 
 // Lista de cartões brasileiros com bandeira e cor padrão
@@ -42,21 +42,6 @@ const CARTOES_BRASIL = [
   { nome: "Digio", bandeira: "Visa", cor: "#0066CC" },
   { nome: "Credicard", bandeira: "Mastercard", cor: "#00A551" },
   { nome: "Outro", bandeira: "", cor: "#6366f1" },
-];
-
-const CORES_PREDEFINIDAS = [
-  { nome: "Inter", cor: "#00A859" },
-  { nome: "Nubank", cor: "#820AD1" },
-  { nome: "Itaú", cor: "#003399" },
-  { nome: "Santander", cor: "#CC0000" },
-  { nome: "Bradesco", cor: "#CC092F" },
-  { nome: "BB", cor: "#FFCD00" },
-  { nome: "Caixa", cor: "#0070C0" },
-  { nome: "C6", cor: "#242424" },
-  { nome: "Next", cor: "#D50032" },
-  { nome: "PAN", cor: "#F37021" },
-  { nome: "Índigo", cor: "#6366f1" },
-  { nome: "Esmeralda", cor: "#10b981" },
 ];
 
 interface Props {
@@ -190,8 +175,7 @@ export function EditarCartaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
-          className="px-4 sm:px-5 pt-4 pb-4"
-          style={{ background: form.cor || "#6366f1" }}
+          className="px-4 sm:px-5 pt-4 pb-4 bg-gradient-to-br from-violet-600 to-indigo-600"
         >
           <DialogHeader>
             <DialogTitle className="text-white">Editar cartão</DialogTitle>
@@ -296,33 +280,9 @@ export function EditarCartaoDialog({
             placeholder="Selecione o banco"
           />
 
-          {/* Seletor de Cor */}
-          <div className="space-y-2">
-            <Label>Cor do cartão</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {CORES_PREDEFINIDAS.map((item) => (
-                <button
-                  key={item.cor}
-                  type="button"
-                  onClick={() => setForm({ ...form, cor: item.cor })}
-                  className="relative w-10 h-10 rounded-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-                  style={{ backgroundColor: item.cor }}
-                  title={item.nome}
-                >
-                  {form.cor === item.cor && (
-                    <Check className="absolute inset-0 m-auto h-5 w-5 text-white drop-shadow-md" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Preview do card */}
           <div
-            className="p-4 rounded-lg text-white text-center"
-            style={{
-              background: `linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 60%, ${form.cor}50 100%)`,
-            }}
+            className="p-4 rounded-lg text-white text-center bg-gradient-to-br from-slate-900 via-slate-900 to-violet-900/50"
           >
             <p className="text-xs opacity-70 mb-1">Preview</p>
             <p className="font-semibold">{displayNome || "Nome do Cartão"}</p>
