@@ -1,32 +1,33 @@
 
 
-# Padronizar Cores Hardcoded no DetalhesCartaoDialog
+# Remover Checkboxes e Limitar a 5 Compras no DetalhesCartaoDialog
 
 ## Problema
 
-O arquivo `DetalhesCartaoDialog.tsx` utiliza cores Tailwind hardcoded (`emerald-500`) em vez dos design tokens do sistema (`income`), quebrando a consistencia visual caso os tokens sejam alterados no futuro.
+O dialog de detalhes do cartao exibe checkboxes ao lado de cada despesa (para marcar como paga) e mostra ate 6 itens. O usuario quer remover os checkboxes e limitar a exibicao a 5 compras, mantendo a interface limpa e focada no historico recente.
 
-## Cores a Substituir
+## Alteracoes
 
-| Linha | Atual | Novo | Contexto |
-|-------|-------|------|----------|
-| 269 | `text-emerald-500` | `text-income` | Valor "Disponivel" no header |
-| 447 | `bg-emerald-500` | `bg-income` | Bolinha "Pago" no resumo |
-| 494 | `bg-emerald-500/5` | `bg-income/5` | Background da linha paga |
+### Arquivo: `src/components/cartoes/DetalhesCartaoDialog.tsx`
 
-## O que nao muda
+1. **Reduzir limite de 6 para 5 itens** (linha 205-206):
+   - `parcelasFiltradas.slice(0, 5)` em vez de `slice(0, 6)`
+   - `parcelasFiltradas.length > 5` em vez de `> 6`
 
-- `text-destructive` ja e um design token (usado para valores de fatura e despesas pendentes)
-- `#6366f1` na linha 239 e um fallback para `cartao.cor` (cor personalizada do usuario) - nao e um token do sistema
-- `text-muted-foreground`, `text-foreground`, `bg-muted/50`, `border-border` ja sao tokens
+2. **Remover o Checkbox de cada linha de despesa** (linhas 499-507):
+   - Eliminar o componente `<Checkbox>` que permite marcar parcelas como pagas
+   - Manter o restante do layout (descricao, parcela, responsavel, valor, menu de acoes)
 
-## Detalhes Tecnicos
+3. **Remover import do Checkbox** se nao for mais utilizado em nenhum outro lugar do arquivo.
 
-Tres alteracoes simples de classe CSS no arquivo `src/components/cartoes/DetalhesCartaoDialog.tsx`:
+4. **Remover import de `desmarcarTodasParcelas`** (linha 7) caso nao seja mais utilizado.
 
-1. Linha 269: `text-emerald-500` para `text-income`
-2. Linha 447: `bg-emerald-500` para `bg-income`  
-3. Linha 494: `bg-emerald-500/5` para `bg-income/5`
+## O que permanece
 
-Os tokens `income` estao definidos em `src/index.css` como `--income: 152 60% 36%` (light) e `--income: 152 55% 42%` (dark), mapeados em `tailwind.config.ts`.
+- Menu de acoes (tres pontos) com opcoes Editar, Estornar e Excluir
+- Descricao, numero da parcela, responsavel
+- Valor monetario com formatacao
+- Botao "Ver todas as X despesas" / "Ver tela ampla"
+- Busca e navegacao entre meses
+- Resumo Pendente/Pago
 
