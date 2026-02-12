@@ -41,107 +41,7 @@ async function findUserByChatId(supabase: any, chatId: string): Promise<string |
   return config?.user_id || null;
 }
 
-// ─── /despesas handler ───
-
-async function handleDespesas(supabase: any, botToken: string, chatId: string, text: string) {
-  const parts = text.trim().split(/\s+/);
-  let meses = 3;
-  if (parts.length > 1) {
-    const parsed = parseInt(parts[1]);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= 12) meses = parsed;
-  }
-
-  const userId = await findUserByChatId(supabase, chatId);
-  if (!userId) {
-    await sendTelegramMessage(botToken, chatId, "❌ Conta não vinculada.\n\nEnvie /start para obter um código de vinculação.");
-    return;
-  }
-
-  const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fimPeriodo = new Date(hoje.getFullYear(), hoje.getMonth() + meses, 0);
-  const inicioStr = inicioMes.toISOString().split("T")[0];
-  const fimStr = fimPeriodo.toISOString().split("T")[0];
-
-  const { data: parcelas } = await supabase
-    .from("parcelas_cartao")
-    .select("valor, numero_parcela, total_parcelas, mes_referencia, tipo_recorrencia, compra_id, compras_cartao(descricao, user_id, cartoes(nome))")
-    .eq("paga", false).eq("ativo", true)
-    .gte("mes_referencia", inicioStr).lte("mes_referencia", fimStr);
-
-  const { data: transacoes } = await supabase
-    .from("transactions")
-    .select("description, amount, due_date, date, numero_parcela, total_parcelas")
-    .eq("user_id", userId).eq("type", "expense").eq("status", "pendente")
-    .gte("due_date", inicioStr).lte("due_date", fimStr);
-
-  interface DespesaItem { descricao: string; valor: number; info: string; }
-  const porMes: Record<string, DespesaItem[]> = {};
-
-  if (parcelas) {
-    for (const p of parcelas) {
-      const compra = p.compras_cartao as any;
-      if (!compra || compra.user_id !== userId) continue;
-      const mesKey = p.mes_referencia.substring(0, 7);
-      if (!porMes[mesKey]) porMes[mesKey] = [];
-      let info = "";
-      if (compra.cartoes?.nome) info = `(${compra.cartoes.nome})`;
-      if (p.total_parcelas > 1) info = `(${p.numero_parcela}/${p.total_parcelas})`;
-      if (p.tipo_recorrencia === "recorrente") info = "(recorrente)";
-      porMes[mesKey].push({ descricao: compra.descricao || "Sem descrição", valor: Number(p.valor), info });
-    }
-  }
-
-  if (transacoes) {
-    for (const t of transacoes) {
-      const dueDate = t.due_date || t.date;
-      if (!dueDate) continue;
-      const mesKey = dueDate.substring(0, 7);
-      if (!porMes[mesKey]) porMes[mesKey] = [];
-      let info = "";
-      if (t.total_parcelas && t.total_parcelas > 1) info = `(${t.numero_parcela || 1}/${t.total_parcelas})`;
-      porMes[mesKey].push({ descricao: t.description || "Sem descrição", valor: Number(t.amount), info });
-    }
-  }
-
-  const mesesOrdenados = Object.keys(porMes).sort();
-  if (mesesOrdenados.length === 0) {
-    await sendTelegramMessage(botToken, chatId, `📋 *Despesas Futuras (${meses} ${meses === 1 ? "mês" : "meses"})*\n\nNenhuma despesa encontrada no período.`);
-    return;
-  }
-
-  let totalGeral = 0;
-  const secoes: string[] = [];
-  for (const mesKey of mesesOrdenados) {
-    const [ano, mesNum] = mesKey.split("-");
-    const nomeMes = MONTH_NAMES[parseInt(mesNum) - 1];
-    const itens = porMes[mesKey];
-    let subtotal = 0;
-    const MAX_ITENS = 50;
-    const linhas: string[] = [];
-    for (const item of itens.slice(0, MAX_ITENS)) {
-      subtotal += item.valor;
-      linhas.push(`  • ${item.descricao} - ${formatBRL(item.valor)}${item.info ? ` ${item.info}` : ""}`);
-    }
-    for (let i = MAX_ITENS; i < itens.length; i++) subtotal += itens[i].valor;
-    if (itens.length > MAX_ITENS) linhas.push(`  _...e mais ${itens.length - MAX_ITENS} itens_`);
-    linhas.push(`  *Subtotal: ${formatBRL(subtotal)}*`);
-    totalGeral += subtotal;
-    secoes.push(`📅 *${nomeMes}/${ano}*\n${linhas.join("\n")}`);
-  }
-
-  const header = `📋 *Despesas Futuras (${meses} ${meses === 1 ? "mês" : "meses"})*\n\n`;
-  const footer = `\n\n💰 *Total geral: ${formatBRL(totalGeral)}*`;
-  const mensagem = header + secoes.join("\n\n") + footer;
-
-  if (mensagem.length <= 4000) {
-    await sendTelegramMessage(botToken, chatId, mensagem);
-  } else {
-    await sendTelegramMessage(botToken, chatId, header + "_(mensagem dividida por ser muito longa)_");
-    for (const s of secoes) await sendTelegramMessage(botToken, chatId, s.length > 4000 ? s.substring(0, 4000) : s);
-    await sendTelegramMessage(botToken, chatId, footer);
-  }
-}
+// (despesas handler removed – all questions go through AI)
 
 // ─── AI pergunta handler ───
 
@@ -382,10 +282,8 @@ Deno.serve(async (req) => {
             parse_mode: "Markdown",
           }),
         });
-      } else if (text.startsWith("/despesas")) {
-        await handleDespesas(supabase, TELEGRAM_BOT_TOKEN, chatId, text);
       } else if (text.startsWith("/")) {
-        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, chatId, "❓ Comando não reconhecido.\n\nComandos disponíveis:\n/start - Vincular conta\n/despesas - Ver despesas futuras\n\nOu envie qualquer pergunta sobre suas finanças!");
+        await sendTelegramMessage(TELEGRAM_BOT_TOKEN, chatId, "❓ Comando não reconhecido.\n\nComandos disponíveis:\n/start - Vincular conta\n\nOu envie qualquer pergunta sobre suas finanças!");
       } else if (text.trim().length > 0) {
         await handlePergunta(supabase, TELEGRAM_BOT_TOKEN, chatId, text);
       }
