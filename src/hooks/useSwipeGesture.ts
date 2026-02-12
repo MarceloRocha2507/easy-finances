@@ -25,6 +25,8 @@ export function useSwipeGesture({
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  const dragOffsetRef = useRef(0);
+  const isDraggingRef = useRef(false);
   const startX = useRef(0);
   const startY = useRef(0);
   const tracking = useRef(false);
@@ -59,26 +61,28 @@ export function useSwipeGesture({
       const deltaY = Math.abs(touch.clientY - startY.current);
 
       // Lock out if vertical scroll detected early
-      if (!isDragging && deltaY > Math.abs(deltaX) && deltaY > 10) {
+      if (!isDraggingRef.current && deltaY > Math.abs(deltaX) && deltaY > 10) {
         verticalLock.current = true;
         tracking.current = false;
         return;
       }
       if (verticalLock.current) return;
 
-      if (Math.abs(deltaX) > 5) {
+      if (Math.abs(deltaX) > 5 && !isDraggingRef.current) {
+        isDraggingRef.current = true;
         setIsDragging(true);
       }
 
+      let offset = 0;
       if (direction.current === "open") {
-        const offset = Math.max(0, Math.min(deltaX, sidebarWidth));
-        setDragOffset(offset);
+        offset = Math.max(0, Math.min(deltaX, sidebarWidth));
       } else if (direction.current === "close") {
-        const offset = Math.max(0, Math.min(-deltaX, sidebarWidth));
-        setDragOffset(offset);
+        offset = Math.max(0, Math.min(-deltaX, sidebarWidth));
       }
+      dragOffsetRef.current = offset;
+      setDragOffset(offset);
     },
-    [enabled, isDragging, sidebarWidth]
+    [enabled, sidebarWidth]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -86,18 +90,20 @@ export function useSwipeGesture({
     tracking.current = false;
 
     const threshold = sidebarWidth * 0.4;
+    const currentOffset = dragOffsetRef.current;
 
-    if (direction.current === "open" && dragOffset > threshold) {
+    if (direction.current === "open" && currentOffset > threshold) {
       onSwipeRight();
-    } else if (direction.current === "close" && dragOffset > threshold) {
+    } else if (direction.current === "close" && currentOffset > threshold) {
       onSwipeLeft();
     }
-    // else: snap back (dragOffset resets to 0)
 
+    dragOffsetRef.current = 0;
+    isDraggingRef.current = false;
     setDragOffset(0);
     setIsDragging(false);
     direction.current = null;
-  }, [enabled, dragOffset, sidebarWidth, onSwipeRight, onSwipeLeft]);
+  }, [enabled, sidebarWidth, onSwipeRight, onSwipeLeft]);
 
   useEffect(() => {
     if (!enabled) return;
