@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet } from "lucide-react";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,8 +16,16 @@ export function Layout({ children }: LayoutProps) {
   const { isAdmin, isCheckingRole } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const isMobile = useIsMobile();
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
+
+  useSwipeGesture({
+    onSwipeRight: openSidebar,
+    onSwipeLeft: closeSidebar,
+    enabled: isMobile,
+  });
 
   return (
     <div className="min-h-screen bg-background relative">
