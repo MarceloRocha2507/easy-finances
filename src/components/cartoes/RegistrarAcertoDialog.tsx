@@ -233,7 +233,7 @@ export function RegistrarAcertoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-y-auto overflow-x-hidden">
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-y-auto overflow-x-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
           className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
           style={{ background: cartao.cor || "#6366f1" }}

@@ -146,7 +146,7 @@ export function EstornarCompraDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-y-auto overflow-x-hidden">
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-y-auto overflow-x-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
           className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
           style={{ background: corCartao || "#6366f1" }}

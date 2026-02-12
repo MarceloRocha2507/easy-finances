@@ -239,7 +239,7 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 overflow-y-auto overflow-x-hidden">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-y-auto overflow-x-hidden [&>button]:text-white [&>button]:hover:text-white/80">
           {/* Header com cor sólida do cartão */}
           <div
             className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden rounded-t-lg"
