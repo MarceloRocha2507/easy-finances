@@ -1,99 +1,65 @@
 
 
-# Assistente IA no Telegram - Perguntar Sobre Seus Dados
+# Assistente IA no Sistema Web
 
 ## O que sera feito
 
-Adicionar um assistente inteligente no bot do Telegram onde voce pode enviar qualquer pergunta em linguagem natural sobre seus dados financeiros e receber uma resposta completa.
-
-**Exemplos de perguntas:**
-- "Qual meu saldo atual?"
-- "Quanto gastei este mes?"
-- "Quais meus cartoes e seus limites?"
-- "Quanto tenho investido?"
-- "Qual categoria tem mais gastos?"
-- "Como estao minhas metas?"
+Adicionar um botao flutuante de chat com IA no canto inferior direito do sistema. Ao clicar, abre um painel de chat onde voce pode fazer perguntas sobre suas financas em linguagem natural, igual ao bot do Telegram, mas direto no sistema.
 
 ## Como vai funcionar
 
-1. Voce envia qualquer mensagem que nao seja um comando (ex: nao comeca com `/`)
-2. O bot busca todos os seus dados financeiros do sistema (transacoes, cartoes, investimentos, metas, bancos, etc.)
-3. Envia esses dados como contexto para um modelo de IA (Gemini 2.5 Flash, via Lovable AI)
-4. A IA analisa e responde sua pergunta de forma clara e formatada
-5. A resposta e enviada de volta no Telegram
+1. Um botao flutuante com icone de chat aparece no canto inferior direito de todas as paginas (quando logado)
+2. Ao clicar, abre um painel de chat compacto
+3. Voce digita uma pergunta (ex: "Quanto gastei este mes?", "Como estao minhas metas?")
+4. A resposta aparece em tempo real com streaming (token por token)
+5. O historico da conversa e mantido durante a sessao
 
 ## Detalhes Tecnicos
 
-### Arquivo modificado: `supabase/functions/telegram-webhook/index.ts`
+### 1. Nova Edge Function: `supabase/functions/ai-chat/index.ts`
 
-### Nova funcao: `handlePergunta`
+- Recebe as mensagens do usuario + auth token
+- Identifica o usuario pelo token JWT
+- Busca todos os dados financeiros (mesma logica do Telegram: transacoes, cartoes, parcelas, bancos, metas, investimentos, orcamentos)
+- Monta o contexto e envia para o Lovable AI Gateway com streaming habilitado
+- Retorna o stream SSE diretamente para o frontend
+- Trata erros 429 (rate limit) e 402 (creditos)
 
-1. **Identificar usuario**: Buscar `user_id` pelo `chat_id` na `telegram_config`
-2. **Buscar dados do usuario** (todas as queries em paralelo para performance):
-   - `transactions` - ultimas 100 transacoes (receitas e despesas)
-   - `cartoes` - todos os cartoes com limite, fechamento, vencimento
-   - `parcelas_cartao` com join em `compras_cartao` - parcelas nao pagas
-   - `bancos` - contas bancarias e saldos
-   - `metas` - metas de economia
-   - `investimentos` - investimentos ativos
-   - `profiles` - saldo inicial
-   - `categories` - categorias do usuario
-   - `orcamentos` - orcamentos do mes atual
-3. **Montar contexto**: Criar um resumo estruturado dos dados em texto
-4. **Chamar IA**: Enviar a pergunta + contexto para `google/gemini-2.5-flash` via Lovable AI API
-5. **Responder**: Enviar resposta formatada no Telegram
+### 2. Novo componente: `src/components/AiChat.tsx`
 
-### Chamada a IA (usando LOVABLE_API_KEY ja configurado)
+- Botao flutuante fixo no canto inferior direito (z-index alto para ficar acima de tudo)
+- Painel de chat que abre/fecha com animacao
+- Campo de input para digitar perguntas
+- Area de mensagens com scroll automatico
+- Renderizacao de markdown nas respostas usando texto simples formatado
+- Indicador de "digitando" enquanto a IA processa
+- Tratamento de erros com mensagens amigaveis
 
-```typescript
-const response = await fetch("https://lovable.dev/api/chat/completions", {
-  method: "POST",
-  headers: {
-    "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    model: "google/gemini-2.5-flash",
-    messages: [
-      { role: "system", content: "Voce e um assistente financeiro..." },
-      { role: "user", content: perguntaComContexto },
-    ],
-  }),
-});
-```
+### 3. Integracao no Layout
 
-### Fluxo no webhook
+- O componente `AiChat` sera adicionado dentro do `Layout.tsx`, apos o `main`, para aparecer em todas as paginas protegidas
+- Nao sera necessario criar rota nova
 
-Mensagens que nao sao comandos (`/start`, `/despesas`) serao tratadas como perguntas para a IA:
+### 4. Streaming no frontend
 
-```typescript
-if (text.startsWith("/start")) { ... }
-else if (text.startsWith("/despesas")) { ... }
-else {
-  // Qualquer outra mensagem -> pergunta para IA
-  await handlePergunta(supabase, TELEGRAM_BOT_TOKEN, chatId, text);
-}
-```
+- Usa fetch com leitura de stream SSE
+- Tokens aparecem um a um na tela conforme chegam
+- Historico de mensagens mantido em estado React (sem persistencia no banco)
 
-### Indicador de "digitando"
+### 5. Configuracao
 
-Antes de processar, o bot enviara a acao "typing" para o usuario ver que esta processando:
+- Adicionar `ai-chat` no `supabase/config.toml` com `verify_jwt = true` (requer autenticacao)
+- Usar `LOVABLE_API_KEY` ja configurado
+- Modelo: `google/gemini-3-flash-preview`
 
-```typescript
-await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
-  body: JSON.stringify({ chat_id: chatId, action: "typing" }),
-});
-```
+### Arquivos criados/modificados
 
-### Limites e seguranca
-
-- Maximo de 100 transacoes no contexto (para nao exceder limites de tokens)
-- Timeout de resposta da IA tratado com mensagem de erro amigavel
-- Apenas usuarios vinculados podem usar
-- Resposta limitada a 4000 chars (dividida se necessario)
-- System prompt instruindo a IA a responder apenas sobre financas e nao inventar dados
+- **Criar**: `supabase/functions/ai-chat/index.ts` - Edge function com streaming
+- **Criar**: `src/components/AiChat.tsx` - Componente do chat flutuante
+- **Modificar**: `src/components/Layout.tsx` - Adicionar o componente AiChat
+- **Modificar**: `supabase/config.toml` - Registrar a nova function
 
 ### Nenhuma mudanca no banco de dados
 
-Nenhuma tabela nova ou alteracao. Usa apenas dados existentes e o `LOVABLE_API_KEY` ja configurado.
+Usa apenas dados existentes. O historico do chat vive apenas na sessao do navegador.
 
