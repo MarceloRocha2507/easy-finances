@@ -68,9 +68,9 @@ export function DetalhesCompraCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-y-auto overflow-x-hidden [&>button]:text-white [&>button]:hover:text-white/80">
+      <DialogContent className="sm:max-w-md p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
-          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          className="px-4 sm:px-5 pt-4 pb-4"
           style={{ background: corCartao || "#6366f1" }}
         >
           <DialogHeader>
@@ -78,7 +78,7 @@ export function DetalhesCompraCartaoDialog({
           </DialogHeader>
         </div>
 
-        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4 overflow-y-auto">
           {/* Cabeçalho com ícone e descrição */}
           <div className="flex items-start gap-3">
             <div

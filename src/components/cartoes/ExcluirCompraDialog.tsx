@@ -92,9 +92,9 @@ export function ExcluirCompraDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="p-0 gap-0 overflow-y-auto overflow-x-hidden [&>button]:text-white [&>button]:hover:text-white/80">
+      <AlertDialogContent className="p-0 gap-0 border-0 overflow-hidden [&>button]:text-white [&>button]:hover:text-white/80">
         <div
-          className="px-4 sm:px-5 pt-4 pb-4 rounded-t-lg"
+          className="px-4 sm:px-5 pt-4 pb-4"
           style={{ background: corCartao || "#6366f1" }}
         >
         <AlertDialogHeader>
