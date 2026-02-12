@@ -40,7 +40,7 @@ function CartaoCard({ cartao, onClick }: CartaoCardProps) {
             <CreditCard className="h-5 w-5" style={{ color: corCartao }} />
           </div>
           <div>
-            <p className="font-medium group-hover:text-primary transition-colors">
+            <p className="font-medium group-hover:text-primary transition-colors truncate">
               {cartao.nome}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -141,22 +141,22 @@ export function DashboardCartoes() {
         <CardContent>
           {/* Resumo */}
           {data?.resumo && data.resumo.quantidadeCartoes > 0 && (
-            <div className="grid grid-cols-3 gap-4 mb-4 p-3 rounded-xl bg-muted/50">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 p-3 rounded-xl bg-muted/50">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Total Faturas</p>
-                <p className="font-semibold text-expense">
+                <p className="text-xs sm:text-base font-semibold text-expense truncate">
                   {formatCurrency(data.resumo.totalPendente)}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Limite Total</p>
-                <p className="font-semibold">
+                <p className="text-xs sm:text-base font-semibold truncate">
                   {formatCurrency(data.resumo.limiteTotal)}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Disponível</p>
-                <p className="font-semibold text-income">
+                <p className="text-xs sm:text-base font-semibold text-income truncate">
                   {formatCurrency(data.resumo.limiteDisponivel)}
                 </p>
               </div>
