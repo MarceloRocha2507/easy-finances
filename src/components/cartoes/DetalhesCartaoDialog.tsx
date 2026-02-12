@@ -266,7 +266,7 @@ export function DetalhesCartaoDialog({
               </div>
               <div className="min-w-0 text-right">
                 <span className="text-muted-foreground">Disponível</span>
-                <p className="font-medium text-emerald-500 truncate">{formatCurrency(disponivel)}</p>
+                <p className="font-medium text-income truncate">{formatCurrency(disponivel)}</p>
               </div>
             </div>
 
@@ -444,7 +444,7 @@ export function DetalhesCartaoDialog({
                   <span>Pendente: {formatCurrency(totalMes)}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <div className="w-2 h-2 rounded-full bg-income" />
                   <span>Pago: {formatCurrency(totalPago)}</span>
                 </div>
                 {podePagarFatura && (
@@ -491,7 +491,7 @@ export function DetalhesCartaoDialog({
                     className={cn(
                       "flex items-center justify-between py-2 px-2 rounded-lg transition-colors",
                       p.paga
-                        ? "opacity-50 bg-emerald-500/5"
+                        ? "opacity-50 bg-income/5"
                         : "hover:bg-muted/50"
                     )}
                   >
