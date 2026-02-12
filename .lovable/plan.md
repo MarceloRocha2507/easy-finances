@@ -1,34 +1,34 @@
 
-# Corrigir Valores Cortados e Metricas Pequenas
 
-## Problemas Identificados
+# Corrigir Compras Cortadas no Celular - Solucao Definitiva
 
-1. **Limite/Fatura/Disponivel muito pequenos**: O `text-[10px]` nos valores esta pequeno demais no mobile. Os valores monetarios precisam de fonte maior.
-2. **Valores das compras cortados**: O `min-w-[70px]` nao e suficiente para valores como "R$ 175,00". Valores estao sendo truncados.
+## Problema Real
 
-## Alteracoes
+O texto da descricao (ex: "Marcelo Rocha Fonseca Filho - 1/4") e da linha de subtitulo (ex: "2/4 . Eu") estao transbordando a tela porque:
+
+1. A linha de subtitulo (parcela + responsavel) **nao tem `truncate`** - ela cresce indefinidamente
+2. O container intermediario precisa de `overflow-hidden` para que o `truncate` dos filhos funcione corretamente
+
+O `truncate` so funciona se **todos** os containers ancestrais limitarem o overflow. Basta um nao ter e o texto vaza.
+
+## Solucao
 
 ### Arquivo: `src/components/cartoes/DetalhesCartaoDialog.tsx`
 
-**1. Aumentar fonte das metricas Limite/Fatura/Disponivel (linha 257)**
+Tres alteracoes cirurgicas:
 
-Trocar `text-[10px] sm:text-sm` por `text-xs sm:text-sm` para que os valores fiquem legiveis no mobile.
+**1. Linha 497** - Adicionar `overflow-hidden` ao container da descricao para garantir que o `truncate` dos filhos funcione:
 
-**2. Aumentar largura minima do valor das compras (linha 516)**
+`flex items-center gap-2 min-w-0 flex-1 mr-2` -> `flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden`
 
-Trocar `min-w-[70px]` por `min-w-[90px]` para acomodar valores como "R$ 3.500,00" sem cortar. Tambem remover o `text-xs` do mobile para manter `text-sm` uniforme, garantindo que o valor sempre apareca por completo.
+**2. Linha 498** - Adicionar `overflow-hidden` ao wrapper interno:
 
-**3. Reduzir margem direita da descricao (linha 497)**
+`min-w-0 flex-1` -> `min-w-0 flex-1 overflow-hidden`
 
-Trocar `mr-3` por `mr-2` para otimizar o espaco entre descricao e valor.
+**3. Linha 505** - Adicionar `truncate` na linha de subtitulo (parcela/responsavel) que hoje nao tem nenhuma restricao de largura:
 
-## Detalhes Tecnicos
+`text-xs text-muted-foreground` -> `text-xs text-muted-foreground truncate`
 
-1. **Linha 257**: `text-[10px] sm:text-sm` -> `text-xs sm:text-sm`
-2. **Linha 516**: `"text-xs sm:text-sm font-semibold min-w-[70px] text-right"` -> `"text-sm font-semibold min-w-[90px] text-right"`
-3. **Linha 497**: `mr-3` -> `mr-2`
+## Por que isso resolve definitivamente
 
-Isso garante que:
-- As metricas do header (Limite, Fatura, Disponivel) ficam legiveis com `text-xs` (12px) em vez de `text-[10px]` (10px)
-- Os valores das compras tem espaco suficiente (90px) para exibir valores completos como "R$ 3.127,93"
-- A descricao continua com `truncate` e corta com reticencias quando necessario, priorizando a visibilidade do valor
+O `truncate` aplica `overflow: hidden`, `text-overflow: ellipsis` e `white-space: nowrap`. Porem, ele so funciona se o elemento pai tambem restrinja o overflow. Ao adicionar `overflow-hidden` nos containers pai e `truncate` na linha de subtitulo, garantimos que **ambas** as linhas de texto (descricao e parcela/responsavel) serao cortadas com reticencias (...) antes de empurrar o valor para fora da tela.
