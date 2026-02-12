@@ -239,7 +239,7 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 border-0 overflow-hidden">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
           {/* Header neutro */}
           <div className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden bg-muted border-b">
             <DialogHeader className="space-y-2">

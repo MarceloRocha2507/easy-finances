@@ -92,7 +92,7 @@ export function ExcluirCompraDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="p-0 gap-0 border-0 overflow-hidden">
+      <AlertDialogContent className="p-0 gap-0 overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">

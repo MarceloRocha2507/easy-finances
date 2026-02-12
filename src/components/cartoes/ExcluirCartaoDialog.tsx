@@ -36,7 +36,7 @@ export function ExcluirCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 gap-0 border-0 overflow-hidden">
+      <DialogContent className="p-0 gap-0 overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
             <DialogTitle>Excluir cartão</DialogTitle>
