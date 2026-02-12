@@ -286,8 +286,8 @@ export function DetalhesCartaoDialog({
           {/* Conteúdo */}
           <div className="px-4 sm:px-5 py-4 space-y-3 overflow-y-auto">
             {/* Navegação + Ações compactas */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 shrink">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -309,7 +309,7 @@ export function DetalhesCartaoDialog({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {/* Mobile: dropdown com ações */}
                 <div className="flex sm:hidden">
                   <DropdownMenu>
