@@ -757,6 +757,33 @@ export type Database = {
         }
         Relationships: []
       }
+      preferencias_telegram: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          id: string
+          tipo_alerta: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          tipo_alerta: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          tipo_alerta?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       preferencias_usuario: {
         Row: {
           created_at: string
@@ -867,6 +894,36 @@ export type Database = {
           nome?: string
           telefone?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      telegram_config: {
+        Row: {
+          ativo: boolean | null
+          codigo_vinculacao: string | null
+          created_at: string | null
+          id: string
+          telegram_chat_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo_vinculacao?: string | null
+          created_at?: string | null
+          id?: string
+          telegram_chat_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo_vinculacao?: string | null
+          created_at?: string | null
+          id?: string
+          telegram_chat_id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

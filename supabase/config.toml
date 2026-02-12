@@ -2,3 +2,12 @@ project_id = "vcpnairzcpljyartrafm"
 
 [functions.admin-create-user]
 verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
+
+[functions.telegram-send]
+verify_jwt = false
+
+[functions.telegram-daily-summary]
+verify_jwt = false
