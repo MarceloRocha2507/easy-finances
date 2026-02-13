@@ -1,42 +1,46 @@
 
-# Corrigir Modais de Cartao
 
-## Problema 1: Modal "Nova Compra" sem scroll e arrastando para os lados
+# Adicionar Seletor de Mes no Modal "Mensagens em Lote"
 
-O `DialogContent` usa `overflow-hidden` mas a div interna de conteudo (`overflow-y-auto`) nao tem altura maxima definida, entao o scroll nunca ativa. Alem disso, falta `overflow-x-hidden` na div interna para bloquear o arraste lateral.
+## O que sera feito
 
-### Correcao em `src/components/cartoes/NovaCompraCartaoDialog.tsx`
-- Na `DialogContent` (linha 297): manter `overflow-hidden` mas adicionar layout flex vertical (`flex flex-col`)
-- Na div de conteudo (linha 310): adicionar `overflow-x-hidden` e `min-h-0` para que o flex permita o encolhimento e o scroll vertical funcione
+Adicionar um seletor de mes/ano na etapa de selecao do modal `GerarMensagensLoteDialog`, permitindo ao usuario escolher para qual mes deseja gerar as mensagens. Atualmente o mes vem fixo da prop `mesReferencia`; com a mudanca, o usuario podera alterar o mes diretamente no modal.
 
-Classe atual da DialogContent:
-```
-sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden
-```
-Nova classe:
-```
-sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col
+## Mudancas em `src/components/cartoes/GerarMensagensLoteDialog.tsx`
+
+1. Adicionar um estado local `mesSelecionado` inicializado com o valor de `mesReferencia`
+2. Inserir um seletor de mes (usando navegacao com setas esquerda/direita e label do mes/ano, similar ao padrao ja usado na pagina de cartoes) entre o header e o seletor de responsavel
+3. Usar `mesSelecionado` em vez de `mesReferencia` ao chamar `gerarMensagemLote` e ao exibir o nome do mes na descricao
+4. Resetar `mesSelecionado` para `mesReferencia` ao fechar o modal
+
+### Layout do seletor de mes
+
+Sera um componente inline com:
+- Botao seta esquerda (mes anterior)
+- Texto centralizado com o mes/ano (ex: "fevereiro de 2026")
+- Botao seta direita (proximo mes)
+
+Posicionado logo acima do seletor de "Responsavel", com label "Mes de referencia" e icone de calendario.
+
+## Secao tecnica
+
+```text
+Estado novo:
+  const [mesSelecionado, setMesSelecionado] = useState(mesReferencia);
+
+Navegacao de mes:
+  const mesAnterior = () => setMesSelecionado(prev => subMonths(prev, 1));
+  const mesProximo = () => setMesSelecionado(prev => addMonths(prev, 1));
+
+Importar de date-fns:
+  import { addMonths, subMonths } from "date-fns";
 ```
 
-Classe atual da div de conteudo:
-```
-space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto
-```
-Nova classe:
-```
-space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto overflow-x-hidden min-h-0
-```
-
-## Problema 2: Modal "Detalhes do Cartao" com conteudo apertado nas bordas
-
-O modal usa `px-4 sm:px-5` tanto no header quanto no conteudo, o que fica muito justo em mobile. Aumentar o padding interno e adicionar pequenos ajustes de espacamento.
-
-### Correcao em `src/components/cartoes/DetalhesCartaoDialog.tsx`
-- Na `DialogContent` (linha 242): adicionar `flex flex-col` para layout correto
-- No header (linha 244): aumentar padding para `px-5 sm:px-6`
-- Na div de conteudo (linha 287): aumentar padding para `px-5 sm:px-6` e adicionar `overflow-x-hidden min-h-0`
+Na chamada de `handleGerar`, substituir `mesReferencia` por `mesSelecionado`.
+Na variavel `nomeMes`, usar `mesSelecionado` em vez de `mesReferencia`.
+No `resetState`, adicionar `setMesSelecionado(mesReferencia)`.
 
 ## Arquivos modificados
 
-- `src/components/cartoes/NovaCompraCartaoDialog.tsx` - flex layout + overflow-x-hidden
-- `src/components/cartoes/DetalhesCartaoDialog.tsx` - padding aumentado + flex layout
+- `src/components/cartoes/GerarMensagensLoteDialog.tsx` - Adicionar estado e seletor de mes
+
