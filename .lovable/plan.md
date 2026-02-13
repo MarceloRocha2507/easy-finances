@@ -1,46 +1,42 @@
 
-# Criar Pagina Dedicada para a Fina IA
+# Corrigir Modais de Cartao
 
-## O que sera feito
+## Problema 1: Modal "Nova Compra" sem scroll e arrastando para os lados
 
-Criar uma pagina `/assistente` com o chat da IA ocupando toda a area de conteudo (full-height), integrada ao Layout com sidebar. O botao "Fina IA" na sidebar passara a ser um link de navegacao para essa pagina em vez de abrir o modal overlay. O modal overlay sera removido.
+O `DialogContent` usa `overflow-hidden` mas a div interna de conteudo (`overflow-y-auto`) nao tem altura maxima definida, entao o scroll nunca ativa. Alem disso, falta `overflow-x-hidden` na div interna para bloquear o arraste lateral.
 
-## Mudancas
+### Correcao em `src/components/cartoes/NovaCompraCartaoDialog.tsx`
+- Na `DialogContent` (linha 297): manter `overflow-hidden` mas adicionar layout flex vertical (`flex flex-col`)
+- Na div de conteudo (linha 310): adicionar `overflow-x-hidden` e `min-h-0` para que o flex permita o encolhimento e o scroll vertical funcione
 
-### 1. Criar `src/pages/Assistente.tsx` (novo arquivo)
-- Pagina dedicada que renderiza o chat em tela cheia dentro do Layout
-- Reutiliza toda a logica de streaming, expiracao de 20 min, auto-grow, etc. do AiChat atual
-- Layout: header com titulo "Fina IA" + botao "Nova conversa", area de mensagens ocupando o restante da tela, input fixo no rodape
-- Sugestoes de perguntas quando nao ha mensagens (como ja existe)
-- Responsivo: funciona bem em mobile e desktop
+Classe atual da DialogContent:
+```
+sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden
+```
+Nova classe:
+```
+sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col
+```
 
-### 2. Atualizar `src/components/sidebar/SidebarNav.tsx`
-- Trocar o `<button>` da Fina IA por um `<Link to="/assistente">`
-- Remover a prop `onAiChatToggle`
-- Destacar o item quando a rota ativa for `/assistente`
+Classe atual da div de conteudo:
+```
+space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto
+```
+Nova classe:
+```
+space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto overflow-x-hidden min-h-0
+```
 
-### 3. Atualizar `src/components/Layout.tsx`
-- Remover o estado `aiChatOpen` e o componente `<AiChat />`
-- Remover a prop `onAiChatToggle` passada ao SidebarNav
-- Remover o import de `AiChat`
+## Problema 2: Modal "Detalhes do Cartao" com conteudo apertado nas bordas
 
-### 4. Remover `src/components/AiChat.tsx`
-- O componente de overlay nao sera mais necessario
+O modal usa `px-4 sm:px-5` tanto no header quanto no conteudo, o que fica muito justo em mobile. Aumentar o padding interno e adicionar pequenos ajustes de espacamento.
 
-### 5. Atualizar `src/App.tsx`
-- Adicionar rota `/assistente` com lazy loading e ProtectedRoute
-
-## Resultado
-
-- O usuario clica em "Fina IA" na sidebar e navega para `/assistente`
-- O chat ocupa toda a area de conteudo, com visual limpo e profissional
-- A sidebar continua visivel, e o item "Fina IA" fica destacado como ativo
-- Toda a logica de streaming, expiracao de historico e auto-grow e mantida
+### Correcao em `src/components/cartoes/DetalhesCartaoDialog.tsx`
+- Na `DialogContent` (linha 242): adicionar `flex flex-col` para layout correto
+- No header (linha 244): aumentar padding para `px-5 sm:px-6`
+- Na div de conteudo (linha 287): aumentar padding para `px-5 sm:px-6` e adicionar `overflow-x-hidden min-h-0`
 
 ## Arquivos modificados
 
-- `src/pages/Assistente.tsx` - Nova pagina (criar)
-- `src/components/sidebar/SidebarNav.tsx` - Link em vez de botao
-- `src/components/Layout.tsx` - Remover modal AiChat
-- `src/components/AiChat.tsx` - Remover arquivo
-- `src/App.tsx` - Adicionar rota /assistente
+- `src/components/cartoes/NovaCompraCartaoDialog.tsx` - flex layout + overflow-x-hidden
+- `src/components/cartoes/DetalhesCartaoDialog.tsx` - padding aumentado + flex layout
