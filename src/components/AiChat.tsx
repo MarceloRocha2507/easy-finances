@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
+import { X, Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,9 +9,13 @@ type Msg = { role: "user" | "assistant"; content: string };
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 const EXPIRY_MS = 20 * 60 * 1000; // 20 minutes
 
-export function AiChat() {
+interface AiChatProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function AiChat({ open, onClose }: AiChatProps) {
   const { session } = useAuth();
-  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -175,20 +179,9 @@ export function AiChat() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105",
-          open ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"
-        )}
-      >
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
-      </button>
-
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[calc(100%-3rem)] max-w-md bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in" style={{ height: "min(500px, calc(100vh - 8rem))" }}>
+        <div className="fixed bottom-6 right-6 z-50 w-[calc(100%-3rem)] max-w-md bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in" style={{ height: "min(500px, calc(100vh - 8rem))" }}>
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -209,6 +202,14 @@ export function AiChat() {
                 <RotateCcw className="h-4 w-4" />
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Messages */}

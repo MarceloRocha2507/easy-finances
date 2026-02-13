@@ -18,6 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin, isCheckingRole } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   const isMobile = useIsMobile();
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -81,7 +82,8 @@ export function Layout({ children }: LayoutProps) {
           </div>
           <SidebarNav 
             isAdmin={!isCheckingRole && isAdmin} 
-            onItemClick={closeSidebar} 
+            onItemClick={closeSidebar}
+            onAiChatToggle={() => setAiChatOpen(prev => !prev)}
           />
           <SidebarUserSection 
             user={user} 
@@ -102,7 +104,8 @@ export function Layout({ children }: LayoutProps) {
       >
         <SidebarNav 
           isAdmin={!isCheckingRole && isAdmin} 
-          onItemClick={closeSidebar} 
+          onItemClick={closeSidebar}
+          onAiChatToggle={() => setAiChatOpen(prev => !prev)}
         />
         <SidebarUserSection 
           user={user} 
@@ -129,7 +132,7 @@ export function Layout({ children }: LayoutProps) {
       </main>
 
       {/* AI Chat */}
-      <AiChat />
+      <AiChat open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </div>
   );
 }

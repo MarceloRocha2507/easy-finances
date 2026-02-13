@@ -20,6 +20,7 @@ import {
   History,
   Building2,
   CalendarClock,
+  Bot,
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -73,9 +74,10 @@ const relatoriosMenu = {
 interface SidebarNavProps {
   isAdmin: boolean;
   onItemClick?: () => void;
+  onAiChatToggle?: () => void;
 }
 
-export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
+export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick, onAiChatToggle }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -198,6 +200,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           Admin
         </Link>
       )}
+
+      {/* Fina IA */}
+      <button
+        onClick={onAiChatToggle}
+        className="group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 text-muted-foreground menu-item-floating-hover w-full"
+      >
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150 text-muted-foreground group-hover:text-foreground">
+          <Bot className="h-4 w-4" />
+        </div>
+        Fina IA
+      </button>
     </nav>
   );
 });
