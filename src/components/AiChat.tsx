@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+const EXPIRY_MS = 20 * 60 * 1000; // 20 minutes
 
 export function AiChat() {
   const { session } = useAuth();
@@ -15,6 +15,8 @@ export function AiChat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamStarted, setStreamStarted] = useState(false);
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -29,6 +31,30 @@ export function AiChat() {
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
 
+  // 20-minute inactivity expiration
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const interval = setInterval(() => {
+      if (Date.now() - lastActivity > EXPIRY_MS) {
+        setMessages([]);
+      }
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [lastActivity, messages.length]);
+
+  // Auto-grow textarea
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 96) + "px"; // max ~4 lines
+  };
+
+  const clearChat = () => {
+    setMessages([]);
+    setLastActivity(Date.now());
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || isLoading || !session) return;
@@ -37,6 +63,11 @@ export function AiChat() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
+    setStreamStarted(false);
+    setLastActivity(Date.now());
+
+    // Reset textarea height
+    if (inputRef.current) inputRef.current.style.height = "auto";
 
     let assistantSoFar = "";
     const allMessages = [...messages, userMsg];
@@ -83,6 +114,7 @@ export function AiChat() {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
+              if (!streamStarted) setStreamStarted(true);
               assistantSoFar += content;
               const snapshot = assistantSoFar;
               setMessages((prev) => {
@@ -156,16 +188,27 @@ export function AiChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[calc(100%-3rem)] max-w-md bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden" style={{ height: "min(500px, calc(100vh - 8rem))" }}>
+        <div className="fixed bottom-24 right-6 z-50 w-[calc(100%-3rem)] max-w-md bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in" style={{ height: "min(500px, calc(100vh - 8rem))" }}>
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <Bot className="h-4 w-4 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">Fina IA</p>
               <p className="text-xs text-muted-foreground">Assistente financeiro</p>
             </div>
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearChat}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Nova conversa"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
           {/* Messages */}
@@ -214,7 +257,7 @@ export function AiChat() {
               </div>
             ))}
 
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            {isLoading && !streamStarted && (
               <div className="flex gap-2 items-center">
                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                   <Bot className="h-3 w-3 text-primary" />
@@ -232,11 +275,11 @@ export function AiChat() {
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Pergunte sobre suas finanças..."
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-h-20 overflow-y-auto"
+                className="flex-1 resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-h-24 overflow-y-auto"
               />
               <Button
                 size="icon"
