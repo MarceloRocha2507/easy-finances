@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet } from "lucide-react";
-import { AiChat } from "@/components/AiChat";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -18,8 +17,6 @@ export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin, isCheckingRole } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
-
   const isMobile = useIsMobile();
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -83,7 +80,6 @@ export function Layout({ children }: LayoutProps) {
           <SidebarNav 
             isAdmin={!isCheckingRole && isAdmin} 
             onItemClick={closeSidebar}
-            onAiChatToggle={() => setAiChatOpen(prev => !prev)}
           />
           <SidebarUserSection 
             user={user} 
@@ -105,7 +101,6 @@ export function Layout({ children }: LayoutProps) {
         <SidebarNav 
           isAdmin={!isCheckingRole && isAdmin} 
           onItemClick={closeSidebar}
-          onAiChatToggle={() => setAiChatOpen(prev => !prev)}
         />
         <SidebarUserSection 
           user={user} 
@@ -131,8 +126,6 @@ export function Layout({ children }: LayoutProps) {
         <div className="p-6 flex-1">{children}</div>
       </main>
 
-      {/* AI Chat */}
-      <AiChat open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </div>
   );
 }

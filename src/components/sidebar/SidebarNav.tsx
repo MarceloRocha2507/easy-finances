@@ -74,10 +74,9 @@ const relatoriosMenu = {
 interface SidebarNavProps {
   isAdmin: boolean;
   onItemClick?: () => void;
-  onAiChatToggle?: () => void;
 }
 
-export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick, onAiChatToggle }: SidebarNavProps) {
+export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -202,15 +201,26 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick, onAiC
       )}
 
       {/* Fina IA */}
-      <button
-        onClick={onAiChatToggle}
-        className="group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 text-muted-foreground menu-item-floating-hover w-full"
+      <Link
+        to="/assistente"
+        onClick={onItemClick}
+        className={cn(
+          "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+          isActive("/assistente")
+            ? "menu-item-floating-active text-foreground font-medium"
+            : "text-muted-foreground menu-item-floating-hover"
+        )}
       >
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150 text-muted-foreground group-hover:text-foreground">
+        <div className={cn(
+          "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
+          isActive("/assistente")
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground group-hover:text-foreground"
+        )}>
           <Bot className="h-4 w-4" />
         </div>
         Fina IA
-      </button>
+      </Link>
     </nav>
   );
 });
