@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -236,13 +237,19 @@ export default function Assistente() {
               )}
               <div
                 className={cn(
-                  "max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap break-words leading-relaxed",
+                  "max-w-[80%] rounded-2xl px-4 py-3 text-sm break-words leading-relaxed",
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    ? "bg-primary text-primary-foreground rounded-br-md whitespace-pre-wrap"
                     : "bg-muted text-foreground rounded-bl-md"
                 )}
               >
-                {msg.content}
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-code:text-xs prose-code:bg-background/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
               </div>
               {msg.role === "user" && (
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
