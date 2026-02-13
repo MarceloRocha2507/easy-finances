@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { gerarMensagemLote } from "@/services/compras-cartao";
 import { CartaoComResumo } from "@/services/cartoes";
 import { useResponsaveis } from "@/services/responsaveis";
+import { addMonths, subMonths } from "date-fns";
 import {
   Copy,
   Check,
@@ -30,6 +31,9 @@ import {
   AlertCircle,
   ArrowLeft,
   Users,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface Props {
@@ -50,6 +54,7 @@ export function GerarMensagensLoteDialog({
   const { toast } = useToast();
   const { data: responsaveis = [] } = useResponsaveis();
   const [etapa, setEtapa] = useState<Etapa>("selecao");
+  const [mesSelecionado, setMesSelecionado] = useState(mesReferencia);
   const [cartoesSelecionados, setCartoesSelecionados] = useState<Set<string>>(new Set());
   const [responsavelId, setResponsavelId] = useState("todos");
   const [mensagemFinal, setMensagemFinal] = useState("");
@@ -58,12 +63,13 @@ export function GerarMensagensLoteDialog({
 
   const resetState = useCallback(() => {
     setEtapa("selecao");
+    setMesSelecionado(mesReferencia);
     setCartoesSelecionados(new Set());
     setResponsavelId("todos");
     setMensagemFinal("");
     setLoading(false);
     setCopiado(false);
-  }, []);
+  }, [mesReferencia]);
 
   const handleOpenChange = (value: boolean) => {
     if (!value) resetState();
@@ -96,7 +102,7 @@ export function GerarMensagensLoteDialog({
     const respId = responsavelId === "todos" ? null : responsavelId;
 
     try {
-      const msg = await gerarMensagemLote(ids, mesReferencia, respId);
+      const msg = await gerarMensagemLote(ids, mesSelecionado, respId);
       setMensagemFinal(msg);
     } catch {
       toast({ title: "Erro ao gerar mensagem", variant: "destructive" });
@@ -121,7 +127,7 @@ export function GerarMensagensLoteDialog({
     window.open(`https://wa.me/?text=${encoded}`, "_blank");
   };
 
-  const nomeMes = mesReferencia.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const nomeMes = mesSelecionado.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const todosChecked = cartoesSelecionados.size === cartoes.length && cartoes.length > 0;
   const algunsChecked = cartoesSelecionados.size > 0 && !todosChecked;
 
@@ -146,6 +152,35 @@ export function GerarMensagensLoteDialog({
 
         {etapa === "selecao" ? (
           <div className="space-y-4 py-2">
+            {/* Seletor de mês */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                Mês de referência
+              </label>
+              <div className="flex items-center justify-between rounded-lg border bg-background px-2 py-1.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setMesSelecionado(prev => subMonths(prev, 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium capitalize">
+                  {nomeMes}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setMesSelecionado(prev => addMonths(prev, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
             {/* Responsável selector */}
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1.5">
