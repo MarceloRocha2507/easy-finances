@@ -294,7 +294,7 @@ export function NovaCompraCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -307,7 +307,7 @@ export function NovaCompraCartaoDialog({
           </DialogHeader>
         </div>
 
-        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto">
+        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-2 overflow-y-auto overflow-x-hidden min-h-0">
           {/* Descrição */}
           <div className="space-y-2">
             <Label htmlFor="descricao">Descrição</Label>

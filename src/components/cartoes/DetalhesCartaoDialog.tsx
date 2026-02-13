@@ -239,9 +239,9 @@ export function DetalhesCartaoDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col">
           {/* Header neutro */}
-          <div className="px-4 sm:px-5 pt-4 pb-5 overflow-hidden bg-muted border-b">
+          <div className="px-5 sm:px-6 pt-4 pb-5 overflow-hidden bg-muted border-b">
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
                 <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -284,7 +284,7 @@ export function DetalhesCartaoDialog({
           </div>
 
           {/* Conteúdo */}
-          <div className="px-4 sm:px-5 py-4 space-y-3 overflow-y-auto">
+          <div className="px-5 sm:px-6 py-4 space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
             {/* Navegação + Ações compactas */}
             <div className="flex items-center justify-between gap-1 min-w-0">
               <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 shrink">
