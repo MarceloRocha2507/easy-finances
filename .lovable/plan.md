@@ -1,39 +1,46 @@
 
-# Mover a IA para a Sidebar
+# Criar Pagina Dedicada para a Fina IA
 
 ## O que sera feito
 
-Remover o botao flutuante do chat IA da tela e colocar um botao "Fina IA" na sidebar, logo antes da secao do usuario (na parte inferior). Ao clicar, abre o painel de chat no mesmo estilo atual, mas ancorado ao contexto da sidebar.
+Criar uma pagina `/assistente` com o chat da IA ocupando toda a area de conteudo (full-height), integrada ao Layout com sidebar. O botao "Fina IA" na sidebar passara a ser um link de navegacao para essa pagina em vez de abrir o modal overlay. O modal overlay sera removido.
 
 ## Mudancas
 
-### 1. `src/components/sidebar/SidebarNav.tsx`
-- Adicionar um botao "Fina IA" com icone `Bot` no final da navegacao (apos o separador e o link Admin)
-- O botao tera o mesmo estilo visual dos outros itens da sidebar
-- Ao clicar, abre/fecha o painel de chat
+### 1. Criar `src/pages/Assistente.tsx` (novo arquivo)
+- Pagina dedicada que renderiza o chat em tela cheia dentro do Layout
+- Reutiliza toda a logica de streaming, expiracao de 20 min, auto-grow, etc. do AiChat atual
+- Layout: header com titulo "Fina IA" + botao "Nova conversa", area de mensagens ocupando o restante da tela, input fixo no rodape
+- Sugestoes de perguntas quando nao ha mensagens (como ja existe)
+- Responsivo: funciona bem em mobile e desktop
 
-### 2. `src/components/AiChat.tsx`
-- Remover o botao flutuante (o circulo fixo no canto inferior direito)
-- Exportar apenas o painel de chat como componente controlado, recebendo `open` e `onOpenChange` como props
-- O painel continuara fixo na tela (position fixed) para nao quebrar o layout da sidebar
+### 2. Atualizar `src/components/sidebar/SidebarNav.tsx`
+- Trocar o `<button>` da Fina IA por um `<Link to="/assistente">`
+- Remover a prop `onAiChatToggle`
+- Destacar o item quando a rota ativa for `/assistente`
 
-### 3. `src/components/Layout.tsx`
-- Remover o `<AiChat />` standalone do final do layout
-- O chat sera gerenciado a partir da sidebar
+### 3. Atualizar `src/components/Layout.tsx`
+- Remover o estado `aiChatOpen` e o componente `<AiChat />`
+- Remover a prop `onAiChatToggle` passada ao SidebarNav
+- Remover o import de `AiChat`
 
-### 4. `src/components/sidebar/SidebarUserSection.tsx`
-- Adicionar o botao da IA na secao do usuario (ao lado das notificacoes e sair), ou alternativamente manter na SidebarNav
+### 4. Remover `src/components/AiChat.tsx`
+- O componente de overlay nao sera mais necessario
 
-## Abordagem escolhida
+### 5. Atualizar `src/App.tsx`
+- Adicionar rota `/assistente` com lazy loading e ProtectedRoute
 
-Colocar o botao "Fina IA" como item da sidebar (na `SidebarNav`), logo apos o separador. O estado `open` do chat sera gerenciado via estado local no Layout e passado via props para SidebarNav e AiChat. Assim:
+## Resultado
 
-- SidebarNav recebe `onAiChatToggle` como prop
-- Layout mantem o estado `aiChatOpen` e renderiza o painel do AiChat condicionalmente
-- O painel de chat continua como overlay fixo (nao dentro da sidebar, que seria muito estreito)
+- O usuario clica em "Fina IA" na sidebar e navega para `/assistente`
+- O chat ocupa toda a area de conteudo, com visual limpo e profissional
+- A sidebar continua visivel, e o item "Fina IA" fica destacado como ativo
+- Toda a logica de streaming, expiracao de historico e auto-grow e mantida
 
 ## Arquivos modificados
 
-- `src/components/AiChat.tsx` - Remover botao flutuante, aceitar props `open`/`onClose`
-- `src/components/sidebar/SidebarNav.tsx` - Adicionar item "Fina IA" com icone Bot
-- `src/components/Layout.tsx` - Gerenciar estado do chat, passar props, remover AiChat standalone
+- `src/pages/Assistente.tsx` - Nova pagina (criar)
+- `src/components/sidebar/SidebarNav.tsx` - Link em vez de botao
+- `src/components/Layout.tsx` - Remover modal AiChat
+- `src/components/AiChat.tsx` - Remover arquivo
+- `src/App.tsx` - Adicionar rota /assistente
