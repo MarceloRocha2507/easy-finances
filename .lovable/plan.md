@@ -1,123 +1,101 @@
 
-# Treinar a IA para Entender o Sistema Financeiro
+# Melhorar o Chat IA - Corrigir Bugs e Adicionar Expiracao de Historico
 
-## Problema Atual
+## Problemas Identificados
 
-A IA tem um entendimento superficial do sistema e pode enviar informacoes erradas porque:
-
-1. **Calculo de saldo errado**: O codigo atual calcula `saldoBancos + receitas - despesas` usando apenas as ultimas 100 transacoes, mas o sistema real usa TODAS as transacoes completed acumuladas
-2. **Conceitos financeiros ausentes**: A IA nao conhece Patrimonio Total, Saldo Estimado, Saldo Disponivel, diferenca entre titular e terceiros nos cartoes
-3. **Dados incompletos**: Falta informacao sobre responsaveis (quem deve o que), acertos de fatura, movimentacoes de metas/investimentos, categorias de meta que devem ser excluidas
-4. **System prompt generico**: Nao explica como o sistema funciona, quais sao as regras de negocio
+1. **Bug de flickering no loading**: O indicador de "digitando" pisca quando a primeira parte do streaming chega, porque a condicao verifica se a ultima mensagem e "assistant" mas o streaming ja adicionou uma
+2. **Import nao utilizado**: `ScrollArea` importado mas nao usado
+3. **Sem expiracao de historico**: As mensagens ficam para sempre na sessao. Devem expirar apos 20 minutos de inatividade
+4. **Sem botao de nova conversa**: Nao tem como limpar o chat manualmente
+5. **Bug no edge function**: `getClaims` pode nao existir na versao do SDK - trocar por `getUser`
+6. **Textarea nao cresce**: Fica sempre com 1 linha, mesmo com texto longo
 
 ## O que sera feito
 
-Reescrever a logica de contexto e o system prompt da edge function `ai-chat` para que a IA entenda 100% como o sistema funciona.
+### Arquivo: `src/components/AiChat.tsx`
 
-## Mudancas Detalhadas
+1. **Expiracao de historico em 20 minutos**
+   - Salvar timestamp da ultima mensagem
+   - No useEffect, verificar se passaram 20 minutos desde a ultima atividade
+   - Se sim, limpar as mensagens automaticamente
+   - Usar `setInterval` de 1 minuto para checar
 
-### 1. Corrigir o calculo de saldo (critico)
+2. **Botao "Nova conversa"**
+   - Adicionar um botao no header do chat para limpar historico manualmente
+   - Icone de `RotateCcw` ou `Trash2`
 
-**Antes (errado):**
-```
-saldoReal = somaSaldoInicialBancos + receitas100ultimas - despesas100ultimas
-```
+3. **Corrigir bug de loading/flickering**
+   - Usar uma ref separada para rastrear se o streaming esta ativo
+   - Mostrar loading spinner apenas quando `isLoading` e true E o streaming ainda nao comecou a gerar conteudo
 
-**Depois (correto, igual ao sistema):**
-```
-saldoInicial = somaSaldoInicialBancos (ou profile.saldo_inicial se nao tem bancos)
-saldoDisponivel = saldoInicial + TODAS receitas completed - TODAS despesas completed
-patrimonioTotal = saldoDisponivel + totalMetas + totalInvestimentos
-saldoEstimado = saldoDisponivel + aReceber - aPagar - faturaCartaoTitular
-```
+4. **Remover import nao usado** (`ScrollArea`)
 
-### 2. Buscar dados completos
+5. **Auto-grow do textarea**
+   - Ajustar altura automaticamente conforme o usuario digita
+   - Maximo de 4 linhas
 
-Adicionar queries que faltam:
-- **Todas transacoes completed** (sem limite de 100) para calculo de saldo correto
-- **Responsaveis** ativos para contexto de cartoes (titular vs terceiros)
-- **Acertos de fatura** pendentes
-- **Movimentacoes de metas** recentes
-- **Movimentacoes de investimentos** recentes
-- **Categorias de meta** ("Deposito em Meta", "Retirada de Meta") para excluir dos totais exibidos
-- **Parcelas do cartao** com filtro por responsavel titular
-- **Transacoes pending** do mes (a receber e a pagar)
+6. **Animacao de abertura do painel**
+   - Adicionar transicao suave ao abrir/fechar o chat
 
-### 3. Reescrever o system prompt com conhecimento completo
+### Arquivo: `supabase/functions/ai-chat/index.ts`
 
-O novo prompt vai ensinar a IA:
-
-- **Estrutura do sistema**: Bancos, Cartoes, Transacoes, Metas, Investimentos, Responsaveis, Orcamentos
-- **Regras de calculo**:
-  - Saldo Disponivel = saldo_inicial_bancos + receitas_completed - despesas_completed (historico completo)
-  - Patrimonio Total = Saldo Disponivel + Metas + Investimentos
-  - Saldo Estimado = Saldo Disponivel + A Receber - A Pagar - Fatura Titular
-  - Fatura do cartao: separar titular de terceiros
-  - Limite usado do cartao = todas parcelas nao pagas (nao apenas do mes)
-- **Status de transacoes**: completed = efetivada, pending = pendente/agendada
-- **Cartoes**: dia_fechamento, dia_vencimento, parcelas, compras com responsaveis
-- **Metas**: depositos e retiradas geram transacoes com categorias especiais que NAO contam como receita/despesa real
-- **Responsaveis**: titular (EU) vs terceiros que usam meu cartao e me devem
-
-### 4. Melhorar formatacao do contexto
-
-- Separar claramente "dados do mes atual" vs "dados acumulados"
-- Mostrar transacoes pending do mes (a receber/a pagar) com datas
-- Mostrar fatura do titular vs total da fatura
-- Incluir acertos pendentes por responsavel
-
-## Arquivos modificados
-
-- `supabase/functions/ai-chat/index.ts` - Reescrever queries, calculo de saldo e system prompt
+7. **Trocar `getClaims` por `getUser`**
+   - Usar `supabase.auth.getUser()` que e o metodo padrao e confiavel
+   - Extrair `user.id` do resultado
 
 ## Detalhes Tecnicos
 
-### Queries adicionais
+### Expiracao de 20 minutos
 
-```sql
--- Todas transacoes completed (para saldo real)
-SELECT type, amount FROM transactions WHERE user_id = X AND status = 'completed'
+```typescript
+const [lastActivity, setLastActivity] = useState<number>(Date.now());
 
--- Categorias de meta (para excluir dos totais)
-SELECT id FROM categories WHERE user_id = X AND name IN ('Deposito em Meta', 'Retirada de Meta')
+// Atualizar timestamp a cada mensagem enviada
+const send = async () => {
+  setLastActivity(Date.now());
+  // ...
+};
 
--- Transacoes pending do mes (a receber/a pagar)
-SELECT * FROM transactions WHERE user_id = X AND status = 'pending' AND due_date BETWEEN inicioMes AND fimMes
-
--- Responsaveis ativos
-SELECT * FROM responsaveis WHERE user_id = X AND ativo = true
-
--- Parcelas com responsavel para separar titular
-SELECT parcelas_cartao.*, compras_cartao(responsavel_id, responsavel:responsaveis(nome, is_titular))
-
--- Acertos pendentes
-SELECT * FROM acertos_fatura WHERE user_id = X AND status = 'pendente'
-
--- Movimentacoes de metas recentes
-SELECT * FROM movimentacoes_meta WHERE user_id = X ORDER BY created_at DESC LIMIT 20
-
--- Movimentacoes de investimentos recentes
-SELECT * FROM movimentacoes_investimento WHERE user_id = X ORDER BY data DESC LIMIT 20
+// Verificar expiracao a cada minuto
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (messages.length > 0 && Date.now() - lastActivity > 20 * 60 * 1000) {
+      setMessages([]);
+    }
+  }, 60_000);
+  return () => clearInterval(interval);
+}, [lastActivity, messages.length]);
 ```
 
-### Estrutura do novo system prompt
+### Fix do loading
 
-```
-Voce e o Fina, assistente financeiro pessoal.
+```typescript
+const [streamStarted, setStreamStarted] = useState(false);
 
-COMO O SISTEMA FUNCIONA:
-[explicacao detalhada de cada modulo]
+// No send():
+setStreamStarted(false);
+// Quando primeiro token chega:
+setStreamStarted(true);
 
-REGRAS DE CALCULO:
-[formulas exatas usadas pelo sistema]
-
-CONCEITOS IMPORTANTES:
-[titular vs terceiros, status de transacoes, etc]
-
-DADOS DO USUARIO:
-[contexto formatado com todos os dados]
+// No JSX:
+{isLoading && !streamStarted && (
+  <div>/* loading spinner */</div>
+)}
 ```
 
-## Nenhuma mudanca no banco de dados
+### Fix do edge function
 
-Usa apenas tabelas e dados existentes.
+```typescript
+// Antes (pode falhar):
+const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+const userId = claimsData.claims.sub;
+
+// Depois (confiavel):
+const { data: { user }, error: userError } = await supabase.auth.getUser();
+const userId = user?.id;
+```
+
+## Arquivos modificados
+
+- `src/components/AiChat.tsx` - Bugs, expiracao, nova conversa, auto-grow
+- `supabase/functions/ai-chat/index.ts` - Fix auth (getClaims -> getUser)
