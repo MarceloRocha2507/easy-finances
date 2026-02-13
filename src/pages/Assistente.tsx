@@ -1,20 +1,23 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
+import { Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { Layout } from "@/components/Layout";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
-const EXPIRY_MS = 20 * 60 * 1000; // 20 minutes
+const EXPIRY_MS = 20 * 60 * 1000;
 
-interface AiChatProps {
-  open: boolean;
-  onClose: () => void;
-}
+const SUGGESTIONS = [
+  "Qual meu saldo atual?",
+  "Quanto gastei este mês?",
+  "Como estão minhas metas?",
+  "Resuma minhas finanças",
+];
 
-export function AiChat({ open, onClose }: AiChatProps) {
+export default function Assistente() {
   const { session } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -33,7 +36,7 @@ export function AiChat({ open, onClose }: AiChatProps) {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
-  useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   // 20-minute inactivity expiration
   useEffect(() => {
@@ -46,12 +49,11 @@ export function AiChat({ open, onClose }: AiChatProps) {
     return () => clearInterval(interval);
   }, [lastActivity, messages.length]);
 
-  // Auto-grow textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     const el = e.target;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 96) + "px"; // max ~4 lines
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
   };
 
   const clearChat = () => {
@@ -59,8 +61,8 @@ export function AiChat({ open, onClose }: AiChatProps) {
     setLastActivity(Date.now());
   };
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || isLoading || !session) return;
 
     const userMsg: Msg = { role: "user", content: text };
@@ -70,7 +72,6 @@ export function AiChat({ open, onClose }: AiChatProps) {
     setStreamStarted(false);
     setLastActivity(Date.now());
 
-    // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = "auto";
 
     let assistantSoFar = "";
@@ -136,7 +137,6 @@ export function AiChat({ open, onClose }: AiChatProps) {
         }
       }
 
-      // flush remaining
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -178,122 +178,115 @@ export function AiChat({ open, onClose }: AiChatProps) {
   if (!session) return null;
 
   return (
-    <>
-      {/* Chat panel */}
-      {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[calc(100%-3rem)] max-w-md bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in" style={{ height: "min(500px, calc(100vh - 8rem))" }}>
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">Fina IA</p>
-              <p className="text-xs text-muted-foreground">Assistente financeiro</p>
-            </div>
-            {messages.length > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={clearChat}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                title="Nova conversa"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            )}
+    <Layout>
+      <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen max-w-3xl mx-auto -m-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Bot className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-foreground">Fina IA</h1>
+            <p className="text-xs text-muted-foreground">Assistente financeiro inteligente</p>
+          </div>
+          {messages.length > 0 && (
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              variant="outline"
+              size="sm"
+              onClick={clearChat}
+              className="gap-2"
             >
-              <X className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5" />
+              Nova conversa
+            </Button>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <Bot className="h-8 w-8 text-primary opacity-60" />
+              </div>
+              <p className="text-lg font-semibold text-foreground">Olá! Sou o Fina 👋</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">
+                Pergunte qualquer coisa sobre suas finanças!
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
+                {SUGGESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => send(q)}
+                    className="text-left px-4 py-3 rounded-xl border border-border text-sm hover:bg-muted/50 transition-colors"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={i} className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}>
+              {msg.role === "assistant" && (
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+              )}
+              <div
+                className={cn(
+                  "max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap break-words leading-relaxed",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "bg-muted text-foreground rounded-bl-md"
+                )}
+              >
+                {msg.content}
+              </div>
+              {msg.role === "user" && (
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {isLoading && !streamStarted && (
+            <div className="flex gap-3 items-center">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="h-4 w-4 text-primary" />
+              </div>
+              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-border px-6 py-4">
+          <div className="flex gap-3 items-end">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Pergunte sobre suas finanças..."
+              rows={1}
+              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-h-[120px] overflow-y-auto"
+            />
+            <Button
+              size="icon"
+              onClick={() => send()}
+              disabled={!input.trim() || isLoading}
+              className="rounded-xl h-11 w-11 flex-shrink-0"
+            >
+              <Send className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                <Bot className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p className="font-medium">Olá! Sou o Fina 👋</p>
-                <p className="mt-1">Pergunte qualquer coisa sobre suas finanças!</p>
-                <div className="mt-4 space-y-2">
-                  {["Qual meu saldo atual?", "Quanto gastei este mês?", "Como estão minhas metas?"].map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                      className="block w-full text-left px-3 py-2 rounded-lg border border-border text-xs hover:bg-muted/50 transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((msg, i) => (
-              <div key={i} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
-                {msg.role === "assistant" && (
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <Bot className="h-3 w-3 text-primary" />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-muted text-foreground rounded-bl-md"
-                  )}
-                >
-                  {msg.content}
-                </div>
-                {msg.role === "user" && (
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-                    <User className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isLoading && !streamStarted && (
-              <div className="flex gap-2 items-center">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-3 w-3 text-primary" />
-                </div>
-                <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input */}
-          <div className="border-t border-border p-3">
-            <div className="flex gap-2 items-end">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Pergunte sobre suas finanças..."
-                rows={1}
-                className="flex-1 resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-h-24 overflow-y-auto"
-              />
-              <Button
-                size="icon"
-                onClick={send}
-                disabled={!input.trim() || isLoading}
-                className="rounded-xl h-9 w-9 flex-shrink-0"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
         </div>
-      )}
-    </>
+      </div>
+    </Layout>
   );
 }

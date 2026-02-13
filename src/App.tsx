@@ -42,6 +42,7 @@ const RecorrentesPage = lazy(() => import("./pages/transactions/Recorrentes"));
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 const InstalarPage = lazy(() => import("./pages/Instalar"));
+const AssistentePage = lazy(() => import("./pages/Assistente"));
 
 const queryClient = new QueryClient();
 
@@ -323,6 +324,17 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+
+            <Route
+              path="/assistente"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <AssistentePage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/admin"
