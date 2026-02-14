@@ -110,7 +110,7 @@ export function useTelegram() {
 
   const isConectado = !!config;
   const getPreferenciaTelegram = (tipoAlerta: string): boolean => {
-    return preferencias[tipoAlerta] ?? false;
+    return preferencias[tipoAlerta] ?? true;
   };
 
   return {
