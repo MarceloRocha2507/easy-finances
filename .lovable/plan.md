@@ -1,46 +1,42 @@
 
+# Corrigir Notificacoes Telegram para Despesas e Receitas
 
-# Adicionar Seletor de Mes no Modal "Mensagens em Lote"
+## Problema identificado
 
-## O que sera feito
+A funcao `telegram-send` filtra os alertas com base na tabela `preferencias_telegram`. O codigo atual usa `prefsMap[a.tipo_alerta] === true`, o que significa que se nao houver nenhuma linha na tabela para um determinado tipo de alerta, ele e tratado como **desativado**.
 
-Adicionar um seletor de mes/ano na etapa de selecao do modal `GerarMensagensLoteDialog`, permitindo ao usuario escolher para qual mes deseja gerar as mensagens. Atualmente o mes vem fixo da prop `mesReferencia`; com a mudanca, o usuario podera alterar o mes diretamente no modal.
+Os tipos `transacao_nova_despesa`, `transacao_nova_receita` e `cartao_nova_compra` foram adicionados recentemente, mas as linhas correspondentes nunca foram criadas na tabela `preferencias_telegram` do usuario. Por isso, todos esses alertas sao silenciosamente descartados.
 
-## Mudancas em `src/components/cartoes/GerarMensagensLoteDialog.tsx`
+O sistema de notificacoes internas do app (`preferencias_notificacao`) ja resolve isso corretamente usando a funcao `getValorPadrao()` como fallback. A funcao `telegram-send` precisa do mesmo comportamento.
 
-1. Adicionar um estado local `mesSelecionado` inicializado com o valor de `mesReferencia`
-2. Inserir um seletor de mes (usando navegacao com setas esquerda/direita e label do mes/ano, similar ao padrao ja usado na pagina de cartoes) entre o header e o seletor de responsavel
-3. Usar `mesSelecionado` em vez de `mesReferencia` ao chamar `gerarMensagemLote` e ao exibir o nome do mes na descricao
-4. Resetar `mesSelecionado` para `mesReferencia` ao fechar o modal
+## Solucao
 
-### Layout do seletor de mes
+Alterar a logica de filtragem na edge function `telegram-send` para tratar preferencias ausentes como **ativadas por padrao** (em vez de desativadas).
 
-Sera um componente inline com:
-- Botao seta esquerda (mes anterior)
-- Texto centralizado com o mes/ano (ex: "fevereiro de 2026")
-- Botao seta direita (proximo mes)
+## Mudancas tecnicas
 
-Posicionado logo acima do seletor de "Responsavel", com label "Mes de referencia" e icone de calendario.
+### Arquivo: `supabase/functions/telegram-send/index.ts`
 
-## Secao tecnica
+Alterar o filtro de alertas (linha ~65):
 
-```text
-Estado novo:
-  const [mesSelecionado, setMesSelecionado] = useState(mesReferencia);
-
-Navegacao de mes:
-  const mesAnterior = () => setMesSelecionado(prev => subMonths(prev, 1));
-  const mesProximo = () => setMesSelecionado(prev => addMonths(prev, 1));
-
-Importar de date-fns:
-  import { addMonths, subMonths } from "date-fns";
+De:
+```typescript
+const alertasFiltrados = alertas.filter((a: any) => {
+  return prefsMap[a.tipo_alerta] === true;
+});
 ```
 
-Na chamada de `handleGerar`, substituir `mesReferencia` por `mesSelecionado`.
-Na variavel `nomeMes`, usar `mesSelecionado` em vez de `mesReferencia`.
-No `resetState`, adicionar `setMesSelecionado(mesReferencia)`.
+Para:
+```typescript
+const alertasFiltrados = alertas.filter((a: any) => {
+  // Se nao ha preferencia salva, considerar ativo por padrao
+  if (!(a.tipo_alerta in prefsMap)) return true;
+  return prefsMap[a.tipo_alerta] === true;
+});
+```
+
+Isso garante que qualquer tipo de alerta novo funcione imediatamente sem precisar que o usuario va nas configuracoes primeiro. Se o usuario explicitamente desativar um tipo, a preferencia `ativo: false` sera respeitada normalmente.
 
 ## Arquivos modificados
 
-- `src/components/cartoes/GerarMensagensLoteDialog.tsx` - Adicionar estado e seletor de mes
-
+- `supabase/functions/telegram-send/index.ts` - Corrigir logica de filtragem de preferencias
