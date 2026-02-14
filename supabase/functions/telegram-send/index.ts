@@ -63,6 +63,8 @@ Deno.serve(async (req) => {
 
     // Filter alerts based on preferences
     const alertasFiltrados = alertas.filter((a: any) => {
+      // Se não há preferência salva, considerar ativo por padrão
+      if (!(a.tipo_alerta in prefsMap)) return true;
       return prefsMap[a.tipo_alerta] === true;
     });
 
