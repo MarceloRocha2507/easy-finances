@@ -1,39 +1,24 @@
 
-# Corrigir Categorias Duplicadas na Tela de Despesas do Cartao
+# Remover a aba "Recorrentes" do sistema
 
-## Problema
+## O que sera feito
 
-Na pagina `DespesasCartao.tsx`, o dropdown de filtro de categorias lista todas as categorias do usuario sem filtrar por tipo. Como existem categorias com o mesmo nome mas tipos diferentes (ex: "Outros" para receita e "Outros" para despesa), elas aparecem duplicadas na lista.
+Remover completamente a pagina e navegacao "Recorrentes" do sistema, incluindo a rota, o item no menu lateral e o arquivo da pagina.
 
-## Solucao
+## Mudancas tecnicas
 
-Filtrar as categorias para exibir apenas as do tipo `expense` no dropdown, ja que a tela de despesas do cartao lida exclusivamente com despesas. Isso elimina duplicatas como "Outros" (receita) e "Outros" (despesa).
+### 1. `src/components/sidebar/SidebarNav.tsx`
+- Remover o item `{ icon: RefreshCw, label: "Recorrentes", href: "/transactions/recorrentes" }` do array `subItems` do menu de Transacoes
+- Remover o import `RefreshCw` se nao for usado em outro lugar
 
-## Mudanca tecnica
+### 2. `src/App.tsx`
+- Remover o lazy import `RecorrentesPage`
+- Remover o bloco `<Route path="/transactions/recorrentes" ...>`
 
-### Arquivo: `src/pages/DespesasCartao.tsx` (linha ~657)
+### 3. `src/pages/transactions/Recorrentes.tsx`
+- Deletar o arquivo completamente
 
-Alterar de:
+## O que NAO sera alterado
 
-```typescript
-{categories.map((cat) => (
-```
-
-Para:
-
-```typescript
-{categories.filter((cat) => cat.type === 'expense').map((cat) => (
-```
-
-Como medida adicional de seguranca, adicionar deduplicacao por nome para evitar categorias com nome repetido mesmo dentro do tipo `expense`:
-
-```typescript
-{categories
-  .filter((cat) => cat.type === 'expense')
-  .filter((cat, index, arr) => arr.findIndex(c => c.name === cat.name) === index)
-  .map((cat) => (
-```
-
-## Arquivos modificados
-
-- `src/pages/DespesasCartao.tsx` - Filtrar categorias por tipo expense e deduplicar por nome
+- O hook `useDeleteRecurringTransactions` em `useTransactions.ts` sera mantido, pois a logica de exclusao de transacoes recorrentes ainda pode ser usada em outros contextos (como na tela principal de Transacoes)
+- A funcionalidade de criar transacoes fixas/recorrentes continua existindo, apenas a pagina dedicada sera removida
