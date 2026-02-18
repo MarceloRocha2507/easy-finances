@@ -38,7 +38,7 @@ const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategori
 const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
-const RecorrentesPage = lazy(() => import("./pages/transactions/Recorrentes"));
+
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 const InstalarPage = lazy(() => import("./pages/Instalar"));
@@ -76,16 +76,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/transactions/recorrentes"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <RecorrentesPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/transactions/importar"
