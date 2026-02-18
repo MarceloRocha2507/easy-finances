@@ -182,11 +182,13 @@ export function EditarCompraDialog({
           const { data: cats } = await supabase
             .from("categories")
             .select("id, name, color, icon")
+            .eq("type", "expense")
             .order("name");
 
           if (cats) {
+            const unique = cats.filter((c: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.name === c.name) === i);
             setCategorias(
-              cats.map((c: any) => ({
+              unique.map((c: any) => ({
                 id: c.id,
                 nome: c.name,
                 cor: c.color || "#6366f1",
