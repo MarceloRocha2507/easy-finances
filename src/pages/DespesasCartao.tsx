@@ -654,7 +654,10 @@ export default function DespesasCartao() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas categorias</SelectItem>
-                  {categories.map((cat) => (
+                  {categories
+                    .filter((cat) => cat.type === 'expense')
+                    .filter((cat, index, arr) => arr.findIndex(c => c.name === cat.name) === index)
+                    .map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       <span className="flex items-center gap-2">
                         <span
