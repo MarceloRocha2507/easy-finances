@@ -1,24 +1,58 @@
 
-# Remover a aba "Recorrentes" do sistema
+# Corrigir Categorias Duplicadas nos Dialogs de Compra do Cartao
 
-## O que sera feito
+## Problema
 
-Remover completamente a pagina e navegacao "Recorrentes" do sistema, incluindo a rota, o item no menu lateral e o arquivo da pagina.
+Os dialogs `NovaCompraCartaoDialog.tsx` e `EditarCompraDialog.tsx` carregam todas as categorias do banco sem filtrar por tipo (`expense`). Como existem categorias com o mesmo nome para tipos diferentes (ex: "Acerto de Fatura" para receita e despesa), elas aparecem duplicadas.
+
+## Solucao
+
+Aplicar o mesmo tratamento ja feito em `DespesasCartao.tsx`: filtrar por `type = 'expense'` na query e deduplicar por nome.
 
 ## Mudancas tecnicas
 
-### 1. `src/components/sidebar/SidebarNav.tsx`
-- Remover o item `{ icon: RefreshCw, label: "Recorrentes", href: "/transactions/recorrentes" }` do array `subItems` do menu de Transacoes
-- Remover o import `RefreshCw` se nao for usado em outro lugar
+### 1. `src/components/cartoes/NovaCompraCartaoDialog.tsx` (~linha 96-99)
 
-### 2. `src/App.tsx`
-- Remover o lazy import `RecorrentesPage`
-- Remover o bloco `<Route path="/transactions/recorrentes" ...>`
+Adicionar filtro `.eq('type', 'expense')` na query de categorias e deduplicar por nome antes de salvar no estado:
 
-### 3. `src/pages/transactions/Recorrentes.tsx`
-- Deletar o arquivo completamente
+```typescript
+const { data } = await supabase
+  .from("categories")
+  .select("id, name, color, icon")
+  .eq("type", "expense")
+  .order("name");
 
-## O que NAO sera alterado
+if (data) {
+  const unique = data.filter((cat, i, arr) => arr.findIndex(c => c.name === cat.name) === i);
+  setCategorias(unique);
+}
+```
 
-- O hook `useDeleteRecurringTransactions` em `useTransactions.ts` sera mantido, pois a logica de exclusao de transacoes recorrentes ainda pode ser usada em outros contextos (como na tela principal de Transacoes)
-- A funcionalidade de criar transacoes fixas/recorrentes continua existindo, apenas a pagina dedicada sera removida
+### 2. `src/components/cartoes/EditarCompraDialog.tsx` (~linha 182-196)
+
+Mesma correcao: adicionar `.eq('type', 'expense')` e deduplicar por nome:
+
+```typescript
+const { data: cats } = await supabase
+  .from("categories")
+  .select("id, name, color, icon")
+  .eq("type", "expense")
+  .order("name");
+
+if (cats) {
+  const unique = cats.filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i);
+  setCategorias(
+    unique.map((c: any) => ({
+      id: c.id,
+      nome: c.name,
+      cor: c.color || "#6366f1",
+      icone: c.icon,
+    }))
+  );
+}
+```
+
+## Arquivos modificados
+
+- `src/components/cartoes/NovaCompraCartaoDialog.tsx` - Filtrar categorias por tipo expense e deduplicar
+- `src/components/cartoes/EditarCompraDialog.tsx` - Filtrar categorias por tipo expense e deduplicar
