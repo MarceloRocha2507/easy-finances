@@ -384,7 +384,7 @@ export default function Transactions() {
                       variant={formData.type === 'income' ? 'default' : 'outline'}
                       className={cn(
                         "flex-1 gap-2",
-                        formData.type === 'income' && 'gradient-income'
+                        formData.type === 'income' && 'gradient-income text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                       )}
                       onClick={() => setFormData({ ...formData, type: 'income', category_id: '' })}
                     >
@@ -396,7 +396,7 @@ export default function Transactions() {
                       variant={formData.type === 'expense' ? 'default' : 'outline'}
                       className={cn(
                         "flex-1 gap-2",
-                        formData.type === 'expense' && 'gradient-expense'
+                        formData.type === 'expense' && 'gradient-expense text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                       )}
                       onClick={() => setFormData({ ...formData, type: 'expense', category_id: '' })}
                     >
