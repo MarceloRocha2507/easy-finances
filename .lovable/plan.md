@@ -1,42 +1,43 @@
 
-# Corrigir Notificacoes Telegram para Despesas e Receitas
 
-## Problema identificado
+# Adicionar Seletor de Mes na Barra de Filtros de Transacoes
 
-A funcao `telegram-send` filtra os alertas com base na tabela `preferencias_telegram`. O codigo atual usa `prefsMap[a.tipo_alerta] === true`, o que significa que se nao houver nenhuma linha na tabela para um determinado tipo de alerta, ele e tratado como **desativado**.
+## O que sera feito
 
-Os tipos `transacao_nova_despesa`, `transacao_nova_receita` e `cartao_nova_compra` foram adicionados recentemente, mas as linhas correspondentes nunca foram criadas na tabela `preferencias_telegram` do usuario. Por isso, todos esses alertas sao silenciosamente descartados.
+Adicionar um seletor de mes com navegacao por setas (< >) na barra de filtros do componente `FiltroDataRange`, posicionado ao lado dos botoes de atalho ("Hoje", "Mes", "Semana", "30 dias"). Ao selecionar um mes, o intervalo de datas sera automaticamente atualizado para o primeiro e ultimo dia do mes escolhido.
 
-O sistema de notificacoes internas do app (`preferencias_notificacao`) ja resolve isso corretamente usando a funcao `getValorPadrao()` como fallback. A funcao `telegram-send` precisa do mesmo comportamento.
+## Comportamento
 
-## Solucao
-
-Alterar a logica de filtragem na edge function `telegram-send` para tratar preferencias ausentes como **ativadas por padrao** (em vez de desativadas).
+- Exibe o mes/ano formatado (ex: "fevereiro 2026") com setas de navegacao
+- Ao clicar nas setas, navega para o mes anterior ou proximo e atualiza automaticamente startDate e endDate
+- Quando o filtro de mes esta ativo (ou seja, startDate = dia 1 e endDate = ultimo dia do mes), o seletor fica visualmente destacado (fundo com cor de accent)
+- Os botoes "Hoje", "Semana", "30 dias" continuam funcionando normalmente e desativam o destaque do seletor de mes quando usados
 
 ## Mudancas tecnicas
 
-### Arquivo: `supabase/functions/telegram-send/index.ts`
+### Arquivo: `src/components/FiltroDataRange.tsx`
 
-Alterar o filtro de alertas (linha ~65):
+1. Adicionar estado local `mesSelecionado` (Date) inicializado com o mes atual
+2. Importar `addMonths`, `subMonths`, `isSameDay` de `date-fns` e `ChevronLeft`, `ChevronRight` de `lucide-react`
+3. Criar funcao `handleMesNavigation(direcao)` que:
+   - Atualiza `mesSelecionado` com `addMonths` ou `subMonths`
+   - Chama `onStartDateChange(startOfMonth(novoMes))` e `onEndDateChange(endOfMonth(novoMes))`
+4. Criar funcao de deteccao `isMesAtivo` que verifica se o startDate e endDate atuais correspondem exatamente ao primeiro e ultimo dia de algum mes (para destacar visualmente)
+5. Inserir o seletor de mes no layout, entre os date pickers e os botoes de atalho, com:
+   - Botao seta esquerda (mes anterior)
+   - Label capitalizado do mes/ano
+   - Botao seta direita (proximo mes)
+6. Quando um atalho ("Hoje", "Semana", "30 dias") for clicado, o `mesSelecionado` se ajusta para refletir o mes correspondente
 
-De:
-```typescript
-const alertasFiltrados = alertas.filter((a: any) => {
-  return prefsMap[a.tipo_alerta] === true;
-});
+### Layout do seletor
+
+```text
+[01/02/26] ate [28/02/26]  | < fevereiro 2026 > |  Hoje  Mes  Semana  30dias  (refresh)
 ```
 
-Para:
-```typescript
-const alertasFiltrados = alertas.filter((a: any) => {
-  // Se nao ha preferencia salva, considerar ativo por padrao
-  if (!(a.tipo_alerta in prefsMap)) return true;
-  return prefsMap[a.tipo_alerta] === true;
-});
-```
-
-Isso garante que qualquer tipo de alerta novo funcione imediatamente sem precisar que o usuario va nas configuracoes primeiro. Se o usuario explicitamente desativar um tipo, a preferencia `ativo: false` sera respeitada normalmente.
+O seletor tera borda arredondada, e quando ativo (mes completo selecionado), tera fundo com `bg-accent` e texto `text-accent-foreground` para destaque visual.
 
 ## Arquivos modificados
 
-- `supabase/functions/telegram-send/index.ts` - Corrigir logica de filtragem de preferencias
+- `src/components/FiltroDataRange.tsx` - Adicionar seletor de mes com navegacao e destaque visual
+
