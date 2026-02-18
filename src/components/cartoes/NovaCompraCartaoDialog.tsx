@@ -96,10 +96,12 @@ export function NovaCompraCartaoDialog({
       const { data } = await supabase
         .from("categories")
         .select("id, name, color, icon")
+        .eq("type", "expense")
         .order("name");
       
       if (data) {
-        setCategorias(data);
+        const unique = data.filter((cat, i, arr) => arr.findIndex(c => c.name === cat.name) === i);
+        setCategorias(unique);
       }
     }
     loadCategorias();
