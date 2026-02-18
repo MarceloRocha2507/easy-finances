@@ -15,7 +15,6 @@ import {
   Gauge,
   PieChart,
   Download,
-  RefreshCw,
   Upload,
   History,
   Building2,
@@ -33,7 +32,7 @@ const transacoesMenu = {
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
-    { icon: RefreshCw, label: "Recorrentes", href: "/transactions/recorrentes" },
+    
     { icon: Upload, label: "Importar", href: "/transactions/importar" },
     { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
   ],
