@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, RefreshCw } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -24,32 +25,53 @@ export function FiltroDataRange({
   isLoading,
 }: FiltroDataRangeProps) {
   const hoje = new Date();
+  const [mesSelecionado, setMesSelecionado] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+
+  const isMesAtivo = (() => {
+    if (!startDate || !endDate) return false;
+    const inicioMes = startOfMonth(startDate);
+    const fimMes = endOfMonth(startDate);
+    return isSameDay(startDate, inicioMes) && isSameDay(endDate, fimMes);
+  })();
+
+  const handleMesNavigation = (direcao: 'prev' | 'next') => {
+    const novoMes = direcao === 'next' ? addMonths(mesSelecionado, 1) : subMonths(mesSelecionado, 1);
+    setMesSelecionado(novoMes);
+    onStartDateChange(startOfMonth(novoMes));
+    onEndDateChange(endOfMonth(novoMes));
+  };
 
   const handleHoje = () => {
+    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
     onStartDateChange(hoje);
     onEndDateChange(hoje);
   };
 
   const handleEstaSemana = () => {
+    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
     onStartDateChange(startOfWeek(hoje, { weekStartsOn: 1 }));
     onEndDateChange(endOfWeek(hoje, { weekStartsOn: 1 }));
   };
 
   const handleEsteMes = () => {
+    const mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    setMesSelecionado(mes);
     onStartDateChange(startOfMonth(hoje));
     onEndDateChange(endOfMonth(hoje));
   };
 
   const handleUltimos30Dias = () => {
+    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
     onStartDateChange(subDays(hoje, 30));
     onEndDateChange(hoje);
   };
+
+  const mesLabel = format(mesSelecionado, "MMMM yyyy", { locale: ptBR });
 
   return (
     <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2">
       {/* Linha de datas */}
       <div className="flex items-center gap-2 w-full sm:w-auto">
-        {/* Data Inicial */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -80,7 +102,6 @@ export function FiltroDataRange({
 
         <span className="text-muted-foreground text-xs sm:text-sm shrink-0">até</span>
 
-        {/* Data Final */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -108,6 +129,35 @@ export function FiltroDataRange({
             />
           </PopoverContent>
         </Popover>
+      </div>
+
+      {/* Seletor de Mês */}
+      <div className={cn(
+        "flex items-center gap-0.5 rounded-md border border-input px-1 h-8",
+        isMesAtivo && "bg-accent border-accent"
+      )}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleMesNavigation('prev')}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Button>
+        <span className={cn(
+          "text-xs font-medium capitalize min-w-[110px] text-center select-none",
+          isMesAtivo && "text-accent-foreground"
+        )}>
+          {mesLabel}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleMesNavigation('next')}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       {/* Atalhos + Refresh */}
