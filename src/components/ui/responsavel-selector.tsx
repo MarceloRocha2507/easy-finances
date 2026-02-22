@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, User, Crown, UserPlus } from "lucide-react";
 import { useResponsaveis, Responsavel } from "@/services/responsaveis";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResponsavelSelectorProps {
   value: string | null;
@@ -37,6 +38,7 @@ export function ResponsavelSelector({
 }: ResponsavelSelectorProps) {
   const [open, setOpen] = useState(false);
   const { data: responsaveis = [], isLoading } = useResponsaveis();
+  const isMobile = useIsMobile();
 
   const selected = responsaveis.find((r) => r.id === value);
 
@@ -81,7 +83,7 @@ export function ResponsavelSelector({
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Buscar pessoa..." />
+            {!isMobile && <CommandInput placeholder="Buscar pessoa..." />}
             <CommandList>
               <CommandEmpty>Nenhuma pessoa encontrada.</CommandEmpty>
               <CommandGroup>
