@@ -1,41 +1,33 @@
 
-# Melhorar visual das Contas Pendentes no modal "Despesas a Pagar"
+# Simplificar modal de Detalhes do Cartao
 
-## Problema
+## O que sera feito
 
-Os icones das categorias estao sendo renderizados como texto (ex: "car") em vez de icones Lucide, porque o componente usa `{transacao.category?.icon}` diretamente como string ao inves de mapear para o componente Lucide correto.
+Remover a listagem de compras recentes e o campo de busca do modal `DetalhesCartaoDialog`, mantendo apenas:
+- Cabecalho do cartao (nome, bandeira, metricas, barra de uso)
+- Navegacao de mes com icones de acao
+- Resumo Pendente/Pago
+- Botao "Ver todas as X despesas"
+- Botoes "Editar cartao" e "Excluir"
 
-## Solucao
+## Mudancas tecnicas
 
-### Arquivo: `src/components/dashboard/DetalhesDespesasDialog.tsx`
+### Arquivo: `src/components/cartoes/DetalhesCartaoDialog.tsx`
 
-1. **Adicionar ICON_MAP e funcao `getIconComponent`** - Mesmo padrao ja usado em `Transactions.tsx`, `Reports.tsx`, etc. Mapeia nomes como "car", "wallet", "utensils" para os componentes Lucide correspondentes.
+1. **Remover bloco de busca** (linhas 464-485) - O Input de busca e toda a logica de filtro visual
 
-2. **Substituir a renderizacao do icone da categoria** - Em vez de exibir o texto da string do icone, renderizar o componente Lucide dentro de um circulo colorido com a cor da categoria.
+2. **Remover bloco da lista de parcelas** (linhas 487-577) - O ScrollArea com a listagem de transacoes, incluindo loading, erro e itens individuais
 
-3. **Melhorar o visual dos itens** - Adicionar um circulo de fundo colorido (cor da categoria) ao redor do icone, similar ao padrao usado nas outras telas do sistema.
+3. **Simplificar variaveis nao mais necessarias**:
+   - Remover estado `busca` e `setBusca`
+   - Remover `parcelasFiltradas` e `parcelasExibidas` / `temMais` (usados apenas na lista)
+   - Remover estados de dialogs de compra individual (`editarCompraOpen`, `excluirCompraOpen`, `estornarCompraOpen`, `parcelaSelecionada`)
+   - Remover imports nao utilizados: `Search`, `X`, `Input`, `ScrollArea`, `EditarCompraDialog`, `ExcluirCompraDialog`, `EstornarCompraDialog`
 
-### Mudancas visuais nos itens de Contas Pendentes
+4. **Atualizar texto do botao "Ver todas"** - Usar `parcelas.length` diretamente em vez de `parcelasFiltradas.length`
 
-De:
-```
-[car] Sem descricao          R$ 421,51
-      Vence em 10/03
-```
+5. **Remover dialogs de compra individual** (linhas 689-739) - `EditarCompraDialog`, `ExcluirCompraDialog`, `EstornarCompraDialog` e seus handlers
 
-Para:
-```
-[icone Lucide em circulo colorido] Sem descricao    R$ 421,51
-                                   Vence em 10/03
-```
+6. **Remover import do `useMemo`** se nao for mais necessario apos limpeza (ainda usado por `totalMes` e `totalPago`)
 
-### Detalhes tecnicos
-
-- Imports adicionais: `Car, Utensils, Home, ShoppingCart, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Briefcase, Tag, TrendingUp` do lucide-react
-- Adicionar constante `ICON_MAP` e funcao `getIconComponent` (mesmo padrao das outras paginas)
-- Substituir `<span className="text-lg">{transacao.category?.icon || "📦"}</span>` por um div com fundo na cor da categoria contendo o icone Lucide renderizado corretamente
-- Usar `transacao.category?.color` como cor de fundo (com opacidade) para o circulo do icone
-
-### Arquivo modificado
-
-- `src/components/dashboard/DetalhesDespesasDialog.tsx`
+O modal ficara mais compacto, mostrando apenas o resumo financeiro. O detalhamento completo das transacoes sera acessado via botao "Ver todas as despesas".
