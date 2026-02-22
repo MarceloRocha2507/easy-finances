@@ -30,9 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -46,23 +44,17 @@ import { EditarCartaoDialog } from "./EditarCartaoDialog";
 import { ExcluirCartaoDialog } from "./ExcluirCartaoDialog";
 import { GerarMensagemDialog } from "./GerarMensagemDialog";
 import { RegistrarAcertoDialog } from "./RegistrarAcertoDialog";
-import { EditarCompraDialog } from "./EditarCompraDialog";
-import { ExcluirCompraDialog } from "./ExcluirCompraDialog";
 import { PagarFaturaDialog } from "./PagarFaturaDialog";
 import { AjustarFaturaDialog } from "./AjustarFaturaDialog";
-import { EstornarCompraDialog } from "./EstornarCompraDialog";
 
 import {
   MoreVertical,
-  Pencil,
   Trash2,
   Plus,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   Check,
-  Search,
-  X,
   FileText,
   Wallet,
   ExternalLink,
@@ -73,7 +65,6 @@ import {
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -142,15 +133,6 @@ export function DetalhesCartaoDialog({
   const [ajustarFaturaOpen, setAjustarFaturaOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
 
-  // Dialogs da compra
-  const [editarCompraOpen, setEditarCompraOpen] = useState(false);
-  const [excluirCompraOpen, setExcluirCompraOpen] = useState(false);
-  const [estornarCompraOpen, setEstornarCompraOpen] = useState(false);
-  const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
-
-  // Filtro simples (apenas busca)
-  const [busca, setBusca] = useState("");
-
   // Hooks
   const { data: acertos = [], refetch: refetchAcertos } = useAcertosMes(
     open && cartao ? cartao.id : null,
@@ -195,23 +177,7 @@ export function DetalhesCartaoDialog({
   useEffect(() => {
     if (!cartao || !open) return;
     carregarFatura();
-    setBusca("");
   }, [cartao?.id, open, mesRef]);
-
-  /* ======================================================
-     Aplicar filtros (apenas busca)
-  ====================================================== */
-
-  const parcelasFiltradas = useMemo(() => {
-    if (!busca) return parcelas;
-    return parcelas.filter((p) =>
-      p.descricao.toLowerCase().includes(busca.toLowerCase())
-    );
-  }, [parcelas, busca]);
-
-  // Limitar exibição a 6 itens no dialog compacto
-  const parcelasExibidas = parcelasFiltradas.slice(0, 5);
-  const temMais = parcelasFiltradas.length > 5;
 
   /* ======================================================
      Totais
@@ -461,122 +427,7 @@ export function DetalhesCartaoDialog({
               </div>
             )}
 
-            {/* Busca rápida - só aparece quando há parcelas */}
-            {parcelas.length > 0 && (
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar..."
-                  className="pl-8 h-9 sm:h-8 text-sm"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                />
-                {busca && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                    onClick={() => setBusca("")}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {/* Lista de parcelas */}
-            <ScrollArea className="max-h-[35vh] min-h-[120px] [&>div]:!overflow-x-hidden">
-              {loading && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  Carregando...
-                </div>
-              )}
-
-              {erro && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
-                  {erro}
-                </div>
-              )}
-
-              {!loading && !erro && parcelasFiltradas.length === 0 && (
-                <div className="py-8 text-center">
-                  <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm text-muted-foreground">
-                    {busca ? "Nenhum resultado." : "Nenhuma despesa neste mês."}
-                  </p>
-                </div>
-              )}
-
-              <div className="divide-y divide-border/50 overflow-hidden">
-                {!loading && !erro && parcelasExibidas.map((p) => (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "flex items-center justify-between py-2.5 sm:py-2 px-2 transition-colors",
-                      p.paga
-                        ? "opacity-50 bg-income/5"
-                        : "hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden">
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className={cn(
-                          "text-sm font-medium truncate",
-                          p.paga && "line-through text-muted-foreground"
-                        )}>
-                          {p.descricao}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {p.numero_parcela}/{p.total_parcelas}
-                          {(p.responsavel_apelido || p.responsavel_nome) && (
-                            <> · {p.responsavel_apelido || p.responsavel_nome}</>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center shrink-0">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-7 sm:w-7">
-                            <MoreVertical className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            setParcelaSelecionada(p);
-                            setEditarCompraOpen(true);
-                          }}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setParcelaSelecionada(p);
-                            setEstornarCompraOpen(true);
-                          }}>
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Estornar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                              setParcelaSelecionada(p);
-                              setExcluirCompraOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            {/* Ver mais / tela ampla */}
+            {/* Ver todas as despesas */}
             <Button
               variant="outline"
               className="w-full h-10 sm:h-9 text-sm gap-2"
@@ -586,8 +437,8 @@ export function DetalhesCartaoDialog({
               }}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              {temMais
-                ? `Ver todas as ${parcelasFiltradas.length} despesas`
+              {parcelas.length > 0
+                ? `Ver todas as ${parcelas.length} despesas`
                 : "Ver tela ampla"}
             </Button>
 
@@ -680,58 +531,6 @@ export function DetalhesCartaoDialog({
         onOpenChange={setAjustarFaturaOpen}
         corCartao={cartao.cor}
         onSuccess={() => {
-          carregarFatura();
-          refetchAcertos();
-          onUpdated();
-        }}
-      />
-
-      {/* Dialogs da compra */}
-      <EditarCompraDialog
-        parcela={parcelaSelecionada}
-        open={editarCompraOpen}
-        corCartao={cartao.cor}
-        onOpenChange={(open) => {
-          setEditarCompraOpen(open);
-          if (!open) setParcelaSelecionada(null);
-        }}
-        onSaved={() => {
-          setEditarCompraOpen(false);
-          setParcelaSelecionada(null);
-          carregarFatura();
-          refetchAcertos();
-          onUpdated();
-        }}
-      />
-
-      <ExcluirCompraDialog
-        parcela={parcelaSelecionada}
-        open={excluirCompraOpen}
-        corCartao={cartao.cor}
-        onOpenChange={(open) => {
-          setExcluirCompraOpen(open);
-          if (!open) setParcelaSelecionada(null);
-        }}
-        onDeleted={() => {
-          setExcluirCompraOpen(false);
-          setParcelaSelecionada(null);
-          carregarFatura();
-          refetchAcertos();
-          onUpdated();
-        }}
-      />
-
-      <EstornarCompraDialog
-        parcela={parcelaSelecionada}
-        open={estornarCompraOpen}
-        corCartao={cartao.cor}
-        onOpenChange={(open) => {
-          setEstornarCompraOpen(open);
-          if (!open) setParcelaSelecionada(null);
-        }}
-        onEstornado={() => {
-          setEstornarCompraOpen(false);
-          setParcelaSelecionada(null);
           carregarFatura();
           refetchAcertos();
           onUpdated();
