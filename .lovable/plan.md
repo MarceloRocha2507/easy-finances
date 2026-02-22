@@ -1,58 +1,57 @@
 
-# Corrigir Categorias Duplicadas nos Dialogs de Compra do Cartao
+# Simplificar seção "Fatura do Cartão" no modal "Despesas a Pagar"
 
-## Problema
+## O que sera feito
 
-Os dialogs `NovaCompraCartaoDialog.tsx` e `EditarCompraDialog.tsx` carregam todas as categorias do banco sem filtrar por tipo (`expense`). Como existem categorias com o mesmo nome para tipos diferentes (ex: "Acerto de Fatura" para receita e despesa), elas aparecem duplicadas.
+Na seção "Fatura do Cartão (EU)" do modal DetalhesDespesasDialog, remover a listagem detalhada de parcelas individuais e mostrar apenas uma linha resumida por cartão. Cada linha sera clicável e redirecionará para `/cartoes/[id]/despesas`.
 
-## Solucao
+## Mudanca tecnica
 
-Aplicar o mesmo tratamento ja feito em `DespesasCartao.tsx`: filtrar por `type = 'expense'` na query e deduplicar por nome.
+### Arquivo: `src/components/dashboard/DetalhesDespesasDialog.tsx`
 
-## Mudancas tecnicas
+**Adicionar**: import de `useNavigate` do react-router-dom
 
-### 1. `src/components/cartoes/NovaCompraCartaoDialog.tsx` (~linha 96-99)
+**Substituir** o bloco de renderização da seção "Fatura do Cartão" (linhas 254-295):
 
-Adicionar filtro `.eq('type', 'expense')` na query de categorias e deduplicar por nome antes de salvar no estado:
+De: listagem com sub-itens de parcelas por cartão
 
-```typescript
-const { data } = await supabase
-  .from("categories")
-  .select("id, name, color, icon")
-  .eq("type", "expense")
-  .order("name");
+Para: apenas uma linha clicável por cartão contendo:
+- Bolinha colorida (cor do cartão)
+- Nome do cartão
+- Icone de seta (ChevronRight) indicando navegação
+- Valor total da fatura
 
-if (data) {
-  const unique = data.filter((cat, i, arr) => arr.findIndex(c => c.name === cat.name) === i);
-  setCategorias(unique);
-}
-```
-
-### 2. `src/components/cartoes/EditarCompraDialog.tsx` (~linha 182-196)
-
-Mesma correcao: adicionar `.eq('type', 'expense')` e deduplicar por nome:
+Ao clicar, fechar o Sheet e navegar para `/cartoes/${cartao.id}/despesas`.
 
 ```typescript
-const { data: cats } = await supabase
-  .from("categories")
-  .select("id, name, color, icon")
-  .eq("type", "expense")
-  .order("name");
-
-if (cats) {
-  const unique = cats.filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i);
-  setCategorias(
-    unique.map((c: any) => ({
-      id: c.id,
-      nome: c.name,
-      cor: c.color || "#6366f1",
-      icone: c.icon,
-    }))
-  );
-}
+<div className="space-y-2">
+  {Object.values(parcelasPorCartao).map(({ cartao, total }) => (
+    <div
+      key={cartao.id}
+      onClick={() => {
+        onOpenChange(false);
+        navigate(`/cartoes/${cartao.id}/despesas`);
+      }}
+      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-3 h-3 rounded-full"
+          style={{ backgroundColor: cartao.cor }}
+        />
+        <span className="text-sm font-medium">{cartao.nome}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold">
+          {formatCurrency(total)}
+        </span>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      </div>
+    </div>
+  ))}
+</div>
 ```
 
 ## Arquivos modificados
 
-- `src/components/cartoes/NovaCompraCartaoDialog.tsx` - Filtrar categorias por tipo expense e deduplicar
-- `src/components/cartoes/EditarCompraDialog.tsx` - Filtrar categorias por tipo expense e deduplicar
+- `src/components/dashboard/DetalhesDespesasDialog.tsx` - Simplificar seção de cartões para mostrar apenas resumo clicável por cartão
