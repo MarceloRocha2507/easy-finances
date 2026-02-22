@@ -1,57 +1,41 @@
 
-# Simplificar seção "Fatura do Cartão" no modal "Despesas a Pagar"
+# Melhorar visual das Contas Pendentes no modal "Despesas a Pagar"
 
-## O que sera feito
+## Problema
 
-Na seção "Fatura do Cartão (EU)" do modal DetalhesDespesasDialog, remover a listagem detalhada de parcelas individuais e mostrar apenas uma linha resumida por cartão. Cada linha sera clicável e redirecionará para `/cartoes/[id]/despesas`.
+Os icones das categorias estao sendo renderizados como texto (ex: "car") em vez de icones Lucide, porque o componente usa `{transacao.category?.icon}` diretamente como string ao inves de mapear para o componente Lucide correto.
 
-## Mudanca tecnica
+## Solucao
 
 ### Arquivo: `src/components/dashboard/DetalhesDespesasDialog.tsx`
 
-**Adicionar**: import de `useNavigate` do react-router-dom
+1. **Adicionar ICON_MAP e funcao `getIconComponent`** - Mesmo padrao ja usado em `Transactions.tsx`, `Reports.tsx`, etc. Mapeia nomes como "car", "wallet", "utensils" para os componentes Lucide correspondentes.
 
-**Substituir** o bloco de renderização da seção "Fatura do Cartão" (linhas 254-295):
+2. **Substituir a renderizacao do icone da categoria** - Em vez de exibir o texto da string do icone, renderizar o componente Lucide dentro de um circulo colorido com a cor da categoria.
 
-De: listagem com sub-itens de parcelas por cartão
+3. **Melhorar o visual dos itens** - Adicionar um circulo de fundo colorido (cor da categoria) ao redor do icone, similar ao padrao usado nas outras telas do sistema.
 
-Para: apenas uma linha clicável por cartão contendo:
-- Bolinha colorida (cor do cartão)
-- Nome do cartão
-- Icone de seta (ChevronRight) indicando navegação
-- Valor total da fatura
+### Mudancas visuais nos itens de Contas Pendentes
 
-Ao clicar, fechar o Sheet e navegar para `/cartoes/${cartao.id}/despesas`.
-
-```typescript
-<div className="space-y-2">
-  {Object.values(parcelasPorCartao).map(({ cartao, total }) => (
-    <div
-      key={cartao.id}
-      onClick={() => {
-        onOpenChange(false);
-        navigate(`/cartoes/${cartao.id}/despesas`);
-      }}
-      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: cartao.cor }}
-        />
-        <span className="text-sm font-medium">{cartao.nome}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold">
-          {formatCurrency(total)}
-        </span>
-        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-      </div>
-    </div>
-  ))}
-</div>
+De:
+```
+[car] Sem descricao          R$ 421,51
+      Vence em 10/03
 ```
 
-## Arquivos modificados
+Para:
+```
+[icone Lucide em circulo colorido] Sem descricao    R$ 421,51
+                                   Vence em 10/03
+```
 
-- `src/components/dashboard/DetalhesDespesasDialog.tsx` - Simplificar seção de cartões para mostrar apenas resumo clicável por cartão
+### Detalhes tecnicos
+
+- Imports adicionais: `Car, Utensils, Home, ShoppingCart, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Briefcase, Tag, TrendingUp` do lucide-react
+- Adicionar constante `ICON_MAP` e funcao `getIconComponent` (mesmo padrao das outras paginas)
+- Substituir `<span className="text-lg">{transacao.category?.icon || "📦"}</span>` por um div com fundo na cor da categoria contendo o icone Lucide renderizado corretamente
+- Usar `transacao.category?.color` como cor de fundo (com opacidade) para o circulo do icone
+
+### Arquivo modificado
+
+- `src/components/dashboard/DetalhesDespesasDialog.tsx`
