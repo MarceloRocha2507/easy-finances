@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CreditCard, Receipt, Wallet, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CreditCard, Receipt, Wallet, ExternalLink, ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   Sheet,
@@ -62,6 +62,7 @@ export function DetalhesDespesasDialog({
   faturaCartao,
 }: DetalhesDespesasDialogProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const inicioMes = format(
     new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1),
@@ -252,43 +253,28 @@ export function DetalhesDespesasDialog({
                   Nenhuma parcela pendente
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {Object.values(parcelasPorCartao).map(({ cartao, parcelas, total }) => (
-                    <div key={cartao.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: cartao.cor }}
-                          />
-                          <span className="text-sm font-medium">{cartao.nome}</span>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {formatCurrency(total)}
-                        </Badge>
+                <div className="space-y-2">
+                  {Object.values(parcelasPorCartao).map(({ cartao, total }) => (
+                    <div
+                      key={cartao.id}
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/cartoes/${cartao.id}/despesas`);
+                      }}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: cartao.cor }}
+                        />
+                        <span className="text-sm font-medium">{cartao.nome}</span>
                       </div>
-
-                      <div className="pl-5 space-y-1">
-                        {parcelas.map((parcela) => (
-                          <div
-                            key={parcela.id}
-                            className="flex items-center justify-between py-2 text-sm"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">
-                                {parcela.compra.descricao}
-                              </span>
-                              {parcela.total_parcelas > 1 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {parcela.numero_parcela}/{parcela.total_parcelas}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="font-medium">
-                              {formatCurrency(parcela.valor)}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">
+                          {formatCurrency(total)}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     </div>
                   ))}
