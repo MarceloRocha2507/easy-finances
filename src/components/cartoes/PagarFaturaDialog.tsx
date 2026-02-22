@@ -241,7 +241,7 @@ export function PagarFaturaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden flex flex-col">
         <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export function PagarFaturaDialog({
           </DialogHeader>
         </div>
 
-        <div className="px-4 sm:px-5 pb-4 pt-4 overflow-y-auto">
+        <div className="px-4 sm:px-5 pb-4 pt-4 overflow-y-auto overflow-x-hidden min-h-0 max-h-[calc(90vh-80px)]">
         {carregandoResumo ? (
           <div className="py-8 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
