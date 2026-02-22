@@ -62,6 +62,7 @@ import {
   Settings,
   RotateCcw,
   Upload,
+  Clock,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
@@ -202,19 +203,21 @@ export function DetalhesCartaoDialog({
   const usoPct = limite > 0 ? Math.min((totalMes / limite) * 100, 100) : 0;
   const podePagarFatura = parcelas.some((p) => !p.paga);
 
+  const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-amber-500" : "bg-income";
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col">
-          {/* Header neutro */}
-          <div className="px-5 sm:px-6 pt-4 pb-5 overflow-hidden bg-muted border-b">
-            <DialogHeader className="space-y-2">
-              <div className="flex items-center justify-between">
-                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                  <span className="truncate">{cartao.nome}</span>
+          {/* Header redesenhado */}
+          <div className="px-5 sm:px-6 pt-5 pb-5 bg-muted border-b">
+            <DialogHeader className="space-y-0">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <DialogTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                  <CreditCard className="h-4 w-4" />
+                  {cartao.nome}
                 </DialogTitle>
-                <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
+                <Badge variant="outline" className="text-[10px]">
                   {cartao.bandeira || "Crédito"}
                 </Badge>
               </div>
@@ -223,60 +226,59 @@ export function DetalhesCartaoDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Métricas */}
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 border">
-                <span className="text-muted-foreground text-[10px] sm:text-xs block">Limite</span>
-                <p className="font-semibold text-xs sm:text-sm truncate">{formatCurrency(limite)}</p>
-              </div>
-              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 border">
-                <span className="text-muted-foreground text-[10px] sm:text-xs block">Fatura</span>
-                <p className="font-semibold text-destructive text-xs sm:text-sm truncate">{formatCurrency(totalMes)}</p>
-              </div>
-              <div className="bg-background rounded-lg px-2.5 py-2 min-w-0 text-right border">
-                <span className="text-muted-foreground text-[10px] sm:text-xs block">Disponível</span>
-                <p className="font-semibold text-income text-xs sm:text-sm truncate">{formatCurrency(disponivel)}</p>
-              </div>
+            {/* Navegação de mês compacta */}
+            <div className="flex items-center justify-center gap-1 mt-2 mb-3">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-full"
+                onClick={() => setMesRef((m) => addMonths(m, -1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[110px] text-center text-xs font-medium text-muted-foreground capitalize bg-background/60 rounded-full px-3 py-1">
+                {monthLabel(mesRef)}
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-full"
+                onClick={() => setMesRef((m) => addMonths(m, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Progress bar com porcentagem */}
-            <div className="mt-3 space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
-                <span>Uso do limite</span>
-                <span className="font-medium text-foreground">{usoPct.toFixed(0)}%</span>
+            {/* Valor da fatura como destaque */}
+            <p className="text-center text-2xl sm:text-3xl font-bold text-destructive tracking-tight">
+              {formatCurrency(totalMes)}
+            </p>
+            <p className="text-center text-xs text-muted-foreground mt-0.5">fatura atual</p>
+
+            {/* Limite e Disponível inline */}
+            <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
+              <span>Limite: <span className="font-semibold text-foreground">{formatCurrency(limite)}</span></span>
+              <span>Disponível: <span className="font-semibold text-income">{formatCurrency(disponivel)}</span></span>
+            </div>
+
+            {/* Progress bar com cor dinâmica */}
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${progressColor}`}
+                  style={{ width: `${usoPct}%` }}
+                />
               </div>
-              <Progress value={usoPct} className="h-2" />
+              <span className="text-[10px] font-medium text-muted-foreground w-8 text-right">{usoPct.toFixed(0)}%</span>
             </div>
           </div>
 
           {/* Conteúdo */}
           <div className="px-5 sm:px-6 py-4 space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
-            {/* Navegação + Ações compactas */}
+            {/* Ações */}
             <div className="flex items-center justify-between gap-1 min-w-0">
-              <div className="flex items-center gap-0.5 sm:gap-1 min-w-0 shrink">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 sm:h-8 sm:w-8"
-                  onClick={() => setMesRef((m) => addMonths(m, -1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="min-w-[85px] sm:min-w-[100px] text-center text-sm font-medium capitalize">
-                  {monthLabel(mesRef)}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 sm:h-8 sm:w-8"
-                  onClick={() => setMesRef((m) => addMonths(m, 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
               <div className="flex items-center gap-1 shrink-0">
-                {/* Mobile: dropdown com ações */}
+                {/* Mobile: dropdown */}
                 <div className="flex sm:hidden">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -284,7 +286,7 @@ export function DetalhesCartaoDialog({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="start">
                       {podePagarFatura && (
                         <>
                           <DropdownMenuItem onClick={() => setPagarFaturaOpen(true)}>
@@ -324,8 +326,8 @@ export function DetalhesCartaoDialog({
                   </DropdownMenu>
                 </div>
                 
-                {/* Desktop: botões individuais */}
-                <div className="hidden sm:flex items-center gap-1">
+                {/* Desktop: ícones */}
+                <div className="hidden sm:flex items-center gap-0.5">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -391,45 +393,49 @@ export function DetalhesCartaoDialog({
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                
-                {/* Botão Nova Compra sempre visível */}
-                <Button size="sm" className="h-9 sm:h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
-                  <Plus className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Compra</span>
-                </Button>
               </div>
+
+              <Button size="sm" className="h-9 sm:h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Compra</span>
+              </Button>
             </div>
 
-            {/* Resumo pendente/pago inline */}
+            {/* Resumo Pendente / Pago - cards lado a lado */}
             {parcelas.length > 0 && (
-              <div className="flex items-center gap-3 flex-wrap text-xs bg-muted/50 rounded-lg px-3 py-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-destructive" />
-                  <span className="text-muted-foreground">Pendente:</span>
-                  <span className="font-medium">{formatCurrency(totalMes)}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium">Pendente</span>
+                  </div>
+                  <p className="text-sm font-semibold text-destructive">{formatCurrency(totalMes)}</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-income" />
-                  <span className="text-muted-foreground">Pago:</span>
-                  <span className="font-medium">{formatCurrency(totalPago)}</span>
+                <div className="rounded-xl border border-income/20 bg-income/5 p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Check className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium">Pago</span>
+                  </div>
+                  <p className="text-sm font-semibold text-income">{formatCurrency(totalPago)}</p>
                 </div>
-                {podePagarFatura && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto h-7 text-xs gap-1 hidden sm:flex"
-                    onClick={() => setPagarFaturaOpen(true)}
-                  >
-                    <Check className="h-3 w-3" />
-                    Pagar fatura
-                  </Button>
-                )}
               </div>
+            )}
+
+            {/* Pagar fatura */}
+            {podePagarFatura && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-9 text-xs gap-1.5"
+                onClick={() => setPagarFaturaOpen(true)}
+              >
+                <Check className="h-3.5 w-3.5" />
+                Pagar fatura
+              </Button>
             )}
 
             {/* Ver todas as despesas */}
             <Button
-              variant="outline"
               className="w-full h-10 sm:h-9 text-sm gap-2"
               onClick={() => {
                 onOpenChange(false);
@@ -442,21 +448,21 @@ export function DetalhesCartaoDialog({
                 : "Ver tela ampla"}
             </Button>
 
-            {/* Ações do cartão */}
-            <div className="flex gap-2 pt-3 border-t min-w-0">
+            {/* Ações do cartão - discretas */}
+            <div className="flex gap-2 pt-2 border-t min-w-0">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex-1 gap-1.5 min-w-0 h-10 sm:h-9"
+                className="flex-1 gap-1.5 min-w-0 h-9 text-xs"
                 onClick={() => setEditarCartaoOpen(true)}
               >
                 <Settings className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">Editar cartão</span>
               </Button>
               <Button
-                variant="destructive"
+                variant="ghost"
                 size="sm"
-                className="flex-1 gap-1.5 min-w-0 h-10 sm:h-9"
+                className="flex-1 gap-1.5 min-w-0 h-9 text-xs text-destructive hover:text-destructive"
                 onClick={() => setExcluirCartaoOpen(true)}
               >
                 <Trash2 className="h-3.5 w-3.5 shrink-0" />
