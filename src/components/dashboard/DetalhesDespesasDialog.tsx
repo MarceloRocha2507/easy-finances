@@ -1,7 +1,41 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CreditCard, Receipt, Wallet, ExternalLink, ChevronRight } from "lucide-react";
+import { 
+  CreditCard, Receipt, Wallet, ExternalLink, ChevronRight,
+  Car, Utensils, Home, ShoppingCart, Heart, GraduationCap, 
+  Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, 
+  DollarSign, Briefcase, Tag, TrendingUp
+} from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  'dollar-sign': DollarSign,
+  'wallet': Wallet,
+  'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart,
+  'home': Home,
+  'car': Car,
+  'utensils': Utensils,
+  'heart': Heart,
+  'graduation-cap': GraduationCap,
+  'gift': Gift,
+  'plane': Plane,
+  'gamepad': Gamepad2,
+  'shirt': Shirt,
+  'pill': Pill,
+  'book': Book,
+  'package': Package,
+  'zap': Zap,
+  'trending-up': TrendingUp,
+  'tag': Tag,
+  'credit-card': CreditCard,
+  'receipt': Receipt,
+};
+
+function getIconComponent(iconValue: string | null | undefined): React.ComponentType<{ className?: string; style?: React.CSSProperties }> {
+  if (!iconValue) return Package;
+  return ICON_MAP[iconValue] || Package;
+}
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -211,9 +245,24 @@ export function DetalhesDespesasDialog({
                       className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-lg">
-                          {transacao.category?.icon || "📦"}
-                        </span>
+                        {(() => {
+                          const IconComp = getIconComponent(transacao.category?.icon);
+                          return (
+                            <div
+                              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                              style={{ 
+                                backgroundColor: transacao.category?.color 
+                                  ? `${transacao.category.color}20` 
+                                  : 'hsl(var(--muted))' 
+                              }}
+                            >
+                              <IconComp 
+                                className="w-4 h-4" 
+                                style={{ color: transacao.category?.color || 'hsl(var(--muted-foreground))' }} 
+                              />
+                            </div>
+                          );
+                        })()}
                         <div>
                           <p className="text-sm font-medium">
                             {transacao.description || "Sem descrição"}
