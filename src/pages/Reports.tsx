@@ -172,7 +172,7 @@ export default function Reports() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCardPrimary title="Saldo do Período" value={stats?.balance || 0} icon={Wallet} type="neutral" delay={0} />
+              <StatCardPrimary title="Saldo Realizado" value={stats?.balance || 0} icon={Wallet} type="neutral" delay={0} />
               <StatCardPrimary title="Total de Receitas" value={stats?.totalIncome || 0} icon={TrendingUp} type="income" delay={0.05} />
               <StatCardPrimary title="Total de Despesas" value={stats?.totalExpense || 0} icon={TrendingDown} type="expense" delay={0.1} />
             </div>

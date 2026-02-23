@@ -142,9 +142,19 @@ export function useTransactionStats(filters?: TransactionFilters) {
   return useQuery({
     queryKey: ['transaction-stats', user?.id, filters],
     queryFn: async () => {
+      // Buscar categorias de meta para excluir
+      const { data: metaCategories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('user_id', user!.id)
+        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+
+      const metaCategoryIds = (metaCategories || []).map(c => c.id);
+
       let query = supabase
         .from('transactions')
-        .select('type, amount');
+        .select('type, amount, category_id')
+        .eq('status', 'completed');
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -164,6 +174,10 @@ export function useTransactionStats(filters?: TransactionFilters) {
       };
 
       data?.forEach((t) => {
+        // Excluir categorias de meta
+        if (metaCategoryIds.length > 0 && t.category_id && metaCategoryIds.includes(t.category_id)) {
+          return;
+        }
         if (t.type === 'income') {
           stats.totalIncome += Number(t.amount);
         } else {
@@ -185,13 +199,23 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
   return useQuery({
     queryKey: ['expenses-by-category', user?.id, filters],
     queryFn: async () => {
+      // Buscar categorias de meta para excluir
+      const { data: metaCategories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('user_id', user!.id)
+        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+
+      const metaCategoryIds = (metaCategories || []).map(c => c.id);
+
       let query = supabase
         .from('transactions')
         .select(`
           amount,
           category:categories(id, name, icon, color)
         `)
-        .eq('type', 'expense');
+        .eq('type', 'expense')
+        .eq('status', 'completed');
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -210,6 +234,12 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         const cat = t.category as unknown as { id: string; name: string; icon: string; color: string } | null;
         const categoryId = cat?.id || 'uncategorized';
         const categoryName = cat?.name || 'Sem categoria';
+
+        // Excluir categorias de meta
+        if (metaCategoryIds.length > 0 && metaCategoryIds.includes(categoryId)) {
+          return;
+        }
+
         const categoryIcon = cat?.icon || '📦';
         const categoryColor = cat?.color || '#6366f1';
 
@@ -854,8 +884,8 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
 export function useCompleteStats(mesReferencia?: Date) {
   const { user } = useAuth();
   const mesRef = mesReferencia || new Date();
-  const inicioMes = new Date(mesRef.getFullYear(), mesRef.getMonth(), 1).toISOString().split('T')[0];
-  const fimMes = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0).toISOString().split('T')[0];
+  const inicioMes = `${mesRef.getFullYear()}-${String(mesRef.getMonth() + 1).padStart(2, '0')}-01`;
+  const fimMes = (() => { const d = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
 
   return useQuery({
     queryKey: ['complete-stats', user?.id, inicioMes],
