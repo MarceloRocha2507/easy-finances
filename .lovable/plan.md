@@ -1,35 +1,47 @@
 
-
-# Reduzir tamanho dos cards de resumo no mobile
+# Corrigir conflito de swipe da sidebar com navegacao do browser
 
 ## Problema
 
-Os cards `StatCardPrimary` e `StatCardSecondary` usam `p-6` fixo, icones grandes (w-12/h-12 e w-10/h-10) e fontes grandes (text-2xl/text-3xl e text-xl), ocupando muito espaco vertical no mobile conforme a screenshot.
+Os event listeners de touch estao registrados com `{ passive: true }`, o que impede o uso de `e.preventDefault()`. Sem isso, o browser interpreta o swipe horizontal na borda esquerda como gesto nativo de "voltar pagina" (iOS Safari e Chrome Android).
+
+Alem disso, o `edgeThreshold` atual e 30px (muito largo) e nao ha bloqueio de scroll do body quando a sidebar esta aberta.
 
 ## Solucao
 
-Reduzir padding, fontes e icones no mobile usando classes responsivas do Tailwind. Nenhuma mudanca em desktop.
+### 1. `src/hooks/useSwipeGesture.ts` - Bloquear gesto nativo
 
-### Arquivo: `src/components/dashboard/StatCardPrimary.tsx`
+**Mudancas:**
+- Registrar `touchmove` com `{ passive: false }` para poder chamar `e.preventDefault()` quando o swipe horizontal for detectado na zona de borda
+- Chamar `e.preventDefault()` no `touchmove` quando estiver rastreando um swipe horizontal (isDragging = true), impedindo o browser de interpretar como "voltar"
+- Reduzir `edgeThreshold` padrao de 30px para 20px conforme solicitado
+- Adicionar logica para exigir deslocamento minimo de 10px horizontal antes de confirmar que e um swipe (ja existe com 5px, aumentar para melhor discriminacao)
 
-1. Padding: `p-3 sm:p-6`
-2. Titulo: `text-xs sm:text-sm`
-3. Valor: `text-lg sm:text-2xl md:text-3xl`
-4. Margem titulo-valor: `mb-1 sm:mb-2`
-5. Icone container: `w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl`
-6. Icone: `w-4 h-4 sm:w-6 sm:h-6`
-7. SubInfo margem: `mt-1 sm:mt-2`
+**Logica critica:**
+```text
+touchstart: passive: true (nao precisa preventDefault aqui)
+touchmove: passive: false (permite preventDefault quando tracking horizontal)
+  - Se isDragging e direction != null: e.preventDefault() para bloquear gesto do browser
+touchend: passive: true
+```
 
-### Arquivo: `src/components/dashboard/StatCardSecondary.tsx`
+### 2. `src/components/Layout.tsx` - Bloquear scroll do body
 
-1. Padding: `p-3 sm:p-6`
-2. Titulo: `text-xs sm:text-sm`
-3. Valor: `text-base sm:text-xl`
-4. Icone container: `w-8 h-8 sm:w-10 sm:h-10`
-5. Icone: `w-4 h-4 sm:w-5 sm:h-5`
+**Mudancas:**
+- Adicionar `useEffect` que aplica `overflow: hidden` no `document.body` quando `sidebarOpen` for `true` no mobile
+- Remover ao fechar a sidebar
+- Aumentar z-index do overlay de `z-30` para `z-35` (ou manter z-30 mas garantir que sidebar z-40 esta acima)
+- Adicionar `touch-action: pan-y` no overlay para evitar conflitos de gesto ao fechar
 
-### Arquivo: `src/pages/Transactions.tsx`
+### 3. Detalhes tecnicos
 
-1. Grid gap: `gap-2 sm:gap-3` (linha 764)
+O ponto chave e que `{ passive: true }` impede `preventDefault()`. A mudanca principal e usar `{ passive: false }` **apenas** no `touchmove`, mantendo `touchstart` e `touchend` como passive para nao afetar performance de scroll.
 
-Isso reduz significativamente a altura dos cards no mobile sem afetar o layout desktop.
+Isso resolve o conflito porque:
+- `preventDefault()` no touchmove cancela o gesto nativo de navegacao do browser
+- So e chamado quando o swipe esta sendo rastreado pelo componente (zona de borda + direcao horizontal confirmada)
+- Scrolling vertical normal nao e afetado (verticalLock ja descarta esses casos antes do preventDefault)
+
+### Arquivos modificados
+1. `src/hooks/useSwipeGesture.ts` - passive: false no touchmove, preventDefault, edgeThreshold 20px
+2. `src/components/Layout.tsx` - overflow hidden no body quando sidebar aberta
