@@ -1,46 +1,29 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { useExpensesByCategory, useTransactions } from '@/hooks/useTransactions';
 import { formatCurrency } from '@/lib/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import { 
-  Calendar, TrendingUp, TrendingDown, Minus, DollarSign, Wallet, Briefcase,
+  TrendingUp, TrendingDown, Minus, DollarSign, Wallet, Briefcase,
   ShoppingCart, Home, Car, Utensils, Heart, GraduationCap, Gift, Plane,
   Gamepad2, Shirt, Pill, Book, Package, Zap, Tag, CreditCard, PiggyBank,
-  type LucideIcon
+  BarChart3, type LucideIcon
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { PieChartWithLegend } from '@/components/dashboard';
+import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
+import { StatCardSecondary } from '@/components/dashboard/StatCardSecondary';
+import { FiltroDataRange } from '@/components/FiltroDataRange';
+import { Skeleton } from '@/components/ui/skeleton';
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 
-const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-];
-
-// Icon mapping for dynamic icon rendering
 const ICON_MAP: Record<string, LucideIcon> = {
-  'dollar-sign': DollarSign,
-  'wallet': Wallet,
-  'briefcase': Briefcase,
-  'shopping-cart': ShoppingCart,
-  'home': Home,
-  'car': Car,
-  'utensils': Utensils,
-  'heart': Heart,
-  'graduation-cap': GraduationCap,
-  'gift': Gift,
-  'plane': Plane,
-  'gamepad': Gamepad2,
-  'shirt': Shirt,
-  'pill': Pill,
-  'book': Book,
-  'package': Package,
-  'zap': Zap,
-  'trending-up': TrendingUp,
-  'tag': Tag,
-  'credit-card': CreditCard,
+  'dollar-sign': DollarSign, 'wallet': Wallet, 'briefcase': Briefcase,
+  'shopping-cart': ShoppingCart, 'home': Home, 'car': Car, 'utensils': Utensils,
+  'heart': Heart, 'graduation-cap': GraduationCap, 'gift': Gift, 'plane': Plane,
+  'gamepad': Gamepad2, 'shirt': Shirt, 'pill': Pill, 'book': Book, 'package': Package,
+  'zap': Zap, 'trending-up': TrendingUp, 'tag': Tag, 'credit-card': CreditCard,
   'piggy-bank': PiggyBank,
 };
 
@@ -50,205 +33,193 @@ function getIconComponent(iconName: string | null | undefined): LucideIcon {
 }
 
 export default function RelatorioCategorias() {
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const hoje = new Date();
+  const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(hoje));
+  const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(hoje));
 
-  const startDate = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
-  const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split('T')[0];
+  const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
+  const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
 
   // Mês anterior para comparação
-  const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
-  const prevYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
-  const prevStartDate = new Date(prevYear, prevMonth, 1).toISOString().split('T')[0];
-  const prevEndDate = new Date(prevYear, prevMonth + 1, 0).toISOString().split('T')[0];
+  const prevStart = startDate ? subMonths(startOfMonth(startDate), 1) : undefined;
+  const prevEnd = prevStart ? endOfMonth(prevStart) : undefined;
+  const prevStartStr = prevStart ? prevStart.toISOString().split('T')[0] : undefined;
+  const prevEndStr = prevEnd ? prevEnd.toISOString().split('T')[0] : undefined;
 
-  const { data: expensesByCategory } = useExpensesByCategory({ startDate, endDate });
-  const { data: prevExpensesByCategory } = useExpensesByCategory({ startDate: prevStartDate, endDate: prevEndDate });
-  const { data: transactions } = useTransactions({ startDate, endDate });
+  const { data: expensesByCategory, isLoading: loadingCat, refetch: r1 } = useExpensesByCategory({ startDate: startDateStr, endDate: endDateStr });
+  const { data: prevExpensesByCategory, isLoading: loadingPrev } = useExpensesByCategory({ startDate: prevStartStr, endDate: prevEndStr });
+  const { data: transactions, isLoading: loadingTx, refetch: r2 } = useTransactions({ startDate: startDateStr, endDate: endDateStr });
 
-  const years = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i);
+  const isLoading = loadingCat || loadingPrev || loadingTx;
 
-  const pieData = expensesByCategory?.map((cat) => ({
-    name: cat.name,
-    value: cat.total,
-    color: cat.color || '#666',
-  })) || [];
+  const handleRefresh = () => { r1(); r2(); };
 
-  const totalExpenses = pieData.reduce((acc, cur) => acc + cur.value, 0);
-  const prevTotalExpenses = prevExpensesByCategory?.reduce((acc, cur) => acc + cur.total, 0) || 0;
+  const pieData = useMemo(() =>
+    expensesByCategory?.map((cat) => ({ name: cat.name, value: cat.total, color: cat.color || '#666' })) || [],
+    [expensesByCategory]
+  );
 
-  // Comparativo por categoria
-  const categoryComparison = expensesByCategory?.map((cat) => {
-    const prevCat = prevExpensesByCategory?.find(p => p.name === cat.name);
-    const prevTotal = prevCat?.total || 0;
-    const variation = prevTotal > 0 ? ((cat.total - prevTotal) / prevTotal) * 100 : 0;
-    return {
-      ...cat,
-      prevTotal,
-      variation,
-    };
-  }) || [];
+  const totalExpenses = useMemo(() => pieData.reduce((acc, cur) => acc + cur.value, 0), [pieData]);
+  const prevTotalExpenses = useMemo(() => prevExpensesByCategory?.reduce((acc, cur) => acc + cur.total, 0) || 0, [prevExpensesByCategory]);
 
-  // Transações agrupadas por categoria
-  const transactionsByCategory = transactions?.reduce((acc, t) => {
-    if (t.type === 'expense') {
-      const catName = t.category?.name || 'Sem categoria';
-      if (!acc[catName]) {
-        acc[catName] = { transactions: [], total: 0, color: t.category?.color || '#666' };
+  const categoryComparison = useMemo(() =>
+    expensesByCategory?.map((cat) => {
+      const prevCat = prevExpensesByCategory?.find(p => p.name === cat.name);
+      const prevTotal = prevCat?.total || 0;
+      const variation = prevTotal > 0 ? ((cat.total - prevTotal) / prevTotal) * 100 : 0;
+      return { ...cat, prevTotal, variation };
+    }) || [],
+    [expensesByCategory, prevExpensesByCategory]
+  );
+
+  const transactionsByCategory = useMemo(() =>
+    transactions?.reduce((acc, t) => {
+      if (t.type === 'expense') {
+        const catName = t.category?.name || 'Sem categoria';
+        if (!acc[catName]) acc[catName] = { count: 0 };
+        acc[catName].count++;
       }
-      acc[catName].transactions.push(t);
-      acc[catName].total += t.amount;
-    }
-    return acc;
-  }, {} as Record<string, { transactions: any[]; total: number; color: string }>) || {};
+      return acc;
+    }, {} as Record<string, { count: number }>) || {},
+    [transactions]
+  );
+
+  const topCategory = useMemo(() => {
+    if (!pieData.length) return null;
+    return [...pieData].sort((a, b) => b.value - a.value)[0];
+  }, [pieData]);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload) return null;
+    return (
+      <div className="rounded-lg border bg-popover p-3 shadow-md">
+        <p className="text-sm font-medium text-foreground mb-1">{label}</p>
+        {payload.map((entry: any, i: number) => (
+          <p key={i} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {formatCurrency(entry.value)}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-xl font-semibold text-foreground">Relatório por Categoria</h1>
           <p className="text-sm text-muted-foreground">Análise detalhada dos gastos por categoria</p>
         </div>
 
-        {/* Period Selector */}
-        <Card className="border shadow-sm rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm font-medium">Período:</span>
-              </div>
-              <div className="flex gap-2">
-                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((month, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <FiltroDataRange
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
 
-        {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border shadow-sm rounded-xl">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-1">Total de Despesas</p>
-              <p className="text-2xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
-              {prevTotalExpenses > 0 && (
-                <p className={`text-sm mt-1 ${totalExpenses > prevTotalExpenses ? 'text-expense' : 'text-income'}`}>
+        {/* Summary Cards */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCardPrimary
+              title="Total de Despesas"
+              value={totalExpenses}
+              icon={TrendingDown}
+              type="expense"
+              delay={0}
+              subInfo={prevTotalExpenses > 0 ? (
+                <span className={`text-xs ${totalExpenses > prevTotalExpenses ? 'text-expense' : 'text-income'}`}>
                   {totalExpenses > prevTotalExpenses ? '+' : ''}
                   {((totalExpenses - prevTotalExpenses) / prevTotalExpenses * 100).toFixed(1)}% vs mês anterior
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border shadow-sm rounded-xl">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-1">Categorias Ativas</p>
-              <p className="text-2xl font-bold text-foreground">{pieData.length}</p>
-              <p className="text-sm text-muted-foreground mt-1">com gastos no período</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border shadow-sm rounded-xl">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-1">Maior Categoria</p>
-              <p className="text-2xl font-bold text-foreground">
-                {pieData.length > 0 ? pieData.sort((a, b) => b.value - a.value)[0].name : '-'}
-              </p>
-              {pieData.length > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {formatCurrency(pieData.sort((a, b) => b.value - a.value)[0].value)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </span>
+              ) : undefined}
+            />
+            <StatCardSecondary
+              title="Categorias Ativas"
+              value={pieData.length}
+              icon={Tag}
+              status="info"
+              subInfo="com gastos no período"
+              delay={0.05}
+              prefix=""
+            />
+            <StatCardSecondary
+              title="Maior Categoria"
+              value={topCategory?.value || 0}
+              icon={ShoppingCart}
+              status="warning"
+              subInfo={topCategory?.name || '-'}
+              delay={0.1}
+            />
+          </div>
+        )}
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart - Using PieChartWithLegend from Dashboard */}
-          <PieChartWithLegend data={pieData} />
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Skeleton className="h-[300px] rounded-xl" />
+            <Skeleton className="h-[300px] rounded-xl" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PieChartWithLegend data={pieData} />
 
-          {/* Bar Chart - Comparativo */}
+            <Card className="border shadow-sm rounded-xl h-full flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">Comparativo com Mês Anterior</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1">
+                {categoryComparison.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={categoryComparison.slice(0, 6)} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis type="number" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
+                      <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="prevTotal" fill="hsl(var(--muted-foreground))" name="Mês Anterior" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="total" fill="hsl(var(--primary))" name="Mês Atual" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyState message="Nenhum dado para comparação" />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Category Details */}
+        {isLoading ? (
+          <Skeleton className="h-[200px] rounded-xl" />
+        ) : (
           <Card className="border shadow-sm rounded-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">Comparativo com Mês Anterior</CardTitle>
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Detalhamento por Categoria</CardTitle>
             </CardHeader>
             <CardContent>
               {categoryComparison.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={categoryComparison.slice(0, 6)} layout="vertical">
-                    <XAxis type="number" tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`} />
-                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                    <Bar dataKey="prevTotal" fill="hsl(var(--muted-foreground))" name="Mês Anterior" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="total" fill="hsl(var(--primary))" name="Mês Atual" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[220px] flex items-center justify-center text-muted-foreground">
-                  Nenhum dado para comparação
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Category Details */}
-        <Card className="border shadow-sm rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Detalhamento por Categoria</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categoryComparison.length > 0 ? (
-              <div className="space-y-4">
-                {categoryComparison
-                  .sort((a, b) => b.total - a.total)
-                  .map((category) => {
+                <div className="space-y-4">
+                  {categoryComparison.sort((a, b) => b.total - a.total).map((category) => {
                     const percentage = totalExpenses > 0 ? (category.total / totalExpenses) * 100 : 0;
                     const IconComp = getIconComponent(category.icon);
                     return (
                       <div key={category.name} className="p-4 rounded-xl bg-secondary/50">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: `${category.color}20` }}
-                            >
-                              <IconComp 
-                                className="w-5 h-5" 
-                                style={{ color: category.color }} 
-                              />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20` }}>
+                              <IconComp className="w-5 h-5" style={{ color: category.color }} />
                             </div>
                             <div>
                               <span className="font-medium">{category.name}</span>
                               <p className="text-sm text-muted-foreground">
-                                {transactionsByCategory[category.name]?.transactions.length || 0} transações
+                                {transactionsByCategory[category.name]?.count || 0} transações
                               </p>
                             </div>
                           </div>
@@ -273,15 +244,23 @@ export default function RelatorioCategorias() {
                       </div>
                     );
                   })}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma despesa registrada no período selecionado
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : (
+                <EmptyState message="Nenhuma despesa registrada no período selecionado" />
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+      <BarChart3 className="w-10 h-10 mb-3 opacity-40" />
+      <p className="text-sm">{message}</p>
+    </div>
   );
 }
