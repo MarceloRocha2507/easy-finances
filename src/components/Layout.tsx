@@ -1,4 +1,4 @@
-import { ReactNode, useState, useCallback, useMemo } from "react";
+import { ReactNode, useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -50,6 +50,16 @@ export function Layout({ children }: LayoutProps) {
   }, [isDragging, sidebarOpen, dragOffset]);
 
   const showOverlay = sidebarOpen || (isDragging && dragOffset > 0);
+
+  // Block body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isMobile && sidebarOpen) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [isMobile, sidebarOpen]);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -116,7 +126,10 @@ export function Layout({ children }: LayoutProps) {
             "lg:hidden fixed inset-0 bg-foreground/20 z-30",
             !isDragging && "transition-opacity duration-300 ease-out"
           )}
-          style={overlayOpacity !== undefined ? { opacity: overlayOpacity } : undefined}
+          style={{
+            ...(overlayOpacity !== undefined ? { opacity: overlayOpacity } : {}),
+            touchAction: "pan-y",
+          }}
           onClick={closeSidebar}
         />
       )}
