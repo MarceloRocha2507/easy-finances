@@ -1,47 +1,44 @@
 
-# Corrigir conflito de swipe da sidebar com navegacao do browser
+# Ajuste Visual dos Modais: Botoes e Toggle Receita/Despesa
 
-## Problema
+## Problema 1: Botoes Criar/Cancelar colados
 
-Os event listeners de touch estao registrados com `{ passive: true }`, o que impede o uso de `e.preventDefault()`. Sem isso, o browser interpreta o swipe horizontal na borda esquerda como gesto nativo de "voltar pagina" (iOS Safari e Chrome Android).
+O `DialogFooter` usa `flex-col-reverse sm:flex-row` com `sm:space-x-2`, mas no mobile os botoes ficam empilhados sem gap suficiente entre eles.
 
-Alem disso, o `edgeThreshold` atual e 30px (muito largo) e nao ha bloqueio de scroll do body quando a sidebar esta aberta.
+## Problema 2: Toggle Despesa com cor errada no modal de Categoria
+
+No modal de Nova Categoria (`src/pages/Categories.tsx`), o toggle usa `variant="default"` (fundo preto/primary) quando selecionado. No modal de Nova Transacao (`src/pages/Transactions.tsx`), o toggle usa classes `gradient-income` (verde) e `gradient-expense` (vermelho) corretamente.
+
+---
 
 ## Solucao
 
-### 1. `src/hooks/useSwipeGesture.ts` - Bloquear gesto nativo
+### 1. DialogFooter - Aumentar espacamento (global)
 
-**Mudancas:**
-- Registrar `touchmove` com `{ passive: false }` para poder chamar `e.preventDefault()` quando o swipe horizontal for detectado na zona de borda
-- Chamar `e.preventDefault()` no `touchmove` quando estiver rastreando um swipe horizontal (isDragging = true), impedindo o browser de interpretar como "voltar"
-- Reduzir `edgeThreshold` padrao de 30px para 20px conforme solicitado
-- Adicionar logica para exigir deslocamento minimo de 10px horizontal antes de confirmar que e um swipe (ja existe com 5px, aumentar para melhor discriminacao)
+**Arquivo: `src/components/ui/dialog.tsx`**
 
-**Logica critica:**
+Alterar o `DialogFooter` de:
 ```text
-touchstart: passive: true (nao precisa preventDefault aqui)
-touchmove: passive: false (permite preventDefault quando tracking horizontal)
-  - Se isDragging e direction != null: e.preventDefault() para bloquear gesto do browser
-touchend: passive: true
+"flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2"
+```
+Para:
+```text
+"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2"
 ```
 
-### 2. `src/components/Layout.tsx` - Bloquear scroll do body
+Isso adiciona `gap-2` entre os botoes no mobile (coluna reversa), garantindo espacamento global em todos os modais.
 
-**Mudancas:**
-- Adicionar `useEffect` que aplica `overflow: hidden` no `document.body` quando `sidebarOpen` for `true` no mobile
-- Remover ao fechar a sidebar
-- Aumentar z-index do overlay de `z-30` para `z-35` (ou manter z-30 mas garantir que sidebar z-40 esta acima)
-- Adicionar `touch-action: pan-y` no overlay para evitar conflitos de gesto ao fechar
+### 2. Toggle Receita/Despesa no modal de Nova Categoria
 
-### 3. Detalhes tecnicos
+**Arquivo: `src/pages/Categories.tsx` (linhas 315-334)**
 
-O ponto chave e que `{ passive: true }` impede `preventDefault()`. A mudanca principal e usar `{ passive: false }` **apenas** no `touchmove`, mantendo `touchstart` e `touchend` como passive para nao afetar performance de scroll.
+Substituir os dois `Button` do toggle por versao com classes condicionais identicas ao modal de Transacoes:
 
-Isso resolve o conflito porque:
-- `preventDefault()` no touchmove cancela o gesto nativo de navegacao do browser
-- So e chamado quando o swipe esta sendo rastreado pelo componente (zona de borda + direcao horizontal confirmada)
-- Scrolling vertical normal nao e afetado (verticalLock ja descarta esses casos antes do preventDefault)
+- **Receita selecionada**: `gradient-income text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800`
+- **Despesa selecionada**: `gradient-expense text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800`
+- **Nao selecionado**: `variant="outline"` (neutro)
 
 ### Arquivos modificados
-1. `src/hooks/useSwipeGesture.ts` - passive: false no touchmove, preventDefault, edgeThreshold 20px
-2. `src/components/Layout.tsx` - overflow hidden no body quando sidebar aberta
+
+1. `src/components/ui/dialog.tsx` - Adicionar `gap-2` ao DialogFooter
+2. `src/pages/Categories.tsx` - Corrigir cores do toggle Receita/Despesa
