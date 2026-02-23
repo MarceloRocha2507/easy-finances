@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -159,19 +160,12 @@ export default function Bancos() {
           <BancoSkeleton />
         </div>
       ) : bancosResumo.length === 0 ? (
-        <Card className="shadow-sm rounded-xl">
-          <CardContent className="py-12 text-center">
-            <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
-            <h3 className="text-lg font-medium mb-2">Nenhuma conta cadastrada</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Cadastre suas contas bancárias para controlar seu saldo real
-            </p>
-            <Button onClick={() => setNovoOpen(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              Cadastrar Primeira Conta
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Building2}
+          title="Nenhuma conta cadastrada"
+          message="Cadastre suas contas bancárias para controlar seu saldo real"
+          action={{ label: "Cadastrar Primeira Conta", onClick: () => setNovoOpen(true) }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {bancosResumo.map((banco) => (

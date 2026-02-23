@@ -195,14 +195,14 @@ export default function Reports() {
                 <CardContent className="flex-1">
                   {monthlyData && monthlyData.some(m => m.income > 0 || m.expense > 0) ? (
                     <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={monthlyData}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <BarChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                         <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Bar dataKey="income" fill="hsl(142 76% 36%)" name="Receitas" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="expense" fill="hsl(0 84% 60%)" name="Despesas" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="income" fill="hsl(var(--income))" name="Receitas" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="expense" fill="hsl(var(--expense))" name="Despesas" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -231,7 +231,7 @@ export default function Reports() {
                           <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                       <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                       <Tooltip content={<CustomTooltip />} />

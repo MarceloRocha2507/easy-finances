@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
+import { StatCardSecondary } from '@/components/dashboard/StatCardSecondary';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
@@ -758,72 +760,59 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Resumo - 6 Indicadores */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
-            {/* Receitas Realizadas */}
-            <div className="flex flex-col p-2 sm:p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Receitas</span>
-              <span className="font-semibold text-emerald-600 text-sm sm:text-base truncate">
-                +{formatCurrency(stats?.completedIncome || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">recebidas</span>
-            </div>
-            
-            {/* Despesas Realizadas */}
-            <div className="flex flex-col p-2 sm:p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Despesas</span>
-              <span className="font-semibold text-red-600 text-sm sm:text-base truncate">
-                -{formatCurrency(stats?.completedExpense || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">pagas</span>
-            </div>
-            
-            {/* A Receber */}
-            <div className="flex flex-col p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-              <span className="text-[10px] sm:text-xs text-muted-foreground">A Receber</span>
-              <span className="font-semibold text-blue-600 text-sm sm:text-base truncate">
-                +{formatCurrency(stats?.pendingIncome || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">pendentes</span>
-            </div>
-            
-            {/* A Pagar */}
-            <div className="flex flex-col p-2 sm:p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-              <span className="text-[10px] sm:text-xs text-muted-foreground">A Pagar</span>
-              <span className="font-semibold text-amber-600 text-sm sm:text-base truncate">
-                -{formatCurrency(stats?.pendingExpense || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">pendentes</span>
-            </div>
-            
-            {/* Saldo Real */}
-            <div 
-              className="flex flex-col p-2 sm:p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors group"
+          {/* Resumo - StatCards Padronizados */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <StatCardPrimary
+              title="Receitas"
+              value={stats?.completedIncome || 0}
+              icon={TrendingUp}
+              type="income"
+              subInfo={<span className="text-xs text-muted-foreground">recebidas</span>}
+              delay={0}
+            />
+            <StatCardPrimary
+              title="Despesas"
+              value={stats?.completedExpense || 0}
+              icon={TrendingDown}
+              type="expense"
+              subInfo={<span className="text-xs text-muted-foreground">pagas</span>}
+              delay={0.05}
+            />
+            <StatCardSecondary
+              title="A Receber"
+              value={stats?.pendingIncome || 0}
+              icon={Clock}
+              status="pending"
+              subInfo="pendentes"
+              prefix="+"
+              delay={0.1}
+            />
+            <StatCardSecondary
+              title="A Pagar"
+              value={stats?.pendingExpense || 0}
+              icon={AlertTriangle}
+              status="warning"
+              subInfo="pendentes"
+              prefix="-"
+              delay={0.15}
+            />
+            <StatCardSecondary
+              title="Saldo Real"
+              value={stats?.realBalance || 0}
+              icon={Scale}
+              status={(stats?.realBalance || 0) >= 0 ? "success" : "danger"}
+              subInfo="clique para ajustar"
               onClick={() => setAjustarSaldoOpen(true)}
-              title="Clique para ajustar"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-muted-foreground">Saldo Real</span>
-                <Scale className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <span className={cn("font-semibold text-sm sm:text-base truncate", 
-                (stats?.realBalance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
-              )}>
-                {formatCurrency(stats?.realBalance || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">clique para ajustar</span>
-            </div>
-            
-            {/* Saldo Estimado */}
-            <div className="flex flex-col p-2 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
-              <span className="text-[10px] sm:text-xs text-muted-foreground">Estimado</span>
-              <span className={cn("font-semibold text-sm sm:text-base truncate", 
-                (stats?.estimatedBalance || 0) >= 0 ? 'text-primary' : 'text-red-600'
-              )}>
-                {formatCurrency(stats?.estimatedBalance || 0)}
-              </span>
-              <span className="text-[10px] text-muted-foreground hidden sm:block">real + a receber - a pagar</span>
-            </div>
+              delay={0.2}
+            />
+            <StatCardSecondary
+              title="Estimado"
+              value={stats?.estimatedBalance || 0}
+              icon={Info}
+              status="info"
+              subInfo="real + a receber - a pagar"
+              delay={0.25}
+            />
           </div>
         </div>
 

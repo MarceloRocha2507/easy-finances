@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -122,12 +123,12 @@ export default function Cartoes() {
           </div>
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-28" />
+              <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-64" />
+              <Skeleton key={i} className="h-64 rounded-xl" />
             ))}
           </div>
         </div>
@@ -268,17 +269,10 @@ export default function Cartoes() {
 
         {/* Lista de Cartões */}
         {cartoes.length === 0 ? (
-          <Card className="shadow-sm rounded-xl">
-            <CardContent className="py-16 text-center">
-              <CreditCard className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
-              <p className="text-muted-foreground mb-4">
-                Nenhum cartão cadastrado
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Clique em "Novo Cartão" acima para adicionar
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={CreditCard}
+            message="Nenhum cartão cadastrado. Clique em 'Novo Cartão' acima para adicionar."
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cartoes.map((cartao, index) => (

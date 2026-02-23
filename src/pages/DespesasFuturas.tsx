@@ -45,6 +45,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { EmptyState } from "@/components/ui/empty-state";
 
 import {
   useDespesasFuturas,
@@ -180,71 +182,39 @@ export default function DespesasFuturas() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <CalendarClock className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-semibold text-foreground">
             Despesas Futuras
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Visualize todas as despesas programadas para os próximos meses
           </p>
         </div>
 
         {/* Cards de Resumo */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                Total no Período
-              </CardTitle>
-              {startDate && endDate && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {format(startDate, "MMM/yy", { locale: ptBR })} até {format(endDate, "MMM/yy", { locale: ptBR })}
-                </p>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-expense">
-                {isLoading ? (
-                  <Skeleton className="h-8 w-32" />
-                ) : (
-                  formatCurrency(resumo.totalPeriodo)
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                Próximos 30 dias
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-warning">
-                {isLoading ? (
-                  <Skeleton className="h-8 w-32" />
-                ) : (
-                  formatCurrency(resumo.proximos30Dias)
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Hash className="h-4 w-4" />
-                Qtd. Despesas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? <Skeleton className="h-8 w-16" /> : resumo.quantidade}
-              </div>
-            </CardContent>
-          </Card>
+          <StatCardSecondary
+            title="Total no Período"
+            value={resumo.totalPeriodo}
+            icon={Wallet}
+            status="danger"
+            subInfo={startDate && endDate ? `${format(startDate, "MMM/yy", { locale: ptBR })} até ${format(endDate, "MMM/yy", { locale: ptBR })}` : undefined}
+            delay={0}
+          />
+          <StatCardSecondary
+            title="Próximos 30 dias"
+            value={resumo.proximos30Dias}
+            icon={CalendarIcon}
+            status="warning"
+            delay={0.05}
+          />
+          <StatCardSecondary
+            title="Qtd. Despesas"
+            value={resumo.quantidade}
+            icon={Hash}
+            status="info"
+            formatValue={(v) => v.toString()}
+            delay={0.1}
+          />
         </div>
 
         {/* Resumo por Cartão */}
