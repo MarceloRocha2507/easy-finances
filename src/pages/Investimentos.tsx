@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestimentos, Investimento } from "@/hooks/useInvestimentos";
@@ -12,6 +11,9 @@ import {
   NovoAporteDialog,
   DetalhesInvestimentoDialog,
 } from "@/components/investimentos";
+import { StatCardPrimary } from "@/components/dashboard/StatCardPrimary";
+import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Plus,
   TrendingUp,
@@ -19,7 +21,6 @@ import {
   PiggyBank,
   ArrowUpRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function Investimentos() {
   const { data: investimentos = [], isLoading } = useInvestimentos();
@@ -93,102 +94,43 @@ export default function Investimentos() {
 
         {/* Cards de resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Patrimônio total */}
-          <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Patrimônio total</p>
-              {isLoading ? (
-                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
-              ) : (
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate">
-                  {formatCurrency(totais.patrimonio)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Total investido */}
-          <Card className="shadow-sm rounded-xl border-l-4 border-l-blue-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total investido</p>
-              {isLoading ? (
-                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
-              ) : (
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate">
-                  {formatCurrency(totais.investido)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Rendimento total */}
-          <Card className={cn(
-            "shadow-lg rounded-xl border-0 animate-fade-in-up",
-            totais.rendimento >= 0 ? "gradient-income" : "gradient-expense"
-          )} style={{ animationDelay: "0.1s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className={cn(
-                  "w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center",
-                  totais.rendimento >= 0 ? "bg-emerald-500/20" : "bg-rose-500/20"
-                )}>
-                  <TrendingUp className={cn(
-                    "h-5 w-5 sm:h-6 sm:w-6",
-                    totais.rendimento >= 0 ? "text-emerald-600" : "text-rose-600"
-                  )} />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Rendimento total</p>
-              {isLoading ? (
-                <Skeleton className="h-7 sm:h-8 w-24 sm:w-28 mt-1" />
-              ) : (
-                <p
-                  className={cn(
-                    "text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 truncate",
-                    totais.rendimento >= 0 ? "text-income" : "text-expense"
-                  )}
-                >
-                  {totais.rendimento >= 0 ? "+" : ""}
-                  {formatCurrency(totais.rendimento)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Rentabilidade */}
-          <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Rentabilidade</p>
-              {isLoading ? (
-                <Skeleton className="h-7 sm:h-8 w-16 sm:w-20 mt-1" />
-              ) : (
-                <p
-                  className={cn(
-                    "text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1",
-                    parseFloat(totais.percentual) >= 0 ? "text-income" : "text-expense"
-                  )}
-                >
-                  {parseFloat(totais.percentual) >= 0 ? "+" : ""}
-                  {totais.percentual}%
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {isLoading ? (
+            <>
+              {[0,1,2,3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+            </>
+          ) : (
+            <>
+              <StatCardPrimary
+                title="Patrimônio total"
+                value={totais.patrimonio}
+                icon={Wallet}
+                type="neutral"
+                delay={0}
+              />
+              <StatCardSecondary
+                title="Total investido"
+                value={totais.investido}
+                icon={PiggyBank}
+                status="pending"
+                delay={0.05}
+              />
+              <StatCardPrimary
+                title="Rendimento total"
+                value={totais.rendimento}
+                icon={TrendingUp}
+                type={totais.rendimento >= 0 ? "income" : "expense"}
+                delay={0.1}
+              />
+              <StatCardSecondary
+                title="Rentabilidade"
+                value={parseFloat(totais.percentual)}
+                icon={ArrowUpRight}
+                status={parseFloat(totais.percentual) >= 0 ? "success" : "danger"}
+                formatValue={(v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`}
+                delay={0.15}
+              />
+            </>
+          )}
         </div>
 
         {/* Lista de investimentos */}
@@ -210,19 +152,12 @@ export default function Investimentos() {
                 ))}
               </div>
             ) : investimentosAtivos.length === 0 ? (
-              <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed">
-                <PiggyBank className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  Nenhum investimento ainda
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Comece a acompanhar seus investimentos
-                </p>
-                <Button onClick={() => setNovoOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar primeiro investimento
-                </Button>
-              </div>
+              <EmptyState
+                icon={PiggyBank}
+                title="Nenhum investimento ainda"
+                message="Comece a acompanhar seus investimentos"
+                action={{ label: "Criar primeiro investimento", onClick: () => setNovoOpen(true) }}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {investimentosAtivos.map((investimento) => (
@@ -239,11 +174,10 @@ export default function Investimentos() {
 
           <TabsContent value="encerrados" className="mt-4">
             {investimentosEncerrados.length === 0 ? (
-              <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed">
-                <p className="text-muted-foreground">
-                  Nenhum investimento encerrado
-                </p>
-              </div>
+              <EmptyState
+                icon={PiggyBank}
+                message="Nenhum investimento encerrado"
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {investimentosEncerrados.map((investimento) => (

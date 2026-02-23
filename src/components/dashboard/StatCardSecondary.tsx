@@ -8,11 +8,12 @@ interface StatCardSecondaryProps {
   title: string;
   value: number;
   icon: LucideIcon;
-  status: "pending" | "warning" | "danger" | "info";
+  status: "pending" | "warning" | "danger" | "info" | "success" | "neutral";
   subInfo?: ReactNode;
   delay?: number;
   onClick?: () => void;
   prefix?: string;
+  formatValue?: (value: number) => string;
 }
 
 export function StatCardSecondary({
@@ -24,12 +25,15 @@ export function StatCardSecondary({
   delay = 0,
   onClick,
   prefix = "",
+  formatValue,
 }: StatCardSecondaryProps) {
   const borderClasses = {
     pending: "border-l-4 border-l-blue-500",
     warning: "border-l-4 border-l-amber-500",
     danger: "border-l-4 border-l-red-500",
     info: "border-l-4 border-l-purple-500",
+    success: "border-l-4 border-l-emerald-500",
+    neutral: "border-l-4 border-l-slate-400",
   };
 
   const iconBgClasses = {
@@ -37,6 +41,8 @@ export function StatCardSecondary({
     warning: "bg-amber-100 dark:bg-amber-950",
     danger: "bg-red-100 dark:bg-red-950",
     info: "bg-purple-100 dark:bg-purple-950",
+    success: "bg-emerald-100 dark:bg-emerald-950",
+    neutral: "bg-slate-100 dark:bg-slate-800",
   };
 
   const iconColorClasses = {
@@ -44,6 +50,8 @@ export function StatCardSecondary({
     warning: "text-amber-600",
     danger: "text-red-600",
     info: "text-purple-600",
+    success: "text-emerald-600",
+    neutral: "text-slate-600 dark:text-slate-400",
   };
 
   const valueColorClasses = {
@@ -51,6 +59,8 @@ export function StatCardSecondary({
     warning: "text-amber-600",
     danger: "text-red-600",
     info: "text-purple-600",
+    success: "text-emerald-600",
+    neutral: "text-foreground",
   };
 
   return (
@@ -68,7 +78,7 @@ export function StatCardSecondary({
           <div>
             <p className="text-sm text-muted-foreground mb-1">{title}</p>
             <p className={cn("text-xl font-semibold", valueColorClasses[status])}>
-              {prefix}{formatCurrency(value)}
+              {prefix}{formatValue ? formatValue(value) : formatCurrency(value)}
             </p>
             {subInfo && (
               <p className="text-xs text-muted-foreground mt-1">{subInfo}</p>

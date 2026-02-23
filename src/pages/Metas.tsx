@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCardPrimary } from "@/components/dashboard/StatCardPrimary";
+import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Target,
   Plus,
@@ -49,10 +52,10 @@ export default function Metas() {
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-28" />
+              <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
           </div>
-          <Skeleton className="h-64" />
+          <Skeleton className="h-64 rounded-xl" />
         </div>
       </Layout>
     );
@@ -90,55 +93,36 @@ export default function Metas() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="gradient-neutral shadow-lg rounded-xl border-0 animate-fade-in-up">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-slate-500/20 flex items-center justify-center">
-                  <Target className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600 dark:text-slate-400" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total</p>
-              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1">{metas.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm rounded-xl border-l-4 border-l-amber-500 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-500/20 flex items-center justify-center">
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Em andamento</p>
-              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1">{metasAtivas.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="gradient-income shadow-lg rounded-xl border-0 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <Check className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Concluídos</p>
-              <p className="text-xl sm:text-2xl md:text-3xl font-bold text-income mt-0.5 sm:mt-1">{metasConcluidas.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm rounded-xl border-l-4 border-l-purple-500 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-                </div>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Valor acumulado</p>
-              <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-0.5 sm:mt-1 value-display truncate">
-                {formatCurrency(totalAtual)}
-              </p>
-            </CardContent>
-          </Card>
+          <StatCardPrimary
+            title="Total"
+            value={metas.length}
+            icon={Target}
+            type="neutral"
+            delay={0}
+            subInfo={<span className="text-xs text-muted-foreground">objetivos</span>}
+          />
+          <StatCardSecondary
+            title="Em andamento"
+            value={metasAtivas.length}
+            icon={Clock}
+            status="warning"
+            formatValue={(v) => v.toString()}
+            delay={0.05}
+          />
+          <StatCardPrimary
+            title="Concluídos"
+            value={metasConcluidas.length}
+            icon={Check}
+            type="income"
+            delay={0.1}
+          />
+          <StatCardSecondary
+            title="Valor acumulado"
+            value={totalAtual}
+            icon={Wallet}
+            status="info"
+            delay={0.15}
+          />
         </div>
 
         {/* Progresso Geral */}
@@ -173,17 +157,11 @@ export default function Metas() {
 
           <TabsContent value="ativos" className="mt-4">
             {metasAtivas.length === 0 ? (
-              <Card className="shadow-sm rounded-xl">
-                <CardContent className="py-16 text-center">
-                  <Target className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
-                  <p className="text-muted-foreground mb-4">
-                    Nenhum objetivo em andamento
-                  </p>
-                  <Button onClick={() => setNovaMetaOpen(true)} variant="outline" size="sm">
-                    Criar primeiro objetivo
-                  </Button>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Target}
+                message="Nenhum objetivo em andamento"
+                action={{ label: "Criar primeiro objetivo", onClick: () => setNovaMetaOpen(true) }}
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {metasAtivas.map((meta, index) => (
@@ -200,14 +178,10 @@ export default function Metas() {
 
           <TabsContent value="concluidos" className="mt-4">
             {metasConcluidas.length === 0 ? (
-              <Card className="shadow-sm rounded-xl">
-                <CardContent className="py-16 text-center">
-                  <Check className="h-10 w-10 mx-auto mb-4 text-muted-foreground/30" strokeWidth={1.5} />
-                  <p className="text-muted-foreground">
-                    Nenhum objetivo concluído
-                  </p>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Check}
+                message="Nenhum objetivo concluído"
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {metasConcluidas.map((meta, index) => (
