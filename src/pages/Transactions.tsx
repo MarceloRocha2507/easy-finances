@@ -143,7 +143,7 @@ export default function Transactions() {
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
   };
-  const { data: stats } = useCompleteStats();
+  const { data: stats } = useCompleteStats(dataInicial);
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
