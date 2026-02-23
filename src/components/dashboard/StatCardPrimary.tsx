@@ -54,26 +54,26 @@ export function StatCardPrimary({
       )}
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-3 sm:p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-muted-foreground mb-2">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
               {title}
             </p>
-            <p className={cn("text-2xl sm:text-3xl font-bold", valueColorClasses[type])}>
+            <p className={cn("text-lg sm:text-2xl md:text-3xl font-bold", valueColorClasses[type])}>
               {formatCurrency(value)}
             </p>
-            {subInfo && <div className="mt-2">{subInfo}</div>}
+            {subInfo && <div className="mt-1 sm:mt-2">{subInfo}</div>}
           </div>
           <div className="flex items-center gap-2">
             {actions}
             <div
               className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
+                "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center",
                 iconBgClasses[type]
               )}
             >
-              <Icon className={cn("w-6 h-6", iconColorClasses[type])} />
+              <Icon className={cn("w-4 h-4 sm:w-6 sm:h-6", iconColorClasses[type])} />
             </div>
           </div>
         </div>
