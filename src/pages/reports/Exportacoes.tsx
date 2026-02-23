@@ -25,8 +25,8 @@ export default function Exportacoes() {
   const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>(['transactions']);
   const [isExporting, setIsExporting] = useState(false);
 
-  const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
-  const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
+  const startDateStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
+  const endDateStr = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
 
   const { data: transactions, isLoading, refetch } = useTransactions({ startDate: startDateStr, endDate: endDateStr });
 
