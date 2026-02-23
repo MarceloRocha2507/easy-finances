@@ -1,56 +1,42 @@
 
-# Corrigir Discrepancia entre Dashboard e Relatorios
+# Corrigir "Saldo Realizado" nos Relatorios
 
 ## Problema
 
-Os valores de Receitas e Despesas nos Relatorios nao batem com o Dashboard por dois motivos:
+O "Saldo Realizado" nos Relatorios mostra apenas `Receitas do mes - Despesas do mes`, sem considerar o saldo inicial nem transacoes de meses anteriores. Isso resulta em -R$ 639,48 quando as despesas do mes superam as receitas, mesmo que o usuario tenha saldo positivo na conta.
 
-### 1. Relatorios nao filtram por status
-
-O hook `useTransactionStats` (usado nos Relatorios) soma **todas** as transacoes do periodo, independente do status (pending, completed, cancelled). Ja o Dashboard usa `useCompleteStats`, que filtra apenas transacoes com `status = 'completed'`.
-
-Isso explica a diferenca:
-- Dashboard Receitas: R$ 2.462,50 (apenas completed)
-- Relatorios Receitas: R$ 4.077,05 (completed + pending + cancelled)
-
-### 2. Relatorios nao excluem categorias de Meta
-
-O Dashboard exclui transacoes das categorias "Deposito em Meta" e "Retirada de Meta" dos totais mensais. Os Relatorios incluem tudo.
-
-### 3. Bug de timezone residual no useCompleteStats
-
-As linhas 857-858 do `useCompleteStats` ainda usam `toISOString().split('T')[0]`, que nao foi corrigido na ultima alteracao.
+O Dashboard calcula corretamente: `Saldo Inicial + TODAS receitas historicas - TODAS despesas historicas`.
 
 ## Solucao
 
-### Arquivo: `src/hooks/useTransactions.ts`
-
-**Linha 857-858** - Corrigir timezone:
-```
-// De:
-const inicioMes = new Date(...).toISOString().split('T')[0];
-const fimMes = new Date(...).toISOString().split('T')[0];
-
-// Para:
-const inicioMes = `${mesRef.getFullYear()}-${String(mesRef.getMonth() + 1).padStart(2, '0')}-01`;
-const fimMes = (() => { const d = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-```
-
-**Linhas 139-180 (`useTransactionStats`)** - Adicionar filtro `status = 'completed'` e exclusao de categorias de meta, para ficar consistente com o Dashboard:
-```typescript
-// Adicionar .eq('status', 'completed') na query
-// Buscar categorias de meta e excluir dos totais
-```
-
-**Linhas 182-235 (`useExpensesByCategory`)** - Adicionar filtro `status = 'completed'` tambem, para que o grafico de pizza mostre apenas despesas efetivamente pagas.
+Renomear e ajustar o card para mostrar o **resultado do periodo** (diferenca entre receitas e despesas daquele mes), deixando claro que nao e o saldo da conta.
 
 ### Arquivo: `src/pages/Reports.tsx`
 
-**Linha 175** - Atualizar label do card de "Saldo do Periodo" para refletir que mostra apenas transacoes confirmadas. Trocar para "Saldo Realizado" ou manter "Saldo do Periodo" mas com subtitulo "recebidas - pagas".
+1. Trocar o titulo do card de "Saldo Realizado" para "Resultado do Periodo"
+2. Mudar o tipo visual: se positivo, mostrar como "income" (verde); se negativo, como "expense" (vermelho)
+3. Isso alinha a expectativa do usuario -- ele entende que e o resultado mensal, nao o saldo acumulado da conta
 
-### Resultado esperado
+### Alternativa (mais completa)
 
-Apos as correcoes, os Relatorios mostrarao os mesmos valores do Dashboard:
-- Receitas: apenas transacoes `completed` (excluindo metas)
-- Despesas: apenas transacoes `completed` (excluindo metas)
-- Saldo: Receitas - Despesas do periodo (apenas realizados)
+Se o usuario preferir ver o saldo acumulado real igual ao Dashboard, a mudanca seria:
+
+1. No `useTransactionStats`, alem do calculo por periodo, buscar tambem o saldo inicial e o total acumulado historico
+2. Adicionar um novo campo `saldoAcumulado = saldoInicial + todasReceitasHistoricas - todasDespesasHistoricas`
+3. Exibir esse valor no card "Saldo Disponivel"
+
+**Recomendacao**: Implementar a alternativa simples (renomear para "Resultado do Periodo") pois o saldo acumulado ja esta no Dashboard e duplicar seria redundante. O relatorio deve focar na analise do periodo selecionado.
+
+## Detalhes tecnicos
+
+### `src/pages/Reports.tsx` (1 linha)
+
+```typescript
+// De:
+<StatCardPrimary title="Saldo Realizado" value={stats?.balance || 0} icon={Wallet} type="neutral" delay={0} />
+
+// Para:
+<StatCardPrimary title="Resultado do Período" value={stats?.balance || 0} icon={Wallet} type={(stats?.balance || 0) >= 0 ? 'income' : 'expense'} delay={0} />
+```
+
+Essa mudanca deixa claro que o valor e o resultado (superavit ou deficit) do periodo filtrado, e a cor verde/vermelha indica visualmente se o mes foi positivo ou negativo.
