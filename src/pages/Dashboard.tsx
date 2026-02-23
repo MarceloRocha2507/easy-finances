@@ -81,8 +81,8 @@ export default function Dashboard() {
   const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
 
   // Calcular range do mês selecionado
-  const inicioMesSelecionado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1).toISOString().split('T')[0];
-  const fimMesSelecionado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, 0).toISOString().split('T')[0];
+  const inicioMesSelecionado = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, '0')}-01`;
+  const fimMesSelecionado = (() => { const d = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
 
   const { data: stats } = useTransactionStats({
     startDate: inicioMesSelecionado,

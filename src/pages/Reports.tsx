@@ -41,8 +41,8 @@ export default function Reports() {
   const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(hoje));
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
-  const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
+  const startDateStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
+  const endDateStr = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
   const selectedYear = startDate?.getFullYear() || hoje.getFullYear();
 
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useTransactionStats({ startDate: startDateStr, endDate: endDateStr });

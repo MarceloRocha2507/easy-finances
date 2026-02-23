@@ -37,14 +37,14 @@ export default function RelatorioCategorias() {
   const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(hoje));
   const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(hoje));
 
-  const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
-  const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
+  const startDateStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
+  const endDateStr = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
 
   // Mês anterior para comparação
   const prevStart = startDate ? subMonths(startOfMonth(startDate), 1) : undefined;
   const prevEnd = prevStart ? endOfMonth(prevStart) : undefined;
-  const prevStartStr = prevStart ? prevStart.toISOString().split('T')[0] : undefined;
-  const prevEndStr = prevEnd ? prevEnd.toISOString().split('T')[0] : undefined;
+  const prevStartStr = prevStart ? format(prevStart, 'yyyy-MM-dd') : undefined;
+  const prevEndStr = prevEnd ? format(prevEnd, 'yyyy-MM-dd') : undefined;
 
   const { data: expensesByCategory, isLoading: loadingCat, refetch: r1 } = useExpensesByCategory({ startDate: startDateStr, endDate: endDateStr });
   const { data: prevExpensesByCategory, isLoading: loadingPrev } = useExpensesByCategory({ startDate: prevStartStr, endDate: prevEndStr });
