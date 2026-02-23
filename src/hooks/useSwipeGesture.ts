@@ -18,7 +18,7 @@ export function useSwipeGesture({
   onSwipeRight,
   onSwipeLeft,
   enabled,
-  edgeThreshold = 30,
+  edgeThreshold = 20,
   sidebarOpen = false,
   sidebarWidth = 280,
 }: UseSwipeGestureOptions): SwipeGestureResult {
@@ -68,7 +68,13 @@ export function useSwipeGesture({
       }
       if (verticalLock.current) return;
 
-      if (Math.abs(deltaX) > 5 && !isDraggingRef.current) {
+      // Block native browser back/forward gesture when we're tracking horizontal swipe
+      if (isDraggingRef.current && direction.current !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      if (Math.abs(deltaX) > 10 && !isDraggingRef.current) {
         isDraggingRef.current = true;
         setIsDragging(true);
       }
@@ -109,7 +115,7 @@ export function useSwipeGesture({
     if (!enabled) return;
 
     document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
     document.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
