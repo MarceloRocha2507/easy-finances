@@ -1,42 +1,34 @@
 
-# Corrigir "Saldo Realizado" nos Relatorios
+# Corrigir filtragem por periodo na tela de Transacoes
 
 ## Problema
 
-O "Saldo Realizado" nos Relatorios mostra apenas `Receitas do mes - Despesas do mes`, sem considerar o saldo inicial nem transacoes de meses anteriores. Isso resulta em -R$ 639,48 quando as despesas do mes superam as receitas, mesmo que o usuario tenha saldo positivo na conta.
-
-O Dashboard calcula corretamente: `Saldo Inicial + TODAS receitas historicas - TODAS despesas historicas`.
+O hook `useCompleteStats()` e chamado na linha 146 de `Transactions.tsx` **sem nenhum parametro de data**. Isso faz com que ele sempre use `new Date()` (mes atual) como referencia, independente do periodo selecionado pelo usuario nos filtros. Resultado: os cards de Receitas, Despesas, A Receber, A Pagar, Saldo Real e Estimado nunca mudam ao navegar entre meses.
 
 ## Solucao
 
-Renomear e ajustar o card para mostrar o **resultado do periodo** (diferenca entre receitas e despesas daquele mes), deixando claro que nao e o saldo da conta.
+Passar o mes selecionado pelo usuario como parametro para `useCompleteStats`.
 
-### Arquivo: `src/pages/Reports.tsx`
+### Arquivo: `src/pages/Transactions.tsx`
 
-1. Trocar o titulo do card de "Saldo Realizado" para "Resultado do Periodo"
-2. Mudar o tipo visual: se positivo, mostrar como "income" (verde); se negativo, como "expense" (vermelho)
-3. Isso alinha a expectativa do usuario -- ele entende que e o resultado mensal, nao o saldo acumulado da conta
-
-### Alternativa (mais completa)
-
-Se o usuario preferir ver o saldo acumulado real igual ao Dashboard, a mudanca seria:
-
-1. No `useTransactionStats`, alem do calculo por periodo, buscar tambem o saldo inicial e o total acumulado historico
-2. Adicionar um novo campo `saldoAcumulado = saldoInicial + todasReceitasHistoricas - todasDespesasHistoricas`
-3. Exibir esse valor no card "Saldo Disponivel"
-
-**Recomendacao**: Implementar a alternativa simples (renomear para "Resultado do Periodo") pois o saldo acumulado ja esta no Dashboard e duplicar seria redundante. O relatorio deve focar na analise do periodo selecionado.
-
-## Detalhes tecnicos
-
-### `src/pages/Reports.tsx` (1 linha)
+**Linha 146** - Passar a data inicial selecionada como referencia de mes:
 
 ```typescript
 // De:
-<StatCardPrimary title="Saldo Realizado" value={stats?.balance || 0} icon={Wallet} type="neutral" delay={0} />
+const { data: stats } = useCompleteStats();
 
 // Para:
-<StatCardPrimary title="Resultado do Período" value={stats?.balance || 0} icon={Wallet} type={(stats?.balance || 0) >= 0 ? 'income' : 'expense'} delay={0} />
+const { data: stats } = useCompleteStats(dataInicial);
 ```
 
-Essa mudanca deixa claro que o valor e o resultado (superavit ou deficit) do periodo filtrado, e a cor verde/vermelha indica visualmente se o mes foi positivo ou negativo.
+Isso e suficiente porque `useCompleteStats` ja aceita um parametro `mesReferencia?: Date` (linha 884 do hook) e calcula `inicioMes` e `fimMes` a partir dele. O `queryKey` ja inclui `inicioMes`, entao o React Query automaticamente refaz a consulta quando o mes muda.
+
+### Por que isso resolve tudo
+
+1. **Receitas/Despesas**: o hook busca `completedDoMes` filtrado por `inicioMes`/`fimMes` (linhas 961-967)
+2. **A Receber/A Pagar**: busca `pendingDoMes` filtrado por `inicioMes`/`fimMes` (linhas 972-978)
+3. **Saldo Estimado**: calculado a partir dos pendentes do mes (linha 1062)
+4. **Saldo Real**: acumulado historico, nao muda com o mes (correto)
+5. **Lista de transacoes**: ja esta filtrada corretamente via `useTransactionsWithBalance` com `startDate`/`endDate`
+
+A correcao e de **1 linha** apenas.
