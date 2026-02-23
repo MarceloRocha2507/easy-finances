@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, addMonths, subMonths, isSameDay } from 'date-fns';
+import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -21,8 +21,6 @@ export function FiltroDataRange({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  onRefresh,
-  isLoading,
 }: FiltroDataRangeProps) {
   const hoje = new Date();
   const [mesSelecionado, setMesSelecionado] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
@@ -41,97 +39,68 @@ export function FiltroDataRange({
     onEndDateChange(endOfMonth(novoMes));
   };
 
-  const handleHoje = () => {
-    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-    onStartDateChange(hoje);
-    onEndDateChange(hoje);
-  };
-
-  const handleEstaSemana = () => {
-    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-    onStartDateChange(startOfWeek(hoje, { weekStartsOn: 1 }));
-    onEndDateChange(endOfWeek(hoje, { weekStartsOn: 1 }));
-  };
-
-  const handleEsteMes = () => {
-    const mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    setMesSelecionado(mes);
-    onStartDateChange(startOfMonth(hoje));
-    onEndDateChange(endOfMonth(hoje));
-  };
-
-  const handleUltimos30Dias = () => {
-    setMesSelecionado(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-    onStartDateChange(subDays(hoje, 30));
-    onEndDateChange(hoje);
-  };
-
   const mesLabel = format(mesSelecionado, "MMMM yyyy", { locale: ptBR });
 
   return (
-    <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2">
-      {/* Linha de datas */}
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "justify-start text-left font-normal flex-1 sm:flex-none min-w-0 sm:min-w-[130px]",
-                !startDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-            <Calendar
-              mode="single"
-              selected={startDate}
-              onSelect={onStartDateChange}
-              initialFocus
-              locale={ptBR}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
+    <div className="flex flex-wrap items-center gap-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "justify-start text-left font-normal min-w-0 sm:min-w-[130px]",
+              !startDate && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+          <Calendar
+            mode="single"
+            selected={startDate}
+            onSelect={onStartDateChange}
+            initialFocus
+            locale={ptBR}
+            className="pointer-events-auto"
+          />
+        </PopoverContent>
+      </Popover>
 
-        <span className="text-muted-foreground text-xs sm:text-sm shrink-0">até</span>
+      <span className="text-muted-foreground text-xs sm:text-sm shrink-0">até</span>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "justify-start text-left font-normal flex-1 sm:flex-none min-w-0 sm:min-w-[130px]",
-                !endDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={onEndDateChange}
-              initialFocus
-              locale={ptBR}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "justify-start text-left font-normal min-w-0 sm:min-w-[130px]",
+              !endDate && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-1.5 sm:mr-2 h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+          <Calendar
+            mode="single"
+            selected={endDate}
+            onSelect={onEndDateChange}
+            initialFocus
+            locale={ptBR}
+            className="pointer-events-auto"
+          />
+        </PopoverContent>
+      </Popover>
 
-      {/* Seletor de Mês */}
       <div className={cn(
         "flex items-center gap-0.5 rounded-md border border-input px-1 h-8",
         isMesAtivo && "bg-accent border-accent"
@@ -158,36 +127,6 @@ export function FiltroDataRange({
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
-      </div>
-
-      {/* Atalhos + Refresh */}
-      <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-start">
-        <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={handleHoje} className="text-xs px-2 h-8">
-            Hoje
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleEsteMes} className="text-xs px-2 h-8">
-            Mês
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleEstaSemana} className="text-xs px-2 h-8 hidden sm:inline-flex">
-            Semana
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleUltimos30Dias} className="text-xs px-2 h-8 hidden sm:inline-flex">
-            30 dias
-          </Button>
-        </div>
-        
-        {onRefresh && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="h-8 w-8"
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </Button>
-        )}
       </div>
     </div>
   );
