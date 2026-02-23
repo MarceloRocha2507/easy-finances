@@ -73,11 +73,11 @@ export function StatCardSecondary({
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
       onClick={onClick}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-3 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">{title}</p>
-            <p className={cn("text-xl font-semibold", valueColorClasses[status])}>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">{title}</p>
+            <p className={cn("text-base sm:text-xl font-semibold", valueColorClasses[status])}>
               {prefix}{formatValue ? formatValue(value) : formatCurrency(value)}
             </p>
             {subInfo && (
@@ -86,11 +86,11 @@ export function StatCardSecondary({
           </div>
           <div
             className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center",
+              "w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center",
               iconBgClasses[status]
             )}
           >
-            <Icon className={cn("w-5 h-5", iconColorClasses[status])} />
+            <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", iconColorClasses[status])} />
           </div>
         </div>
       </CardContent>
