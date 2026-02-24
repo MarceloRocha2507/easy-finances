@@ -1,137 +1,80 @@
 
 
-# Organizar Listagem por Grupos com Cabecalhos Colapsaveis
+# Humanizar a listagem de transacoes agrupada
 
-## Visao Geral
+## Problema atual
 
-Reorganizar a listagem de transacoes para agrupar itens por tipo, com cabecalhos visuais contendo subtotal, e permitir recolher/expandir cada grupo. Cada grupo tera diferenciacao visual (cores de borda/fundo).
+Os cabecalhos de grupo tem um visual muito "gerado por IA": bordas coloridas fortes, fundos chamativos, icones por grupo, bordas laterais em cada item. Isso cria um visual sobrecarregado e artificial.
 
-## Grupos definidos
+## Abordagem
 
-Dependendo da tab ativa:
+Simplificar drasticamente para parecer um app de banco real (Nubank, Inter, etc.):
 
-- **Tab "Despesas"**: 3 grupos possiveis
-  1. Faturas de Cartao (icone roxo, borda roxa) -- itens com `isFaturaCartao` ou categoria "Fatura de Cartao"
-  2. Despesas Fixas/Recorrentes (icone amarelo, borda amarela) -- `tipo_lancamento === 'fixa'` ou `is_recurring`
-  3. Despesas Comuns (icone vermelho, borda vermelha) -- todas as outras despesas
+- **Cabecalhos de grupo**: trocar por separadores discretos, apenas texto em cinza + subtotal alinhado a direita, sem fundo colorido nem icones
+- **Itens individuais**: remover border-l-2 e fundos coloridos por grupo -- cada item ja tem seu icone/cor proprios
+- **Chevron de colapsar**: manter, mas mais sutil
+- **Espacamento**: usar um separador leve entre grupos em vez de cards coloridos
 
-- **Tab "Receitas"**: 2 grupos
-  1. Receitas Fixas/Recorrentes (borda verde-escuro)
-  2. Receitas Avulsas (borda verde)
+## Mudancas em `src/pages/Transactions.tsx`
 
-- **Tab "Todos"**: todos os grupos acima combinados
+### 1. Simplificar `GRUPO_CONFIG`
 
-- **Tab "Pendentes"** e **Tab "Fixas"**: sem agrupamento (ja sao filtros especificos)
+Remover `bgClass`, `borderClass`, `headerBg`. Manter apenas `key`, `label`, `colorClass` (para o subtotal) e `icon` (opcional, mais discreto).
 
-## Arquivos modificados
+### 2. Redesenhar `GroupHeader`
 
-### `src/pages/Transactions.tsx`
-
-#### 1. Novo tipo e logica de agrupamento
-
-Criar funcao `agruparTransacoes` que recebe o array de `sortedTransactions` e a `activeTab`, e retorna:
-
+De:
 ```text
-type GrupoTransacao = {
-  key: string;
-  label: string;
-  icon: React.ComponentType;
-  colorClass: string;       // classes de cor do cabecalho
-  bgClass: string;           // fundo leve nos itens do grupo
-  borderClass: string;       // borda esquerda nos itens
-  items: (Transaction | FaturaVirtual)[];
-  subtotal: number;
-};
+[bg colorido + borda] [icone colorido] [TEXTO COLORIDO BOLD] (3) .... R$ 500,00 [chevron]
 ```
 
-A funcao classifica cada item em seu grupo, calcula o subtotal e ordena os itens por data de vencimento dentro de cada grupo.
-
-#### 2. Estado de grupos colapsados
-
-Adicionar `const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())` para controlar quais grupos estao recolhidos.
-
-Funcao toggle: `toggleGroup(key)` que adiciona/remove do Set.
-
-#### 3. Componente `GroupHeader`
-
-Cabecalho clicavel para cada grupo com:
-- Icone do grupo (CreditCard roxo, TrendingDown vermelho, TrendingUp verde, RefreshCw amarelo)
-- Label do grupo (ex: "Faturas de Cartao")
-- Quantidade de itens entre parenteses
-- Subtotal formatado (ex: "R$ 867,94")
-- Seta de chevron indicando expandido/recolhido
-- Fundo leve com a cor do grupo
-
-#### 4. Renderizacao agrupada
-
-Substituir o `sortedTransactions.map(...)` atual por:
-
+Para:
 ```text
-{grupos.map(grupo => (
-  <div key={grupo.key}>
-    <GroupHeader grupo={grupo} collapsed={...} onToggle={...} />
-    {!collapsed && (
-      <div className="space-y-0.5">
-        {grupo.items.map(item => (
-          // renderizar TransactionRow ou FaturaCartaoRow com borda esquerda colorida
-        ))}
-      </div>
-    )}
-  </div>
-))}
+Faturas de Cartao                                    R$ 500,00  v
+------- (linha fina) -------
 ```
 
-#### 5. Diferenciacao visual nos itens
+Visualmente:
+- Texto em `text-muted-foreground` com `text-xs uppercase tracking-wider font-medium`
+- Subtotal discreto, `text-sm text-muted-foreground`
+- Sem fundo colorido, sem borda de card
+- Apenas uma linha divisoria sutil embaixo (`border-b border-border`)
+- Chevron pequeno e discreto
 
-Cada item dentro de um grupo recebe:
-- **Faturas de cartao**: `border-l-2 border-violet-400 bg-violet-50/30`
-- **Despesas comuns**: `border-l-2 border-red-300 bg-red-50/20`
-- **Receitas**: `border-l-2 border-emerald-300 bg-emerald-50/20`
-- **Fixas/Recorrentes**: `border-l-2 border-amber-300 bg-amber-50/20`
-- **Pendentes**: `bg-amber-50/30` (ja existente, manter)
+### 3. Remover estilos dos itens por grupo
 
-#### 6. Tabs sem agrupamento
+Na renderizacao dos itens dentro de cada grupo, remover o wrapper `<div className={cn("rounded-lg", grupoConfig.borderClass, grupoConfig.bgClass)}>`. Renderizar os itens diretamente sem wrapper de cor.
 
-Nas tabs "Pendentes" e "Fixas", manter a listagem flat sem agrupamento (esses ja sao filtros especificos).
+### 4. Ajustar espacamento entre grupos
 
-## Logica de classificacao dos itens
+Trocar `space-y-0.5` por `space-y-4` entre grupos para dar respiro visual. Dentro do grupo, manter `space-y-0` (itens colados).
+
+## Resultado esperado
+
+Uma listagem que parece um extrato bancario limpo:
 
 ```text
-function classificarItem(item, activeTab):
-  if 'isFaturaCartao' in item:
-    return 'faturas'
-  if item.category?.name === 'Fatura de Cartao':
-    return 'faturas'
-  if item.tipo_lancamento === 'fixa' || item.is_recurring:
-    return 'fixas'
-  if item.type === 'income':
-    return 'receitas'
-  return 'despesas'
+FATURAS DE CARTAO                           R$ 867,94  v
+-------------------------------------------------
+  [icone roxo] Fatura Nubank    Em aberto   -R$ 500,00
+  [icone roxo] Fatura Inter     Pendente    -R$ 367,94
+
+DESPESAS FIXAS                              R$ 1.200,00  v
+-------------------------------------------------
+  [icone] Aluguel              01/02        -R$ 900,00
+  [icone] Internet             05/02        -R$ 300,00
+
+DESPESAS                                    R$ 450,00  v
+-------------------------------------------------
+  [icone] Supermercado         Hoje, 14:30  -R$ 250,00
+  [icone] Farmacia             Ontem, 09:15 -R$ 200,00
 ```
 
-## Ordenacao dentro dos grupos
+## Arquivo modificado
 
-Itens dentro de cada grupo ordenados por `date` (data de vencimento), do mais proximo para o mais distante.
-
-## Ordem dos grupos na tela
-
-1. Faturas de Cartao (primeiro, pois sao compromissos com data fixa)
-2. Despesas Fixas/Recorrentes
-3. Despesas Comuns
-4. Receitas (na tab "Todos")
-
-## Importacoes adicionais necessarias
-
-- `ChevronDown`, `ChevronRight` de lucide-react (para indicador de colapsado)
-- `Collapsible`, `CollapsibleContent`, `CollapsibleTrigger` do radix (ja instalado)
-
-## Resumo de alteracoes
-
-- **Arquivo unico modificado**: `src/pages/Transactions.tsx`
-- Adicionar funcao `agruparTransacoes`
-- Adicionar componente `GroupHeader`
-- Adicionar estado `collapsedGroups`
-- Substituir renderizacao flat por renderizacao agrupada
-- Adicionar classes de borda/fundo nos itens por grupo
-- Manter comportamento flat nas tabs "Pendentes" e "Fixas"
+`src/pages/Transactions.tsx`:
+- Simplificar `GRUPO_CONFIG` (remover bgClass, borderClass, headerBg)
+- Reescrever `GroupHeader` com estilo minimalista
+- Remover wrappers coloridos dos itens na renderizacao agrupada (linhas 1092-1115)
+- Ajustar espacamento entre grupos
 
