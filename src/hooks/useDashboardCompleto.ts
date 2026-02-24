@@ -107,21 +107,34 @@ function firstDayOfMonth(date: Date): string {
   return `${yyyy}-${mm}-01`;
 }
 
-function calcularDiasParaVencimento(diaVencimento: number): number {
+function calcularDiasParaVencimento(diaVencimento: number, mesRef: Date): number {
   const hoje = new Date();
-  const diaAtual = hoje.getDate();
-  const mesAtual = hoje.getMonth();
-  const anoAtual = hoje.getFullYear();
+  const isMesAtual = mesRef.getFullYear() === hoje.getFullYear() && mesRef.getMonth() === hoje.getMonth();
 
-  let dataVencimento: Date;
-  if (diaAtual <= diaVencimento) {
-    dataVencimento = new Date(anoAtual, mesAtual, diaVencimento);
-  } else {
-    dataVencimento = new Date(anoAtual, mesAtual + 1, diaVencimento);
+  // Data de vencimento no mês selecionado
+  const dataVencimento = new Date(mesRef.getFullYear(), mesRef.getMonth(), diaVencimento);
+
+  if (isMesAtual) {
+    // Mês atual: calcular a partir de hoje
+    const diffTime = dataVencimento.getTime() - hoje.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  const diffTime = dataVencimento.getTime() - hoje.getTime();
+  // Mês futuro/passado: dias do início do mês até o vencimento
+  const inicioMes = new Date(mesRef.getFullYear(), mesRef.getMonth(), 1);
+  const diffTime = dataVencimento.getTime() - inicioMes.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function isMesAtualOuPassado(mesRef: Date): { isMesAtual: boolean; isMesPassado: boolean; isMesFuturo: boolean } {
+  const hoje = new Date();
+  const hojeMonth = hoje.getFullYear() * 12 + hoje.getMonth();
+  const refMonth = mesRef.getFullYear() * 12 + mesRef.getMonth();
+  return {
+    isMesAtual: hojeMonth === refMonth,
+    isMesPassado: refMonth < hojeMonth,
+    isMesFuturo: refMonth > hojeMonth,
+  };
 }
 
 /* ======================================================
@@ -223,7 +236,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         const totais = parcelasPorCartao[cartao.id] || { total: 0, pago: 0, pendente: 0 };
         const disponivel = Math.max(limite - totais.pendente, 0);
         const usoPct = limite > 0 ? Math.min((totais.pendente / limite) * 100, 100) : 0;
-        const diasParaVencimento = calcularDiasParaVencimento(cartao.dia_vencimento || 10);
+        const diasParaVencimento = calcularDiasParaVencimento(cartao.dia_vencimento || 10, mesRef);
 
         return {
           id: cartao.id,
@@ -283,6 +296,8 @@ export function useDashboardCompleto(mesReferencia?: Date) {
       });
 
       // Alertas de vencimento de fatura
+      const { isMesAtual, isMesFuturo } = isMesAtualOuPassado(mesRef);
+
       cartoesFormatados.forEach((cartao) => {
         if (cartao.totalPendente > 0) {
           const valorFormatado = cartao.totalPendente.toLocaleString("pt-BR", {
@@ -290,61 +305,66 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             currency: "BRL",
           });
 
-          // Fatura VENCIDA
-          if (cartao.diasParaVencimento < 0) {
+          if (isMesFuturo) {
+            // Mês futuro: mostrar data de vencimento do mês, sem "dias restantes" baseado em hoje
             alertas.push({
-              id: `fatura-vencida-${cartao.id}`,
-              tipo: "danger",
-              titulo: "Fatura VENCIDA!",
-              mensagem: `${cartao.nome} está vencida há ${Math.abs(cartao.diasParaVencimento)} dia(s). Valor: ${valorFormatado}.`,
-              icone: "alert-octagon",
-              categoria: "cartao",
-            });
-          }
-          // Fatura vence HOJE
-          else if (cartao.diasParaVencimento === 0) {
-            alertas.push({
-              id: `fatura-hoje-${cartao.id}`,
-              tipo: "danger",
-              titulo: "Fatura vence HOJE!",
-              mensagem: `${cartao.nome} vence hoje. Valor: ${valorFormatado}.`,
-              icone: "clock",
-              categoria: "cartao",
-            });
-          }
-          // Fatura vence em breve (1-3 dias)
-          else if (cartao.diasParaVencimento <= 3) {
-            alertas.push({
-              id: `vencimento-${cartao.id}`,
-              tipo: "warning",
-              titulo: "Fatura vence em breve!",
-              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+              id: `fatura-futura-${cartao.id}`,
+              tipo: "info",
+              titulo: "Fatura prevista",
+              mensagem: `${cartao.nome} vence dia ${cartao.dia_vencimento} deste mês. Valor: ${valorFormatado}.`,
               icone: "calendar",
               categoria: "cartao",
             });
+          } else if (isMesAtual) {
+            // Mês atual: comportamento original com dias restantes a partir de hoje
+            if (cartao.diasParaVencimento < 0) {
+              alertas.push({
+                id: `fatura-vencida-${cartao.id}`,
+                tipo: "danger",
+                titulo: "Fatura VENCIDA!",
+                mensagem: `${cartao.nome} está vencida há ${Math.abs(cartao.diasParaVencimento)} dia(s). Valor: ${valorFormatado}.`,
+                icone: "alert-octagon",
+                categoria: "cartao",
+              });
+            } else if (cartao.diasParaVencimento === 0) {
+              alertas.push({
+                id: `fatura-hoje-${cartao.id}`,
+                tipo: "danger",
+                titulo: "Fatura vence HOJE!",
+                mensagem: `${cartao.nome} vence hoje. Valor: ${valorFormatado}.`,
+                icone: "clock",
+                categoria: "cartao",
+              });
+            } else if (cartao.diasParaVencimento <= 3) {
+              alertas.push({
+                id: `vencimento-${cartao.id}`,
+                tipo: "warning",
+                titulo: "Fatura vence em breve!",
+                mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+                icone: "calendar",
+                categoria: "cartao",
+              });
+            } else if (cartao.diasParaVencimento <= 7) {
+              alertas.push({
+                id: `fatura-semana-${cartao.id}`,
+                tipo: "info",
+                titulo: "Fatura vence esta semana",
+                mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+                icone: "calendar",
+                categoria: "cartao",
+              });
+            } else if (cartao.diasParaVencimento <= 15) {
+              alertas.push({
+                id: `fatura-quinzena-${cartao.id}`,
+                tipo: "info",
+                titulo: "Fatura vence em breve",
+                mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
+                icone: "calendar-days",
+                categoria: "cartao",
+              });
+            }
           }
-          // Fatura vence esta semana (4-7 dias)
-          else if (cartao.diasParaVencimento <= 7) {
-            alertas.push({
-              id: `fatura-semana-${cartao.id}`,
-              tipo: "info",
-              titulo: "Fatura vence esta semana",
-              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
-              icone: "calendar",
-              categoria: "cartao",
-            });
-          }
-          // Fatura vence em breve (8-15 dias)
-          else if (cartao.diasParaVencimento <= 15) {
-            alertas.push({
-              id: `fatura-quinzena-${cartao.id}`,
-              tipo: "info",
-              titulo: "Fatura vence em breve",
-              mensagem: `${cartao.nome} vence em ${cartao.diasParaVencimento} dia(s). Valor: ${valorFormatado}.`,
-              icone: "calendar-days",
-              categoria: "cartao",
-            });
-          }
+          // Mês passado: não gerar alertas de vencimento
         }
 
         // Limite disponível muito baixo (< R$ 500)
@@ -364,13 +384,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
       const proximasFaturas: ProximaFatura[] = cartoesFormatados
         .filter((c) => c.totalPendente > 0)
         .map((cartao) => {
-          const hoje = new Date();
-          let dataVencimento: Date;
-          if (hoje.getDate() <= cartao.dia_vencimento) {
-            dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), cartao.dia_vencimento);
-          } else {
-            dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth() + 1, cartao.dia_vencimento);
-          }
+          const dataVencimento = new Date(mesRef.getFullYear(), mesRef.getMonth(), cartao.dia_vencimento);
 
           return {
             cartaoId: cartao.id,
