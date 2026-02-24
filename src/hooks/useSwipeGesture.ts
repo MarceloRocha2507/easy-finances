@@ -42,6 +42,8 @@ export function useSwipeGesture({
       verticalLock.current = false;
 
       if (!sidebarOpen && touch.clientX <= edgeThreshold) {
+        e.preventDefault();
+        e.stopPropagation();
         tracking.current = true;
         direction.current = "open";
       } else if (sidebarOpen) {
@@ -68,8 +70,8 @@ export function useSwipeGesture({
       }
       if (verticalLock.current) return;
 
-      // Block native browser back/forward gesture when we're tracking horizontal swipe
-      if (isDraggingRef.current && direction.current !== null) {
+      // Block native browser gestures as soon as we're tracking horizontally
+      if (tracking.current && !verticalLock.current) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -111,19 +113,30 @@ export function useSwipeGesture({
     direction.current = null;
   }, [enabled, sidebarWidth, onSwipeRight, onSwipeLeft]);
 
+  const handleTouchCancel = useCallback(() => {
+    tracking.current = false;
+    direction.current = null;
+    dragOffsetRef.current = 0;
+    isDraggingRef.current = false;
+    setDragOffset(0);
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     if (!enabled) return;
 
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchstart", handleTouchStart, { passive: false });
     document.addEventListener("touchmove", handleTouchMove, { passive: false });
     document.addEventListener("touchend", handleTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", handleTouchCancel, { passive: true });
 
     return () => {
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchCancel);
     };
-  }, [enabled, handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [enabled, handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel]);
 
   return { dragOffset, isDragging };
 }
