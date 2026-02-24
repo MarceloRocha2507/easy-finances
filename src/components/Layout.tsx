@@ -119,6 +119,14 @@ export function Layout({ children }: LayoutProps) {
         />
       </aside>
 
+      {/* Edge touch capture zone - blocks native browser gestures */}
+      {isMobile && !sidebarOpen && (
+        <div
+          className="fixed top-0 left-0 bottom-0 w-5 z-50"
+          style={{ touchAction: "none" }}
+        />
+      )}
+
       {/* Mobile overlay */}
       {showOverlay && (
         <div
