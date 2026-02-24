@@ -1,44 +1,83 @@
 
-# Ajuste Visual dos Modais: Botoes e Toggle Receita/Despesa
+# Corrigir Sidebar Mobile - Swipe e Renderizacao
 
-## Problema 1: Botoes Criar/Cancelar colados
+## Problema
 
-O `DialogFooter` usa `flex-col-reverse sm:flex-row` com `sm:space-x-2`, mas no mobile os botoes ficam empilhados sem gap suficiente entre eles.
+A imagem mostra a sidebar parcialmente aberta com conteudo cortado na borda esquerda (icones invisiveis, texto como "hshboard" ao inves de "Dashboard"). O gesto de swipe continua conflitando com a navegacao nativa do browser (voltar pagina).
 
-## Problema 2: Toggle Despesa com cor errada no modal de Categoria
+Causas identificadas:
 
-No modal de Nova Categoria (`src/pages/Categories.tsx`), o toggle usa `variant="default"` (fundo preto/primary) quando selecionado. No modal de Nova Transacao (`src/pages/Transactions.tsx`), o toggle usa classes `gradient-income` (verde) e `gradient-expense` (vermelho) corretamente.
-
----
+1. **`e.preventDefault()` chamado tarde demais**: So e chamado apos confirmar `isDraggingRef.current` (apos 10px de movimento), mas o browser ja iniciou o gesto de "voltar" antes disso
+2. **`touchstart` nao bloqueia o gesto nativo**: O listener usa `passive: true`, entao o browser ja agenda seu gesto de navegacao no momento do toque na borda
+3. **CSS `touch-action` ausente na zona de borda**: Sem `touch-action: none` na zona de captura, o browser interpreta livremente toques nessa area
+4. **Sidebar pode ficar presa em estado parcial**: Se o `touchend` nao disparar (ex: gesto cancelado pelo browser), a sidebar fica travada no meio
 
 ## Solucao
 
-### 1. DialogFooter - Aumentar espacamento (global)
+### 1. `src/hooks/useSwipeGesture.ts` - Bloquear gesto mais cedo
 
-**Arquivo: `src/components/ui/dialog.tsx`**
+**Mudancas:**
+- Registrar `touchstart` com `{ passive: false }` (nao apenas touchmove) para poder chamar `e.preventDefault()` quando o toque iniciar na zona de borda (primeiros 20px)
+- No `handleTouchStart`: se o toque esta na zona de borda e sidebar fechada, chamar `e.preventDefault()` imediatamente para impedir o browser de iniciar o gesto de voltar
+- No `handleTouchMove`: chamar `e.preventDefault()` assim que `tracking.current` for true e o movimento horizontal for detectado (antes de confirmar isDragging com 10px)
+- Adicionar `touchcancel` listener para limpar estado se o gesto for cancelado pelo sistema
 
-Alterar o `DialogFooter` de:
+### 2. `src/components/Layout.tsx` - Zona de captura com touch-action
+
+**Mudancas:**
+- Adicionar um `div` invisivel fixo na borda esquerda da tela (20px de largura, altura total) com `touch-action: none` quando a sidebar esta fechada no mobile
+- Este elemento CSS impede o browser de processar qualquer gesto nativo naquela zona, eliminando o conflito na raiz
+- Quando a sidebar esta aberta, aplicar `touch-action: none` ao overlay tambem
+
+### 3. Robustez do estado
+
+**Em `useSwipeGesture.ts`:**
+- Adicionar handler para `touchcancel` que reseta o estado (isDragging, dragOffset, tracking) para evitar sidebar presa em estado parcial
+- Garantir que `setIsDragging(false)` e `setDragOffset(0)` sao chamados em todos os cenarios de finalizacao
+
+---
+
+## Detalhes tecnicos
+
+### useSwipeGesture.ts - Codigo critico
+
 ```text
-"flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2"
+// touchstart com passive: false na zona de borda
+handleTouchStart:
+  if (!sidebarOpen && touch.clientX <= edgeThreshold) {
+    e.preventDefault()  // NOVO: bloqueia gesto nativo imediatamente
+    e.stopPropagation()
+    tracking = true
+    direction = "open"
+  }
+
+// touchmove - preventDefault mais cedo  
+handleTouchMove:
+  if (tracking && !verticalLock) {
+    e.preventDefault()  // MOVIDO: agora antes de confirmar isDragging
+    e.stopPropagation()
+  }
+
+// NOVO: touchcancel handler
+handleTouchCancel:
+  tracking = false
+  isDragging = false
+  dragOffset = 0
+  direction = null
 ```
-Para:
+
+### Layout.tsx - Zona de captura
+
 ```text
-"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2"
+{/* Zona de captura na borda esquerda - impede gesto nativo do browser */}
+{isMobile && !sidebarOpen && (
+  <div
+    className="fixed top-0 left-0 bottom-0 w-5 z-50"
+    style={{ touchAction: "none" }}
+  />
+)}
 ```
-
-Isso adiciona `gap-2` entre os botoes no mobile (coluna reversa), garantindo espacamento global em todos os modais.
-
-### 2. Toggle Receita/Despesa no modal de Nova Categoria
-
-**Arquivo: `src/pages/Categories.tsx` (linhas 315-334)**
-
-Substituir os dois `Button` do toggle por versao com classes condicionais identicas ao modal de Transacoes:
-
-- **Receita selecionada**: `gradient-income text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800`
-- **Despesa selecionada**: `gradient-expense text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800`
-- **Nao selecionado**: `variant="outline"` (neutro)
 
 ### Arquivos modificados
-
-1. `src/components/ui/dialog.tsx` - Adicionar `gap-2` ao DialogFooter
-2. `src/pages/Categories.tsx` - Corrigir cores do toggle Receita/Despesa
+1. `src/hooks/useSwipeGesture.ts` - passive:false no touchstart, preventDefault mais cedo, touchcancel handler
+2. `src/components/Layout.tsx` - div de captura na borda esquerda com touch-action:none
