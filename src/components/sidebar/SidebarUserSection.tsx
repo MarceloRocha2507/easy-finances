@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationBadge } from "./NotificationBadge";
 import { useProfile } from "@/hooks/useProfile";
+import { APP_VERSION } from "@/lib/version";
 import type { User } from "@supabase/supabase-js";
 
 interface SidebarUserSectionProps {
@@ -69,6 +70,13 @@ export const SidebarUserSection = memo(function SidebarUserSection({
           </button>
         </div>
       </div>
+      <Link 
+        to="/changelog" 
+        onClick={onClose}
+        className="block text-center text-[10px] text-muted-foreground hover:text-foreground transition-colors pt-1"
+      >
+        v{APP_VERSION}
+      </Link>
     </div>
   );
 });

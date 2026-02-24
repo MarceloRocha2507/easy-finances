@@ -20,6 +20,7 @@ import {
   Building2,
   CalendarClock,
   Bot,
+  Sparkles,
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -174,6 +175,28 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
 
       {/* Separador */}
       <div className="my-3 border-t border-border/50" />
+
+      {/* Novidades */}
+      <Link
+        to="/changelog"
+        onClick={onItemClick}
+        className={cn(
+          "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+          isActive("/changelog")
+            ? "menu-item-floating-active text-foreground font-medium"
+            : "text-muted-foreground menu-item-floating-hover"
+        )}
+      >
+        <div className={cn(
+          "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
+          isActive("/changelog")
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground group-hover:text-foreground"
+        )}>
+          <Sparkles className="h-4 w-4" />
+        </div>
+        Novidades
+      </Link>
 
       {/* Link Admin - apenas para admins */}
       {isAdmin && (
