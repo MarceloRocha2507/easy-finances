@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
@@ -11,6 +12,7 @@ interface StatCardPrimaryProps {
   subInfo?: React.ReactNode;
   delay?: number;
   actions?: React.ReactNode;
+  isLoading?: boolean;
 }
 
 export function StatCardPrimary({
@@ -21,6 +23,7 @@ export function StatCardPrimary({
   subInfo,
   delay = 0,
   actions,
+  isLoading,
 }: StatCardPrimaryProps) {
   const gradientClasses = {
     income: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-l-4 border-l-emerald-500",
@@ -60,10 +63,18 @@ export function StatCardPrimary({
             <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
               {title}
             </p>
-            <p className={cn("text-lg sm:text-2xl md:text-3xl font-bold", valueColorClasses[type])}>
-              {formatCurrency(value)}
-            </p>
-            {subInfo && <div className="mt-1 sm:mt-2">{subInfo}</div>}
+            {isLoading ? (
+              <Skeleton className="h-7 w-28 sm:h-9 sm:w-36" />
+            ) : (
+              <p className={cn("text-lg sm:text-2xl md:text-3xl font-bold", valueColorClasses[type])}>
+                {formatCurrency(value)}
+              </p>
+            )}
+            {isLoading ? (
+              <Skeleton className="h-3 w-20 mt-1 sm:mt-2" />
+            ) : (
+              subInfo && <div className="mt-1 sm:mt-2">{subInfo}</div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {actions}

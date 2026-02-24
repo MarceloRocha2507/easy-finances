@@ -12,6 +12,7 @@ import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompl
 import { formatCurrency } from "@/lib/formatters";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   BarChart,
@@ -88,12 +89,12 @@ export default function Dashboard() {
     startDate: inicioMesSelecionado,
     endDate: fimMesSelecionado,
   });
-  const { data: expensesByCategory } = useExpensesByCategory({
+  const { data: expensesByCategory, isFetching: isCategoryFetching } = useExpensesByCategory({
     startDate: inicioMesSelecionado,
     endDate: fimMesSelecionado,
   });
-  const { data: monthlyData } = useMonthlyData(mesReferencia.getFullYear());
-  const { data: completeStats } = useCompleteStats(mesReferencia);
+  const { data: monthlyData, isFetching: isMonthlyFetching } = useMonthlyData(mesReferencia.getFullYear());
+  const { data: completeStats, isFetching: isStatsFetching } = useCompleteStats(mesReferencia);
 
   const {
     data: dashboardData,
@@ -151,6 +152,7 @@ export default function Dashboard() {
           icon={Wallet}
           type="neutral"
           delay={0.05}
+          isLoading={isStatsFetching}
           actions={
             <Button 
               variant="ghost" 
@@ -183,6 +185,7 @@ export default function Dashboard() {
           icon={TrendingUp}
           type="income"
           delay={0.1}
+          isLoading={isStatsFetching}
           subInfo={<p className="text-xs text-muted-foreground hidden sm:block">recebidas</p>}
         />
 
@@ -192,6 +195,7 @@ export default function Dashboard() {
           icon={TrendingDown}
           type="expense"
           delay={0.15}
+          isLoading={isStatsFetching}
           subInfo={<p className="text-xs text-muted-foreground hidden sm:block">pagas</p>}
         />
       </div>
@@ -206,6 +210,7 @@ export default function Dashboard() {
           subInfo={<span className="hidden sm:inline">pendentes</span>}
           delay={0.2}
           prefix="+"
+          isLoading={isStatsFetching}
         />
 
         <StatCardSecondary
@@ -220,6 +225,7 @@ export default function Dashboard() {
           }
           delay={0.25}
           prefix="-"
+          isLoading={isStatsFetching}
         />
 
         <StatCardSecondary
@@ -230,6 +236,7 @@ export default function Dashboard() {
           subInfo={<span className="hidden sm:inline">titular do mês</span>}
           delay={0.3}
           prefix="-"
+          isLoading={isStatsFetching}
         />
 
         <StatCardSecondary
@@ -241,6 +248,7 @@ export default function Dashboard() {
           delay={0.35}
           prefix="-"
           onClick={() => setDespesasDialogOpen(true)}
+          isLoading={isStatsFetching}
         />
       </div>
 
@@ -249,12 +257,13 @@ export default function Dashboard() {
         <EstimatedBalanceBanner
           value={completeStats?.estimatedBalance || 0}
           delay={0.4}
+          isLoading={isStatsFetching}
         />
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <PieChartWithLegend data={pieData} delay={0.45} />
+        <PieChartWithLegend data={pieData} delay={0.45} isLoading={isCategoryFetching} />
 
         <Card className="border rounded-xl shadow-sm animate-fade-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
           <CardHeader className="pb-2">
@@ -264,7 +273,11 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {hasMonthlyData ? (
+            {isMonthlyFetching ? (
+              <div className="h-[220px] flex items-center justify-center">
+                <Skeleton className="w-full h-[200px] rounded-xl" />
+              </div>
+            ) : hasMonthlyData ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart
                   data={monthlyData}
