@@ -75,7 +75,7 @@ export const SidebarUserSection = memo(function SidebarUserSection({
         onClick={onClose}
         className="block text-center text-[10px] text-muted-foreground hover:text-foreground transition-colors pt-1"
       >
-        v{APP_VERSION_DISPLAY}
+        {APP_VERSION_DISPLAY}
       </Link>
     </div>
   );
