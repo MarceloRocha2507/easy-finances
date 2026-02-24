@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
+import { Badge } from '@/components/ui/badge';
 import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
 import { StatCardSecondary } from '@/components/dashboard/StatCardSecondary';
 import { useAuth } from '@/hooks/useAuth';
@@ -129,6 +132,8 @@ export default function Transactions() {
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
 
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: faturasVirtuais } = useFaturasNaListagem();
   const queryClient = useQueryClient();
 
   const { data: transactionsData, isLoading, isFetching } = useTransactionsWithBalance({
@@ -169,15 +174,17 @@ export default function Transactions() {
     [searchedTransactions]
   );
   
-  const expenseTransactions = useMemo(() => 
-    searchedTransactions.filter(t => t.type === 'expense'), 
-    [searchedTransactions]
-  );
+  const expenseTransactions = useMemo(() => {
+    const expenses = searchedTransactions.filter(t => t.type === 'expense');
+    // Mesclar faturas virtuais de cartão
+    const combinadas = [...expenses, ...(faturasVirtuais || [])] as (Transaction | FaturaVirtual)[];
+    return combinadas;
+  }, [searchedTransactions, faturasVirtuais]);
   
   const fixedExpenseTransactions = useMemo(() => 
     expenseTransactions.filter(t => 
-      FIXED_EXPENSE_CATEGORIES.includes(t.category?.name || '')
-    ), 
+      !('isFaturaCartao' in t) && FIXED_EXPENSE_CATEGORIES.includes((t as Transaction).category?.name || '')
+    ) as Transaction[], 
     [expenseTransactions]
   );
 
@@ -187,21 +194,30 @@ export default function Transactions() {
   );
 
   // Transações ativas baseado na tab
-  const activeTransactions = useMemo(() => {
+  const activeTransactions = useMemo((): (Transaction | FaturaVirtual)[] => {
     switch (activeTab) {
       case 'income': return incomeTransactions;
       case 'expense': return expenseTransactions;
       case 'pending': return pendingTransactions;
       case 'fixed': return fixedExpenseTransactions;
-      default: return searchedTransactions;
+      default: return [...searchedTransactions, ...(faturasVirtuais || [])];
     }
-  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions]);
+  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasVirtuais]);
 
-  // Ordenar transações por data de criação (mais recente primeiro)
+  // Ordenar transações por data (mais recente primeiro), faturas futuras ao final
   const sortedTransactions = useMemo(() => {
-    return [...activeTransactions].sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    return [...activeTransactions].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      // Ambas no passado/presente: ordenar por created_at desc
+      // Uma futura e outra não: futura vai ao final
+      const now = Date.now();
+      const aFuture = dateA > now;
+      const bFuture = dateB > now;
+      if (aFuture !== bFuture) return aFuture ? 1 : -1;
+      if (aFuture && bFuture) return dateA - dateB; // futuras em ordem cronológica
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }, [activeTransactions]);
 
   // Filtrar categorias pelo tipo selecionado
@@ -884,19 +900,27 @@ export default function Transactions() {
               </CardContent>
             </Card>
           ) : (
-            sortedTransactions.map((transaction) => (
-              <TransactionRow 
-                key={transaction.id} 
-                transaction={transaction}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onMarkAsPaid={handleMarkAsPaid}
-                onDuplicate={handleDuplicate}
-                onView={setViewingTransaction}
-                saldoApos={saldoMap?.get(transaction.id)}
-                isUltimaTransacao={transaction.id === ultimaTransacaoId}
-                totalGuardado={totalGuardado}
-              />
+            sortedTransactions.map((item) => (
+              'isFaturaCartao' in item ? (
+                <FaturaCartaoRow 
+                  key={item.id} 
+                  fatura={item as FaturaVirtual}
+                  onClick={() => navigate(`/cartoes`)}
+                />
+              ) : (
+                <TransactionRow 
+                  key={item.id} 
+                  transaction={item as Transaction}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onMarkAsPaid={handleMarkAsPaid}
+                  onDuplicate={handleDuplicate}
+                  onView={setViewingTransaction}
+                  saldoApos={saldoMap?.get(item.id)}
+                  isUltimaTransacao={item.id === ultimaTransacaoId}
+                  totalGuardado={totalGuardado}
+                />
+              )
             ))
           )}
         </div>
@@ -955,7 +979,8 @@ interface TransactionRowProps {
 }
 
 function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
-  const IconComponent = getIconComponent(transaction.category?.icon || 'package');
+  const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.description?.startsWith('Fatura ');
+  const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
@@ -965,23 +990,27 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
       {/* Ícone da categoria */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
-        isPending 
-          ? isOverdue 
-            ? 'bg-red-100 dark:bg-red-900/30'
-            : 'bg-amber-100 dark:bg-amber-900/30'
-          : transaction.type === 'income' 
-            ? 'bg-emerald-100 dark:bg-emerald-900/30' 
-            : 'bg-red-100 dark:bg-red-900/30'
+        isFaturaCartaoPaga
+          ? 'bg-violet-100 dark:bg-violet-900/30'
+          : isPending 
+            ? isOverdue 
+              ? 'bg-red-100 dark:bg-red-900/30'
+              : 'bg-amber-100 dark:bg-amber-900/30'
+            : transaction.type === 'income' 
+              ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+              : 'bg-red-100 dark:bg-red-900/30'
       )}>
         <IconComponent className={cn(
           "w-3.5 h-3.5 sm:w-4 sm:h-4",
-          isPending 
-            ? isOverdue 
-              ? 'text-red-600'
-              : 'text-amber-600'
-            : transaction.type === 'income' 
-              ? 'text-emerald-600' 
-              : 'text-red-600'
+          isFaturaCartaoPaga
+            ? 'text-violet-600'
+            : isPending 
+              ? isOverdue 
+                ? 'text-red-600'
+                : 'text-amber-600'
+              : transaction.type === 'income' 
+                ? 'text-emerald-600' 
+                : 'text-red-600'
         )} />
       </div>
       
@@ -996,6 +1025,13 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
               {transaction.numero_parcela}/{transaction.total_parcelas}
             </span>
+          )}
+          {/* Badge de fatura paga */}
+          {isFaturaCartaoPaga && (
+            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hidden sm:inline-flex">
+              <CreditCard className="w-3 h-3 mr-0.5" />
+              Cartão
+            </Badge>
           )}
           {/* Ícone de Fixa */}
           {transaction.tipo_lancamento === 'fixa' && (
@@ -1174,6 +1210,58 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           </AlertDialog>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Componente para fatura virtual de cartão
+interface FaturaCartaoRowProps {
+  fatura: FaturaVirtual;
+  onClick: () => void;
+}
+
+function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
+  const statusConfig = {
+    aberta: { label: 'Em aberto', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    fechada: { label: 'Fechada', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    pendente: { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
+  };
+
+  const status = statusConfig[fatura.statusFatura];
+
+  return (
+    <div 
+      className="group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
+      onClick={onClick}
+    >
+      {/* Ícone de cartão com fundo roxo */}
+      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0 bg-violet-100 dark:bg-violet-900/30">
+        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-600" />
+      </div>
+      
+      {/* Descrição + Status */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <p className="font-medium text-foreground truncate text-sm sm:text-base">
+            {fatura.description}
+          </p>
+          <Badge variant="outline" className={cn("text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-0", status.className)}>
+            {status.label}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+          <span>Vence {format(parseISO(fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}</span>
+          <span className="hidden sm:inline text-muted-foreground/50">•</span>
+          <span className="hidden sm:inline" style={{ color: fatura.cartaoCor }}>
+            {fatura.cartaoNome}
+          </span>
+        </div>
+      </div>
+      
+      {/* Valor */}
+      <span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-red-600">
+        -{formatCurrency(fatura.amount)}
+      </span>
     </div>
   );
 }
