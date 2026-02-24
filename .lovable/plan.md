@@ -1,44 +1,137 @@
 
 
-# Filtrar Faturas de Cartao pelo Mes Selecionado
+# Organizar Listagem por Grupos com Cabecalhos Colapsaveis
 
-## Problema
+## Visao Geral
 
-As faturas virtuais de cartao sempre mostram o mes atual + proximos 3, independente do filtro de data selecionado na tela de Transacoes. O usuario espera ver apenas as faturas correspondentes ao mes/periodo filtrado.
+Reorganizar a listagem de transacoes para agrupar itens por tipo, com cabecalhos visuais contendo subtotal, e permitir recolher/expandir cada grupo. Cada grupo tera diferenciacao visual (cores de borda/fundo).
 
-## Solucao
+## Grupos definidos
 
-Filtrar as faturas virtuais pela data de vencimento (`date`) com base no intervalo de datas selecionado (`dataInicial` / `dataFinal`), antes de mescla-las com as transacoes reais.
+Dependendo da tab ativa:
 
-## Arquivo modificado
+- **Tab "Despesas"**: 3 grupos possiveis
+  1. Faturas de Cartao (icone roxo, borda roxa) -- itens com `isFaturaCartao` ou categoria "Fatura de Cartao"
+  2. Despesas Fixas/Recorrentes (icone amarelo, borda amarela) -- `tipo_lancamento === 'fixa'` ou `is_recurring`
+  3. Despesas Comuns (icone vermelho, borda vermelha) -- todas as outras despesas
+
+- **Tab "Receitas"**: 2 grupos
+  1. Receitas Fixas/Recorrentes (borda verde-escuro)
+  2. Receitas Avulsas (borda verde)
+
+- **Tab "Todos"**: todos os grupos acima combinados
+
+- **Tab "Pendentes"** e **Tab "Fixas"**: sem agrupamento (ja sao filtros especificos)
+
+## Arquivos modificados
 
 ### `src/pages/Transactions.tsx`
 
-Alterar o `expenseTransactions` (e o `activeTransactions` na tab "all") para filtrar `faturasVirtuais` pelo periodo selecionado:
+#### 1. Novo tipo e logica de agrupamento
+
+Criar funcao `agruparTransacoes` que recebe o array de `sortedTransactions` e a `activeTab`, e retorna:
 
 ```text
-const expenseTransactions = useMemo(() => {
-  const expenses = searchedTransactions.filter(t => t.type === 'expense');
-  
-  // Filtrar faturas virtuais pelo período selecionado
-  const faturasFiltradas = (faturasVirtuais || []).filter(f => {
-    const faturaDate = f.date; // yyyy-MM-dd
-    if (startDate && faturaDate < startDate) return false;
-    if (endDate && faturaDate > endDate) return false;
-    return true;
-  });
-  
-  const combinadas = [...expenses, ...faturasFiltradas];
-  return combinadas;
-}, [searchedTransactions, faturasVirtuais, startDate, endDate]);
+type GrupoTransacao = {
+  key: string;
+  label: string;
+  icon: React.ComponentType;
+  colorClass: string;       // classes de cor do cabecalho
+  bgClass: string;           // fundo leve nos itens do grupo
+  borderClass: string;       // borda esquerda nos itens
+  items: (Transaction | FaturaVirtual)[];
+  subtotal: number;
+};
 ```
 
-A mesma filtragem sera aplicada na tab "all" (`activeTransactions`), usando `faturasFiltradas` ao inves de `faturasVirtuais` diretamente.
+A funcao classifica cada item em seu grupo, calcula o subtotal e ordena os itens por data de vencimento dentro de cada grupo.
 
-## Detalhes tecnicos
+#### 2. Estado de grupos colapsados
 
-- Criar uma variavel `faturasFiltradas` via `useMemo` que aplica o filtro de `startDate`/`endDate` sobre `faturasVirtuais`
-- Usar essa variavel filtrada em `expenseTransactions` e em `activeTransactions` (tab "all")
-- A comparacao de strings `yyyy-MM-dd` funciona corretamente para ordenacao/filtragem cronologica
-- Nenhuma mudanca no hook `useFaturasNaListagem` e necessaria - ele continua buscando os dados brutos e a filtragem e feita no componente
+Adicionar `const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())` para controlar quais grupos estao recolhidos.
+
+Funcao toggle: `toggleGroup(key)` que adiciona/remove do Set.
+
+#### 3. Componente `GroupHeader`
+
+Cabecalho clicavel para cada grupo com:
+- Icone do grupo (CreditCard roxo, TrendingDown vermelho, TrendingUp verde, RefreshCw amarelo)
+- Label do grupo (ex: "Faturas de Cartao")
+- Quantidade de itens entre parenteses
+- Subtotal formatado (ex: "R$ 867,94")
+- Seta de chevron indicando expandido/recolhido
+- Fundo leve com a cor do grupo
+
+#### 4. Renderizacao agrupada
+
+Substituir o `sortedTransactions.map(...)` atual por:
+
+```text
+{grupos.map(grupo => (
+  <div key={grupo.key}>
+    <GroupHeader grupo={grupo} collapsed={...} onToggle={...} />
+    {!collapsed && (
+      <div className="space-y-0.5">
+        {grupo.items.map(item => (
+          // renderizar TransactionRow ou FaturaCartaoRow com borda esquerda colorida
+        ))}
+      </div>
+    )}
+  </div>
+))}
+```
+
+#### 5. Diferenciacao visual nos itens
+
+Cada item dentro de um grupo recebe:
+- **Faturas de cartao**: `border-l-2 border-violet-400 bg-violet-50/30`
+- **Despesas comuns**: `border-l-2 border-red-300 bg-red-50/20`
+- **Receitas**: `border-l-2 border-emerald-300 bg-emerald-50/20`
+- **Fixas/Recorrentes**: `border-l-2 border-amber-300 bg-amber-50/20`
+- **Pendentes**: `bg-amber-50/30` (ja existente, manter)
+
+#### 6. Tabs sem agrupamento
+
+Nas tabs "Pendentes" e "Fixas", manter a listagem flat sem agrupamento (esses ja sao filtros especificos).
+
+## Logica de classificacao dos itens
+
+```text
+function classificarItem(item, activeTab):
+  if 'isFaturaCartao' in item:
+    return 'faturas'
+  if item.category?.name === 'Fatura de Cartao':
+    return 'faturas'
+  if item.tipo_lancamento === 'fixa' || item.is_recurring:
+    return 'fixas'
+  if item.type === 'income':
+    return 'receitas'
+  return 'despesas'
+```
+
+## Ordenacao dentro dos grupos
+
+Itens dentro de cada grupo ordenados por `date` (data de vencimento), do mais proximo para o mais distante.
+
+## Ordem dos grupos na tela
+
+1. Faturas de Cartao (primeiro, pois sao compromissos com data fixa)
+2. Despesas Fixas/Recorrentes
+3. Despesas Comuns
+4. Receitas (na tab "Todos")
+
+## Importacoes adicionais necessarias
+
+- `ChevronDown`, `ChevronRight` de lucide-react (para indicador de colapsado)
+- `Collapsible`, `CollapsibleContent`, `CollapsibleTrigger` do radix (ja instalado)
+
+## Resumo de alteracoes
+
+- **Arquivo unico modificado**: `src/pages/Transactions.tsx`
+- Adicionar funcao `agruparTransacoes`
+- Adicionar componente `GroupHeader`
+- Adicionar estado `collapsedGroups`
+- Substituir renderizacao flat por renderizacao agrupada
+- Adicionar classes de borda/fundo nos itens por grupo
+- Manter comportamento flat nas tabs "Pendentes" e "Fixas"
 
