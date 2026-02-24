@@ -1427,10 +1427,6 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
         </div>
       </div>
       
-      {/* Valor */}
-      <span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-red-600">
-        -{formatCurrency(fatura.amount)}
-      </span>
     </div>
   );
 }
