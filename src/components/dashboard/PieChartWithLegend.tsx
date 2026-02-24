@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   PieChart,
   Pie,
@@ -21,6 +22,7 @@ interface PieDataItem {
 interface PieChartWithLegendProps {
   data: PieDataItem[];
   delay?: number;
+  isLoading?: boolean;
 }
 
 const renderActiveShape = (props: any) => {
@@ -70,7 +72,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps) {
+export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithLegendProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const total = data.reduce((sum, item) => sum + item.value, 0);
@@ -95,7 +97,27 @@ export function PieChartWithLegend({ data, delay = 0 }: PieChartWithLegendProps)
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
-        {data.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4 h-full">
+            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 200, height: 200 }}>
+              <Skeleton className="w-[160px] h-[160px] rounded-full" />
+            </div>
+            <div className="w-full md:w-auto md:min-w-[180px] space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="w-3 h-3 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="text-right space-y-1">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                    <Skeleton className="h-3 w-10 ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : data.length > 0 ? (
           <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4 h-full">
             {/* Chart */}
             <div className="flex-shrink-0">

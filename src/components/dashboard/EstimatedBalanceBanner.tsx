@@ -5,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
@@ -12,11 +13,13 @@ import { formatCurrency } from "@/lib/formatters";
 interface EstimatedBalanceBannerProps {
   value: number;
   delay?: number;
+  isLoading?: boolean;
 }
 
 export function EstimatedBalanceBanner({
   value,
   delay = 0,
+  isLoading,
 }: EstimatedBalanceBannerProps) {
   const isPositive = value >= 0;
 
@@ -55,14 +58,18 @@ export function EstimatedBalanceBanner({
               </TooltipProvider>
             </div>
 
-            <p
-              className={cn(
-                "text-2xl sm:text-3xl md:text-4xl font-bold",
-                isPositive ? "text-emerald-400" : "text-rose-400"
-              )}
-            >
-              {formatCurrency(value)}
-            </p>
+            {isLoading ? (
+              <Skeleton className="h-8 w-40 sm:h-10 sm:w-48 bg-white/10" />
+            ) : (
+              <p
+                className={cn(
+                  "text-2xl sm:text-3xl md:text-4xl font-bold",
+                  isPositive ? "text-emerald-400" : "text-rose-400"
+                )}
+              >
+                {formatCurrency(value)}
+              </p>
+            )}
 
             <p className="text-xs text-white/50 mt-2 sm:mt-3 hidden sm:block">
               saldo real + receitas pendentes - despesas pendentes - cartão

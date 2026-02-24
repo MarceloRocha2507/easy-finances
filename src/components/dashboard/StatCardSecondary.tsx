@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
@@ -14,6 +15,7 @@ interface StatCardSecondaryProps {
   onClick?: () => void;
   prefix?: string;
   formatValue?: (value: number) => string;
+  isLoading?: boolean;
 }
 
 export function StatCardSecondary({
@@ -26,6 +28,7 @@ export function StatCardSecondary({
   onClick,
   prefix = "",
   formatValue,
+  isLoading,
 }: StatCardSecondaryProps) {
   const borderClasses = {
     pending: "border-l-4 border-l-blue-500",
@@ -77,11 +80,19 @@ export function StatCardSecondary({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">{title}</p>
-            <p className={cn("text-base sm:text-xl font-semibold", valueColorClasses[status])}>
-              {prefix}{formatValue ? formatValue(value) : formatCurrency(value)}
-            </p>
-            {subInfo && (
-              <p className="text-xs text-muted-foreground mt-1">{subInfo}</p>
+            {isLoading ? (
+              <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" />
+            ) : (
+              <p className={cn("text-base sm:text-xl font-semibold", valueColorClasses[status])}>
+                {prefix}{formatValue ? formatValue(value) : formatCurrency(value)}
+              </p>
+            )}
+            {isLoading ? (
+              <Skeleton className="h-3 w-16 mt-1" />
+            ) : (
+              subInfo && (
+                <p className="text-xs text-muted-foreground mt-1">{subInfo}</p>
+              )
             )}
           </div>
           <div
