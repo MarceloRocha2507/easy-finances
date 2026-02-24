@@ -1,16 +1,3 @@
-
-
-# Atualizar .lovable/plan.md
-
-O plano atual descreve a tarefa de adicionar o valor da fatura como pendente. Como a implementacao ja foi concluida com sucesso, o arquivo sera atualizado para refletir o status atual.
-
-## Alteracao
-
-**Arquivo**: `.lovable/plan.md`
-
-Atualizar o conteudo para indicar que a tarefa foi concluida, adicionando uma secao de status e marcando como implementado. O conteudo ficara:
-
-```text
 # Adicionar valor da fatura em cada linha de cartao
 
 ## Status: Concluido
@@ -29,5 +16,3 @@ Cada linha de fatura exibe:
 - Nome da fatura + badge de status
 - Data de vencimento + nome do cartao
 - Valor da fatura (a direita)
-```
-
