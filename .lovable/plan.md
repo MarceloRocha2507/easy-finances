@@ -1,65 +1,77 @@
 
 
-# Versionamento incremental automatico
+# Skeleton Loading ao navegar entre meses no Dashboard
 
-## Abordagem
+## Problema
 
-Gerar um numero de build automatico e incremental a cada deploy, sem precisar alterar nada manualmente. O numero sera derivado do tempo decorrido desde o lancamento do app, garantindo que sempre aumente.
+Ao trocar de mes usando os botoes de navegacao, os cards do dashboard mostram "R$ 0,00" brevemente enquanto os dados carregam, causando um flash visual desagradavel (como mostrado na screenshot).
 
-## Como funciona
+## Solucao
 
-O sistema calcula quantos minutos se passaram desde a data de lancamento (24/02/2026). Cada build gera um numero unico e crescente.
+Adicionar uma prop `isLoading` aos componentes de cards e ao banner, e no Dashboard usar `isFetching` dos hooks de query para acionar o skeleton. Quando `isFetching` for true, os componentes exibem Skeleton em vez dos valores.
 
-Exemplos na sidebar:
-- Primeiro deploy: `Build #1`
-- Deploy 2 horas depois: `Build #120`
-- Deploy no dia seguinte: `Build #1500`
+## Alteracoes
 
-## Detalhes tecnicos
+### 1. `src/components/dashboard/StatCardPrimary.tsx`
 
-### 1. `src/lib/version.ts`
-
-Substituir o sufixo de data pelo calculo de build incremental:
+Adicionar prop opcional `isLoading?: boolean`. Quando true, substituir o valor formatado e o subInfo por componentes `<Skeleton />`:
 
 ```typescript
-declare const __BUILD_DATE__: string;
+// No lugar do valor:
+isLoading ? <Skeleton className="h-7 w-28 sm:h-9 sm:w-36" /> : <p ...>{formatCurrency(value)}</p>
 
-export const APP_VERSION = "1.0.0";
-export const APP_BUILD_DATE = __BUILD_DATE__;
-
-// Numero de build = minutos desde o lancamento
-const LAUNCH_DATE = new Date("2026-02-24T00:00:00Z");
-const buildDate = new Date(APP_BUILD_DATE);
-export const APP_BUILD_NUMBER = Math.floor(
-  (buildDate.getTime() - LAUNCH_DATE.getTime()) / 60000
-);
-
-export const APP_VERSION_DISPLAY = `Build #${APP_BUILD_NUMBER}`;
+// No lugar do subInfo:
+isLoading ? <Skeleton className="h-3 w-20 mt-1" /> : subInfo
 ```
 
-### 2. `src/components/sidebar/SidebarUserSection.tsx`
+### 2. `src/components/dashboard/StatCardSecondary.tsx`
 
-Ajustar a exibicao no rodape (remover o prefixo "v" ja que agora mostra "Build #N"):
+Mesma abordagem - prop `isLoading?: boolean`. Quando true, substituir valor e subInfo por Skeleton:
 
 ```typescript
-// De:
-v{APP_VERSION_DISPLAY}
-// Para:
-{APP_VERSION_DISPLAY}
+isLoading ? <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" /> : <p ...>{prefix}{formatCurrency(value)}</p>
+isLoading ? <Skeleton className="h-3 w-16 mt-1" /> : <p ...>{subInfo}</p>
 ```
 
-### 3. `vite.config.ts`
+### 3. `src/components/dashboard/EstimatedBalanceBanner.tsx`
 
-Sem alteracao. O `__BUILD_DATE__` ja esta sendo injetado corretamente.
+Prop `isLoading?: boolean`. Substituir o valor central por Skeleton com fundo semi-transparente para combinar com o fundo escuro:
 
-### 4. `src/pages/Changelog.tsx` e `src/components/WhatsNewDialog.tsx`
+```typescript
+isLoading ? <Skeleton className="h-8 w-40 sm:h-10 sm:w-48 bg-white/10" /> : <p ...>{formatCurrency(value)}</p>
+```
 
-Sem alteracao. Continuam usando `APP_VERSION` para controle de changelog.
+### 4. `src/components/dashboard/PieChartWithLegend.tsx`
 
-## Resultado
+Prop `isLoading?: boolean`. Quando true, exibir skeletons no lugar do grafico (circulo skeleton + linhas de legenda skeleton).
 
-- Cada deploy gera automaticamente um numero de build unico e crescente
-- Nenhuma acao manual necessaria
-- O changelog continua controlado pela versao semantica (1.0.0)
-- Visual limpo no rodape: "Build #1234"
+### 5. `src/pages/Dashboard.tsx`
 
+- Extrair `isFetching` de `useCompleteStats`:
+  ```typescript
+  const { data: completeStats, isFetching: isStatsFetching } = useCompleteStats(mesReferencia);
+  ```
+- Extrair `isFetching` de `useExpensesByCategory`:
+  ```typescript
+  const { data: expensesByCategory, isFetching: isCategoryFetching } = useExpensesByCategory(...);
+  ```
+- Passar `isLoading={isStatsFetching}` para todos os StatCardPrimary, StatCardSecondary e EstimatedBalanceBanner
+- Passar `isLoading={isCategoryFetching}` para PieChartWithLegend
+- Para o grafico de barras inline, usar skeleton condicional com `isLoading` de `useMonthlyData`
+
+### Arquivos modificados
+
+| Arquivo | Alteracao |
+|---|---|
+| `src/components/dashboard/StatCardPrimary.tsx` | Adicionar prop `isLoading`, renderizar Skeleton condicionalmente |
+| `src/components/dashboard/StatCardSecondary.tsx` | Adicionar prop `isLoading`, renderizar Skeleton condicionalmente |
+| `src/components/dashboard/EstimatedBalanceBanner.tsx` | Adicionar prop `isLoading`, Skeleton com estilo escuro |
+| `src/components/dashboard/PieChartWithLegend.tsx` | Adicionar prop `isLoading`, Skeleton para grafico e legenda |
+| `src/pages/Dashboard.tsx` | Extrair `isFetching` dos hooks e passar como `isLoading` aos componentes |
+
+### Resultado
+
+- Ao clicar nos botoes < > de navegacao de mes, todos os cards exibem skeletons animados imediatamente
+- Nenhum valor "R$ 0,00" visivel durante o carregamento
+- Skeletons usam o componente `Skeleton` do shadcn/ui ja existente no projeto
+- Animacao pulse padrao do Tailwind, consistente com o design system
