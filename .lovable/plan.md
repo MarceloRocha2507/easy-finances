@@ -1,67 +1,65 @@
 
 
-# Versao automatica no build
+# Versionamento incremental automatico
 
-## Problema
+## Abordagem
 
-A versao do sistema (`APP_VERSION = "1.0.0"`) e um valor estatico em `src/lib/version.ts`. Quando voce publica uma atualizacao (Update), o valor nao muda porque ninguem o incrementa manualmente.
+Gerar um numero de build automatico e incremental a cada deploy, sem precisar alterar nada manualmente. O numero sera derivado do tempo decorrido desde o lancamento do app, garantindo que sempre aumente.
 
-## Solucao
+## Como funciona
 
-Usar o Vite para injetar automaticamente a data/hora do build como identificador de versao. Assim, cada vez que o app for publicado, a versao reflete o momento do deploy.
+O sistema calcula quantos minutos se passaram desde a data de lancamento (24/02/2026). Cada build gera um numero unico e crescente.
 
-A versao ficara no formato: `1.0.0+YYMMDD.HHmm` (ex: `1.0.0+260224.1430`), mantendo a versao semantica base mas adicionando um sufixo de build unico.
+Exemplos na sidebar:
+- Primeiro deploy: `Build #1`
+- Deploy 2 horas depois: `Build #120`
+- Deploy no dia seguinte: `Build #1500`
 
-## Alteracoes
+## Detalhes tecnicos
 
-### 1. `vite.config.ts`
+### 1. `src/lib/version.ts`
 
-Adicionar um `define` que injeta a data/hora do build como variavel global:
-
-```typescript
-define: {
-  __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
-}
-```
-
-### 2. `src/lib/version.ts`
-
-- Declarar `__BUILD_DATE__` como variavel global
-- Criar `APP_BUILD_DATE` a partir dela
-- Gerar `APP_VERSION_DISPLAY` que combina a versao base com o sufixo de build (ex: `1.0.0+260224.1430`)
-- Manter `APP_VERSION` como versao semantica base para o changelog e comparacao no `WhatsNewDialog`
+Substituir o sufixo de data pelo calculo de build incremental:
 
 ```typescript
 declare const __BUILD_DATE__: string;
 
-export const APP_VERSION = "1.0.0"; // versao semantica (manual)
+export const APP_VERSION = "1.0.0";
 export const APP_BUILD_DATE = __BUILD_DATE__;
 
-// Gera sufixo: YYMMDD.HHmm
-const bd = new Date(APP_BUILD_DATE);
-const suffix = [
-  String(bd.getFullYear()).slice(2),
-  String(bd.getMonth() + 1).padStart(2, "0"),
-  String(bd.getDate()).padStart(2, "0"),
-  ".",
-  String(bd.getHours()).padStart(2, "0"),
-  String(bd.getMinutes()).padStart(2, "0"),
-].join("");
+// Numero de build = minutos desde o lancamento
+const LAUNCH_DATE = new Date("2026-02-24T00:00:00Z");
+const buildDate = new Date(APP_BUILD_DATE);
+export const APP_BUILD_NUMBER = Math.floor(
+  (buildDate.getTime() - LAUNCH_DATE.getTime()) / 60000
+);
 
-export const APP_VERSION_DISPLAY = `${APP_VERSION}+${suffix}`;
+export const APP_VERSION_DISPLAY = `Build #${APP_BUILD_NUMBER}`;
 ```
 
-### 3. `src/components/sidebar/SidebarUserSection.tsx`
+### 2. `src/components/sidebar/SidebarUserSection.tsx`
 
-Trocar `APP_VERSION` por `APP_VERSION_DISPLAY` para exibir a versao com sufixo de build no rodape da sidebar.
+Ajustar a exibicao no rodape (remover o prefixo "v" ja que agora mostra "Build #N"):
+
+```typescript
+// De:
+v{APP_VERSION_DISPLAY}
+// Para:
+{APP_VERSION_DISPLAY}
+```
+
+### 3. `vite.config.ts`
+
+Sem alteracao. O `__BUILD_DATE__` ja esta sendo injetado corretamente.
 
 ### 4. `src/pages/Changelog.tsx` e `src/components/WhatsNewDialog.tsx`
 
-Sem alteracao. Continuam usando `APP_VERSION` (versao semantica) para controle de changelog e notificacao.
+Sem alteracao. Continuam usando `APP_VERSION` para controle de changelog.
 
 ## Resultado
 
-- Cada deploy gera uma versao unica visivel na sidebar (ex: `v1.0.0+260224.1430`)
-- O changelog continua controlado manualmente pela versao semantica
-- O `WhatsNewDialog` so aparece quando a versao semantica base muda (novo release real)
+- Cada deploy gera automaticamente um numero de build unico e crescente
+- Nenhuma acao manual necessaria
+- O changelog continua controlado pela versao semantica (1.0.0)
+- Visual limpo no rodape: "Build #1234"
 
