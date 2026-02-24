@@ -1,5 +1,21 @@
+declare const __BUILD_DATE__: string;
+
 export const APP_VERSION = "1.0.0";
 export const APP_VERSION_DATE = "2026-02-24";
+export const APP_BUILD_DATE = __BUILD_DATE__;
+
+// Gera sufixo: YYMMDD.HHmm
+const bd = new Date(APP_BUILD_DATE);
+const suffix = [
+  String(bd.getFullYear()).slice(2),
+  String(bd.getMonth() + 1).padStart(2, "0"),
+  String(bd.getDate()).padStart(2, "0"),
+  ".",
+  String(bd.getHours()).padStart(2, "0"),
+  String(bd.getMinutes()).padStart(2, "0"),
+].join("");
+
+export const APP_VERSION_DISPLAY = `${APP_VERSION}+${suffix}`;
 
 export type ChangeType = "feature" | "fix" | "improvement";
 
