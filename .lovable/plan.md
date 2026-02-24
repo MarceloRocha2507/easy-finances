@@ -1,27 +1,30 @@
 
 
-# Remover valor (saldo) das faturas de cartão na listagem de Transações
+# Adicionar valor da fatura em cada linha de cartao
 
 ## O que muda
 
-Na tela `/transactions`, as linhas de fatura de cartão (FaturaCartaoRow) atualmente mostram o valor individual à direita (ex: `-R$ 500,00`). O plano é remover essa exibição de valor, já que o subtotal do grupo "Faturas de Cartão" no cabeçalho já mostra o total.
+Cada linha de fatura de cartao na listagem de Transacoes voltara a exibir o valor individual, posicionado a direita da linha (apos a descricao e status), como e padrao nas linhas de transacao comum.
 
-## Alteração
+## Alteracao
 
 **Arquivo**: `src/pages/Transactions.tsx`
 
-Remover o bloco de valor (linhas 1430-1433) do componente `FaturaCartaoRow`:
+No componente `FaturaCartaoRow`, adicionar o valor da fatura de volta, posicionado apos o bloco de descricao (antes do fechamento do div principal):
 
 ```text
-// REMOVER:
-<span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-red-600">
-  -{formatCurrency(fatura.amount)}
+<span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-muted-foreground">
+  {formatCurrency(fatura.amount)}
 </span>
 ```
 
-O componente manterá:
-- Ícone de cartão roxo
-- Nome da fatura + badge de status
-- Data de vencimento + nome do cartão
+Diferencas em relacao a versao anterior:
+- Cor: `text-muted-foreground` em vez de `text-red-600`, para manter o visual limpo e discreto (nao vermelho gritante)
+- Sem o prefixo "-" no valor, ja que o `formatCurrency` formata como "R$ 1.753,42"
 
-Sem o valor individual, a linha fica mais limpa e o subtotal no cabeçalho do grupo já cobre essa informação.
+O componente ficara:
+- Icone de cartao roxo
+- Nome da fatura + badge de status
+- Data de vencimento + nome do cartao
+- **Valor da fatura (a direita)**
+
