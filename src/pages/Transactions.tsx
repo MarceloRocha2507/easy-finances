@@ -174,12 +174,20 @@ export default function Transactions() {
     [searchedTransactions]
   );
   
+  // Filtrar faturas virtuais pelo período selecionado
+  const faturasFiltradas = useMemo(() => {
+    return (faturasVirtuais || []).filter(f => {
+      if (startDate && f.date < startDate) return false;
+      if (endDate && f.date > endDate) return false;
+      return true;
+    });
+  }, [faturasVirtuais, startDate, endDate]);
+
   const expenseTransactions = useMemo(() => {
     const expenses = searchedTransactions.filter(t => t.type === 'expense');
-    // Mesclar faturas virtuais de cartão
-    const combinadas = [...expenses, ...(faturasVirtuais || [])] as (Transaction | FaturaVirtual)[];
+    const combinadas = [...expenses, ...faturasFiltradas] as (Transaction | FaturaVirtual)[];
     return combinadas;
-  }, [searchedTransactions, faturasVirtuais]);
+  }, [searchedTransactions, faturasFiltradas]);
   
   const fixedExpenseTransactions = useMemo(() => 
     expenseTransactions.filter(t => 
@@ -200,9 +208,9 @@ export default function Transactions() {
       case 'expense': return expenseTransactions;
       case 'pending': return pendingTransactions;
       case 'fixed': return fixedExpenseTransactions;
-      default: return [...searchedTransactions, ...(faturasVirtuais || [])];
+      default: return [...searchedTransactions, ...faturasFiltradas];
     }
-  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasVirtuais]);
+  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasFiltradas]);
 
   // Ordenar transações por data (mais recente primeiro), faturas futuras ao final
   const sortedTransactions = useMemo(() => {
