@@ -118,10 +118,6 @@ function formatTransactionDay(dateStr: string, createdAt?: string): string {
 type GrupoTransacao = {
   key: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  colorClass: string;
-  bgClass: string;
-  borderClass: string;
   items: (Transaction | FaturaVirtual)[];
   subtotal: number;
 };
@@ -130,56 +126,26 @@ const GRUPO_CONFIG = {
   faturas: {
     key: 'faturas',
     label: 'Faturas de Cartão',
-    icon: CreditCard,
-    colorClass: 'text-violet-600 dark:text-violet-400',
-    bgClass: 'bg-violet-50/50 dark:bg-violet-900/20',
-    borderClass: 'border-l-2 border-violet-400 dark:border-violet-600',
-    headerBg: 'bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800',
   },
   fixas: {
     key: 'fixas',
     label: 'Fixas / Recorrentes',
-    icon: RefreshCw,
-    colorClass: 'text-amber-600 dark:text-amber-400',
-    bgClass: 'bg-amber-50/30 dark:bg-amber-900/10',
-    borderClass: 'border-l-2 border-amber-300 dark:border-amber-600',
-    headerBg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
   },
   despesas: {
     key: 'despesas',
-    label: 'Despesas Comuns',
-    icon: TrendingDown,
-    colorClass: 'text-red-600 dark:text-red-400',
-    bgClass: 'bg-red-50/20 dark:bg-red-900/10',
-    borderClass: 'border-l-2 border-red-300 dark:border-red-600',
-    headerBg: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+    label: 'Despesas',
   },
   receitas: {
     key: 'receitas',
     label: 'Receitas',
-    icon: TrendingUp,
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'bg-emerald-50/20 dark:bg-emerald-900/10',
-    borderClass: 'border-l-2 border-emerald-300 dark:border-emerald-600',
-    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
   },
   receitas_fixas: {
     key: 'receitas_fixas',
-    label: 'Receitas Fixas / Recorrentes',
-    icon: RefreshCw,
-    colorClass: 'text-emerald-700 dark:text-emerald-300',
-    bgClass: 'bg-emerald-50/30 dark:bg-emerald-900/15',
-    borderClass: 'border-l-2 border-emerald-400 dark:border-emerald-500',
-    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700',
+    label: 'Receitas Fixas',
   },
   receitas_avulsas: {
     key: 'receitas_avulsas',
-    label: 'Receitas Avulsas',
-    icon: TrendingUp,
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'bg-emerald-50/20 dark:bg-emerald-900/10',
-    borderClass: 'border-l-2 border-emerald-300 dark:border-emerald-600',
-    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
+    label: 'Receitas',
   },
 } as const;
 
@@ -229,43 +195,30 @@ function agruparTransacoes(items: (Transaction | FaturaVirtual)[], activeTab: Ta
       return {
         key: config.key,
         label: config.label,
-        icon: config.icon,
-        colorClass: config.colorClass,
-        bgClass: config.bgClass,
-        borderClass: config.borderClass,
         items: groupItems,
         subtotal: groupItems.reduce((sum, item) => sum + item.amount, 0),
       };
     });
 }
 
-// Componente GroupHeader
+// Componente GroupHeader — estilo minimalista tipo extrato bancário
 function GroupHeader({ grupo, collapsed, onToggle }: { grupo: GrupoTransacao; collapsed: boolean; onToggle: () => void }) {
-  const config = GRUPO_CONFIG[grupo.key as keyof typeof GRUPO_CONFIG];
-  const Icon = grupo.icon;
-
   return (
     <button
       onClick={onToggle}
-      className={cn(
-        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors",
-        config.headerBg,
-        "hover:opacity-90"
-      )}
+      className="w-full flex items-center justify-between py-2 px-1 border-b border-border/50 hover:bg-muted/30 transition-colors"
     >
+      <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {grupo.label} ({grupo.items.length})
+      </span>
       <div className="flex items-center gap-2">
-        <Icon className={cn("w-4 h-4", grupo.colorClass)} />
-        <span className={cn("text-sm font-semibold", grupo.colorClass)}>{grupo.label}</span>
-        <span className="text-xs text-muted-foreground">({grupo.items.length})</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className={cn("text-sm font-semibold tabular-nums", grupo.colorClass)}>
+        <span className="text-xs font-medium tabular-nums text-muted-foreground">
           {formatCurrency(grupo.subtotal)}
         </span>
         {collapsed ? (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" />
         )}
       </div>
     </button>
@@ -1083,34 +1036,31 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              const grupoConfig = GRUPO_CONFIG[grupo.key as keyof typeof GRUPO_CONFIG];
               return (
-                <div key={grupo.key} className="space-y-0.5">
+                <div key={grupo.key} className="mb-4">
                   <GroupHeader grupo={grupo} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
                   {!isCollapsed && (
-                    <div className="space-y-0.5">
+                    <div className="divide-y divide-border/30">
                       {grupo.items.map((item) => (
                         'isFaturaCartao' in item ? (
-                          <div key={item.id} className={cn("rounded-lg", grupoConfig.borderClass, grupoConfig.bgClass)}>
-                            <FaturaCartaoRow 
-                              fatura={item as FaturaVirtual}
-                              onClick={() => navigate(`/cartoes`)}
-                            />
-                          </div>
+                          <FaturaCartaoRow 
+                            key={item.id}
+                            fatura={item as FaturaVirtual}
+                            onClick={() => navigate(`/cartoes`)}
+                          />
                         ) : (
-                          <div key={item.id} className={cn("rounded-lg", grupoConfig.borderClass, grupoConfig.bgClass)}>
-                            <TransactionRow 
-                              transaction={item as Transaction}
-                              onEdit={handleEdit}
-                              onDelete={handleDelete}
-                              onMarkAsPaid={handleMarkAsPaid}
-                              onDuplicate={handleDuplicate}
-                              onView={setViewingTransaction}
-                              saldoApos={saldoMap?.get(item.id)}
-                              isUltimaTransacao={item.id === ultimaTransacaoId}
-                              totalGuardado={totalGuardado}
-                            />
-                          </div>
+                          <TransactionRow 
+                            key={item.id}
+                            transaction={item as Transaction}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onMarkAsPaid={handleMarkAsPaid}
+                            onDuplicate={handleDuplicate}
+                            onView={setViewingTransaction}
+                            saldoApos={saldoMap?.get(item.id)}
+                            isUltimaTransacao={item.id === ultimaTransacaoId}
+                            totalGuardado={totalGuardado}
+                          />
                         )
                       ))}
                     </div>
