@@ -1,30 +1,33 @@
 
 
-# Adicionar valor da fatura em cada linha de cartao
+# Atualizar .lovable/plan.md
 
-## O que muda
-
-Cada linha de fatura de cartao na listagem de Transacoes voltara a exibir o valor individual, posicionado a direita da linha (apos a descricao e status), como e padrao nas linhas de transacao comum.
+O plano atual descreve a tarefa de adicionar o valor da fatura como pendente. Como a implementacao ja foi concluida com sucesso, o arquivo sera atualizado para refletir o status atual.
 
 ## Alteracao
 
-**Arquivo**: `src/pages/Transactions.tsx`
+**Arquivo**: `.lovable/plan.md`
 
-No componente `FaturaCartaoRow`, adicionar o valor da fatura de volta, posicionado apos o bloco de descricao (antes do fechamento do div principal):
+Atualizar o conteudo para indicar que a tarefa foi concluida, adicionando uma secao de status e marcando como implementado. O conteudo ficara:
 
 ```text
-<span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-muted-foreground">
-  {formatCurrency(fatura.amount)}
-</span>
-```
+# Adicionar valor da fatura em cada linha de cartao
 
-Diferencas em relacao a versao anterior:
-- Cor: `text-muted-foreground` em vez de `text-red-600`, para manter o visual limpo e discreto (nao vermelho gritante)
-- Sem o prefixo "-" no valor, ja que o `formatCurrency` formata como "R$ 1.753,42"
+## Status: Concluido
 
-O componente ficara:
+## O que foi feito
+
+No componente `FaturaCartaoRow` em `src/pages/Transactions.tsx`, o valor da fatura foi re-adicionado a direita de cada linha de cartao de credito na listagem de Transacoes.
+
+Detalhes da implementacao:
+- Cor: `text-muted-foreground` (discreto, sem vermelho)
+- Sem prefixo "-", usando apenas `formatCurrency`
+- Posicionado apos o bloco de descricao/status
+
+Cada linha de fatura exibe:
 - Icone de cartao roxo
 - Nome da fatura + badge de status
 - Data de vencimento + nome do cartao
-- **Valor da fatura (a direita)**
+- Valor da fatura (a direita)
+```
 
