@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -114,6 +114,164 @@ function formatTransactionDay(dateStr: string, createdAt?: string): string {
   return hour ? `${dayLabel}, ${hour}` : dayLabel;
 }
 
+// Tipos e configuração de agrupamento
+type GrupoTransacao = {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  colorClass: string;
+  bgClass: string;
+  borderClass: string;
+  items: (Transaction | FaturaVirtual)[];
+  subtotal: number;
+};
+
+const GRUPO_CONFIG = {
+  faturas: {
+    key: 'faturas',
+    label: 'Faturas de Cartão',
+    icon: CreditCard,
+    colorClass: 'text-violet-600 dark:text-violet-400',
+    bgClass: 'bg-violet-50/50 dark:bg-violet-900/20',
+    borderClass: 'border-l-2 border-violet-400 dark:border-violet-600',
+    headerBg: 'bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800',
+  },
+  fixas: {
+    key: 'fixas',
+    label: 'Fixas / Recorrentes',
+    icon: RefreshCw,
+    colorClass: 'text-amber-600 dark:text-amber-400',
+    bgClass: 'bg-amber-50/30 dark:bg-amber-900/10',
+    borderClass: 'border-l-2 border-amber-300 dark:border-amber-600',
+    headerBg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
+  },
+  despesas: {
+    key: 'despesas',
+    label: 'Despesas Comuns',
+    icon: TrendingDown,
+    colorClass: 'text-red-600 dark:text-red-400',
+    bgClass: 'bg-red-50/20 dark:bg-red-900/10',
+    borderClass: 'border-l-2 border-red-300 dark:border-red-600',
+    headerBg: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+  },
+  receitas: {
+    key: 'receitas',
+    label: 'Receitas',
+    icon: TrendingUp,
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+    bgClass: 'bg-emerald-50/20 dark:bg-emerald-900/10',
+    borderClass: 'border-l-2 border-emerald-300 dark:border-emerald-600',
+    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
+  },
+  receitas_fixas: {
+    key: 'receitas_fixas',
+    label: 'Receitas Fixas / Recorrentes',
+    icon: RefreshCw,
+    colorClass: 'text-emerald-700 dark:text-emerald-300',
+    bgClass: 'bg-emerald-50/30 dark:bg-emerald-900/15',
+    borderClass: 'border-l-2 border-emerald-400 dark:border-emerald-500',
+    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700',
+  },
+  receitas_avulsas: {
+    key: 'receitas_avulsas',
+    label: 'Receitas Avulsas',
+    icon: TrendingUp,
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+    bgClass: 'bg-emerald-50/20 dark:bg-emerald-900/10',
+    borderClass: 'border-l-2 border-emerald-300 dark:border-emerald-600',
+    headerBg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
+  },
+} as const;
+
+function classificarItem(item: Transaction | FaturaVirtual): string {
+  if ('isFaturaCartao' in item) return 'faturas';
+  const t = item as Transaction;
+  if (t.category?.name === 'Fatura de Cartão') return 'faturas';
+  if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
+    return t.type === 'income' ? 'receitas_fixas' : 'fixas';
+  }
+  if (t.type === 'income') return 'receitas_avulsas';
+  return 'despesas';
+}
+
+function agruparTransacoes(items: (Transaction | FaturaVirtual)[], activeTab: TabType): GrupoTransacao[] {
+  const gruposMap = new Map<string, (Transaction | FaturaVirtual)[]>();
+
+  for (const item of items) {
+    let grupoKey = classificarItem(item);
+    
+    // Na tab "all", receitas fixas e avulsas ficam como "receitas"
+    if (activeTab === 'all' && (grupoKey === 'receitas_fixas' || grupoKey === 'receitas_avulsas')) {
+      grupoKey = 'receitas';
+    }
+    // Na tab "expense", não separar receitas
+    if (activeTab === 'expense' && grupoKey.startsWith('receitas')) {
+      grupoKey = 'despesas';
+    }
+
+    if (!gruposMap.has(grupoKey)) {
+      gruposMap.set(grupoKey, []);
+    }
+    gruposMap.get(grupoKey)!.push(item);
+  }
+
+  // Ordem dos grupos
+  const ordemGrupos = ['faturas', 'fixas', 'despesas', 'receitas_fixas', 'receitas_avulsas', 'receitas'];
+
+  return ordemGrupos
+    .filter(key => gruposMap.has(key))
+    .map(key => {
+      const config = GRUPO_CONFIG[key as keyof typeof GRUPO_CONFIG];
+      const groupItems = gruposMap.get(key)!;
+      // Ordenar por data dentro do grupo
+      groupItems.sort((a, b) => a.date.localeCompare(b.date));
+      
+      return {
+        key: config.key,
+        label: config.label,
+        icon: config.icon,
+        colorClass: config.colorClass,
+        bgClass: config.bgClass,
+        borderClass: config.borderClass,
+        items: groupItems,
+        subtotal: groupItems.reduce((sum, item) => sum + item.amount, 0),
+      };
+    });
+}
+
+// Componente GroupHeader
+function GroupHeader({ grupo, collapsed, onToggle }: { grupo: GrupoTransacao; collapsed: boolean; onToggle: () => void }) {
+  const config = GRUPO_CONFIG[grupo.key as keyof typeof GRUPO_CONFIG];
+  const Icon = grupo.icon;
+
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors",
+        config.headerBg,
+        "hover:opacity-90"
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Icon className={cn("w-4 h-4", grupo.colorClass)} />
+        <span className={cn("text-sm font-semibold", grupo.colorClass)}>{grupo.label}</span>
+        <span className="text-xs text-muted-foreground">({grupo.items.length})</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={cn("text-sm font-semibold tabular-nums", grupo.colorClass)}>
+          {formatCurrency(grupo.subtotal)}
+        </span>
+        {collapsed ? (
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+    </button>
+  );
+}
+
 export default function Transactions() {
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +284,7 @@ export default function Transactions() {
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
-
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
@@ -217,16 +375,31 @@ export default function Transactions() {
     return [...activeTransactions].sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
-      // Ambas no passado/presente: ordenar por created_at desc
-      // Uma futura e outra não: futura vai ao final
       const now = Date.now();
       const aFuture = dateA > now;
       const bFuture = dateB > now;
       if (aFuture !== bFuture) return aFuture ? 1 : -1;
-      if (aFuture && bFuture) return dateA - dateB; // futuras em ordem cronológica
+      if (aFuture && bFuture) return dateA - dateB;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [activeTransactions]);
+
+  // Tabs que usam agrupamento
+  const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income';
+
+  const grupos = useMemo(() => {
+    if (!useGrouping) return [];
+    return agruparTransacoes(sortedTransactions, activeTab);
+  }, [sortedTransactions, activeTab, useGrouping]);
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // Filtrar categorias pelo tipo selecionado
   const filteredCategories = categories?.filter((c) => c.type === formData.type) || [];
@@ -892,7 +1065,7 @@ export default function Transactions() {
         </div>
 
         {/* Lista de Transações */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           {isLoading ? (
             <LoadingList />
           ) : sortedTransactions.length === 0 ? (
@@ -907,6 +1080,44 @@ export default function Transactions() {
                 </p>
               </CardContent>
             </Card>
+          ) : useGrouping && grupos.length > 0 ? (
+            grupos.map((grupo) => {
+              const isCollapsed = collapsedGroups.has(grupo.key);
+              const grupoConfig = GRUPO_CONFIG[grupo.key as keyof typeof GRUPO_CONFIG];
+              return (
+                <div key={grupo.key} className="space-y-0.5">
+                  <GroupHeader grupo={grupo} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
+                  {!isCollapsed && (
+                    <div className="space-y-0.5">
+                      {grupo.items.map((item) => (
+                        'isFaturaCartao' in item ? (
+                          <div key={item.id} className={cn("rounded-lg", grupoConfig.borderClass, grupoConfig.bgClass)}>
+                            <FaturaCartaoRow 
+                              fatura={item as FaturaVirtual}
+                              onClick={() => navigate(`/cartoes`)}
+                            />
+                          </div>
+                        ) : (
+                          <div key={item.id} className={cn("rounded-lg", grupoConfig.borderClass, grupoConfig.bgClass)}>
+                            <TransactionRow 
+                              transaction={item as Transaction}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              onMarkAsPaid={handleMarkAsPaid}
+                              onDuplicate={handleDuplicate}
+                              onView={setViewingTransaction}
+                              saldoApos={saldoMap?.get(item.id)}
+                              isUltimaTransacao={item.id === ultimaTransacaoId}
+                              totalGuardado={totalGuardado}
+                            />
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
             sortedTransactions.map((item) => (
               'isFaturaCartao' in item ? (
