@@ -114,25 +114,25 @@ export default function Bancos() {
 
       {/* Resumo Geral */}
       {bancosResumo.length > 0 && (
-        <Card className="gradient-neutral shadow-lg rounded-xl border-0 mb-6 animate-fade-in-up">
+        <Card className="bg-card border border-border rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-6 animate-fade-in-up">
           <CardContent className="p-4 sm:p-6">
             {/* Saldo Total em Destaque */}
             <div className="text-center mb-3 sm:mb-4 pb-3 sm:pb-4 border-b">
               <p className="text-xs sm:text-sm text-muted-foreground mb-1">Saldo Total em Contas</p>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-income truncate">{formatCurrency(totalSaldo)}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold truncate" style={{ color: '#16A34A' }}>{formatCurrency(totalSaldo)}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
               <div className="text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/20 items-center justify-center mx-auto mb-1 sm:mb-2 hidden sm:flex">
-                  <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-muted items-center justify-center mx-auto mb-1 sm:mb-2 hidden sm:flex">
+                  <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </div>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">Contas Ativas</p>
                 <span className="text-lg sm:text-xl font-bold">{bancosResumo.length}</span>
               </div>
               <div className="text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-500/20 items-center justify-center mx-auto mb-1 sm:mb-2 hidden sm:flex">
-                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 dark:text-slate-400" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-muted items-center justify-center mx-auto mb-1 sm:mb-2 hidden sm:flex">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </div>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">Total Cartões</p>
                 <span className="text-lg sm:text-xl font-bold">{totalCartoes}</span>
@@ -143,7 +143,7 @@ export default function Bancos() {
               </div>
               <div className="text-center">
                 <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">Crédito Disponível</p>
-                <p className="text-lg sm:text-xl font-bold text-income truncate">
+                <p className="text-lg sm:text-xl font-bold truncate" style={{ color: '#16A34A' }}>
                   {formatCurrency(totalDisponivel)}
                 </p>
               </div>
@@ -198,11 +198,8 @@ export default function Bancos() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: `${banco.cor}15` }}
-                        >
-                          <Building2 className="h-6 w-6" style={{ color: banco.cor }} />
+                       <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted">
+                          <Building2 className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <div>
                           <p className="font-semibold">{banco.nome}</p>

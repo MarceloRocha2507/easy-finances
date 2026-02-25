@@ -232,20 +232,16 @@ export default function DespesasFuturas() {
                     key={item.cartaoId || "transacao"}
                     onClick={() => handleFiltrarCartao(item.cartaoId)}
                     className={cn(
-                      "p-2 sm:p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left flex-1 min-w-[130px] max-w-[180px]",
+                      "p-2 sm:p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left flex-1 min-w-[130px] max-w-[180px]",
                       (item.cartaoId === null && cartaoId === "transacao") ||
                         (item.cartaoId && cartaoId === item.cartaoId)
-                        ? "ring-2 ring-primary bg-muted/30"
+                        ? "border-primary bg-muted/30"
                         : ""
                     )}
-                    style={{ borderColor: item.cartaoCor || undefined }}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       {item.cartaoId ? (
-                        <CreditCard
-                          className="h-4 w-4 shrink-0"
-                          style={{ color: item.cartaoCor }}
-                        />
+                        <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />
                       ) : (
                         <Receipt className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
@@ -253,7 +249,7 @@ export default function DespesasFuturas() {
                         {item.cartaoNome}
                       </span>
                     </div>
-                    <p className="text-sm sm:text-lg font-bold text-expense truncate">
+                    <p className="text-sm sm:text-lg font-bold text-destructive truncate">
                       {formatCurrency(item.total)}
                     </p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -567,13 +563,13 @@ export default function DespesasFuturas() {
                                 {grupo.despesas.length}
                               </Badge>
                             </div>
-                            <span className="font-semibold text-expense">
-                              {formatCurrency(grupo.total)}
-                            </span>
+                    <span className="font-semibold text-destructive">
+                      {formatCurrency(grupo.total)}
+                    </span>
                           </button>
 
                           {isExpanded && (
-                            <div className="border-t bg-muted/20">
+                            <div className="border-t bg-muted/50">
                               <Table>
                                 <TableBody>
                                   {grupo.despesas.map((d) => (
@@ -653,10 +649,7 @@ function DespesaRow({
         <div className="flex items-center gap-1.5 text-sm">
           {despesa.origem === "cartao" ? (
             <>
-              <CreditCard
-                className="h-3.5 w-3.5"
-                style={{ color: "hsl(var(--primary))" }}
-              />
+              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{despesa.cartaoNome}</span>
             </>
           ) : (
@@ -668,7 +661,7 @@ function DespesaRow({
         </div>
       </TableCell>
       <TableCell className={cn("text-right", compact && "py-2")}>
-        <span className="font-semibold text-expense">
+        <span className="font-semibold text-destructive">
           {formatCurrency(despesa.valor)}
         </span>
       </TableCell>

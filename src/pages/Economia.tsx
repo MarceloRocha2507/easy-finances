@@ -194,7 +194,7 @@ export default function Economia() {
             )}
 
             {/* Dicas sobre orçamento */}
-            <Card className="mt-6 bg-muted/30 shadow-sm rounded-xl">
+            <Card className="mt-6 bg-muted/50 shadow-sm rounded-xl">
               <CardContent className="py-4 sm:py-6">
                 <h3 className="font-medium mb-3 text-sm sm:text-base">
                   Dicas para definir orçamentos
@@ -238,7 +238,7 @@ export default function Economia() {
               </CardHeader>
               <CardContent>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/50">
                     <h4 className="font-medium text-sm mb-1.5">
                       Pague-se primeiro
                     </h4>
@@ -248,7 +248,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/50">
                     <h4 className="font-medium text-sm mb-1.5">
                       Regra das 24 horas
                     </h4>
@@ -258,7 +258,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/50">
                     <h4 className="font-medium text-sm mb-1.5">
                       Fundo de emergência
                     </h4>
@@ -268,7 +268,7 @@ export default function Economia() {
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="p-4 rounded-xl border bg-muted/50">
                     <h4 className="font-medium text-sm mb-1.5">
                       Revise assinaturas
                     </h4>

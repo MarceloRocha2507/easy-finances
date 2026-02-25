@@ -130,11 +130,11 @@ export default function Investimentos() {
 
         {/* Lista de investimentos */}
         <Tabs defaultValue="ativos" className="w-full">
-          <TabsList>
-            <TabsTrigger value="ativos">
+          <TabsList className="w-full justify-start border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="ativos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5">
               Ativos ({investimentosAtivos.length})
             </TabsTrigger>
-            <TabsTrigger value="encerrados">
+            <TabsTrigger value="encerrados" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5">
               Encerrados ({investimentosEncerrados.length})
             </TabsTrigger>
           </TabsList>

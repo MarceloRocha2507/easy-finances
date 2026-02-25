@@ -266,10 +266,10 @@ export default function Reports() {
                     {pieData.sort((a, b) => b.value - a.value).map((category) => {
                       const IconComp = getIconComponent(category.icon);
                       return (
-                        <div key={category.name} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                        <div key={category.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20` }}>
-                              <IconComp className="w-5 h-5" style={{ color: category.color }} />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted">
+                              <IconComp className="w-5 h-5 text-muted-foreground" />
                             </div>
                             <span className="font-medium">{category.name}</span>
                           </div>
@@ -302,10 +302,10 @@ export default function Reports() {
                     {transactions.sort((a, b) => b.amount - a.amount).slice(0, 5).map((transaction) => {
                       const IconComp = getIconComponent(transaction.category?.icon);
                       return (
-                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-rose-100 dark:bg-rose-900/50'}`}>
-                              <IconComp className={`w-5 h-5 ${transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`} />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted">
+                              <IconComp className="w-5 h-5 text-muted-foreground" />
                             </div>
                             <div>
                               <p className="font-medium">{transaction.description || transaction.category?.name || 'Sem descrição'}</p>
