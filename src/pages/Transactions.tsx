@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
+import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 
 
@@ -872,7 +873,7 @@ export default function Transactions() {
         />
 
         {/* Saldo Inicial + Resumo Completo */}
-        <div className="space-y-3">
+        <AnimatedSection className="space-y-3">
           {/* Card de Saldo Inicial e Metas */}
           <div className="flex items-center justify-between p-2 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50">
             {/* Saldo Inicial */}
@@ -919,7 +920,7 @@ export default function Transactions() {
           </div>
 
           {/* Resumo - StatCards Minimalistas */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <StatCardMinimal
               title="Receitas"
               value={stats?.completedIncome || 0}
@@ -971,8 +972,8 @@ export default function Transactions() {
               delay={0.25}
               isLoading={isStatsFetching}
             />
-          </div>
-        </div>
+          </AnimatedSection>
+        </AnimatedSection>
 
         {/* Dialog Editar Saldo */}
         <EditarSaldoDialog open={editarSaldoOpen} onOpenChange={setEditarSaldoOpen} />
@@ -1042,62 +1043,66 @@ export default function Transactions() {
               </CardContent>
             </Card>
           ) : useGrouping && grupos.length > 0 ? (
-            grupos.map((grupo) => {
+            grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
               return (
-                <div key={grupo.key} className="mb-4">
+                <AnimatedItem key={grupo.key} index={grupoIdx} className="mb-4">
                   <GroupHeader grupo={grupo} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
                   {!isCollapsed && (
                     <div className="divide-y divide-border/30">
-                      {grupo.items.map((item) => (
-                        'isFaturaCartao' in item ? (
-                          <FaturaCartaoRow 
-                            key={item.id}
-                            fatura={item as FaturaVirtual}
-                            onClick={() => navigate(`/cartoes`)}
-                          />
-                        ) : (
-                          <TransactionRow 
-                            key={item.id}
-                            transaction={item as Transaction}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onMarkAsPaid={handleMarkAsPaid}
-                            onDuplicate={handleDuplicate}
-                            onView={setViewingTransaction}
-                            saldoApos={saldoMap?.get(item.id)}
-                            isUltimaTransacao={item.id === ultimaTransacaoId}
-                            totalGuardado={totalGuardado}
-                          />
-                        )
+                      {grupo.items.map((item, itemIdx) => (
+                        <div
+                          key={item.id}
+                          className="stagger-item"
+                          style={{ "--stagger-index": Math.min(itemIdx, 12) } as React.CSSProperties}
+                        >
+                          {'isFaturaCartao' in item ? (
+                            <FaturaCartaoRow 
+                              fatura={item as FaturaVirtual}
+                              onClick={() => navigate(`/cartoes`)}
+                            />
+                          ) : (
+                            <TransactionRow 
+                              transaction={item as Transaction}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              onMarkAsPaid={handleMarkAsPaid}
+                              onDuplicate={handleDuplicate}
+                              onView={setViewingTransaction}
+                              saldoApos={saldoMap?.get(item.id)}
+                              isUltimaTransacao={item.id === ultimaTransacaoId}
+                              totalGuardado={totalGuardado}
+                            />
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
-                </div>
+                </AnimatedItem>
               );
             })
           ) : (
-            sortedTransactions.map((item) => (
-              'isFaturaCartao' in item ? (
-                <FaturaCartaoRow 
-                  key={item.id} 
-                  fatura={item as FaturaVirtual}
-                  onClick={() => navigate(`/cartoes`)}
-                />
-              ) : (
-                <TransactionRow 
-                  key={item.id} 
-                  transaction={item as Transaction}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onMarkAsPaid={handleMarkAsPaid}
-                  onDuplicate={handleDuplicate}
-                  onView={setViewingTransaction}
-                  saldoApos={saldoMap?.get(item.id)}
-                  isUltimaTransacao={item.id === ultimaTransacaoId}
-                  totalGuardado={totalGuardado}
-                />
-              )
+            sortedTransactions.map((item, itemIdx) => (
+              <AnimatedItem key={item.id} index={itemIdx}>
+                {'isFaturaCartao' in item ? (
+                  <FaturaCartaoRow 
+                    fatura={item as FaturaVirtual}
+                    onClick={() => navigate(`/cartoes`)}
+                  />
+                ) : (
+                  <TransactionRow 
+                    transaction={item as Transaction}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onMarkAsPaid={handleMarkAsPaid}
+                    onDuplicate={handleDuplicate}
+                    onView={setViewingTransaction}
+                    saldoApos={saldoMap?.get(item.id)}
+                    isUltimaTransacao={item.id === ultimaTransacaoId}
+                    totalGuardado={totalGuardado}
+                  />
+                )}
+              </AnimatedItem>
             ))
           )}
         </div>
