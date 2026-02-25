@@ -1281,20 +1281,20 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </div>
       </div>
       
-      {/* Valor */}
-      <span className={cn(
-        "font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base",
-        isPending 
-          ? 'text-amber-600'
-          : transaction.type === 'income' 
-            ? 'text-emerald-600' 
-            : 'text-red-600'
-      )}>
-        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-      </span>
-      
-      {/* Ações - Mobile: dropdown, Desktop: hover buttons */}
-      <div className="ml-2 flex gap-1">
+      {/* Valor + Ações container */}
+      <div className="flex items-center gap-1 ml-2 sm:ml-4 relative">
+        {/* Valor - sempre visível */}
+        <span className={cn(
+          "font-semibold tabular-nums text-sm sm:text-base shrink-0",
+          isPending 
+            ? 'text-amber-600'
+            : transaction.type === 'income' 
+              ? 'text-emerald-600' 
+              : 'text-red-600'
+        )}>
+          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+        </span>
+
         {/* Mobile dropdown */}
         <div className="flex md:hidden">
           <DropdownMenu>
@@ -1329,13 +1329,13 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
-        {/* Desktop hover buttons */}
-        <div className="hidden md:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+        {/* Desktop hover - posição absoluta, aparece sobre o valor */}
+        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8" 
+            className="h-7 w-7" 
             onClick={() => onView(transaction)}
             title="Ver detalhes"
           >
@@ -1345,7 +1345,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+              className="h-7 w-7 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
               onClick={() => onMarkAsPaid(transaction.id)}
               title="Marcar como pago"
             >
@@ -1355,18 +1355,18 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8" 
+            className="h-7 w-7" 
             onClick={() => onDuplicate(transaction)}
             title="Duplicar transação"
           >
             <Copy className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(transaction)} title="Editar">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(transaction)} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
             </AlertDialogTrigger>
