@@ -14,3 +14,4 @@ export { StatCardPrimary } from "./StatCardPrimary";
 export { StatCardSecondary } from "./StatCardSecondary";
 export { EstimatedBalanceBanner } from "./EstimatedBalanceBanner";
 export { PieChartWithLegend } from "./PieChartWithLegend";
+export { StatCardMinimal } from "./StatCardMinimal";
