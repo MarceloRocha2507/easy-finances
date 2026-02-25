@@ -1,53 +1,48 @@
 
 
-# Sidebar Active State: Left Border to Floating Pill
+# Redesign da Pagina de Categorias
 
-Replace the left accent border active indicator with a floating pill/capsule background, inspired by Vercel/Raycast sidebars.
+Redesign completo da pagina de Categorias para alinhar com o estilo premium fintech do resto do app.
 
-## Changes
+## Alteracoes em `src/pages/Categories.tsx`
 
-### 1. `src/index.css` -- Update CSS utility classes
+### 1. Botao "Nova Categoria"
+- Trocar estilo do Button para `className="bg-[#111827] hover:bg-[#1F2937] text-white"` sem sombra pesada.
 
-- **`.menu-item-active`**: Remove `border-left: 2px solid`. Add `background: #F3F4F6`, `border-radius: 8px`, `font-weight: 600`, `color: hsl(var(--foreground))`.
-- **`.menu-item-hover:hover`**: Add `background: #F9FAFB` and `border-radius: 8px` alongside the existing color transition.
-- **`.submenu-item-active`**: Same pattern -- remove border-left, add `background: #F3F4F6`, `border-radius: 6px`.
-- **Dark mode**: Use `hsl(0 0% 100% / 0.08)` for active pill and `hsl(0 0% 100% / 0.04)` for hover pill.
+### 2. Tabs (Categorias / Regras)
+- Remover o componente `TabsList` com grid background. Substituir por um container `flex` com borda inferior.
+- Cada tab sera um botao com estilo de underline: ativo = `border-b-2 border-[#111827] text-[#111827] font-semibold`, inativo = `text-[#6B7280]`.
+- Remover icones das tabs (FolderOpen, Wand2).
 
-### 2. `src/components/sidebar/SidebarNav.tsx` -- Adjust item classes
+### 3. Headers de secao (Receitas / Despesas)
+- Remover icones coloridos (TrendingUp, TrendingDown) dos titulos.
+- Remover classes `text-income` e `text-expense`.
+- Usar texto `text-[#111827] font-semibold` para ambos.
+- Adicionar contagem ao lado: `<span className="text-[#6B7280] font-normal text-sm ml-2">{count}</span>`.
 
-- Add `rounded-lg` and `mx-1` to nav items so the pill has 8px horizontal margin from the sidebar edges (nav already has `px-3`, items get `mx-1` to create inset).
-- Active class: `menu-item-active` (now pill-based).
-- Inactive class: `text-muted-foreground menu-item-hover`.
-- No other structural changes needed -- the CSS classes do the work.
+### 4. Container das duas colunas
+- Manter `Card` mas com classes: `border border-[#E5E7EB] rounded-xl shadow-none`.
+- Remover `CardHeader` padding desnecessario.
 
-### 3. `src/components/sidebar/MenuCollapsible.tsx` -- Same pill pattern
+### 5. CategoryCard (itens da lista)
+- **Icone**: Remover background colorido. Usar `bg-[#F3F4F6]` fixo com icone em `text-[#6B7280]` (sem `style={{ color }}`).
+- **Color swatch**: Trocar circulo de 12px (rounded-full) por quadrado 12x12px com `rounded-[3px]`.
+- **Edit/Delete**: Esconder por padrao com `opacity-0 group-hover:opacity-100 transition-opacity`. Adicionar `group` class no row.
+- **Row**: Remover `rounded-md border` individual. Usar `border-b border-[#F3F4F6] last:border-b-0` e `hover:bg-[#F9FAFB]`.
+- **Trash icon**: Remover `text-destructive`, usar `text-[#9CA3AF] hover:text-[#374151]`.
 
-- Collapsible trigger button: Add `rounded-lg mx-1` for consistent pill sizing.
-- Sub-items: Add `rounded-md` for slightly smaller pill radius on sub-items.
-- Active/inactive classes remain `menu-item-active` / `submenu-item-active` and `menu-item-hover`.
+### 6. Preview no dialog
+- Atualizar preview para refletir o novo estilo (swatch quadrado, icone neutro).
 
-### CSS Summary
+## Resumo visual
 
-```css
-.menu-item-active {
-  background: #F3F4F6;
-  border-radius: 8px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
+| Elemento | Antes | Depois |
+|----------|-------|--------|
+| Tabs | Pill/grid com background | Underline minimal |
+| Headers secao | Icone colorido + texto colorido | Texto neutro bold + contagem |
+| Icone categoria | Background com cor da categoria | Background #F3F4F6 fixo, icone #6B7280 |
+| Color indicator | Circulo 12px colorido | Quadrado 12x12 rounded-[3px] |
+| Edit/Delete | Sempre visivel | Visivel apenas no hover |
+| Row | Card com border individual | Lista com border-bottom sutil |
+| Container | Card generico | White card, border #E5E7EB, rounded-xl |
 
-.menu-item-hover:hover {
-  background: #F9FAFB;
-  border-radius: 8px;
-  color: hsl(257 4.6% 25%);
-}
-
-.submenu-item-active {
-  background: #F3F4F6;
-  border-radius: 6px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-```
-
-No borders, no shadows -- just flat subtle fill for active and hover states.
