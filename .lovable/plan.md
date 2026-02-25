@@ -1,54 +1,76 @@
 
 
-# Fix: Skeletons invisíveis nos cards de Transações
+# Redesign: Cards de Resumo com visual premium e minimalista
 
-## Problema
+## Objetivo
 
-Os skeletons nos cards com fundo gradiente (Receitas e Despesas) usam a cor padrão `bg-muted` que se confunde com o fundo do card, tornando-os praticamente invisíveis. O mesmo pode acontecer nos cards secundários dependendo do tema.
+Substituir o visual atual dos 6 cards de resumo na pagina de Transacoes (gradientes, bordas coloridas laterais, fundos pasteis) por um design limpo e moderno inspirado em apps como Notion e Linear.
 
-## Solução
+## Abordagem
 
-Adicionar classes de cor específicas aos Skeletons dentro dos componentes `StatCardPrimary` e `StatCardSecondary` para que contrastem com o fundo de cada tipo de card.
+Criar um **novo componente unificado** `StatCardMinimal` que substitui tanto `StatCardPrimary` quanto `StatCardSecondary` na pagina de Transacoes. Os componentes originais continuam existindo para uso no Dashboard.
 
-## Alterações
+## Especificacoes visuais
 
-### 1. `src/components/dashboard/StatCardPrimary.tsx`
+- **Fundo**: branco / `#F8F8F8` (sem gradientes, sem fundos coloridos)
+- **Borda**: 1px solid `#E5E7EB` (uniforme, sem borda lateral colorida)
+- **Border-radius**: 10px
+- **Box-shadow**: `0 1px 3px rgba(0,0,0,0.07)`
+- **Padding**: 16px
+- **Icone**: pequeno (16x16), canto superior direito, opacidade baixa (~30%)
+- **Valor**: bold, grande (`text-xl`), cor semantica apenas no texto:
+  - Positivo: `#16A34A`
+  - Negativo: `#DC2626`
+  - Neutro: foreground padrao
+- **Label**: `#6B7280`, texto pequeno, abaixo ou acima do valor
+- **SubInfo**: mantido como texto muted discreto
 
-Adicionar um mapa de cores de skeleton por tipo e aplicar nos Skeletons:
+## Alteracoes
 
-```typescript
-const skeletonClasses = {
-  income: "bg-emerald-200/60 dark:bg-emerald-800/40",
-  expense: "bg-rose-200/60 dark:bg-rose-800/40",
-  neutral: "bg-slate-200/60 dark:bg-slate-700/40",
-};
+### 1. Novo arquivo: `src/components/dashboard/StatCardMinimal.tsx`
 
-// Uso:
-<Skeleton className={cn("h-7 w-28 sm:h-9 sm:w-36", skeletonClasses[type])} />
-<Skeleton className={cn("h-3 w-20 mt-1 sm:mt-2", skeletonClasses[type])} />
+Componente unificado com props:
+```text
+title: string
+value: number
+icon: LucideIcon
+prefix?: string ("+", "-")
+subInfo?: ReactNode
+delay?: number
+onClick?: () => void
+isLoading?: boolean
+formatValue?: (v: number) => string
 ```
 
-### 2. `src/components/dashboard/StatCardSecondary.tsx`
+Logica de cor do valor:
+- Se tem prefix "-": valor exibido em vermelho `#DC2626`
+- Se tem prefix "+": valor exibido em verde `#16A34A`
+- Sem prefix: verde se >= 0, vermelho se < 0
 
-Adicionar cores de skeleton por status para melhor contraste:
+### 2. Atualizar `src/components/dashboard/index.ts`
 
-```typescript
-const skeletonClasses = {
-  pending: "bg-blue-200/50 dark:bg-blue-800/30",
-  warning: "bg-amber-200/50 dark:bg-amber-800/30",
-  danger: "bg-red-200/50 dark:bg-red-800/30",
-  info: "bg-purple-200/50 dark:bg-purple-800/30",
-  success: "bg-emerald-200/50 dark:bg-emerald-800/30",
-  neutral: "bg-slate-200/50 dark:bg-slate-700/30",
-};
+Exportar o novo `StatCardMinimal`.
 
-// Uso:
-<Skeleton className={cn("h-5 w-24 sm:h-6 sm:w-28", skeletonClasses[status])} />
-<Skeleton className={cn("h-3 w-16 mt-1", skeletonClasses[status])} />
+### 3. Atualizar `src/pages/Transactions.tsx`
+
+Substituir os 6 cards (2x StatCardPrimary + 4x StatCardSecondary) por 6x `StatCardMinimal`:
+
+```text
+Grid: grid-cols-2 lg:grid-cols-3 gap-3
+
+1. Receitas    - prefix: nenhum, valor positivo = verde
+2. Despesas    - prefix: nenhum, valor = vermelho (sempre negativo)
+3. A Receber   - prefix: "+"
+4. A Pagar     - prefix: "-"
+5. Saldo Real  - sem prefix, cor dinamica
+6. Estimado    - sem prefix, cor dinamica
 ```
 
 ### Resultado
 
-- Skeletons visíveis em todos os cards, com cores que contrastam com o fundo gradiente
-- Mantém a consistência visual (skeleton com tonalidade da cor do card)
-- Funciona tanto no tema claro quanto no escuro
+- 6 cards uniformes, limpos, sem gradientes ou bordas coloridas
+- Tipografia carrega o peso visual (valores grandes e bold, labels discretos)
+- Icones sutis no canto superior direito
+- Aparencia moderna e premium tipo Notion/Linear
+- Dashboard continua usando os componentes antigos sem alteracao
+
