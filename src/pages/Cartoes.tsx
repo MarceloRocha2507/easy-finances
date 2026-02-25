@@ -339,133 +339,126 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
   });
 
   return (
-    <Card
-      className="cursor-pointer shadow-sm rounded-xl card-hover fade-in overflow-hidden"
+    <div
+      className="cursor-pointer bg-card border border-border rounded-[12px] shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all fade-in overflow-hidden"
       style={{ animationDelay: `${index * 0.05}s` }}
       onClick={onClick}
     >
-      {/* Header com cor do cartão */}
-      <div
-        className="h-2"
-        style={{ backgroundColor: cartao.cor || "#6366f1" }}
-      />
-
-      <CardContent className="p-6">
-        {/* Info do Cartão */}
+      <div className="p-5">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="h-12 w-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${cartao.cor || "#6366f1"}15` }}
-            >
-              <CreditCard
-                className="h-6 w-6"
-                style={{ color: cartao.cor || "#6366f1" }}
-                strokeWidth={1.75}
-              />
+            <div className="h-10 w-10 rounded-[10px] bg-muted flex items-center justify-center">
+              <CreditCard className="h-5 w-5 text-muted-foreground" strokeWidth={1.75} />
             </div>
             <div>
-              <p className="font-semibold">{cartao.nome}</p>
-              <p className="text-xs text-muted-foreground uppercase">
+              <p className="font-semibold text-sm text-foreground">{cartao.nome}</p>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
                 {cartao.bandeira || "Crédito"}
               </p>
             </div>
           </div>
-          <Badge 
-            variant={cartao.faturaAtualPaga ? "default" : "outline"} 
-            className={cn(
-              "text-xs",
-              cartao.faturaAtualPaga && "bg-emerald-500 hover:bg-emerald-600"
-            )}
-          >
+          <span className={cn(
+            "text-[11px] font-medium px-2.5 py-0.5 rounded-full",
+            cartao.faturaAtualPaga
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-muted text-muted-foreground"
+          )}>
             {cartao.faturaAtualPaga ? "Paga" : "Aberta"}
-          </Badge>
+          </span>
         </div>
 
         {/* Datas */}
-        <div className="grid grid-cols-2 gap-4 mb-4 p-4 rounded-xl bg-muted/50">
+        <div className="grid grid-cols-2 gap-4 mb-4 p-3 rounded-[10px] bg-muted/50 border border-border">
           <div>
-            <p className="text-xs text-muted-foreground">Fechamento</p>
-            <p className="text-sm font-medium">
+            <p className="text-[11px] text-muted-foreground">Fechamento</p>
+            <p className="text-sm font-medium text-foreground">
               {dataFechamento.toLocaleDateString("pt-BR")}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground/70">
               em {diasAteFechamento} dia(s)
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Vencimento</p>
-            <p className="text-sm font-medium">
+            <p className="text-[11px] text-muted-foreground">Vencimento</p>
+            <p className="text-sm font-medium text-foreground">
               {dataVencimento.toLocaleDateString("pt-BR")}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground/70">
               em {diasAteVencimento} dia(s)
             </p>
           </div>
         </div>
 
-        {/* Uso do Limite */}
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
+        {/* Barra de uso do limite */}
+        <div className="space-y-1.5 mb-4">
+          <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Uso do limite</span>
-            <span className="font-medium">{cartao.percentualUsado.toFixed(0)}%</span>
+            <span className="font-bold text-foreground">{cartao.percentualUsado.toFixed(0)}%</span>
           </div>
-          <Progress
-            value={cartao.percentualUsado}
-            className={cn(
-              "h-2",
-              cartao.percentualUsado > 80 && "[&>div]:bg-red-500",
-              cartao.percentualUsado > 50 && cartao.percentualUsado <= 80 && "[&>div]:bg-amber-500"
-            )}
-          />
+          <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(cartao.percentualUsado, 100)}%`,
+                backgroundColor:
+                  cartao.percentualUsado > 85
+                    ? "hsl(0, 72%, 51%)"
+                    : cartao.percentualUsado > 60
+                    ? "hsl(45, 93%, 47%)"
+                    : "hsl(142, 71%, 45%)",
+              }}
+            />
+          </div>
         </div>
 
-        {/* Valores do Limite */}
+        {/* Valores: Limite / Usado / Disponível */}
         <div className="grid grid-cols-3 gap-2 text-center mb-4">
           <div>
-            <p className="text-xs text-muted-foreground">Limite</p>
-            <p className="text-sm font-semibold value-display">
+            <p className="text-[11px] text-muted-foreground">Limite</p>
+            <p className="text-sm font-semibold text-foreground value-display">
               {formatCurrency(cartao.limite)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Usado</p>
-            <p className="text-sm font-semibold value-display text-amber-600">
+            <p className="text-[11px] text-muted-foreground">Usado</p>
+            <p className={cn(
+              "text-sm font-semibold value-display",
+              cartao.percentualUsado > 85
+                ? "text-red-600 dark:text-red-400"
+                : cartao.percentualUsado > 60
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-foreground"
+            )}>
               {formatCurrency(cartao.limiteUsado)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Disponível</p>
-            <p className="text-sm font-semibold value-display text-emerald-600">
+            <p className="text-[11px] text-muted-foreground">Disponível</p>
+            <p className={cn(
+              "text-sm font-semibold value-display",
+              cartao.limiteDisponivel > cartao.limite * 0.2
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-foreground"
+            )}>
               {formatCurrency(cartao.limiteDisponivel)}
             </p>
           </div>
         </div>
 
-        {/* Fatura do Mês - Destaque */}
-        <div className={cn(
-          "p-4 rounded-xl border",
-          cartao.faturaAtualPaga 
-            ? "bg-emerald-500/5 border-emerald-500/20" 
-            : "bg-red-500/5 border-red-500/20"
-        )}>
+        {/* Footer: Fatura */}
+        <div className="p-3 rounded-[10px] bg-muted/50 border-t border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Receipt className={cn(
-                "h-4 w-4",
-                cartao.faturaAtualPaga ? "text-emerald-500" : "text-red-500"
-              )} />
-              <span className="text-sm font-medium capitalize">Fatura {nomeMesFatura}</span>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground capitalize">Fatura {nomeMesFatura}</span>
             </div>
-            <span className={cn(
-              "text-lg font-bold value-display",
-              cartao.faturaAtualPaga ? "text-emerald-600" : "text-red-600"
-            )}>
+            <span className="text-base font-bold text-foreground value-display">
               {formatCurrency(cartao.faturaExibida)}
             </span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
