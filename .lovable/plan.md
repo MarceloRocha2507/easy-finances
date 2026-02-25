@@ -1,36 +1,81 @@
 
+# Redesign Premium da Sidebar -- Estilo Notion/Linear
 
-# Transformar "Economia" de subcategoria em item de primeiro nivel
+Redesign completo da sidebar para um visual minimalista, tipografico e premium, removendo backgrounds preenchidos, icones coloridos e containers tipo card. A identidade visual passa a ser baseada em tipografia, borda lateral de estado ativo, e transicoes de cor sutis.
 
-Como "Economia" possui apenas uma opcao ("Metas"), nao faz sentido manter o menu colapsavel. A solucao e promover "Metas" a um item de primeiro nivel no menu, usando o icone `PiggyBank` e apontando para `/economia/metas`.
+## Arquivos Modificados
 
-## Alteracoes no arquivo `src/components/sidebar/SidebarNav.tsx`
+### 1. `src/index.css` -- Estilos base da sidebar
 
-### 1. Adicionar "Metas" ao `mainMenuItems`
-Incluir `{ icon: PiggyBank, label: "Metas", href: "/economia/metas" }` apos "Categorias" no array `mainMenuItems`.
+Substituir os estilos utilitarios da sidebar por novos:
 
-### 2. Remover `economiaMenu`
-Deletar o objeto `economiaMenu` (linhas 53-59).
+- **`.sidebar-floating`**: Remover box-shadow complexo. Usar `background: #FAFAFA` (light) / dark mode existente, com apenas `border-right: 1px solid #E5E7EB`. Sem border-radius (sidebar e flush na lateral).
+- **`.menu-item-floating-active`**: Remover `background` e `border-radius`. Adicionar `border-left: 3px solid #111827` (ou `hsl(var(--foreground))`), `font-weight: 600`, `color: #111827`.
+- **`.menu-item-floating-hover`**: Remover `background` no hover. Manter apenas transicao de cor: `color: #111827` no hover.
+- **`.submenu-item-floating-active`**: Mesmo padrao -- sem background, com `border-left: 2px solid #111827` e texto bold.
 
-### 3. Remover o `MenuCollapsible` de Economia
-Deletar o bloco do componente `MenuCollapsible` de economia (linhas 154-162).
+### 2. `src/components/Layout.tsx` -- Container da sidebar
 
-### 4. Limpar estado `openMenus`
-Remover `economia` do estado `openMenus` (linha 85) e do `useEffect` (linha 95).
+- **Desktop sidebar**: Remover `p-3` wrapper e `border-radius` do aside. A sidebar deve ser flush (colada na borda), fundo `bg-[#FAFAFA]` com `border-r border-[#E5E7EB]`. Sem classe `sidebar-floating`.
+- **Mobile sidebar**: Manter drawer behavior mas aplicar mesmo fundo e remover sombra card-style.
+- **Logo area**: Remover o icone `Wallet` do container colorido (`bg-primary/10`). Usar icone `Wallet` em cinza monocromatico (`text-[#111827]`). Texto "Fina" com `text-xl font-bold text-[#111827]`.
 
-### Menu resultante
+### 3. `src/components/sidebar/SidebarNav.tsx` -- Itens de navegacao
 
+- **Remover icon containers** (os `div` com `w-8 h-8 rounded-lg bg-primary/15`). Icones ficam inline, sem wrapper.
+- **Item ativo**: Classe com `border-l-[3px] border-[#111827] font-semibold text-[#111827]` e padding-left ajustado. Icone em `text-[#374151]`.
+- **Item inativo**: `text-[#6B7280]`, hover `text-[#111827]` via `hover:text-[#111827]`. Sem background no hover.
+- **Padding**: Reduzir de `py-2.5` para `py-2` (10px) para ritmo editorial mais apertado.
+- **Separador antes de Novidades/Admin**: Manter o `border-t` existente. Adicionar `mt-2` (8px gap) antes dos itens secundarios.
+- **Remover link "Fina IA"** e import `Bot` (ja planejado anteriormente).
+
+### 4. `src/components/sidebar/MenuCollapsible.tsx` -- Menus colapsaveis
+
+- **Trigger button**: Mesmo padrao -- sem background, left-border quando ativo, icone inline sem wrapper.
+- **Chevron**: Reduzir para `h-3.5 w-3.5` com `strokeWidth={1.5}`. Manter animacao `rotate-180` existente.
+- **Sub-items**: Sem background no ativo. Usar `border-l-2 border-[#111827]` + bold. Sem hover background.
+
+### 5. `src/components/sidebar/SidebarUserSection.tsx` -- Footer do usuario
+
+- **Avatar**: Trocar circulo por quadrado arredondado. `rounded-md` (6px) ao inves de `rounded-full`. Fundo `bg-[#1F2937]` com texto branco para iniciais. Remover `ring-2 ring-primary/20`.
+- **Username**: `font-semibold text-[#111827]` (mais bold).
+- **Versao**: `text-[10px] text-[#9CA3AF]`.
+- **Icones (bell, logout)**: Cor `text-[#9CA3AF]`, hover `text-[#111827]`. Remover `hover:bg-muted/50` background.
+
+### 6. `src/components/sidebar/NotificationBadge.tsx` -- Sino de notificacao
+
+- Cor base do icone: `text-[#9CA3AF]`, hover `text-[#111827]`. Remover hover background.
+
+### 7. `src/components/ui/avatar.tsx` -- Fallback shape
+
+- Nenhuma mudanca global no componente -- as mudancas de `rounded-full` para `rounded-md` serao aplicadas inline no `SidebarUserSection`.
+
+## Resumo Visual
+
+```text
++---------------------------+
+| [W] Fina                  |  <- Monochrome icon, bold text
++---------------------------+
+| | Dashboard               |  <- Active: left bar + bold
+|   Bancos                  |  <- Inactive: gray, no bg
+|   Categorias              |
+|   Metas                   |
+|                           |
+|   v Transacoes            |  <- Chevron thin, no bg
+|       Visao Geral         |
+|       Importar            |
+|       Despesas Futuras    |
+|                           |
+|   v Cartoes               |
+|   > Relatorios            |
+|                           |
+|  -------------------------+  <- Separator
+|   Novidades               |
+|   Admin                   |
++---------------------------+
+| [JD] John Doe    [B] [>]  |  <- Square avatar, gray icons
+|      v2.4.0               |
++---------------------------+
 ```
-Dashboard
-Bancos
-Categorias
-Metas            <-- item de primeiro nivel
-Transacoes (...)
-Cartoes (...)
-Relatorios (...)
----
-Novidades
-Admin (condicional)
-Fina IA
-```
 
+Todos os itens: sem background fill, sem icones coloridos, sem containers. Cor usada apenas para sinalizar estado ativo via borda lateral esquerda.
