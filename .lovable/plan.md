@@ -1,53 +1,52 @@
 
 
-# Aplicar visual premium ao CartaoCard standalone
+# Reorganizar menu de navegacao
 
-## Objetivo
+## Alteracoes no arquivo `src/components/sidebar/SidebarNav.tsx`
 
-Alinhar o componente `src/components/cartoes/CartaoCard.tsx` com o mesmo visual premium ja aplicado nos cards da pagina `Cartoes.tsx`, garantindo consistencia visual em todo o sistema.
+### 1. Remover "Limites" do menu Cartoes (linha 50)
 
-## Alteracoes
+### 2. Mover "Bancos" para fora de Cartoes
 
-### Arquivo: `src/components/cartoes/CartaoCard.tsx`
+**Bancos** e um conceito financeiro independente (contas bancarias, saldos). Faz mais sentido como item de primeiro nivel, junto com Dashboard e Categorias, pois representa uma entidade central do sistema financeiro — nao e exclusivo de cartoes.
 
-**Container (linha 110-112):**
-- De: `className="p-5 border rounded-md bg-card cursor-pointer hover:bg-secondary/30 transition-colors"`
-- Para: `className="cursor-pointer bg-card border border-border rounded-[12px] shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all overflow-hidden"`
-- Mover padding para um wrapper interno `<div className="p-5">`
+Adicionar `{ icon: Building2, label: "Bancos", href: "/cartoes/bancos" }` ao array `mainMenuItems`, posicionado apos "Dashboard" e antes de "Categorias".
 
-**Header (linhas 114-134):**
-- Icone: fundo neutro `bg-muted` com `rounded-[10px]`, sem cor customizada via style
-- Nome: `font-semibold text-foreground`
-- Bandeira: `text-[11px] uppercase tracking-wide text-muted-foreground`
-- Badge de status: pill minimal com `rounded-full`, usando `bg-emerald-100 text-emerald-700` para "Fechada"/"Paga" e `bg-muted text-muted-foreground` para "Aberta". Font `text-[11px]`. Alerta "Limite critico" como `bg-red-100 text-red-700`
+### 3. Mover "Auditoria" para o menu Relatorios
 
-**Secao de datas (linhas 158-175):**
-- Envolver em container com `p-3 rounded-[10px] bg-muted/50 border border-border`
-- Labels em `text-[11px] text-muted-foreground`
-- Valores em `text-sm font-medium text-foreground`
-- "em X dia(s)" em `text-[11px] text-muted-foreground/70`
+**Auditoria** e essencialmente um historico de alteracoes — se encaixa naturalmente dentro de "Relatorios", onde o usuario busca informacoes sobre o que aconteceu no sistema.
 
-**Barra de uso (linhas 177-200):**
-- Track: `bg-border` ao inves de `bg-secondary`
-- Cor da barra semantica (ja existente, manter logica): verde < 60%, amber 60-85%, vermelho > 85%
-- Percentual em `font-bold text-foreground`
-- Remover alerta "Limite alto" com icone vermelho (redundante com a barra semantica)
+Adicionar `{ icon: History, label: "Auditoria", href: "/cartoes/auditoria" }` ao array `relatoriosMenu.subItems`.
 
-**Valores Limite/Usado/Disponivel (linhas 202-218):**
-- Layout: `grid-cols-3 text-center`
-- Labels: `text-[11px] text-muted-foreground`
-- Limite: sempre `text-foreground font-semibold`
-- Usado: cor condicional — vermelho se > 85%, amber se > 60%, senao `text-foreground`
-- Disponivel: verde se disponivel > 20% do limite, senao `text-foreground`. Remover classe fixa `text-income`
+### 4. Menu Cartoes resultante
 
-**Cores da barra (linhas 79-84):**
-- Atualizar valores HSL para corresponder exatamente aos usados em `Cartoes.tsx`:
-  - Verde: `hsl(142, 71%, 45%)` (era `hsl(152, 60%, 36%)`)
-  - Amber: `hsl(45, 93%, 47%)` (ja igual)
-  - Vermelho: `hsl(0, 72%, 51%)` (era `hsl(0, 65%, 51%)`)
+```
+Cartoes
+  - Visao Geral
+  - Parcelamentos
+  - Responsaveis
+```
 
-## Resultado
+### 5. Menu principal e Relatorios resultantes
 
-- O `CartaoCard` standalone tera visual identico ao card inline da pagina `Cartoes.tsx`
-- Consistencia total: mesmos border-radius, shadows, cores semanticas, tipografia e espacamento
-- Dark mode compativel via classes Tailwind existentes (`text-foreground`, `bg-muted`, `border-border`)
+```
+Dashboard
+Bancos          <-- novo item de primeiro nivel
+Categorias
+Transacoes (...)
+Cartoes (simplificado)
+Economia (...)
+Relatorios
+  - Visao Geral
+  - Por Categoria
+  - Exportacoes
+  - Auditoria    <-- movido para ca
+```
+
+### Detalhes tecnicos
+
+- Atualizar `mainMenuItems` adicionando Bancos entre Dashboard e Categorias
+- Remover linhas 47 (Bancos), 50 (Limites) e 51 (Auditoria) do `cartoesMenu.subItems`
+- Adicionar Auditoria ao `relatoriosMenu.subItems`
+- Atualizar a logica de `openMenus` para que rotas `/cartoes/bancos` e `/cartoes/auditoria` abram os menus corretos (Relatorios para auditoria; Bancos nao precisa pois e item de primeiro nivel)
+
