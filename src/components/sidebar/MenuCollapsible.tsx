@@ -27,6 +27,7 @@ interface MenuCollapsibleProps {
   label: string;
   subItems: MenuItem[];
   basePath: string | string[];
+  excludePaths?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemClick?: () => void;
@@ -61,6 +62,7 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
   label,
   subItems,
   basePath,
+  excludePaths,
   open,
   onOpenChange,
   onItemClick,
@@ -69,10 +71,12 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
   const location = useLocation();
 
   const isMenuActive = useMemo(() => {
+    const excluded = excludePaths?.some((p) => location.pathname.startsWith(p));
+    if (excluded) return false;
     return Array.isArray(basePath)
       ? basePath.some((path) => location.pathname.startsWith(path))
       : location.pathname.startsWith(basePath);
-  }, [basePath, location.pathname]);
+  }, [basePath, excludePaths, location.pathname]);
 
   const isItemActive = useCallback(
     (href: string) => location.pathname === href,
