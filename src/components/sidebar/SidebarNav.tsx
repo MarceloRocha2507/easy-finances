@@ -98,7 +98,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
+            "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150",
             isActive(item.href)
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
@@ -144,7 +144,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         to="/changelog"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-2",
+          "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-2",
           isActive("/changelog")
             ? "menu-item-active"
             : "text-muted-foreground menu-item-hover"
@@ -159,7 +159,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to="/admin"
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
+            "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-1",
             isActive("/admin")
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
@@ -174,7 +174,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         to="/assistente"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
+          "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-1",
           isActive("/assistente")
             ? "menu-item-active"
             : "text-muted-foreground menu-item-hover"

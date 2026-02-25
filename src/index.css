@@ -167,30 +167,43 @@
     border-right: 1px solid hsl(0 0% 100% / 0.08);
   }
 
-  /* Menu item ativo - left accent bar */
+  /* Menu item ativo - floating pill */
   .menu-item-active {
-    border-left: 2px solid hsl(var(--foreground));
+    background: hsl(220 14% 96%);
+    border-radius: 8px;
     font-weight: 600;
     color: hsl(var(--foreground));
   }
 
-  /* Menu item hover - color only */
+  .dark .menu-item-active {
+    background: hsl(0 0% 100% / 0.08);
+  }
+
+  /* Menu item hover - faint pill */
   .menu-item-hover {
-    transition: color 150ms ease;
+    transition: color 150ms ease, background 150ms ease;
+    border-radius: 8px;
   }
   .menu-item-hover:hover {
+    background: hsl(210 20% 98%);
     color: hsl(257 4.6% 25%);
   }
 
   .dark .menu-item-hover:hover {
+    background: hsl(0 0% 100% / 0.04);
     color: hsl(var(--foreground));
   }
 
-  /* Submenu ativo - thinner left bar */
+  /* Submenu ativo - smaller pill */
   .submenu-item-active {
-    border-left: 2px solid hsl(var(--foreground));
+    background: hsl(220 14% 96%);
+    border-radius: 6px;
     font-weight: 600;
     color: hsl(var(--foreground));
+  }
+
+  .dark .submenu-item-active {
+    background: hsl(0 0% 100% / 0.08);
   }
 
   /* Stagger delays for lists */

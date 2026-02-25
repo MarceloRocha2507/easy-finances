@@ -88,7 +88,7 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between px-3 py-2 text-sm transition-colors duration-150",
+            "group w-full flex items-center justify-between mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150",
             isMenuActive
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
@@ -118,7 +118,7 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "group flex items-center justify-between px-3 py-1.5 text-sm transition-colors duration-150",
+              "group flex items-center justify-between px-3 py-1.5 text-sm rounded-md transition-colors duration-150",
               isItemActive(subItem.href)
                 ? "submenu-item-active"
                 : "text-muted-foreground menu-item-hover"
