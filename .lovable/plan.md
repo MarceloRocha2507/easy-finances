@@ -1,77 +1,56 @@
 
 
-# Skeleton Loading ao navegar entre meses no Dashboard
+# Skeleton Loading na página de Transações
 
 ## Problema
 
-Ao trocar de mes usando os botoes de navegacao, os cards do dashboard mostram "R$ 0,00" brevemente enquanto os dados carregam, causando um flash visual desagradavel (como mostrado na screenshot).
+Ao navegar entre meses na página de Transações, os cards de resumo (Receitas, Despesas, A Receber, A Pagar, Saldo Real, Estimado) e o card de Saldo Inicial mostram "R$ 0,00" enquanto os dados carregam, igual ao bug que já foi corrigido no Dashboard.
 
-## Solucao
+## Solução
 
-Adicionar uma prop `isLoading` aos componentes de cards e ao banner, e no Dashboard usar `isFetching` dos hooks de query para acionar o skeleton. Quando `isFetching` for true, os componentes exibem Skeleton em vez dos valores.
+Usar o `isFetching` já disponível nos hooks e passar `isLoading` para os componentes `StatCardPrimary` e `StatCardSecondary` (que já suportam essa prop desde a implementação anterior). Também adicionar skeleton ao card de Saldo Inicial.
 
-## Alteracoes
+## Alterações
 
-### 1. `src/components/dashboard/StatCardPrimary.tsx`
+### 1. `src/pages/Transactions.tsx`
 
-Adicionar prop opcional `isLoading?: boolean`. Quando true, substituir o valor formatado e o subInfo por componentes `<Skeleton />`:
-
-```typescript
-// No lugar do valor:
-isLoading ? <Skeleton className="h-7 w-28 sm:h-9 sm:w-36" /> : <p ...>{formatCurrency(value)}</p>
-
-// No lugar do subInfo:
-isLoading ? <Skeleton className="h-3 w-20 mt-1" /> : subInfo
-```
-
-### 2. `src/components/dashboard/StatCardSecondary.tsx`
-
-Mesma abordagem - prop `isLoading?: boolean`. Quando true, substituir valor e subInfo por Skeleton:
+**a) Extrair `isFetching` do `useCompleteStats` (linha 264):**
 
 ```typescript
-isLoading ? <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" /> : <p ...>{prefix}{formatCurrency(value)}</p>
-isLoading ? <Skeleton className="h-3 w-16 mt-1" /> : <p ...>{subInfo}</p>
+const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
 ```
 
-### 3. `src/components/dashboard/EstimatedBalanceBanner.tsx`
-
-Prop `isLoading?: boolean`. Substituir o valor central por Skeleton com fundo semi-transparente para combinar com o fundo escuro:
+**b) Adicionar `isLoading` aos StatCardPrimary (linhas 915-930):**
 
 ```typescript
-isLoading ? <Skeleton className="h-8 w-40 sm:h-10 sm:w-48 bg-white/10" /> : <p ...>{formatCurrency(value)}</p>
+<StatCardPrimary
+  title="Receitas"
+  value={stats?.completedIncome || 0}
+  icon={TrendingUp}
+  type="income"
+  isLoading={isStatsFetching}
+  ...
+/>
+<StatCardPrimary
+  title="Despesas"
+  value={stats?.completedExpense || 0}
+  icon={TrendingDown}
+  type="expense"
+  isLoading={isStatsFetching}
+  ...
+/>
 ```
 
-### 4. `src/components/dashboard/PieChartWithLegend.tsx`
+**c) Adicionar `isLoading` aos StatCardSecondary (linhas 931-965):**
 
-Prop `isLoading?: boolean`. Quando true, exibir skeletons no lugar do grafico (circulo skeleton + linhas de legenda skeleton).
+Passar `isLoading={isStatsFetching}` para os 4 cards: A Receber, A Pagar, Saldo Real e Estimado.
 
-### 5. `src/pages/Dashboard.tsx`
+**d) Adicionar skeleton ao card de Saldo Inicial (linhas 878-911):**
 
-- Extrair `isFetching` de `useCompleteStats`:
-  ```typescript
-  const { data: completeStats, isFetching: isStatsFetching } = useCompleteStats(mesReferencia);
-  ```
-- Extrair `isFetching` de `useExpensesByCategory`:
-  ```typescript
-  const { data: expensesByCategory, isFetching: isCategoryFetching } = useExpensesByCategory(...);
-  ```
-- Passar `isLoading={isStatsFetching}` para todos os StatCardPrimary, StatCardSecondary e EstimatedBalanceBanner
-- Passar `isLoading={isCategoryFetching}` para PieChartWithLegend
-- Para o grafico de barras inline, usar skeleton condicional com `isLoading` de `useMonthlyData`
-
-### Arquivos modificados
-
-| Arquivo | Alteracao |
-|---|---|
-| `src/components/dashboard/StatCardPrimary.tsx` | Adicionar prop `isLoading`, renderizar Skeleton condicionalmente |
-| `src/components/dashboard/StatCardSecondary.tsx` | Adicionar prop `isLoading`, renderizar Skeleton condicionalmente |
-| `src/components/dashboard/EstimatedBalanceBanner.tsx` | Adicionar prop `isLoading`, Skeleton com estilo escuro |
-| `src/components/dashboard/PieChartWithLegend.tsx` | Adicionar prop `isLoading`, Skeleton para grafico e legenda |
-| `src/pages/Dashboard.tsx` | Extrair `isFetching` dos hooks e passar como `isLoading` aos componentes |
+Substituir os valores de "Saldo Inicial" e "Em Metas" por `<Skeleton />` quando `isStatsFetching` for true, para manter consistência visual com os demais cards.
 
 ### Resultado
 
-- Ao clicar nos botoes < > de navegacao de mes, todos os cards exibem skeletons animados imediatamente
-- Nenhum valor "R$ 0,00" visivel durante o carregamento
-- Skeletons usam o componente `Skeleton` do shadcn/ui ja existente no projeto
-- Animacao pulse padrao do Tailwind, consistente com o design system
+- Todos os valores na página de Transações mostram skeleton animado durante o carregamento
+- Nenhum "R$ 0,00" visível durante a transição entre meses
+- Usa os mesmos componentes e props já implementados no Dashboard
