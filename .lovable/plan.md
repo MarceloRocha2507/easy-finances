@@ -1,61 +1,39 @@
 
-# Fix: Botoes de acao desalinhando o valor nas transacoes
 
-## Problema
-Os botoes de acao (ver, duplicar, editar, excluir) que aparecem no hover do desktop estao ocupando espaco inline no layout, empurrando o valor monetario para a esquerda e criando um espaco grande e desorganizado entre o valor e os botoes.
+# Redesign: Parcelamentos Page
 
-## Solucao em `src/pages/Transactions.tsx`
+Rewrite the layout and styling of `src/pages/cartoes/Parcelamentos.tsx` to match the premium fintech design system.
 
-### Mudanca na estrutura do lado direito (valor + acoes)
+## Changes (single file: `src/pages/cartoes/Parcelamentos.tsx`)
 
-Atualmente o valor e os botoes estao em sequencia no flex, sem largura fixa. Quando os botoes aparecem, o layout se desloca.
+### Summary cards
+- Replace 3 separate `Card` components with a single unified white container (`bg-white border border-[#E5E7EB] rounded-xl`) using a `grid` with `divide-x` vertical dividers between columns
+- Labels: 12px, `#6B7280`, with 16px stroke icons in `#9CA3AF`
+- Values: `text-2xl font-bold text-[#111827]`
 
-**Abordagem**: Envolver valor + acoes em um container com posicionamento relativo, e colocar os botoes de hover em posicao absoluta, sobrepostos ao conteudo (com fundo branco para cobrir).
+### Filter dropdowns
+- Add explicit classes: `bg-white border-[#E5E7EB] text-[#374151] rounded-lg focus:border-[#111827] focus:ring-0 shadow-none`
 
-**De (linhas ~1284-1388):**
-```tsx
-{/* Valor */}
-<span className="font-semibold tabular-nums ml-2 sm:ml-4 ...">
-  {value}
-</span>
+### Badge ("Parcelado")
+- Replace `<Badge>` with a plain `<span>` using: `bg-[#F3F4F6] text-[#374151] text-[11px] font-medium rounded-[6px] px-2 py-0.5`
 
-{/* Acoes */}
-<div className="ml-2 flex gap-1">
-  {/* Mobile dropdown */}
-  <div className="flex md:hidden">...</div>
-  {/* Desktop hover buttons */}
-  <div className="hidden md:flex gap-1 opacity-0 group-hover:opacity-100">
-    ...5 botoes...
-  </div>
-</div>
-```
+### Installment list items
+- Replace `<Card>` with plain `<div>` using: `bg-white border border-[#E5E7EB] rounded-[10px] p-4 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]`
+- Title: `font-bold text-[#111827]`
+- Metadata (card name, responsavel): `text-[12px] text-[#6B7280]`, card icon `text-[#9CA3AF]`, dot separator `text-[#D1D5DB]`
+- Right side: value `font-bold text-[#111827]`, total `text-[12px] text-[#6B7280]`, proxima `text-[11px] text-[#9CA3AF]`
 
-**Para:**
-```tsx
-{/* Valor + Acoes container */}
-<div className="flex items-center gap-1 ml-2 sm:ml-4 relative">
-  {/* Valor - sempre visivel */}
-  <span className="font-semibold tabular-nums text-sm sm:text-base shrink-0 ...">
-    {value}
-  </span>
+### Progress bar
+- Replace `<Progress>` component with a custom 4px bar (`h-1`)
+- Track: `bg-[#F3F4F6] rounded-full`
+- Fill color logic: under 50% = `#111827`, 50-80% = `#D97706`, above 80% = `#16A34A`
 
-  {/* Mobile dropdown - posicao normal */}
-  <div className="flex md:hidden">...</div>
+### Parcelas text
+- "X/Y parcelas pagas" and "Restante" lines: `text-[12px] text-[#9CA3AF]`
 
-  {/* Desktop hover - posicao absoluta, aparece sobre o valor */}
-  <div className="hidden md:flex items-center gap-0.5
-    absolute right-0 top-1/2 -translate-y-1/2
-    opacity-0 group-hover:opacity-100 transition-opacity
-    bg-white dark:bg-card rounded-md pl-1 pr-0.5 py-0.5
-    shadow-sm border border-border/50">
-    ...botoes com h-7 w-7 menores...
-  </div>
-</div>
-```
+### Empty state
+- Plain `div` with `bg-white border border-[#E5E7EB] rounded-xl`, icon `text-[#9CA3AF]`
 
-Mudancas chave:
-- Botoes de desktop passam a usar `absolute right-0` para se sobrepor ao valor em vez de empurra-lo
-- Fundo branco com borda sutil nos botoes para manter legibilidade
-- Botoes ligeiramente menores (`h-7 w-7`) para um visual mais compacto
-- O valor fica sempre no mesmo lugar, sem deslocamento
-- No mobile nada muda (continua usando o dropdown)
+### Removed imports
+- `Card`, `CardContent`, `CardHeader`, `CardTitle`, `Button`, `Badge`, `Progress`, `AlertTriangle` (no longer used)
+
