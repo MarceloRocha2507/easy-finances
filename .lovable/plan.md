@@ -1,27 +1,36 @@
 
 
-# Remover "Visao Geral" do submenu Economia
+# Transformar "Economia" de subcategoria em item de primeiro nivel
 
-## Alteracao
+Como "Economia" possui apenas uma opcao ("Metas"), nao faz sentido manter o menu colapsavel. A solucao e promover "Metas" a um item de primeiro nivel no menu, usando o icone `PiggyBank` e apontando para `/economia/metas`.
 
-### Arquivo: `src/components/sidebar/SidebarNav.tsx`
+## Alteracoes no arquivo `src/components/sidebar/SidebarNav.tsx`
 
-**Linha 56-59** - Remover a subopção "Visão Geral" do `economiaMenu`, mantendo apenas "Metas":
+### 1. Adicionar "Metas" ao `mainMenuItems`
+Incluir `{ icon: PiggyBank, label: "Metas", href: "/economia/metas" }` apos "Categorias" no array `mainMenuItems`.
 
-De:
-```typescript
-subItems: [
-  { icon: PiggyBank, label: "Visão Geral", href: "/economia" },
-  { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
-],
+### 2. Remover `economiaMenu`
+Deletar o objeto `economiaMenu` (linhas 53-59).
+
+### 3. Remover o `MenuCollapsible` de Economia
+Deletar o bloco do componente `MenuCollapsible` de economia (linhas 154-162).
+
+### 4. Limpar estado `openMenus`
+Remover `economia` do estado `openMenus` (linha 85) e do `useEffect` (linha 95).
+
+### Menu resultante
+
 ```
-
-Para:
-```typescript
-subItems: [
-  { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
-],
+Dashboard
+Bancos
+Categorias
+Metas            <-- item de primeiro nivel
+Transacoes (...)
+Cartoes (...)
+Relatorios (...)
+---
+Novidades
+Admin (condicional)
+Fina IA
 ```
-
-Nenhuma outra alteracao necessaria — a rota `/economia` continua existindo no App.tsx, apenas nao sera mais acessivel pelo menu lateral.
 
