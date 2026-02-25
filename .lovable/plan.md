@@ -1,35 +1,53 @@
 
-# Refinamento da Sidebar Navigation
 
-## Alteracoes
+# Sidebar Active State: Left Border to Floating Pill
 
-### 1. `src/index.css` -- Estilos CSS
+Replace the left accent border active indicator with a floating pill/capsule background, inspired by Vercel/Raycast sidebars.
 
-- **`.menu-item-active`**: Mudar borda de `3px` para `2px`. Manter `font-weight: 600` e `color: hsl(var(--foreground))`.
-- **`.menu-item-hover:hover`**: Mudar cor para `#374151` ao inves de `hsl(var(--foreground))` para hover mais sutil.
-- **`.submenu-item-active`**: Ja esta com `2px`, manter.
+## Changes
 
-### 2. `src/components/sidebar/SidebarNav.tsx` -- Itens de navegacao
+### 1. `src/index.css` -- Update CSS utility classes
 
-- **Icones**: Adicionar classe de opacidade condicional nos icones -- `opacity-100` quando ativo, `opacity-50` quando inativo. No hover, usar `group-hover:opacity-75`.
-- **Wrapper com `group`**: Adicionar `group` class nos Links para permitir hover no icone via parent.
-- **Hover**: Adicionar `hover:text-[#374151]` nos itens inativos.
-- **Separador**: Remover o `<div>` com `border-t` (linha visivel). Substituir por `mt-2` (8px spacing) no link "Novidades". Manter `mt-1` no Admin e Fina IA (ja presente).
-- **Collapsible triggers**: O `menu-item-active` no trigger do collapsible so deve aparecer quando `isMenuActive` e true (nao quando apenas `open`). Isso evita que abrir o menu sem estar na rota marque como ativo.
+- **`.menu-item-active`**: Remove `border-left: 2px solid`. Add `background: #F3F4F6`, `border-radius: 8px`, `font-weight: 600`, `color: hsl(var(--foreground))`.
+- **`.menu-item-hover:hover`**: Add `background: #F9FAFB` and `border-radius: 8px` alongside the existing color transition.
+- **`.submenu-item-active`**: Same pattern -- remove border-left, add `background: #F3F4F6`, `border-radius: 6px`.
+- **Dark mode**: Use `hsl(0 0% 100% / 0.08)` for active pill and `hsl(0 0% 100% / 0.04)` for hover pill.
 
-### 3. `src/components/sidebar/MenuCollapsible.tsx` -- Menus colapsaveis
+### 2. `src/components/sidebar/SidebarNav.tsx` -- Adjust item classes
 
-- **Trigger ativo**: Mudar logica de `open || isMenuActive` para apenas `isMenuActive`. O menu aberto sem rota ativa nao deve ter borda lateral.
-- **Icones**: Adicionar opacidade condicional -- `opacity-100` quando ativo, `opacity-50` quando inativo, com `group-hover:opacity-75`.
-- **Sub-itens icones**: Mesma logica de opacidade.
+- Add `rounded-lg` and `mx-1` to nav items so the pill has 8px horizontal margin from the sidebar edges (nav already has `px-3`, items get `mx-1` to create inset).
+- Active class: `menu-item-active` (now pill-based).
+- Inactive class: `text-muted-foreground menu-item-hover`.
+- No other structural changes needed -- the CSS classes do the work.
 
-### Resumo das mudancas
+### 3. `src/components/sidebar/MenuCollapsible.tsx` -- Same pill pattern
 
-| O que | De | Para |
-|-------|-----|------|
-| Borda ativa | 3px | 2px |
-| Trigger collapsible ativo | `open \|\| isMenuActive` | `isMenuActive` apenas |
-| Icone inativo | mesma cor do texto | `opacity-50` |
-| Icone ativo | mesma cor do texto | `opacity-100` |
-| Hover cor | `#111827` | `#374151` |
-| Separador | `border-t` visivel | Removido, usar `mt-2` |
+- Collapsible trigger button: Add `rounded-lg mx-1` for consistent pill sizing.
+- Sub-items: Add `rounded-md` for slightly smaller pill radius on sub-items.
+- Active/inactive classes remain `menu-item-active` / `submenu-item-active` and `menu-item-hover`.
+
+### CSS Summary
+
+```css
+.menu-item-active {
+  background: #F3F4F6;
+  border-radius: 8px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.menu-item-hover:hover {
+  background: #F9FAFB;
+  border-radius: 8px;
+  color: hsl(257 4.6% 25%);
+}
+
+.submenu-item-active {
+  background: #F3F4F6;
+  border-radius: 6px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+```
+
+No borders, no shadows -- just flat subtle fill for active and hover states.
