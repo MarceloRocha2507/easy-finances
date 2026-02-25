@@ -6,8 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatCardPrimary } from "@/components/dashboard/StatCardPrimary";
-import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { StatCardMinimal } from "@/components/dashboard/StatCardMinimal";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Target,
@@ -92,35 +91,33 @@ export default function Metas() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <StatCardPrimary
+        <div className="grid gap-3 md:grid-cols-4">
+          <StatCardMinimal
             title="Total"
             value={metas.length}
             icon={Target}
-            type="neutral"
             delay={0}
+            formatValue={(v) => v.toString()}
             subInfo={<span className="text-xs text-muted-foreground">objetivos</span>}
           />
-          <StatCardSecondary
+          <StatCardMinimal
             title="Em andamento"
             value={metasAtivas.length}
             icon={Clock}
-            status="warning"
             formatValue={(v) => v.toString()}
             delay={0.05}
           />
-          <StatCardPrimary
+          <StatCardMinimal
             title="Concluídos"
             value={metasConcluidas.length}
             icon={Check}
-            type="income"
+            formatValue={(v) => v.toString()}
             delay={0.1}
           />
-          <StatCardSecondary
+          <StatCardMinimal
             title="Valor acumulado"
             value={totalAtual}
             icon={Wallet}
-            status="info"
             delay={0.15}
           />
         </div>

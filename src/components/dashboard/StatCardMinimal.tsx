@@ -14,6 +14,7 @@ interface StatCardMinimalProps {
   onClick?: () => void;
   isLoading?: boolean;
   formatValue?: (value: number) => string;
+  actions?: ReactNode;
 }
 
 export function StatCardMinimal({
@@ -26,6 +27,7 @@ export function StatCardMinimal({
   onClick,
   isLoading,
   formatValue,
+  actions,
 }: StatCardMinimalProps) {
   const getValueColor = () => {
     if (prefix === "-") return "text-[#DC2626]";
@@ -45,7 +47,10 @@ export function StatCardMinimal({
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
       onClick={onClick}
     >
-      <Icon className="absolute top-4 right-4 h-4 w-4 text-foreground/30" />
+      <div className="absolute top-4 right-4 flex items-center gap-1">
+        {actions}
+        <Icon className="h-4 w-4 text-foreground/30" />
+      </div>
 
       <p className="text-[#6B7280] text-xs sm:text-sm mb-1">{title}</p>
 

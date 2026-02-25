@@ -11,8 +11,7 @@ import {
   NovoAporteDialog,
   DetalhesInvestimentoDialog,
 } from "@/components/investimentos";
-import { StatCardPrimary } from "@/components/dashboard/StatCardPrimary";
-import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { StatCardMinimal } from "@/components/dashboard/StatCardMinimal";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Plus,
@@ -93,39 +92,35 @@ export default function Investimentos() {
         </div>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {isLoading ? (
             <>
-              {[0,1,2,3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+              {[0,1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-[10px]" />)}
             </>
           ) : (
             <>
-              <StatCardPrimary
+              <StatCardMinimal
                 title="Patrimônio total"
                 value={totais.patrimonio}
                 icon={Wallet}
-                type="neutral"
                 delay={0}
               />
-              <StatCardSecondary
+              <StatCardMinimal
                 title="Total investido"
                 value={totais.investido}
                 icon={PiggyBank}
-                status="pending"
                 delay={0.05}
               />
-              <StatCardPrimary
+              <StatCardMinimal
                 title="Rendimento total"
                 value={totais.rendimento}
                 icon={TrendingUp}
-                type={totais.rendimento >= 0 ? "income" : "expense"}
                 delay={0.1}
               />
-              <StatCardSecondary
+              <StatCardMinimal
                 title="Rentabilidade"
                 value={parseFloat(totais.percentual)}
                 icon={ArrowUpRight}
-                status={parseFloat(totais.percentual) >= 0 ? "success" : "danger"}
                 formatValue={(v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`}
                 delay={0.15}
               />

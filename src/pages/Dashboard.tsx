@@ -34,8 +34,7 @@ import {
   MetasEconomia,
   FiltroPeriodo,
   CartoesCredito,
-  StatCardPrimary,
-  StatCardSecondary,
+  StatCardMinimal,
   EstimatedBalanceBanner,
   PieChartWithLegend,
 } from "@/components/dashboard";
@@ -144,109 +143,103 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Stats Cards - Primeira Linha (Cards Principais com Gradiente) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <StatCardPrimary
+      {/* Stats Cards - Primeira Linha */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <StatCardMinimal
           title="Saldo Disponível"
           value={completeStats?.saldoDisponivel || 0}
           icon={Wallet}
-          type="neutral"
           delay={0.05}
           isLoading={isStatsFetching}
           actions={
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8"
+              className="h-6 w-6"
               onClick={() => setEditarSaldoOpen(true)}
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="w-3.5 h-3.5" />
             </Button>
           }
           subInfo={
             <div className="flex flex-col gap-0.5">
               {(completeStats?.totalInvestido || 0) > 0 && (
-                <p className="text-xs text-primary">
+                <span className="text-xs text-primary">
                   Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
-                </p>
+                </span>
               )}
               {(completeStats?.totalMetas || 0) > 0 && (
-                <p className="text-xs text-amber-600">
+                <span className="text-xs text-amber-600">
                   Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
-                </p>
+                </span>
               )}
             </div>
           }
         />
 
-        <StatCardPrimary
+        <StatCardMinimal
           title="Receitas"
           value={completeStats?.completedIncome || 0}
           icon={TrendingUp}
-          type="income"
           delay={0.1}
           isLoading={isStatsFetching}
-          subInfo={<p className="text-xs text-muted-foreground hidden sm:block">recebidas</p>}
+          subInfo={<span className="hidden sm:inline">recebidas</span>}
         />
 
-        <StatCardPrimary
+        <StatCardMinimal
           title="Despesas"
           value={completeStats?.completedExpense || 0}
           icon={TrendingDown}
-          type="expense"
+          prefix="-"
           delay={0.15}
           isLoading={isStatsFetching}
-          subInfo={<p className="text-xs text-muted-foreground hidden sm:block">pagas</p>}
+          subInfo={<span className="hidden sm:inline">pagas</span>}
         />
       </div>
 
-      {/* Stats Cards - Segunda Linha (Cards Secundários com Borda Colorida) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatCardSecondary
+      {/* Stats Cards - Segunda Linha */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <StatCardMinimal
           title="A Receber"
           value={completeStats?.pendingIncome || 0}
           icon={Clock}
-          status="pending"
+          prefix="+"
           subInfo={<span className="hidden sm:inline">pendentes</span>}
           delay={0.2}
-          prefix="+"
           isLoading={isStatsFetching}
         />
 
-        <StatCardSecondary
+        <StatCardMinimal
           title="A Pagar"
           value={completeStats?.pendingExpense || 0}
           icon={AlertTriangle}
-          status="warning"
+          prefix="-"
           subInfo={
             (completeStats?.overdueCount || 0) > 0 
               ? `${completeStats?.overdueCount} vencida(s)` 
               : "pendentes"
           }
           delay={0.25}
-          prefix="-"
           isLoading={isStatsFetching}
         />
 
-        <StatCardSecondary
+        <StatCardMinimal
           title="Fatura Cartão"
           value={completeStats?.faturaCartao || 0}
           icon={CreditCard}
-          status="info"
+          prefix="-"
           subInfo={<span className="hidden sm:inline">titular do mês</span>}
           delay={0.3}
-          prefix="-"
           isLoading={isStatsFetching}
         />
 
-        <StatCardSecondary
+        <StatCardMinimal
           title="Total a Pagar"
           value={(completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0)}
           icon={Wallet}
-          status="danger"
+          prefix="-"
           subInfo={<span className="hidden sm:inline">contas + cartão</span>}
           delay={0.35}
-          prefix="-"
           onClick={() => setDespesasDialogOpen(true)}
           isLoading={isStatsFetching}
         />

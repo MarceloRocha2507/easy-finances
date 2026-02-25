@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, AreaChart, Area, CartesianGrid } from 'recharts';
 import { PieChartWithLegend } from '@/components/dashboard';
-import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
+import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
 import { FiltroDataRange } from '@/components/FiltroDataRange';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -171,10 +171,10 @@ export default function Reports() {
               {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCardPrimary title="Resultado do Período" value={stats?.balance || 0} icon={Wallet} type={(stats?.balance || 0) >= 0 ? 'income' : 'expense'} delay={0} />
-              <StatCardPrimary title="Total de Receitas" value={stats?.totalIncome || 0} icon={TrendingUp} type="income" delay={0.05} />
-              <StatCardPrimary title="Total de Despesas" value={stats?.totalExpense || 0} icon={TrendingDown} type="expense" delay={0.1} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <StatCardMinimal title="Resultado do Período" value={stats?.balance || 0} icon={Wallet} delay={0} />
+              <StatCardMinimal title="Total de Receitas" value={stats?.totalIncome || 0} icon={TrendingUp} delay={0.05} />
+              <StatCardMinimal title="Total de Despesas" value={stats?.totalExpense || 0} icon={TrendingDown} prefix="-" delay={0.1} />
             </div>
           )}
 
