@@ -120,6 +120,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      <div className="page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -300,12 +301,18 @@ export default function Dashboard() {
                     fill="hsl(var(--income))"
                     name="Receitas"
                     radius={[4, 4, 0, 0]}
+                    animationBegin={200}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                   />
                   <Bar
                     dataKey="expense"
                     fill="hsl(var(--expense))"
                     name="Despesas"
                     radius={[4, 4, 0, 0]}
+                    animationBegin={200}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -421,6 +428,7 @@ export default function Dashboard() {
         pendingExpense={completeStats?.pendingExpense || 0}
         faturaCartao={completeStats?.faturaCartao || 0}
       />
+      </div>
     </Layout>
   );
 }

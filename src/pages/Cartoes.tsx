@@ -138,7 +138,7 @@ export default function Cartoes() {
 
   return (
     <Layout>
-      <div className="space-y-6 fade-in">
+      <div className="space-y-6 page-enter">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

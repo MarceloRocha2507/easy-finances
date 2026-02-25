@@ -502,7 +502,7 @@ export default function Transactions() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 page-enter">
         {/* Header - título e botões na mesma linha */}
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-semibold text-foreground">Transações</h1>

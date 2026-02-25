@@ -214,6 +214,27 @@
   .stagger-5 { animation-delay: 0.25s; opacity: 0; }
   .stagger-6 { animation-delay: 0.3s; opacity: 0; }
 
+  /* Dynamic stagger item */
+  .stagger-item {
+    opacity: 0;
+    animation: fade-in-up 0.3s ease-out forwards;
+    animation-delay: calc(var(--stagger-index, 0) * 50ms);
+  }
+
+  /* Page enter animation */
+  .page-enter {
+    animation: fade-in-up 0.3s ease-out forwards;
+  }
+
+  /* Hover lift for cards/buttons */
+  .hover-lift {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .hover-lift:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
   /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 ease-out;

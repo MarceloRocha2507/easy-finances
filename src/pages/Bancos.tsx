@@ -97,6 +97,7 @@ export default function Bancos() {
 
   return (
     <Layout>
+      <div className="page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -168,14 +169,15 @@ export default function Bancos() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {bancosResumo.map((banco) => (
-            <BancoCard
-              key={banco.id}
-              banco={banco}
-              onEdit={() => handleEdit(banco)}
-              onDelete={() => handleDelete(banco)}
-              onAjustarSaldo={() => handleAjustarSaldo(banco)}
-            />
+          {bancosResumo.map((banco, index) => (
+            <div key={banco.id} className="stagger-item" style={{ "--stagger-index": Math.min(index, 12) } as React.CSSProperties}>
+              <BancoCard
+                banco={banco}
+                onEdit={() => handleEdit(banco)}
+                onDelete={() => handleDelete(banco)}
+                onAjustarSaldo={() => handleAjustarSaldo(banco)}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -254,6 +256,7 @@ export default function Bancos() {
         onOpenChange={setAjustarOpen}
         onSaved={() => refetch()}
       />
+      </div>
     </Layout>
   );
 }

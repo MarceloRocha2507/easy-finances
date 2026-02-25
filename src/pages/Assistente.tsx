@@ -182,7 +182,7 @@ export default function Assistente() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen max-w-3xl mx-auto -m-6">
+      <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen max-w-3xl mx-auto -m-6 page-enter">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
