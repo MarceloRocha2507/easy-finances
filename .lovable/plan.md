@@ -1,89 +1,58 @@
 
 
-# Unificar todos os cards do sistema com o design StatCardMinimal
+# Redesign: Cards de Cartao de Credito - Visual Premium Fintech
 
 ## Objetivo
 
-Substituir todas as instancias de `StatCardPrimary` e `StatCardSecondary` em todas as paginas por `StatCardMinimal`, aplicando o visual premium e minimalista (fundo branco, borda fina, tipografia como peso visual, icone sutil) de forma consistente em todo o sistema.
-
-## Paginas afetadas
-
-1. **Dashboard** (`src/pages/Dashboard.tsx`) - 3x StatCardPrimary + 4x StatCardSecondary
-2. **Investimentos** (`src/pages/Investimentos.tsx`) - 2x StatCardPrimary + 2x StatCardSecondary
-3. **Metas** (`src/pages/Metas.tsx`) - 2x StatCardPrimary + 2x StatCardSecondary
-4. **Relatorios** (`src/pages/Reports.tsx`) - 3x StatCardPrimary
-5. **Relatorio Categorias** (`src/pages/reports/RelatorioCategorias.tsx`) - 1x StatCardPrimary + 2x StatCardSecondary
-6. **Despesas Futuras** (`src/pages/DespesasFuturas.tsx`) - 3x StatCardSecondary
+Redesenhar o componente `CartaoCard` dentro de `src/pages/Cartoes.tsx` (linhas 312-471) para um visual limpo e premium, estilo Stripe/Revolut, removendo bordas coloridas, fundos pasteis e decoracoes desnecessarias.
 
 ## Alteracoes
 
-### 1. Atualizar `StatCardMinimal` para suportar `actions`
+### Arquivo: `src/pages/Cartoes.tsx` (componente CartaoCard, linhas 341-470)
 
-O card de "Saldo Disponivel" no Dashboard usa uma prop `actions` (botao de editar). Adicionar essa prop ao `StatCardMinimal`:
+**Container do card:**
+- Remover a barra colorida superior (`<div className="h-2" style=.../>`)
+- Substituir o Card por um container com: fundo branco, borda 1px `#E5E7EB`, border-radius 12px, box-shadow `0 2px 6px rgba(0,0,0,0.06)`
+- Estilo: `bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[12px] shadow-[0_2px_6px_rgba(0,0,0,0.06)]`
 
-```typescript
-interface StatCardMinimalProps {
-  // ... props existentes
-  actions?: ReactNode;
-}
-```
+**Header do cartao:**
+- Icone com fundo neutro `#F3F4F6` (sem cor do cartao)
+- Nome em bold `#111827`, bandeira em `#9CA3AF` uppercase
+- Badge "Paga"/"Aberta" como pill minimal: fundo `#DCFCE7` com texto `#15803D` (11px) para paga, fundo `#F3F4F6` com texto `#6B7280` para aberta
 
-Renderizar o `actions` ao lado do icone no canto superior direito.
+**Secao de datas:**
+- Container com fundo `#F9FAFB`, borda 1px `#E5E7EB`, border-radius 10px
+- Labels em `#6B7280`, valores em `#111827`, "em X dia(s)" em `#9CA3AF`
 
-### 2. Dashboard (`src/pages/Dashboard.tsx`)
+**Barra de uso do limite:**
+- Track em `#E5E7EB`
+- Cor da barra: verde `#16A34A` (< 60%), amber `#D97706` (60-85%), vermelho `#DC2626` (> 85%)
+- Percentual em bold `#111827`
 
-- Substituir imports de `StatCardPrimary`/`StatCardSecondary` por `StatCardMinimal`
-- Converter os 7 cards para `StatCardMinimal`:
-  - **Saldo Disponivel**: sem prefix, cor dinamica, com actions (botao editar) e subInfo
-  - **Receitas**: sem prefix, valor positivo = verde
-  - **Despesas**: prefix "-", valor vermelho
-  - **A Receber**: prefix "+"
-  - **A Pagar**: prefix "-", com subInfo de vencidas
-  - **Fatura Cartao**: prefix "-"
-  - **Total a Pagar**: prefix "-", com onClick
-- Unificar o grid em uma unica secao (grid-cols-2 lg:grid-cols-4 ou manter 3+4)
+**Linha Limite/Usado/Disponivel:**
+- "Limite" sempre em `#111827`
+- "Usado" em `#D97706` se > 60%, `#DC2626` se > 85%, senao `#111827`
+- "Disponivel" em `#16A34A` se disponivel > 20% do limite, senao `#111827`
 
-### 3. Investimentos (`src/pages/Investimentos.tsx`)
+**Footer da fatura:**
+- Remover fundos coloridos (emerald/red)
+- Usar fundo `#F9FAFB` com borda superior 1px `#E5E7EB`
+- Icone em `#9CA3AF`
+- Label "Fatura ..." em `#6B7280`
+- Valor em bold `#111827` (sem cor verde/vermelha no valor)
 
-Converter os 4 cards:
-- **Patrimonio total**: sem prefix, cor dinamica
-- **Total investido**: sem prefix
-- **Rendimento total**: sem prefix, cor dinamica baseada no valor
-- **Rentabilidade**: formatValue customizado para percentual
+### Dark mode
 
-### 4. Metas (`src/pages/Metas.tsx`)
+Todas as cores hardcoded terao equivalentes dark:
+- `#111827` -> `text-[#111827] dark:text-[#F9FAFB]`
+- `#F9FAFB` bg -> `bg-[#F9FAFB] dark:bg-[#111827]/30`
+- `#E5E7EB` border -> `border-[#E5E7EB] dark:border-[#2a2a2a]`
+- `#6B7280` -> `text-[#6B7280] dark:text-[#9CA3AF]`
 
-Converter os 4 cards:
-- **Total**: formatValue para numero inteiro
-- **Em andamento**: formatValue para numero inteiro
-- **Concluidos**: formatValue para numero inteiro
-- **Valor acumulado**: valor monetario padrao
+### Resultado
 
-### 5. Relatorios (`src/pages/Reports.tsx`)
+- Cards uniformes, limpos, sem bordas coloridas ou fundos pasteis
+- Cor usada apenas como sinal semantico (barra de limite, valores criticos)
+- Visual premium e estruturado, consistente com o design do StatCardMinimal
+- Compativel com dark mode
 
-Converter os 3 cards:
-- **Resultado do Periodo**: cor dinamica
-- **Total de Receitas**: positivo
-- **Total de Despesas**: prefix "-"
-
-### 6. Relatorio Categorias (`src/pages/reports/RelatorioCategorias.tsx`)
-
-Converter os 3 cards:
-- **Total de Despesas**: prefix "-", com subInfo comparativo
-- **Categorias Ativas**: formatValue para numero inteiro
-- **Maior Categoria**: com subInfo do nome
-
-### 7. Despesas Futuras (`src/pages/DespesasFuturas.tsx`)
-
-Converter os 3 cards:
-- **Total no Periodo**: prefix "-"
-- **Proximos 30 dias**: prefix "-"
-- **Qtd. Despesas**: formatValue para numero inteiro
-
-## Resultado
-
-- Visual uniforme em todas as paginas do sistema
-- Todos os cards com fundo branco limpo, borda fina, tipografia bold
-- Icones sutis no canto superior direito com 30% de opacidade
-- Cores semanticas apenas no texto dos valores
-- Componentes `StatCardPrimary` e `StatCardSecondary` podem ser removidos ou mantidos como legado
