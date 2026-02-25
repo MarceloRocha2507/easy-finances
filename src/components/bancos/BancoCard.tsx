@@ -20,11 +20,8 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${banco.cor}15` }}
-            >
-              <Building2 className="h-6 w-6" style={{ color: banco.cor }} />
+           <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted">
+              <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">{banco.nome}</h3>
@@ -39,7 +36,7 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={onDelete}
             >
               <Trash2 className="h-4 w-4" />
@@ -48,7 +45,7 @@ export function BancoCard({ banco, onEdit, onDelete, onAjustarSaldo }: BancoCard
         </div>
 
         {/* Saldo da Conta */}
-        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 mb-4">
+        <div className="p-4 rounded-xl bg-muted/50 border border-border mb-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Saldo da Conta</p>

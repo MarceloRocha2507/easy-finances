@@ -58,23 +58,16 @@ export function InvestimentoCard({
   return (
     <Card
       className={cn(
-        "group cursor-pointer shadow-sm rounded-xl card-hover border-l-4 transition-all duration-200",
-        !investimento.ativo && "opacity-60",
-        isPositive ? "border-l-emerald-500" : "border-l-rose-500"
+        "group cursor-pointer rounded-xl card-hover border border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-all duration-200",
+        !investimento.ativo && "opacity-60"
       )}
       onClick={onDetalhes}
     >
       <CardContent className="p-6">
         <div className="flex items-start gap-3">
           {/* Ícone */}
-          <div
-            className="p-3 rounded-xl shrink-0"
-            style={{ backgroundColor: `${investimento.cor}20` }}
-          >
-            <IconComponent
-              className="h-6 w-6"
-              style={{ color: investimento.cor }}
-            />
+          <div className="p-3 rounded-xl shrink-0 bg-muted">
+            <IconComponent className="h-6 w-6 text-muted-foreground" />
           </div>
 
           {/* Conteúdo */}

@@ -30,27 +30,27 @@ type TabStatus = "todas" | "nao_lidas" | "lidas";
 const tipoConfig = {
   danger: {
     icon: AlertCircle,
-    bgColor: "bg-expense/10",
-    textColor: "text-expense",
-    borderColor: "border-expense/20",
+    bgColor: "bg-muted",
+    textColor: "text-muted-foreground",
+    borderColor: "border-border",
   },
   warning: {
     icon: AlertTriangle,
-    bgColor: "bg-amber-500/10",
-    textColor: "text-amber-500",
-    borderColor: "border-amber-500/20",
+    bgColor: "bg-muted",
+    textColor: "text-muted-foreground",
+    borderColor: "border-border",
   },
   info: {
     icon: Info,
-    bgColor: "bg-primary/10",
-    textColor: "text-primary",
-    borderColor: "border-primary/20",
+    bgColor: "bg-muted",
+    textColor: "text-muted-foreground",
+    borderColor: "border-border",
   },
   success: {
     icon: CheckCircle2,
-    bgColor: "bg-income/10",
-    textColor: "text-income",
-    borderColor: "border-income/20",
+    bgColor: "bg-muted",
+    textColor: "text-muted-foreground",
+    borderColor: "border-border",
   },
 };
 
@@ -174,19 +174,19 @@ export default function Notificacoes() {
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={(v) => setTab(v as TabStatus)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="todas" className="gap-2">
+          <TabsList className="w-full justify-start border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="todas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 gap-2">
               Todas
             </TabsTrigger>
-            <TabsTrigger value="nao_lidas" className="gap-2">
+            <TabsTrigger value="nao_lidas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 gap-2">
               Não Lidas
               {naoLidas > 0 && (
-                <Badge className="ml-1 h-5 px-1.5 text-xs bg-expense">
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                   {naoLidas}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="lidas">Lidas</TabsTrigger>
+            <TabsTrigger value="lidas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5">Lidas</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4 space-y-3">
@@ -224,8 +224,7 @@ export default function Notificacoes() {
                   <Card
                     key={notificacao.id}
                     className={cn(
-                      "transition-all duration-300 border-l-4",
-                      config.borderColor,
+                      "transition-all duration-300 border border-border",
                       notificacao.lido && "opacity-60"
                     )}
                     style={{

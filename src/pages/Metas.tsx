@@ -124,7 +124,7 @@ export default function Metas() {
 
         {/* Progresso Geral */}
         {metas.length > 0 && (
-          <Card className="shadow-sm rounded-xl">
+          <Card className="rounded-xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium">Progresso geral</span>
@@ -143,11 +143,11 @@ export default function Metas() {
 
         {/* Tabs */}
         <Tabs defaultValue="ativos">
-          <TabsList>
-            <TabsTrigger value="ativos">
+          <TabsList className="w-full justify-start border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="ativos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5">
               Em andamento ({metasAtivas.length})
             </TabsTrigger>
-            <TabsTrigger value="concluidos">
+            <TabsTrigger value="concluidos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5">
               Concluídos ({metasConcluidas.length})
             </TabsTrigger>
           </TabsList>
@@ -242,8 +242,7 @@ function MetaCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all shadow-sm rounded-xl card-hover fade-in",
-        meta.concluida && "bg-income/5 border-income/20"
+        "cursor-pointer transition-all rounded-xl card-hover fade-in border border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
       )}
       style={{ animationDelay: `${index * 0.05}s` }}
       onClick={onClick}
@@ -251,14 +250,11 @@ function MetaCard({
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="h-12 w-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${meta.cor}15` }}
-            >
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-muted">
               {meta.concluida ? (
-                <Check className="h-6 w-6" style={{ color: meta.cor }} strokeWidth={1.75} />
+                <Check className="h-6 w-6 text-muted-foreground" strokeWidth={1.75} />
               ) : (
-                <Target className="h-6 w-6" style={{ color: meta.cor }} strokeWidth={1.75} />
+                <Target className="h-6 w-6 text-muted-foreground" strokeWidth={1.75} />
               )}
             </div>
             <div>
@@ -273,7 +269,7 @@ function MetaCard({
           </div>
 
           {meta.concluida && (
-            <Badge variant="secondary" className="bg-income/10 text-income border-0">
+            <Badge variant="secondary" className="text-xs">
               Concluído
             </Badge>
           )}

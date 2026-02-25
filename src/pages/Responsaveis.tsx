@@ -194,7 +194,7 @@ export default function Responsaveis() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight">Responsáveis</h1>
+              <h1 className="text-xl font-semibold tracking-tight">Responsáveis</h1>
               <PlanLimitBadge usado={usage.responsaveis} limite={limits.responsaveis} />
             </div>
             <p className="text-muted-foreground text-sm mt-0.5">
@@ -228,13 +228,7 @@ export default function Responsaveis() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {/* Avatar */}
-                    <div
-                      className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        responsavel.is_titular
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
+                    <div className="h-12 w-12 rounded-full flex items-center justify-center bg-muted text-muted-foreground">
                       {responsavel.is_titular ? (
                         <Crown className="h-5 w-5" />
                       ) : (
@@ -281,7 +275,7 @@ export default function Responsaveis() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-red-500 focus:text-red-500"
+                          className="text-destructive focus:text-destructive"
                           onClick={() => setExcluindoId(responsavel.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -420,7 +414,7 @@ export default function Responsaveis() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDesativar}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Remover
             </AlertDialogAction>

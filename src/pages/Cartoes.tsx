@@ -209,11 +209,11 @@ export default function Cartoes() {
         </div>
 
         {/* Previsão de Faturas */}
-        <Card className="shadow-lg rounded-xl">
+        <Card className="rounded-xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-primary" strokeWidth={1.75} />
+              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-muted-foreground" strokeWidth={1.75} />
               </div>
               <div>
                 <h2 className="font-semibold">Previsão de Faturas</h2>
@@ -236,14 +236,11 @@ export default function Cartoes() {
                     <div key={offset} className={cn(
                       "p-2 sm:p-4 rounded-xl transition-all",
                       offset === 0 
-                        ? "bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm" 
+                        ? "bg-muted shadow-sm" 
                         : "bg-muted/50"
                     )}>
                       <p className="text-xs text-muted-foreground capitalize">{getMesLabel(offset)}</p>
-                      <p className={cn(
-                        "text-sm sm:text-lg font-bold value-display mt-1 truncate",
-                        offset === 0 ? "text-primary" : "text-foreground"
-                      )}>
+                      <p className="text-sm sm:text-lg font-bold value-display mt-1 truncate text-foreground">
                         {formatCurrency(getFaturaDoMes(titular.id, offset))}
                       </p>
                     </div>

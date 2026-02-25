@@ -15,20 +15,20 @@ export default function Profile() {
 
         {/* Tabs */}
         <Tabs defaultValue="perfil" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
-            <TabsTrigger value="perfil" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2">
+          <TabsList className="w-full justify-start border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="perfil" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="text-xs sm:text-sm">Perfil</span>
             </TabsTrigger>
-            <TabsTrigger value="preferencias" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2">
+            <TabsTrigger value="preferencias" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 flex items-center gap-2">
               <Settings className="w-4 h-4" />
               <span className="text-xs sm:text-sm">Preferências</span>
             </TabsTrigger>
-            <TabsTrigger value="estatisticas" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2">
+            <TabsTrigger value="estatisticas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="text-xs sm:text-sm">Estatísticas</span>
             </TabsTrigger>
-            <TabsTrigger value="seguranca" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2">
+            <TabsTrigger value="seguranca" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 flex items-center gap-2">
               <Shield className="w-4 h-4" />
               <span className="text-xs sm:text-sm">Segurança</span>
             </TabsTrigger>
