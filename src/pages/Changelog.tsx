@@ -13,7 +13,7 @@ const typeBadge: Record<ChangeType, { label: string; className: string }> = {
 export default function Changelog() {
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6 page-enter">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -29,7 +29,7 @@ export default function Changelog() {
           <div className="absolute left-[15px] top-6 bottom-6 w-px bg-border" />
 
           {CHANGELOG.map((entry, idx) => (
-            <div key={entry.version} className="relative pl-10">
+            <div key={entry.version} className="relative pl-10 stagger-item" style={{ "--stagger-index": Math.min(idx, 12) } as React.CSSProperties}>
               {/* Timeline dot */}
               <div className={`absolute left-2 top-6 w-3 h-3 rounded-full border-2 ${idx === 0 ? "bg-primary border-primary" : "bg-muted border-border"}`} />
 

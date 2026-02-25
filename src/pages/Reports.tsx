@@ -134,7 +134,7 @@ export default function Reports() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 page-enter">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -201,8 +201,8 @@ export default function Reports() {
                         <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Bar dataKey="income" fill="hsl(var(--income))" name="Receitas" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="expense" fill="hsl(var(--expense))" name="Despesas" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="income" fill="hsl(var(--income))" name="Receitas" radius={[4, 4, 0, 0]} animationBegin={200} animationDuration={800} animationEasing="ease-out" />
+                        <Bar dataKey="expense" fill="hsl(var(--expense))" name="Despesas" radius={[4, 4, 0, 0]} animationBegin={200} animationDuration={800} animationEasing="ease-out" />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -242,6 +242,9 @@ export default function Reports() {
                         fill="url(#saldoGradient)"
                         name="Saldo"
                         strokeWidth={2}
+                        animationBegin={200}
+                        animationDuration={800}
+                        animationEasing="ease-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>

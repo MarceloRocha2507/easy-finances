@@ -229,7 +229,7 @@ export default function Admin() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 page-enter">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
