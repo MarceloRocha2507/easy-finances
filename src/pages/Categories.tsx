@@ -152,39 +152,41 @@ export default function Categories() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div 
-            className="w-3 h-3 rounded-[3px]" 
+            className="w-3 h-3 rounded-[3px] shrink-0" 
             style={{ backgroundColor: category.color || '#64748b' }}
           />
-          {!category.is_default && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]" onClick={() => handleEdit(category)}>
-                <Pencil className="w-3.5 h-3.5" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Excluir a categoria "{category.name}"? Transações vinculadas ficarão sem categoria.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDelete(category.id)} className="bg-destructive text-destructive-foreground">
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
+          <div className="flex items-center gap-1 w-[68px] justify-end">
+            {!category.is_default && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]" onClick={() => handleEdit(category)}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Excluir a categoria "{category.name}"? Transações vinculadas ficarão sem categoria.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(category.id)} className="bg-destructive text-destructive-foreground">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
