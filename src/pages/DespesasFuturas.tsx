@@ -45,7 +45,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { StatCardSecondary } from "@/components/dashboard/StatCardSecondary";
+import { StatCardMinimal } from "@/components/dashboard/StatCardMinimal";
 import { EmptyState } from "@/components/ui/empty-state";
 
 import {
@@ -191,27 +191,26 @@ export default function DespesasFuturas() {
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatCardSecondary
+        <div className="grid gap-3 md:grid-cols-3">
+          <StatCardMinimal
             title="Total no Período"
             value={resumo.totalPeriodo}
             icon={Wallet}
-            status="danger"
+            prefix="-"
             subInfo={startDate && endDate ? `${format(startDate, "MMM/yy", { locale: ptBR })} até ${format(endDate, "MMM/yy", { locale: ptBR })}` : undefined}
             delay={0}
           />
-          <StatCardSecondary
+          <StatCardMinimal
             title="Próximos 30 dias"
             value={resumo.proximos30Dias}
             icon={CalendarIcon}
-            status="warning"
+            prefix="-"
             delay={0.05}
           />
-          <StatCardSecondary
+          <StatCardMinimal
             title="Qtd. Despesas"
             value={resumo.quantidade}
             icon={Hash}
-            status="info"
             formatValue={(v) => v.toString()}
             delay={0.1}
           />

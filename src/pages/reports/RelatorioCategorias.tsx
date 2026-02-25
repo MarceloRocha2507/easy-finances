@@ -12,8 +12,7 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { PieChartWithLegend } from '@/components/dashboard';
-import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
-import { StatCardSecondary } from '@/components/dashboard/StatCardSecondary';
+import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
 import { FiltroDataRange } from '@/components/FiltroDataRange';
 import { Skeleton } from '@/components/ui/skeleton';
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
@@ -126,12 +125,12 @@ export default function RelatorioCategorias() {
             {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCardPrimary
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <StatCardMinimal
               title="Total de Despesas"
               value={totalExpenses}
               icon={TrendingDown}
-              type="expense"
+              prefix="-"
               delay={0}
               subInfo={prevTotalExpenses > 0 ? (
                 <span className={`text-xs ${totalExpenses > prevTotalExpenses ? 'text-expense' : 'text-income'}`}>
@@ -140,20 +139,18 @@ export default function RelatorioCategorias() {
                 </span>
               ) : undefined}
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="Categorias Ativas"
               value={pieData.length}
               icon={Tag}
-              status="info"
+              formatValue={(v) => v.toString()}
               subInfo="com gastos no período"
               delay={0.05}
-              prefix=""
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="Maior Categoria"
               value={topCategory?.value || 0}
               icon={ShoppingCart}
-              status="warning"
               subInfo={topCategory?.name || '-'}
               delay={0.1}
             />
