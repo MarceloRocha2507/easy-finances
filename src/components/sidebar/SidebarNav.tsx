@@ -124,6 +124,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         label={cartoesMenu.label}
         subItems={cartoesMenu.subItems}
         basePath="/cartoes"
+        excludePaths={["/cartoes/bancos", "/cartoes/auditoria"]}
         open={openMenus.cartoes}
         onOpenChange={handleMenuChange("cartoes")}
         onItemClick={onItemClick}
