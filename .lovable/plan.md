@@ -1,39 +1,61 @@
 
+# Fix: Botoes de acao desalinhando o valor nas transacoes
 
-# Redesign: Saldo Estimado do Mes
+## Problema
+Os botoes de acao (ver, duplicar, editar, excluir) que aparecem no hover do desktop estao ocupando espaco inline no layout, empurrando o valor monetario para a esquerda e criando um espaco grande e desorganizado entre o valor e os botoes.
 
-Replace the dark gradient hero banner with a clean, inline summary card that matches the rest of the dashboard grid.
+## Solucao em `src/pages/Transactions.tsx`
 
-## Changes in `src/components/dashboard/EstimatedBalanceBanner.tsx`
+### Mudanca na estrutura do lado direito (valor + acoes)
 
-Full rewrite of the component layout:
+Atualmente o valor e os botoes estao em sequencia no flex, sem largura fixa. Quando os botoes aparecem, o layout se desloca.
 
-**Remove:**
-- Dark gradient background (`bg-gradient-to-r from-slate-800...`)
-- Centered icon box (16x16 rounded box with TrendingUp)
-- `shadow-lg`, `border-0`
-- Neon emerald/rose colors (`text-emerald-400`, `text-rose-400`)
-- Centered text layout
+**Abordagem**: Envolver valor + acoes em um container com posicionamento relativo, e colocar os botoes de hover em posicao absoluta, sobrepostos ao conteudo (com fundo branco para cobrir).
 
-**New structure:**
+**De (linhas ~1284-1388):**
+```tsx
+{/* Valor */}
+<span className="font-semibold tabular-nums ml-2 sm:ml-4 ...">
+  {value}
+</span>
+
+{/* Acoes */}
+<div className="ml-2 flex gap-1">
+  {/* Mobile dropdown */}
+  <div className="flex md:hidden">...</div>
+  {/* Desktop hover buttons */}
+  <div className="hidden md:flex gap-1 opacity-0 group-hover:opacity-100">
+    ...5 botoes...
+  </div>
+</div>
 ```
-[Card: white bg, 1px border #E5E7EB, rounded-xl, subtle shadow]
-  Row (flex, justify-between, items-center):
-    Left side:
-      - Label: "Saldo Estimado do Mes" in text-[13px] text-[#6B7280]
-        with inline HelpCircle icon (16px, #9CA3AF) + tooltip
-      - Value: text-2xl font-bold, #16A34A if positive, #DC2626 if negative
-    Right side (hidden on mobile, visible sm+):
-      - Formula: "saldo real + receitas pendentes
-        - despesas pendentes - cartao"
-        in text-[11px] text-[#9CA3AF], text-right, stacked lines
+
+**Para:**
+```tsx
+{/* Valor + Acoes container */}
+<div className="flex items-center gap-1 ml-2 sm:ml-4 relative">
+  {/* Valor - sempre visivel */}
+  <span className="font-semibold tabular-nums text-sm sm:text-base shrink-0 ...">
+    {value}
+  </span>
+
+  {/* Mobile dropdown - posicao normal */}
+  <div className="flex md:hidden">...</div>
+
+  {/* Desktop hover - posicao absoluta, aparece sobre o valor */}
+  <div className="hidden md:flex items-center gap-0.5
+    absolute right-0 top-1/2 -translate-y-1/2
+    opacity-0 group-hover:opacity-100 transition-opacity
+    bg-white dark:bg-card rounded-md pl-1 pr-0.5 py-0.5
+    shadow-sm border border-border/50">
+    ...botoes com h-7 w-7 menores...
+  </div>
+</div>
 ```
 
-**Styling details:**
-- Card: `bg-white border border-[#E5E7EB] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)]`
-- Padding: `p-4 sm:p-5`
-- No icon box, no dark backgrounds, no gradients
-- Value colors: `text-[#16A34A]` / `text-[#DC2626]` (matching other stat cards)
-- Skeleton loader updated to use neutral background
-
-No other files need changes -- the component is already imported and used in Dashboard.tsx with the same props.
+Mudancas chave:
+- Botoes de desktop passam a usar `absolute right-0` para se sobrepor ao valor em vez de empurra-lo
+- Fundo branco com borda sutil nos botoes para manter legibilidade
+- Botoes ligeiramente menores (`h-7 w-7`) para um visual mais compacto
+- O valor fica sempre no mesmo lugar, sem deslocamento
+- No mobile nada muda (continua usando o dropdown)
