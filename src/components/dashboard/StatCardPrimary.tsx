@@ -43,6 +43,12 @@ export function StatCardPrimary({
     neutral: "text-slate-600 dark:text-slate-400",
   };
 
+  const skeletonClasses = {
+    income: "bg-emerald-200/60 dark:bg-emerald-800/40",
+    expense: "bg-rose-200/60 dark:bg-rose-800/40",
+    neutral: "bg-slate-200/60 dark:bg-slate-700/40",
+  };
+
   const valueColorClasses = {
     income: "text-income",
     expense: "text-expense",
@@ -64,14 +70,14 @@ export function StatCardPrimary({
               {title}
             </p>
             {isLoading ? (
-              <Skeleton className="h-7 w-28 sm:h-9 sm:w-36" />
+              <Skeleton className={cn("h-7 w-28 sm:h-9 sm:w-36", skeletonClasses[type])} />
             ) : (
               <p className={cn("text-lg sm:text-2xl md:text-3xl font-bold", valueColorClasses[type])}>
                 {formatCurrency(value)}
               </p>
             )}
             {isLoading ? (
-              <Skeleton className="h-3 w-20 mt-1 sm:mt-2" />
+              <Skeleton className={cn("h-3 w-20 mt-1 sm:mt-2", skeletonClasses[type])} />
             ) : (
               subInfo && <div className="mt-1 sm:mt-2">{subInfo}</div>
             )}
