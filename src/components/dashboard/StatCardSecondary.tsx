@@ -57,6 +57,15 @@ export function StatCardSecondary({
     neutral: "text-slate-600 dark:text-slate-400",
   };
 
+  const skeletonClasses = {
+    pending: "bg-blue-200/50 dark:bg-blue-800/30",
+    warning: "bg-amber-200/50 dark:bg-amber-800/30",
+    danger: "bg-red-200/50 dark:bg-red-800/30",
+    info: "bg-purple-200/50 dark:bg-purple-800/30",
+    success: "bg-emerald-200/50 dark:bg-emerald-800/30",
+    neutral: "bg-slate-200/50 dark:bg-slate-700/30",
+  };
+
   const valueColorClasses = {
     pending: "text-blue-600",
     warning: "text-amber-600",
@@ -81,14 +90,14 @@ export function StatCardSecondary({
           <div>
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">{title}</p>
             {isLoading ? (
-              <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" />
+              <Skeleton className={cn("h-5 w-24 sm:h-6 sm:w-28", skeletonClasses[status])} />
             ) : (
               <p className={cn("text-base sm:text-xl font-semibold", valueColorClasses[status])}>
                 {prefix}{formatValue ? formatValue(value) : formatCurrency(value)}
               </p>
             )}
             {isLoading ? (
-              <Skeleton className="h-3 w-16 mt-1" />
+              <Skeleton className={cn("h-3 w-16 mt-1", skeletonClasses[status])} />
             ) : (
               subInfo && (
                 <p className="text-xs text-muted-foreground mt-1">{subInfo}</p>
