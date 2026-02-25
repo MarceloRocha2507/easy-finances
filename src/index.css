@@ -156,40 +156,37 @@
 }
 
 @layer utilities {
-  /* Floating Sidebar Container */
-  .sidebar-floating {
-    background: hsl(var(--card));
-    border-radius: 1rem;
-    box-shadow: 
-      0 4px 6px -1px hsl(0 0% 0% / 0.05),
-      0 10px 15px -3px hsl(0 0% 0% / 0.08),
-      0 0 0 1px hsl(var(--border) / 0.5);
+  /* Sidebar Container - flush, minimal */
+  .sidebar-premium {
+    background: hsl(0 0% 98%);
+    border-right: 1px solid hsl(220 13% 91%);
   }
 
-  .dark .sidebar-floating {
+  .dark .sidebar-premium {
     background: hsl(220 15% 13%);
-    box-shadow: 
-      0 4px 6px -1px hsl(0 0% 0% / 0.2),
-      0 10px 15px -3px hsl(0 0% 0% / 0.3),
-      0 0 0 1px hsl(0 0% 100% / 0.05);
+    border-right: 1px solid hsl(0 0% 100% / 0.08);
   }
 
-  /* Menu item ativo - pill style */
-  .menu-item-floating-active {
-    background: hsl(var(--primary) / 0.1);
-    border-radius: 0.75rem;
+  /* Menu item ativo - left accent bar */
+  .menu-item-active {
+    border-left: 3px solid hsl(var(--foreground));
+    font-weight: 600;
+    color: hsl(var(--foreground));
   }
 
-  /* Menu item hover */
-  .menu-item-floating-hover:hover {
-    background: hsl(var(--muted) / 0.5);
-    border-radius: 0.75rem;
+  /* Menu item hover - color only */
+  .menu-item-hover {
+    transition: color 150ms ease;
+  }
+  .menu-item-hover:hover {
+    color: hsl(var(--foreground));
   }
 
-  /* Submenu ativo */
-  .submenu-item-floating-active {
-    background: hsl(var(--primary) / 0.08);
-    border-radius: 0.5rem;
+  /* Submenu ativo - thinner left bar */
+  .submenu-item-active {
+    border-left: 2px solid hsl(var(--foreground));
+    font-weight: 600;
+    color: hsl(var(--foreground));
   }
 
   /* Stagger delays for lists */

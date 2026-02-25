@@ -77,33 +77,29 @@ export function Layout({ children }: LayoutProps) {
         </button>
       </header>
 
-      {/* Desktop Sidebar - Floating */}
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-64 p-3 z-40">
-        <aside className="h-full sidebar-floating flex flex-col overflow-hidden">
-          <div className="h-14 flex items-center px-4 border-b border-border/30">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Wallet className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-xl font-bold text-foreground">Fina</span>
-            </div>
+      {/* Desktop Sidebar - Flush, minimal */}
+      <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
+        <div className="h-14 flex items-center px-5 border-b border-border/30">
+          <div className="flex items-center gap-2.5">
+            <Wallet className="h-5 w-5 text-foreground" />
+            <span className="text-xl font-bold text-foreground">Fina</span>
           </div>
+        </div>
           <SidebarNav 
             isAdmin={!isCheckingRole && isAdmin} 
             onItemClick={closeSidebar}
           />
-          <SidebarUserSection 
-            user={user} 
-            onClose={closeSidebar} 
-            onSignOut={signOut} 
-          />
-        </aside>
-      </div>
+        <SidebarUserSection 
+          user={user} 
+          onClose={closeSidebar} 
+          onSignOut={signOut} 
+        />
+      </aside>
 
       {/* Mobile Sidebar - Floating Drawer */}
       <aside
         className={cn(
-          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-floating z-40 flex flex-col overflow-hidden rounded-l-none",
+          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-premium z-40 flex flex-col overflow-hidden",
           !isDragging && "transition-transform duration-300 ease-out",
           !isDragging && (sidebarOpen ? "translate-x-0" : "-translate-x-full")
         )}
