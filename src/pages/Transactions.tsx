@@ -5,8 +5,7 @@ import { Layout } from '@/components/Layout';
 import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
-import { StatCardPrimary } from '@/components/dashboard/StatCardPrimary';
-import { StatCardSecondary } from '@/components/dashboard/StatCardSecondary';
+import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
@@ -919,61 +918,55 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Resumo - StatCards Padronizados */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-            <StatCardPrimary
+          {/* Resumo - StatCards Minimalistas */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <StatCardMinimal
               title="Receitas"
               value={stats?.completedIncome || 0}
               icon={TrendingUp}
-              type="income"
-              subInfo={<span className="text-xs text-muted-foreground">recebidas</span>}
+              subInfo="recebidas"
               delay={0}
               isLoading={isStatsFetching}
             />
-            <StatCardPrimary
+            <StatCardMinimal
               title="Despesas"
               value={stats?.completedExpense || 0}
               icon={TrendingDown}
-              type="expense"
-              subInfo={<span className="text-xs text-muted-foreground">pagas</span>}
+              subInfo="pagas"
               delay={0.05}
               isLoading={isStatsFetching}
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="A Receber"
               value={stats?.pendingIncome || 0}
               icon={Clock}
-              status="pending"
-              subInfo="pendentes"
               prefix="+"
+              subInfo="pendentes"
               delay={0.1}
               isLoading={isStatsFetching}
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="A Pagar"
               value={stats?.pendingExpense || 0}
               icon={AlertTriangle}
-              status="warning"
-              subInfo="pendentes"
               prefix="-"
+              subInfo="pendentes"
               delay={0.15}
               isLoading={isStatsFetching}
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="Saldo Real"
               value={stats?.realBalance || 0}
               icon={Scale}
-              status={(stats?.realBalance || 0) >= 0 ? "success" : "danger"}
               subInfo="clique para ajustar"
               onClick={() => setAjustarSaldoOpen(true)}
               delay={0.2}
               isLoading={isStatsFetching}
             />
-            <StatCardSecondary
+            <StatCardMinimal
               title="Estimado"
               value={stats?.estimatedBalance || 0}
               icon={Info}
-              status="info"
               subInfo="real + a receber - a pagar"
               delay={0.25}
               isLoading={isStatsFetching}
