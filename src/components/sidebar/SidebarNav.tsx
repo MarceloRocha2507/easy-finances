@@ -27,6 +27,7 @@ const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
+  { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
 ];
 
 const transacoesMenu = {
@@ -50,13 +51,6 @@ const cartoesMenu = {
   ],
 };
 
-const economiaMenu = {
-  icon: PiggyBank,
-  label: "Economia",
-  subItems: [
-    { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
-  ],
-};
 
 const relatoriosMenu = {
   icon: BarChart3,
@@ -82,7 +76,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const [openMenus, setOpenMenus] = useState(() => ({
     transacoes: pathname.startsWith("/transactions"),
     cartoes: pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria",
-    economia: pathname.startsWith("/economia"),
     relatorios: pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
   }));
 
@@ -92,7 +85,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       ...prev,
       transacoes: prev.transacoes || pathname.startsWith("/transactions"),
       cartoes: prev.cartoes || (pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria"),
-      economia: prev.economia || pathname.startsWith("/economia"),
       relatorios: prev.relatorios || pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
     }));
   }, [pathname]);
@@ -148,16 +140,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         basePath="/cartoes"
         open={openMenus.cartoes}
         onOpenChange={handleMenuChange("cartoes")}
-        onItemClick={onItemClick}
-      />
-
-      <MenuCollapsible
-        icon={economiaMenu.icon}
-        label={economiaMenu.label}
-        subItems={economiaMenu.subItems}
-        basePath="/economia"
-        open={openMenus.economia}
-        onOpenChange={handleMenuChange("economia")}
         onItemClick={onItemClick}
       />
 
