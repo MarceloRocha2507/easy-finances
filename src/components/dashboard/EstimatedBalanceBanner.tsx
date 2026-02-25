@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -6,8 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, HelpCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { HelpCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 
 interface EstimatedBalanceBannerProps {
@@ -25,57 +24,51 @@ export function EstimatedBalanceBanner({
 
   return (
     <Card
-      className="overflow-hidden rounded-xl shadow-lg animate-fade-in-up border-0"
+      className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(0,0,0,0.06)] animate-fade-in-up"
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
     >
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <CardContent className="p-4 sm:p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/10 flex items-center justify-center mb-3 sm:mb-4">
-              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-            </div>
-
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              <p className="text-xs sm:text-sm font-medium text-white/70">
-                Saldo Estimado do Mês
-              </p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-white/50 hover:text-white/80 transition-colors">
-                      <HelpCircle className="w-4 h-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="text-sm">
-                      <strong>Cálculo:</strong> Saldo real + receitas pendentes - despesas pendentes - fatura do cartão
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Este valor representa sua projeção financeira considerando todos os lançamentos do mês.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            {isLoading ? (
-              <Skeleton className="h-8 w-40 sm:h-10 sm:w-48 bg-white/10" />
-            ) : (
-              <p
-                className={cn(
-                  "text-2xl sm:text-3xl md:text-4xl font-bold",
-                  isPositive ? "text-emerald-400" : "text-rose-400"
-                )}
-              >
-                {formatCurrency(value)}
-              </p>
-            )}
-
-            <p className="text-xs text-white/50 mt-2 sm:mt-3 hidden sm:block">
-              saldo real + receitas pendentes - despesas pendentes - cartão
+      <div className="flex items-center justify-between p-4 sm:p-5">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[13px] text-muted-foreground">
+              Saldo Estimado do Mês
             </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">
+                    <strong>Cálculo:</strong> Saldo real + receitas pendentes − despesas pendentes − fatura do cartão
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Este valor representa sua projeção financeira considerando todos os lançamentos do mês.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        </CardContent>
+
+          {isLoading ? (
+            <Skeleton className="h-7 w-40" />
+          ) : (
+            <p
+              className={`text-2xl font-bold ${
+                isPositive ? "text-[#16A34A]" : "text-destructive"
+              }`}
+            >
+              {formatCurrency(value)}
+            </p>
+          )}
+        </div>
+
+        <div className="hidden sm:flex flex-col items-end text-[11px] text-muted-foreground/60 leading-relaxed">
+          <span>saldo real + receitas pendentes</span>
+          <span>− despesas pendentes − cartão</span>
+        </div>
       </div>
     </Card>
   );
