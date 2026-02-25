@@ -1,114 +1,39 @@
 
+# Adicionar animacoes na pagina de Transacoes
 
-# Animacoes Suaves e Consistentes em Todo o Sistema
+## Situacao atual
+A pagina ja tem `page-enter` no container principal, mas as secoes internas (stat cards, grupos de transacoes, linhas individuais) nao possuem animacoes stagger.
 
-## Abordagem
+## Mudancas em `src/pages/Transactions.tsx`
 
-Usar uma estrategia CSS-first com Tailwind + um pequeno componente utilitario para stagger de listas. Sem dependencias extras (sem framer-motion), mantendo performance maxima.
+### 1. Stat cards com stagger
+Os 6 `StatCardMinimal` ja recebem uma prop `delay` que provavelmente adiciona animation-delay. Verificar se ja esta funcionando -- eles ja tem delays de 0 a 0.25s. Se o componente `StatCardMinimal` nao aplica a animacao, envolver o grid em `<AnimatedSection>`.
 
-## Arquivos a criar/modificar
+### 2. Secao de saldo inicial + metas
+Adicionar classe `stagger-item` com `--stagger-index: 0` no card de saldo inicial.
 
-### 1. Novo componente: `src/components/ui/animated-section.tsx`
-Componente wrapper reutilizavel que aplica fade-in-up com stagger opcional para listas de cards/itens.
+### 3. Grupos de transacoes com stagger
+Cada grupo (`div key={grupo.key}`) recebera a classe `stagger-item` com `--stagger-index` baseado no indice do grupo (0, 1, 2...).
 
-```tsx
-// Wrapper simples que aplica animate-fade-in-up com delay baseado no index
-<AnimatedSection> // page-level fade
-<AnimatedItem index={0}> // staggered item (delay = index * 50ms)
-```
+### 4. Linhas de transacao dentro dos grupos
+Cada `TransactionRow` e `FaturaCartaoRow` recebera um wrapper com `stagger-item` e `--stagger-index` baseado no indice dentro do grupo, limitado a 12 itens.
 
-### 2. `tailwind.config.ts` - Novos keyframes
-- Adicionar `stagger-fade-in` keyframe (opacity 0 -> 1, translateY 16px -> 0)
-- Adicionar animation delays via CSS custom properties
+### 5. Tabs com transicao
+Os botoes de tab ja tem `transition-colors`. Manter como esta.
 
-### 3. `src/index.css` - Utilidades de animacao
-- `.page-enter` - fade-in-up 300ms para containers de pagina
-- `.stagger-item` - animacao com delay dinamico via `--stagger-index`
-- `.hover-lift` - scale(1.02) + shadow no hover, 150ms
-- `.skeleton-pulse` - pulse suave customizado
+### 6. LoadingList com pulse
+Os skeletons ja usam `animate-pulse` via componente Skeleton. Manter.
 
-### 4. Paginas a atualizar (wrapper + stagger)
+## Implementacao tecnica
 
-Cada pagina recebe:
-- Container principal envolto em `<div className="animate-fade-in-up">` 
-- Cards/itens de lista com delay stagger via style `--stagger-index`
+- Importar `AnimatedSection` e `AnimatedItem` de `@/components/ui/animated-section`
+- Envolver o bloco de saldo inicial em `<AnimatedSection delay={0}>`
+- Envolver o grid de stat cards em `<AnimatedSection delay={0.1}>`
+- Nos grupos: cada grupo recebe `<AnimatedItem index={grupoIdx}>`
+- Dentro de cada grupo: cada item recebe style `--stagger-index` no wrapper existente
+- Na lista sem agrupamento: cada item recebe `<AnimatedItem index={itemIdx}>`
 
-Paginas:
-- **Dashboard** (`src/pages/Dashboard.tsx`) - stat cards, graficos, secoes
-- **Bancos** (`src/pages/Bancos.tsx`) - banco cards
-- **Categorias** (`src/pages/Categories.tsx`) - categoria cards
-- **Metas** (`src/pages/Metas.tsx`) - meta cards
-- **Transacoes** (`src/pages/Transactions.tsx`) - lista de transacoes (top-level only, not each row)
-- **Cartoes** (`src/pages/Cartoes.tsx`) - cartao cards
-- **Parcelamentos** (`src/pages/cartoes/Parcelamentos.tsx`) - summary + list
-- **Relatorios** (`src/pages/Reports.tsx`) - stat cards + graficos
-- **Novidades** (`src/pages/Changelog.tsx`) - timeline items
-- **Admin** (`src/pages/Admin.tsx`) - stat cards + table
-- **Fina IA** (`src/pages/Assistente.tsx`) - mensagens de chat
-
-### 5. Menu lateral (`src/components/sidebar/SidebarNav.tsx`)
-- Adicionar `transition-all duration-150` no indicador ativo do menu
-- Background do item ativo com transicao suave (ja existe parcialmente via CSS)
-
-### 6. Graficos (Dashboard/Relatorios)
-- Adicionar `animationBegin={200}` e `animationDuration={800}` nos componentes Recharts (Bar, Area, etc.)
-
-## Detalhes tecnicos
-
-### Componente AnimatedSection
-```tsx
-interface Props { children: ReactNode; className?: string; delay?: number; }
-// Renderiza div com animate-fade-in-up e animation-delay via style
-```
-
-### CSS stagger pattern
-```css
-.stagger-item {
-  opacity: 0;
-  animation: fade-in-up 0.3s ease-out forwards;
-  animation-delay: calc(var(--stagger-index, 0) * 50ms);
-}
-```
-
-### Hover em botoes/cards
-```css
-.hover-lift {
-  transition: transform 150ms ease, box-shadow 150ms ease;
-}
-.hover-lift:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-```
-
-### Recharts animation props
-```tsx
-<Bar animationBegin={200} animationDuration={800} animationEasing="ease-out" />
-<Area animationBegin={200} animationDuration={800} animationEasing="ease-out" />
-```
-
-## Performance
-- Apenas CSS transforms e opacity (GPU-accelerated)
-- Sem JavaScript animation loops
-- Stagger limitado aos primeiros 12 itens (apos isso, sem delay)
-- `will-change: transform, opacity` apenas durante animacao via `forwards`
-
-## Resumo de arquivos
+## Arquivos modificados
 | Arquivo | Acao |
 |---------|------|
-| `src/components/ui/animated-section.tsx` | Criar |
-| `tailwind.config.ts` | Editar (keyframe stagger) |
-| `src/index.css` | Editar (utilidades) |
-| `src/pages/Dashboard.tsx` | Editar |
-| `src/pages/Bancos.tsx` | Editar |
-| `src/pages/Categories.tsx` | Editar |
-| `src/pages/Metas.tsx` | Editar |
-| `src/pages/Transactions.tsx` | Editar |
-| `src/pages/Cartoes.tsx` | Editar |
-| `src/pages/cartoes/Parcelamentos.tsx` | Editar |
-| `src/pages/Reports.tsx` | Editar |
-| `src/pages/Changelog.tsx` | Editar |
-| `src/pages/Admin.tsx` | Editar |
-| `src/pages/Assistente.tsx` | Editar |
-| `src/components/sidebar/SidebarNav.tsx` | Editar |
-
+| `src/pages/Transactions.tsx` | Editar - adicionar stagger nos stat cards, grupos e linhas |
