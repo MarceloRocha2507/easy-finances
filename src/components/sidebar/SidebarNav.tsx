@@ -12,7 +12,7 @@ import {
   Shield,
   Layers,
   Users,
-  Gauge,
+  
   PieChart,
   Download,
   Upload,
@@ -25,6 +25,7 @@ import {
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
 ];
 
@@ -44,11 +45,8 @@ const cartoesMenu = {
   label: "Cartões",
   subItems: [
     { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-    { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
     { icon: Layers, label: "Parcelamentos", href: "/cartoes/parcelamentos" },
     { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
-    { icon: Gauge, label: "Limites", href: "/cartoes/limites" },
-    { icon: History, label: "Auditoria", href: "/cartoes/auditoria" },
   ],
 };
 
@@ -68,6 +66,7 @@ const relatoriosMenu = {
     { icon: BarChart3, label: "Visão Geral", href: "/reports" },
     { icon: PieChart, label: "Por Categoria", href: "/reports/categorias" },
     { icon: Download, label: "Exportações", href: "/reports/exportar" },
+    { icon: History, label: "Auditoria", href: "/cartoes/auditoria" },
   ],
 };
 
@@ -83,9 +82,9 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   // Estado local para controle de menus abertos
   const [openMenus, setOpenMenus] = useState(() => ({
     transacoes: pathname.startsWith("/transactions"),
-    cartoes: pathname.startsWith("/cartoes"),
+    cartoes: pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria",
     economia: pathname.startsWith("/economia"),
-    relatorios: pathname.startsWith("/reports"),
+    relatorios: pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
   }));
 
   // Sincronizar quando URL muda (abrir menu se entrar em subrota)
@@ -93,9 +92,9 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     setOpenMenus(prev => ({
       ...prev,
       transacoes: prev.transacoes || pathname.startsWith("/transactions"),
-      cartoes: prev.cartoes || pathname.startsWith("/cartoes"),
+      cartoes: prev.cartoes || (pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria"),
       economia: prev.economia || pathname.startsWith("/economia"),
-      relatorios: prev.relatorios || pathname.startsWith("/reports"),
+      relatorios: prev.relatorios || pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
     }));
   }, [pathname]);
 
