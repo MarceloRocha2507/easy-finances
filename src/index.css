@@ -169,7 +169,7 @@
 
   /* Menu item ativo - left accent bar */
   .menu-item-active {
-    border-left: 3px solid hsl(var(--foreground));
+    border-left: 2px solid hsl(var(--foreground));
     font-weight: 600;
     color: hsl(var(--foreground));
   }
@@ -179,6 +179,10 @@
     transition: color 150ms ease;
   }
   .menu-item-hover:hover {
+    color: hsl(257 4.6% 25%);
+  }
+
+  .dark .menu-item-hover:hover {
     color: hsl(var(--foreground));
   }
 

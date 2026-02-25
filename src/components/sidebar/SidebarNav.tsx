@@ -98,13 +98,13 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
+            "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
             isActive(item.href)
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn("h-4 w-4 transition-opacity duration-150", isActive(item.href) ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
           {item.label}
         </Link>
       ))}
@@ -140,19 +140,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         onItemClick={onItemClick}
       />
 
-      <div className="my-3 border-t border-border/50" />
-
       <Link
         to="/changelog"
         onClick={onItemClick}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
+          "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-2",
           isActive("/changelog")
             ? "menu-item-active"
             : "text-muted-foreground menu-item-hover"
         )}
       >
-        <Sparkles className="h-4 w-4" />
+        <Sparkles className={cn("h-4 w-4 transition-opacity duration-150", isActive("/changelog") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
         Novidades
       </Link>
 
@@ -161,13 +159,13 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           to="/admin"
           onClick={onItemClick}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
+            "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
             isActive("/admin")
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
           )}
         >
-          <Shield className="h-4 w-4" />
+          <Shield className={cn("h-4 w-4 transition-opacity duration-150", isActive("/admin") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
           Admin
         </Link>
       )}
@@ -176,13 +174,13 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         to="/assistente"
         onClick={onItemClick}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
+          "group flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
           isActive("/assistente")
             ? "menu-item-active"
             : "text-muted-foreground menu-item-hover"
         )}
       >
-        <Bot className="h-4 w-4" />
+        <Bot className={cn("h-4 w-4 transition-opacity duration-150", isActive("/assistente") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
         Fina IA
       </Link>
     </nav>
