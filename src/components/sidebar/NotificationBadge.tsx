@@ -22,7 +22,7 @@ export const NotificationBadge = memo(function NotificationBadge({ onClick }: No
     <Link 
       to="/notificacoes" 
       onClick={onClick}
-      className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors"
+      className="relative p-2 rounded-lg transition-colors hover:text-foreground"
     >
       <Bell className="h-4 w-4 text-muted-foreground" />
       {alertasCount > 0 && (

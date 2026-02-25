@@ -45,13 +45,13 @@ export const SidebarUserSection = memo(function SidebarUserSection({
           onClick={onClose}
           className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
         >
-          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={userName} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+          <Avatar className="h-8 w-8 rounded-md">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={userName} className="rounded-md" />
+            <AvatarFallback className="bg-foreground text-background text-xs font-semibold rounded-md">
               {userInitials}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium text-foreground truncate max-w-[90px]">
+          <span className="text-sm font-semibold text-foreground truncate max-w-[90px]">
             {userName}
           </span>
         </Link>
@@ -64,7 +64,7 @@ export const SidebarUserSection = memo(function SidebarUserSection({
           {/* Sair */}
           <button 
             onClick={onSignOut}
-            className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-destructive"
+            className="p-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
           >
             <LogOut className="h-4 w-4" />
           </button>

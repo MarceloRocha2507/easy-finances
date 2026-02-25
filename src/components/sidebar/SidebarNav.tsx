@@ -12,7 +12,6 @@ import {
   Shield,
   Layers,
   Users,
-  
   PieChart,
   Download,
   Upload,
@@ -35,7 +34,6 @@ const transacoesMenu = {
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
-    
     { icon: Upload, label: "Importar", href: "/transactions/importar" },
     { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
   ],
@@ -50,7 +48,6 @@ const cartoesMenu = {
     { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
   ],
 };
-
 
 const relatoriosMenu = {
   icon: BarChart3,
@@ -72,14 +69,12 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Estado local para controle de menus abertos
   const [openMenus, setOpenMenus] = useState(() => ({
     transacoes: pathname.startsWith("/transactions"),
     cartoes: pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria",
     relatorios: pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
   }));
 
-  // Sincronizar quando URL muda (abrir menu se entrar em subrota)
   useEffect(() => {
     setOpenMenus(prev => ({
       ...prev,
@@ -89,7 +84,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     }));
   }, [pathname]);
 
-  // Handler para toggle manual
   const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
     setOpenMenus(prev => ({ ...prev, [menu]: open }));
   }, []);
@@ -97,32 +91,24 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const isActive = useCallback((href: string) => pathname === href, [pathname]);
 
   return (
-    <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
       {mainMenuItems.map((item) => (
         <Link
           key={item.href}
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
             isActive(item.href)
-              ? "menu-item-floating-active text-foreground font-medium"
-              : "text-muted-foreground menu-item-floating-hover"
+              ? "menu-item-active"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
-          <div className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-            isActive(item.href)
-              ? "bg-primary/15 text-primary"
-              : "text-muted-foreground group-hover:text-foreground"
-          )}>
-            <item.icon className="h-4 w-4" />
-          </div>
+          <item.icon className="h-4 w-4" />
           {item.label}
         </Link>
       ))}
 
-      {/* Menus com submenu - estado local + sincronização URL */}
       <MenuCollapsible
         icon={transacoesMenu.icon}
         label={transacoesMenu.label}
@@ -153,74 +139,49 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         onItemClick={onItemClick}
       />
 
-      {/* Separador */}
       <div className="my-3 border-t border-border/50" />
 
-      {/* Novidades */}
       <Link
         to="/changelog"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+          "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150",
           isActive("/changelog")
-            ? "menu-item-floating-active text-foreground font-medium"
-            : "text-muted-foreground menu-item-floating-hover"
+            ? "menu-item-active"
+            : "text-muted-foreground menu-item-hover"
         )}
       >
-        <div className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-          isActive("/changelog")
-            ? "bg-primary/15 text-primary"
-            : "text-muted-foreground group-hover:text-foreground"
-        )}>
-          <Sparkles className="h-4 w-4" />
-        </div>
+        <Sparkles className="h-4 w-4" />
         Novidades
       </Link>
 
-      {/* Link Admin - apenas para admins */}
       {isAdmin && (
         <Link
           to="/admin"
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
             isActive("/admin")
-              ? "menu-item-floating-active text-foreground font-medium"
-              : "text-muted-foreground menu-item-floating-hover"
+              ? "menu-item-active"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
-          <div className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-            isActive("/admin")
-              ? "bg-primary/15 text-primary"
-              : "text-muted-foreground group-hover:text-foreground"
-          )}>
-            <Shield className="h-4 w-4" />
-          </div>
+          <Shield className="h-4 w-4" />
           Admin
         </Link>
       )}
 
-      {/* Fina IA */}
       <Link
         to="/assistente"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150",
+          "flex items-center gap-3 px-3 py-2 text-sm transition-colors duration-150 mt-1",
           isActive("/assistente")
-            ? "menu-item-floating-active text-foreground font-medium"
-            : "text-muted-foreground menu-item-floating-hover"
+            ? "menu-item-active"
+            : "text-muted-foreground menu-item-hover"
         )}
       >
-        <div className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-          isActive("/assistente")
-            ? "bg-primary/15 text-primary"
-            : "text-muted-foreground group-hover:text-foreground"
-        )}>
-          <Bot className="h-4 w-4" />
-        </div>
+        <Bot className="h-4 w-4" />
         Fina IA
       </Link>
     </nav>

@@ -84,53 +84,44 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between px-3 py-2.5 text-sm transition-all duration-150",
+            "w-full flex items-center justify-between px-3 py-2 text-sm transition-colors duration-150",
             open || isMenuActive
-              ? "menu-item-floating-active text-foreground font-medium"
-              : "text-muted-foreground menu-item-floating-hover"
+              ? "menu-item-active"
+              : "text-muted-foreground menu-item-hover"
           )}
         >
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-lg transition-colors duration-150",
-              open || isMenuActive
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground group-hover:text-foreground"
-            )}>
-              <Icon className="h-4 w-4" />
-            </div>
+            <Icon className="h-4 w-4" />
             {label}
           </div>
           <div className="flex items-center gap-2">
             {badge && <MenuBadge {...badge} />}
             <ChevronDown 
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-150",
+                "h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
                 open && "rotate-180"
-              )} 
+              )}
+              strokeWidth={1.5}
             />
           </div>
         </button>
       </CollapsibleTrigger>
 
-      <CollapsibleContent className="mt-1 ml-11 space-y-0.5 overflow-hidden">
+      <CollapsibleContent className="mt-0.5 ml-7 space-y-0.5 overflow-hidden">
         {subItems.map((subItem) => (
           <Link
             key={subItem.href}
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "group/item flex items-center justify-between px-3 py-2 text-sm transition-all duration-150",
+              "flex items-center justify-between px-3 py-1.5 text-sm transition-colors duration-150",
               isItemActive(subItem.href)
-                ? "submenu-item-floating-active text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground menu-item-floating-hover"
+                ? "submenu-item-active"
+                : "text-muted-foreground menu-item-hover"
             )}
           >
             <div className="flex items-center gap-2.5">
-              <subItem.icon className={cn(
-                "h-3.5 w-3.5 transition-colors duration-150",
-                isItemActive(subItem.href) && "text-primary"
-              )} />
+              <subItem.icon className="h-3.5 w-3.5" />
               {subItem.label}
             </div>
             {subItem.badge && <MenuBadge {...subItem.badge} />}
