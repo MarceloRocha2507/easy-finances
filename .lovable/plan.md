@@ -1,56 +1,54 @@
 
 
-# Skeleton Loading na página de Transações
+# Fix: Skeletons invisíveis nos cards de Transações
 
 ## Problema
 
-Ao navegar entre meses na página de Transações, os cards de resumo (Receitas, Despesas, A Receber, A Pagar, Saldo Real, Estimado) e o card de Saldo Inicial mostram "R$ 0,00" enquanto os dados carregam, igual ao bug que já foi corrigido no Dashboard.
+Os skeletons nos cards com fundo gradiente (Receitas e Despesas) usam a cor padrão `bg-muted` que se confunde com o fundo do card, tornando-os praticamente invisíveis. O mesmo pode acontecer nos cards secundários dependendo do tema.
 
 ## Solução
 
-Usar o `isFetching` já disponível nos hooks e passar `isLoading` para os componentes `StatCardPrimary` e `StatCardSecondary` (que já suportam essa prop desde a implementação anterior). Também adicionar skeleton ao card de Saldo Inicial.
+Adicionar classes de cor específicas aos Skeletons dentro dos componentes `StatCardPrimary` e `StatCardSecondary` para que contrastem com o fundo de cada tipo de card.
 
 ## Alterações
 
-### 1. `src/pages/Transactions.tsx`
+### 1. `src/components/dashboard/StatCardPrimary.tsx`
 
-**a) Extrair `isFetching` do `useCompleteStats` (linha 264):**
-
-```typescript
-const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
-```
-
-**b) Adicionar `isLoading` aos StatCardPrimary (linhas 915-930):**
+Adicionar um mapa de cores de skeleton por tipo e aplicar nos Skeletons:
 
 ```typescript
-<StatCardPrimary
-  title="Receitas"
-  value={stats?.completedIncome || 0}
-  icon={TrendingUp}
-  type="income"
-  isLoading={isStatsFetching}
-  ...
-/>
-<StatCardPrimary
-  title="Despesas"
-  value={stats?.completedExpense || 0}
-  icon={TrendingDown}
-  type="expense"
-  isLoading={isStatsFetching}
-  ...
-/>
+const skeletonClasses = {
+  income: "bg-emerald-200/60 dark:bg-emerald-800/40",
+  expense: "bg-rose-200/60 dark:bg-rose-800/40",
+  neutral: "bg-slate-200/60 dark:bg-slate-700/40",
+};
+
+// Uso:
+<Skeleton className={cn("h-7 w-28 sm:h-9 sm:w-36", skeletonClasses[type])} />
+<Skeleton className={cn("h-3 w-20 mt-1 sm:mt-2", skeletonClasses[type])} />
 ```
 
-**c) Adicionar `isLoading` aos StatCardSecondary (linhas 931-965):**
+### 2. `src/components/dashboard/StatCardSecondary.tsx`
 
-Passar `isLoading={isStatsFetching}` para os 4 cards: A Receber, A Pagar, Saldo Real e Estimado.
+Adicionar cores de skeleton por status para melhor contraste:
 
-**d) Adicionar skeleton ao card de Saldo Inicial (linhas 878-911):**
+```typescript
+const skeletonClasses = {
+  pending: "bg-blue-200/50 dark:bg-blue-800/30",
+  warning: "bg-amber-200/50 dark:bg-amber-800/30",
+  danger: "bg-red-200/50 dark:bg-red-800/30",
+  info: "bg-purple-200/50 dark:bg-purple-800/30",
+  success: "bg-emerald-200/50 dark:bg-emerald-800/30",
+  neutral: "bg-slate-200/50 dark:bg-slate-700/30",
+};
 
-Substituir os valores de "Saldo Inicial" e "Em Metas" por `<Skeleton />` quando `isStatsFetching` for true, para manter consistência visual com os demais cards.
+// Uso:
+<Skeleton className={cn("h-5 w-24 sm:h-6 sm:w-28", skeletonClasses[status])} />
+<Skeleton className={cn("h-3 w-16 mt-1", skeletonClasses[status])} />
+```
 
 ### Resultado
 
-- Todos os valores na página de Transações mostram skeleton animado durante o carregamento
-- Nenhum "R$ 0,00" visível durante a transição entre meses
-- Usa os mesmos componentes e props já implementados no Dashboard
+- Skeletons visíveis em todos os cards, com cores que contrastam com o fundo gradiente
+- Mantém a consistência visual (skeleton com tonalidade da cor do card)
+- Funciona tanto no tema claro quanto no escuro
