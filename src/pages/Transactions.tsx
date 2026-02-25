@@ -261,7 +261,7 @@ export default function Transactions() {
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
   };
-  const { data: stats } = useCompleteStats(dataInicial);
+  const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
@@ -883,15 +883,24 @@ export default function Transactions() {
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Saldo Inicial</span>
-                <p className="font-semibold text-sm sm:text-base truncate">
-                  {formatCurrency(stats?.saldoInicial || 0)}
-                </p>
+                {isStatsFetching ? (
+                  <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" />
+                ) : (
+                  <p className="font-semibold text-sm sm:text-base truncate">
+                    {formatCurrency(stats?.saldoInicial || 0)}
+                  </p>
+                )}
               </div>
             </div>
             
             {/* Em Metas + Botão */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              {(stats?.totalMetas || 0) > 0 && (
+              {isStatsFetching ? (
+                <div className="text-right">
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
+                  <Skeleton className="h-5 w-20 sm:h-6 sm:w-24" />
+                </div>
+              ) : (stats?.totalMetas || 0) > 0 && (
                 <div className="text-right">
                   <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
                   <p className="font-semibold text-primary text-sm sm:text-base">
@@ -919,6 +928,7 @@ export default function Transactions() {
               type="income"
               subInfo={<span className="text-xs text-muted-foreground">recebidas</span>}
               delay={0}
+              isLoading={isStatsFetching}
             />
             <StatCardPrimary
               title="Despesas"
@@ -927,6 +937,7 @@ export default function Transactions() {
               type="expense"
               subInfo={<span className="text-xs text-muted-foreground">pagas</span>}
               delay={0.05}
+              isLoading={isStatsFetching}
             />
             <StatCardSecondary
               title="A Receber"
@@ -936,6 +947,7 @@ export default function Transactions() {
               subInfo="pendentes"
               prefix="+"
               delay={0.1}
+              isLoading={isStatsFetching}
             />
             <StatCardSecondary
               title="A Pagar"
@@ -945,6 +957,7 @@ export default function Transactions() {
               subInfo="pendentes"
               prefix="-"
               delay={0.15}
+              isLoading={isStatsFetching}
             />
             <StatCardSecondary
               title="Saldo Real"
@@ -954,6 +967,7 @@ export default function Transactions() {
               subInfo="clique para ajustar"
               onClick={() => setAjustarSaldoOpen(true)}
               delay={0.2}
+              isLoading={isStatsFetching}
             />
             <StatCardSecondary
               title="Estimado"
@@ -962,6 +976,7 @@ export default function Transactions() {
               status="info"
               subInfo="real + a receber - a pagar"
               delay={0.25}
+              isLoading={isStatsFetching}
             />
           </div>
         </div>
