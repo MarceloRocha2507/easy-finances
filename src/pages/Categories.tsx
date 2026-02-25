@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category, CategoryInsert } from '@/hooks/useCategories';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag, Wand2, FolderOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Lock, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Wallet, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
@@ -62,6 +61,7 @@ export default function Categories() {
   const [formData, setFormData] = useState<CategoryFormData>(initialFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'categories' | 'rules'>('categories');
 
   const { data: categories, isLoading } = useCategories();
   const createMutation = useCreateCategory();
@@ -75,7 +75,6 @@ export default function Categories() {
   const expenseCategories = categories?.filter((c) => c.type === 'expense') || [];
 
   const handleSubmit = () => {
-    // Verificar limite apenas para novas categorias
     if (!editingId && !canCreate("categorias")) {
       toast.error("Limite de categorias atingido. Faça upgrade do seu plano.");
       return;
@@ -138,13 +137,10 @@ export default function Categories() {
     const IconComponent = getIconComponent(category.icon || 'package');
     
     return (
-      <div className="flex items-center justify-between p-3 rounded-md border hover:bg-secondary/30 transition-colors">
+      <div className="group flex items-center justify-between px-4 py-3 border-b border-[hsl(220,14%,96%)] last:border-b-0 hover:bg-[hsl(210,20%,98%)] transition-colors">
         <div className="flex items-center gap-3">
-          <div 
-            className="w-8 h-8 rounded-md flex items-center justify-center"
-            style={{ backgroundColor: `${category.color}15` }}
-          >
-            <IconComponent className="w-4 h-4" style={{ color: category.color || '#64748b' }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[hsl(220,14%,96%)]">
+            <IconComponent className="w-4 h-4 text-[hsl(220,9%,46%)]" />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">{category.name}</p>
@@ -156,19 +152,19 @@ export default function Categories() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <div 
-            className="w-3 h-3 rounded-full" 
+            className="w-3 h-3 rounded-[3px]" 
             style={{ backgroundColor: category.color || '#64748b' }}
           />
           {!category.is_default && (
-            <>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]" onClick={() => handleEdit(category)}>
                 <Pencil className="w-3.5 h-3.5" />
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,9%,64%)] hover:text-[hsl(220,13%,26%)]">
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </AlertDialogTrigger>
@@ -187,7 +183,7 @@ export default function Categories() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -200,37 +196,62 @@ export default function Categories() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
-          <p className="text-sm text-muted-foreground">Gerencie suas categorias e regras de categorização</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Categorias</h1>
+            <p className="text-sm text-muted-foreground">Gerencie suas categorias e regras de categorização</p>
+          </div>
+          {activeTab === 'categories' && (
+            <Button 
+              onClick={handleOpenDialog} 
+              disabled={limiteCategoriasAtingido}
+              className="bg-[hsl(220,26%,14%)] hover:bg-[hsl(220,17%,17%)] text-white shadow-none"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Categoria
+            </Button>
+          )}
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="categories" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid">
-            <TabsTrigger value="categories" className="gap-2">
-              <FolderOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Categorias</span>
-              <span className="sm:hidden">Cats</span>
-            </TabsTrigger>
-            <TabsTrigger value="rules" className="gap-2">
-              <Wand2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Regras</span>
-              <span className="sm:hidden">Auto</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Underline Tabs */}
+        <div className="border-b border-[hsl(220,13%,91%)]">
+          <div className="flex gap-6">
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={cn(
+                "pb-3 text-sm transition-colors relative",
+                activeTab === 'categories'
+                  ? "font-semibold text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Categorias
+              {activeTab === 'categories' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={cn(
+                "pb-3 text-sm transition-colors relative",
+                activeTab === 'rules'
+                  ? "font-semibold text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Regras
+              {activeTab === 'rules' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-full" />
+              )}
+            </button>
+          </div>
+        </div>
 
-          {/* Categories Tab */}
-          <TabsContent value="categories" className="space-y-4">
-            {/* Categories Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <PlanLimitBadge usado={usage.categorias} limite={limits.categorias} />
-              </div>
-              <Button onClick={handleOpenDialog} disabled={limiteCategoriasAtingido}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Categoria
-              </Button>
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <PlanLimitBadge usado={usage.categorias} limite={limits.categorias} />
             </div>
 
             {limiteCategoriasAtingido && (
@@ -242,11 +263,10 @@ export default function Categories() {
               />
             )}
 
-            {/* Categories Grid */}
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(2)].map((_, i) => (
-                  <Card key={i} className="border animate-pulse">
+                  <Card key={i} className="border border-[hsl(220,13%,91%)] rounded-xl shadow-none animate-pulse">
                     <CardContent className="p-6">
                       <div className="h-40 bg-muted rounded" />
                     </CardContent>
@@ -256,16 +276,16 @@ export default function Categories() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Income Categories */}
-                <Card className="border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center gap-2 text-income">
-                      <TrendingUp className="w-4 h-4" />
+                <Card className="border border-[hsl(220,13%,91%)] rounded-xl shadow-none">
+                  <div className="px-4 pt-4 pb-2">
+                    <h3 className="text-sm font-semibold text-foreground">
                       Receitas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                      <span className="text-muted-foreground font-normal text-xs ml-2">{incomeCategories.length}</span>
+                    </h3>
+                  </div>
+                  <CardContent className="p-0">
                     {incomeCategories.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
+                      <p className="text-sm text-muted-foreground text-center py-6">Nenhuma categoria</p>
                     ) : (
                       incomeCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
@@ -275,16 +295,16 @@ export default function Categories() {
                 </Card>
 
                 {/* Expense Categories */}
-                <Card className="border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center gap-2 text-expense">
-                      <TrendingDown className="w-4 h-4" />
+                <Card className="border border-[hsl(220,13%,91%)] rounded-xl shadow-none">
+                  <div className="px-4 pt-4 pb-2">
+                    <h3 className="text-sm font-semibold text-foreground">
                       Despesas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                      <span className="text-muted-foreground font-normal text-xs ml-2">{expenseCategories.length}</span>
+                    </h3>
+                  </div>
+                  <CardContent className="p-0">
                     {expenseCategories.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria</p>
+                      <p className="text-sm text-muted-foreground text-center py-6">Nenhuma categoria</p>
                     ) : (
                       expenseCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
@@ -294,13 +314,11 @@ export default function Categories() {
                 </Card>
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Rules Tab */}
-          <TabsContent value="rules">
-            <RulesList />
-          </TabsContent>
-        </Tabs>
+        {/* Rules Tab */}
+        {activeTab === 'rules' && <RulesList />}
 
         {/* Category Dialog */}
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
@@ -402,15 +420,12 @@ export default function Categories() {
               <div className="space-y-2">
                 <Label className="text-sm">Prévia</Label>
                 <div className="flex items-center gap-3 p-3 rounded-md bg-secondary/50">
-                  <div 
-                    className="w-8 h-8 rounded-md flex items-center justify-center"
-                    style={{ backgroundColor: `${formData.color}15` }}
-                  >
-                    <SelectedIcon className="w-4 h-4" style={{ color: formData.color }} />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[hsl(220,14%,96%)]">
+                    <SelectedIcon className="w-4 h-4 text-[hsl(220,9%,46%)]" />
                   </div>
                   <span className="text-sm font-medium">{formData.name || 'Nome da categoria'}</span>
                   <div 
-                    className="w-3 h-3 rounded-full ml-auto" 
+                    className="w-3 h-3 rounded-[3px] ml-auto" 
                     style={{ backgroundColor: formData.color }}
                   />
                 </div>
