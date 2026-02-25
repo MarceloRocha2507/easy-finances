@@ -88,14 +88,14 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "w-full flex items-center justify-between px-3 py-2 text-sm transition-colors duration-150",
-            open || isMenuActive
+            "group w-full flex items-center justify-between px-3 py-2 text-sm transition-colors duration-150",
+            isMenuActive
               ? "menu-item-active"
               : "text-muted-foreground menu-item-hover"
           )}
         >
           <div className="flex items-center gap-3">
-            <Icon className="h-4 w-4" />
+            <Icon className={cn("h-4 w-4 transition-opacity duration-150", isMenuActive ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
             {label}
           </div>
           <div className="flex items-center gap-2">
@@ -118,14 +118,14 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "flex items-center justify-between px-3 py-1.5 text-sm transition-colors duration-150",
+              "group flex items-center justify-between px-3 py-1.5 text-sm transition-colors duration-150",
               isItemActive(subItem.href)
                 ? "submenu-item-active"
                 : "text-muted-foreground menu-item-hover"
             )}
           >
             <div className="flex items-center gap-2.5">
-              <subItem.icon className="h-3.5 w-3.5" />
+              <subItem.icon className={cn("h-3.5 w-3.5 transition-opacity duration-150", isItemActive(subItem.href) ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
               {subItem.label}
             </div>
             {subItem.badge && <MenuBadge {...subItem.badge} />}
