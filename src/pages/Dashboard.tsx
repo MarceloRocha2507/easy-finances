@@ -318,7 +318,7 @@ export default function Dashboard() {
       })()}
 
       {/* Contas a Pagar */}
-      <ContasAPagar mesReferencia={mesReferencia} />
+      <ContasAPagar mesReferencia={mesReferencia} rendaMensal={completeStats?.completedIncome || 0} />
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
