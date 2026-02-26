@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight, Repeat } from 'lucide-react';
 import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -32,7 +32,7 @@ import { Switch } from '@/components/ui/switch';
 import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
-
+import { useAssinaturas } from '@/hooks/useAssinaturas';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
@@ -262,6 +262,18 @@ export default function Transactions() {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
   };
   const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
+  const { assinaturas, isLoading: isAssinaturasLoading } = useAssinaturas();
+
+  const assinaturasAtivas = useMemo(() => assinaturas.filter(a => a.status === 'ativa'), [assinaturas]);
+  const totalMensalAssinaturas = useMemo(() => assinaturasAtivas.reduce((sum, a) => {
+    const divisor = ({ mensal: 1, trimestral: 3, semestral: 6, anual: 12 } as Record<string, number>)[a.frequencia] || 1;
+    return sum + a.valor / divisor;
+  }, 0), [assinaturasAtivas]);
+  const renovamEssaSemana = useMemo(() => assinaturasAtivas.filter(a => {
+    const prox = new Date(a.proxima_cobranca + 'T12:00:00');
+    const diff = (prox.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diff >= 0 && diff <= 7;
+  }).length, [assinaturasAtivas]);
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
@@ -972,6 +984,25 @@ export default function Transactions() {
               subInfo="real + a receber - a pagar"
               delay={0.25}
               isLoading={isStatsFetching}
+            />
+            <StatCardMinimal
+              title="Assinaturas"
+              value={totalMensalAssinaturas}
+              icon={Repeat}
+              subInfo={
+                <>
+                  {assinaturasAtivas.length} ativas
+                  {renovamEssaSemana > 0 && (
+                    <span className="text-amber-500 ml-1">
+                      · {renovamEssaSemana} renovam essa semana
+                    </span>
+                  )}
+                </>
+              }
+              onClick={() => navigate('/assinaturas')}
+              delay={0.3}
+              isLoading={isAssinaturasLoading}
+              valueColor="expense"
             />
           </AnimatedSection>
         </AnimatedSection>
