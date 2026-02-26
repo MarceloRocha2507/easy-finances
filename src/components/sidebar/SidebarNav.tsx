@@ -1,7 +1,8 @@
-import React, { memo, useCallback, useState, useEffect } from "react";
+import React, { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { MenuCollapsible } from "./MenuCollapsible";
+import { useRadarGastos } from "@/hooks/useRadarGastos";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -70,6 +71,16 @@ interface SidebarNavProps {
 export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
+  const { totalDetectados } = useRadarGastos();
+
+  const transacoesMenuWithBadge = useMemo(() => ({
+    ...transacoesMenu,
+    subItems: transacoesMenu.subItems.map((item) =>
+      item.href === "/assinaturas" && totalDetectados > 0
+        ? { ...item, badge: { count: totalDetectados, variant: "warning" as const } }
+        : item
+    ),
+  }), [totalDetectados]);
 
   const [openMenus, setOpenMenus] = useState(() => ({
     transacoes: pathname.startsWith("/transactions") || pathname === "/assinaturas",
@@ -112,9 +123,9 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       ))}
 
       <MenuCollapsible
-        icon={transacoesMenu.icon}
-        label={transacoesMenu.label}
-        subItems={transacoesMenu.subItems}
+        icon={transacoesMenuWithBadge.icon}
+        label={transacoesMenuWithBadge.label}
+        subItems={transacoesMenuWithBadge.subItems}
         basePath={["/transactions", "/assinaturas"]}
         open={openMenus.transacoes}
         onOpenChange={handleMenuChange("transacoes")}

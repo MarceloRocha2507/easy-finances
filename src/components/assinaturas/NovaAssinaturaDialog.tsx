@@ -39,9 +39,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   assinatura?: Assinatura | null;
+  prefill?: { nome: string; valor: string; frequencia: string } | null;
 }
 
-export function NovaAssinaturaDialog({ open, onOpenChange, assinatura }: Props) {
+export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }: Props) {
   const { criar, atualizar } = useAssinaturas();
   const { data: categories } = useCategories();
   const isEdit = !!assinatura;
@@ -75,11 +76,11 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura }: Props) 
       });
     } else {
       setForm({
-        nome: "",
+        nome: prefill?.nome || "",
         categoria: "outros",
-        valor: "",
+        valor: prefill?.valor || "",
         moeda: "BRL",
-        frequencia: "mensal",
+        frequencia: prefill?.frequencia || "mensal",
         data_inicio: new Date().toISOString().split("T")[0],
         proxima_cobranca: new Date().toISOString().split("T")[0],
         metodo_pagamento: "cartao_credito",
@@ -87,7 +88,7 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura }: Props) 
         category_id: "",
       });
     }
-  }, [assinatura, open]);
+  }, [assinatura, open, prefill]);
 
   const handleSubmit = () => {
     if (!form.nome || !form.valor) return;
