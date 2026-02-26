@@ -51,7 +51,7 @@ export function useFaturasNaListagem() {
       // 3. Buscar parcelas não pagas agrupadas
       const { data: parcelas, error: parcelasError } = await supabase
         .from('parcelas_cartao')
-        .select('valor, mes_referencia, compra_id, compras_cartao!inner(cartao_id)')
+        .select('valor, mes_referencia, compra_id, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
         .eq('paga', false)
         .eq('ativo', true)
         .gte('mes_referencia', mesInicioStr)
@@ -63,8 +63,14 @@ export function useFaturasNaListagem() {
       const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number }>();
 
       for (const p of parcelas) {
-        const cartaoId = (p.compras_cartao as any)?.cartao_id;
+        const compra = p.compras_cartao as any;
+        const cartaoId = compra?.cartao_id;
         if (!cartaoId) continue;
+
+        // Filtrar apenas parcelas do titular
+        const isTitular = compra?.responsavel?.is_titular === true;
+        if (!isTitular) continue;
+
         const mesRef = p.mes_referencia;
         const key = `${cartaoId}-${mesRef}`;
         
