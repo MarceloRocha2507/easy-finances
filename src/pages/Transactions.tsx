@@ -929,11 +929,12 @@ export default function Transactions() {
               delay={0}
               isLoading={isStatsFetching}
             />
-            <StatCardMinimal
+             <StatCardMinimal
               title="Despesas"
               value={stats?.completedExpense || 0}
               icon={TrendingDown}
               subInfo="pagas"
+              valueColor="expense"
               delay={0.05}
               isLoading={isStatsFetching}
             />
