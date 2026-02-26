@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CreditCard, ChevronDown } from "lucide-react";
+import { ClipboardList, CreditCard, ChevronDown, Receipt, AlertCircle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions, Transaction } from "@/hooks/useTransactions";
 import { useFaturasNaListagem, FaturaVirtual } from "@/hooks/useFaturasNaListagem";
@@ -19,36 +15,16 @@ interface ContasAPagarProps {
   rendaMensal: number;
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  'moradia': '🏠', 'aluguel': '🏠',
-  'energia': '⚡', 'luz': '⚡',
-  'agua': '💧', 'água': '💧',
-  'internet': '📡', 'telefone': '📡',
-  'assinatura': '📺', 'streaming': '📺',
-  'alimentação': '🍔', 'alimentacao': '🍔',
-  'transporte': '🚗', 'educação': '📚', 'educacao': '📚',
-  'saúde': '🏥', 'saude': '🏥', 'lazer': '🎮',
-};
-
-function getCategoryEmoji(categoryName: string | undefined): string {
-  if (!categoryName) return '📌';
-  const lower = categoryName.toLowerCase();
-  for (const [key, emoji] of Object.entries(CATEGORY_EMOJI)) {
-    if (lower.includes(key)) return emoji;
-  }
-  return '📌';
-}
-
-function getDueDateInfo(dueDateStr: string) {
+function getDueDateText(dueDateStr: string): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dueDate = new Date(dueDateStr + "T00:00:00");
   const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / 86400000);
 
-  if (diffDays < 0) return { text: `Venceu há ${Math.abs(diffDays)} dia${Math.abs(diffDays) > 1 ? 's' : ''}`, className: 'text-red-600 font-medium' };
-  if (diffDays === 0) return { text: 'Vence hoje!', className: 'text-orange-500 font-medium' };
-  if (diffDays <= 3) return { text: `Vence em ${diffDays} dia${diffDays > 1 ? 's' : ''}`, className: 'text-yellow-600' };
-  return { text: `Vence ${format(dueDate, 'dd/MM')}`, className: 'text-muted-foreground' };
+  if (diffDays < 0) return `Venceu há ${Math.abs(diffDays)}d`;
+  if (diffDays === 0) return 'Vence hoje';
+  if (diffDays <= 3) return `Vence em ${diffDays}d`;
+  return `Vence ${format(dueDate, 'dd/MM')}`;
 }
 
 function isOverdue(dueDateStr: string): boolean {
@@ -77,7 +53,6 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
 
-  // Contas pendentes (transações)
   const { data: transactions, isLoading: isLoadingTx } = useTransactions({
     startDate: inicioMes,
     endDate: fimMes,
@@ -85,257 +60,216 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
     status: "pending",
   });
 
-  // Faturas de cartão
   const { data: todasFaturas, isLoading: isLoadingFaturas } = useFaturasNaListagem();
 
   const isLoading = isLoadingTx || isLoadingFaturas;
 
-  // Filtrar faturas do mês de referência
   const mesRefStr = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
   const faturasMes = (todasFaturas || []).filter(f => f.mesReferencia.startsWith(mesRefStr));
 
-  // Contas pendentes ordenadas
   const contasPendentes = (transactions || []).sort(sortPendingExpenses);
   const displayedContas = contasExpanded ? contasPendentes : contasPendentes.slice(0, 5);
 
-  // Totais
   const totalCartoes = faturasMes.reduce((s, f) => s + f.amount, 0);
   const totalContas = contasPendentes.reduce((s, t) => s + t.amount, 0);
   const totalGeral = totalCartoes + totalContas;
-
-  const pctRenda = rendaMensal > 0 ? (totalGeral / rendaMensal) * 100 : 0;
-  const barColor = pctRenda > 80 ? '[&>div]:bg-red-500' : pctRenda > 50 ? '[&>div]:bg-amber-500' : '[&>div]:bg-green-500';
 
   const mesNome = format(mesReferencia, "MMMM", { locale: ptBR });
   const isEmpty = faturasMes.length === 0 && contasPendentes.length === 0;
 
   return (
-    <Card className="rounded-xl border shadow-sm mb-4 animate-fade-in">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <ClipboardList className="w-4 h-4" />
-              Contas a Pagar
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1 capitalize">
-              Compromissos pendentes de {mesNome}
-            </p>
+    <div className="bg-white border border-[hsl(220,13%,91%)] rounded-[12px] p-5 mb-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-[hsl(220,9%,64%)]" />
+            <span className="text-sm font-bold text-[hsl(220,13%,10%)]">Contas a Pagar</span>
           </div>
-          <Link to="/transactions">
-            <Button variant="ghost" size="sm" className="text-xs">
-              Ver todas →
-            </Button>
-          </Link>
+          <p className="text-xs text-[hsl(220,9%,64%)] mt-1 capitalize">
+            Compromissos pendentes de {mesNome}
+          </p>
         </div>
-      </CardHeader>
+        <Link to="/transactions" className="text-xs text-[hsl(220,9%,46%)] hover:text-[hsl(220,13%,10%)] transition-colors">
+          Ver todas →
+        </Link>
+      </div>
 
-      <CardContent className="pt-0">
-        {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg" />
-            ))}
-          </div>
-        ) : isEmpty ? (
-          <div className="text-center py-6 text-sm text-muted-foreground">
-            <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p>Nenhum compromisso pendente este mês</p>
-          </div>
-        ) : (
-          <>
-            {/* BLOCO 1 — Faturas de Cartão */}
-            {faturasMes.length > 0 && (
-              <Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg px-3 py-2.5 transition-colors">
-                    <span className="text-sm font-semibold flex items-center gap-2">
-                      💳 Faturas de Cartão
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : isEmpty ? (
+        <div className="text-center py-6 text-sm text-[hsl(220,9%,64%)]">
+          <ClipboardList className="w-8 h-8 mx-auto mb-2 text-[hsl(220,9%,64%)] opacity-30" />
+          <p>Nenhum compromisso pendente este mês</p>
+        </div>
+      ) : (
+        <>
+          {/* BLOCO 1 — Faturas de Cartão */}
+          {faturasMes.length > 0 && (
+            <Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between cursor-pointer hover:bg-[hsl(210,20%,98%)] rounded-lg px-3 py-2.5 transition-colors border-b border-[hsl(220,14%,96%)]">
+                  <span className="text-[11px] uppercase tracking-[0.05em] text-[hsl(220,9%,64%)] font-medium">
+                    Faturas de Cartão
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[hsl(220,9%,64%)]">
+                      {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
-                      </Badge>
-                      <span className="text-sm font-semibold text-destructive">
-                        -{formatCurrency(totalCartoes)}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-1 mt-2">
-                    {faturasMes.map((f) => {
-                      const overdue = isOverdue(f.due_date);
-                      const dueDateInfo = getDueDateInfo(f.due_date);
-                      return (
-                        <div
-                          key={f.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                            overdue
-                              ? 'bg-red-50 border-l-4 border-l-red-500'
-                              : 'bg-yellow-50 border-l-4 border-l-yellow-400'
-                          }`}
-                        >
-                          <CreditCard
-                            className="w-4 h-4 shrink-0"
-                            style={{ color: f.cartaoCor }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{f.cartaoNome}</p>
-                          </div>
-                          <span className={`text-xs whitespace-nowrap hidden sm:block ${dueDateInfo.className}`}>
-                            {dueDateInfo.text}
-                          </span>
-                          <span className="text-sm font-semibold text-destructive whitespace-nowrap">
-                            -{formatCurrency(f.amount)}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] px-1.5 py-0.5 ${
-                              overdue
-                                ? 'bg-red-100 text-red-700 border-red-200 animate-pulse'
-                                : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                            }`}
-                          >
-                            {overdue ? 'Vencido' : 'Pendente'}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-
-            {/* Separador entre blocos */}
-            {faturasMes.length > 0 && contasPendentes.length > 0 && (
-              <Separator className="my-3" />
-            )}
-
-            {/* BLOCO 2 — Contas Pendentes */}
-            {contasPendentes.length > 0 && (
-              <Collapsible open={contasOpen} onOpenChange={setContasOpen}>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg px-3 py-2.5 transition-colors">
-                    <span className="text-sm font-semibold flex items-center gap-2">
-                      📋 Contas Pendentes
+                    <span className="text-sm font-semibold text-[hsl(0,84%,60%)]">
+                      -{formatCurrency(totalCartoes)}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {contasPendentes.length} {contasPendentes.length === 1 ? 'conta' : 'contas'}
-                      </Badge>
-                      <span className="text-sm font-semibold text-destructive">
-                        -{formatCurrency(totalContas)}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${contasOpen ? 'rotate-180' : ''}`} />
-                    </div>
+                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
                   </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-1 mt-2">
-                    {displayedContas.map((t) => {
-                      const dueDate = t.due_date || t.date;
-                      const overdue = isOverdue(dueDate);
-                      const dueDateInfo = getDueDateInfo(dueDate);
-                      const categoryName = t.category?.name;
-                      const emoji = getCategoryEmoji(categoryName);
-
-                      return (
-                        <div
-                          key={t.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                            overdue
-                              ? 'bg-red-50 border-l-4 border-l-red-500'
-                              : 'bg-yellow-50 border-l-4 border-l-yellow-400'
-                          }`}
-                        >
-                          <span className="text-base shrink-0">{emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {t.description || "Sem descrição"}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {categoryName || "Sem categoria"}
-                            </p>
-                          </div>
-                          <span className={`text-xs whitespace-nowrap hidden sm:block ${dueDateInfo.className}`}>
-                            {dueDateInfo.text}
-                          </span>
-                          <span className="text-sm font-semibold text-destructive whitespace-nowrap">
-                            -{formatCurrency(t.amount)}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] px-1.5 py-0.5 ${
-                              overdue
-                                ? 'bg-red-100 text-red-700 border-red-200 animate-pulse'
-                                : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                            }`}
-                          >
-                            {overdue ? 'Vencido' : 'Pendente'}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {contasPendentes.length > 5 && (
-                    <div className="flex justify-center mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs gap-1"
-                        onClick={() => setContasExpanded(!contasExpanded)}
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-1">
+                  {faturasMes.map((f) => {
+                    const overdue = isOverdue(f.due_date);
+                    return (
+                      <div
+                        key={f.id}
+                        className="flex items-center gap-3 px-3 py-2.5 border-b border-[hsl(210,20%,98%)] hover:bg-[hsl(210,20%,98%)] transition-colors"
                       >
-                        {contasExpanded ? (
-                          <>Mostrar menos <ChevronDown className="w-3 h-3 rotate-180" /></>
-                        ) : (
-                          <>Mostrar mais ({contasPendentes.length - 5}) <ChevronDown className="w-3 h-3" /></>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
+                        <div className="w-7 h-7 rounded-[6px] bg-[hsl(220,14%,96%)] flex items-center justify-center shrink-0">
+                          <CreditCard className="w-4 h-4 text-[hsl(220,9%,64%)]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[hsl(220,13%,10%)] truncate">{f.cartaoNome}</p>
+                        </div>
+                        <span className="text-xs text-[hsl(220,9%,64%)] whitespace-nowrap hidden sm:block">
+                          {getDueDateText(f.due_date)}
+                        </span>
+                        <span className="text-sm font-bold text-[hsl(0,84%,60%)] whitespace-nowrap">
+                          -{formatCurrency(f.amount)}
+                        </span>
+                        <span className={`text-[11px] font-medium rounded-[6px] px-2 py-0.5 ${
+                          overdue
+                            ? 'bg-[hsl(0,93%,94%)] text-[hsl(0,74%,35%)]'
+                            : 'bg-[hsl(48,96%,89%)] text-[hsl(32,95%,29%)]'
+                        }`}>
+                          {overdue ? 'Vencido' : 'Pendente'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
-            {/* BLOCO 3 — Totalizador Geral */}
-            <Separator className="my-3" />
+          {/* Separador */}
+          {faturasMes.length > 0 && contasPendentes.length > 0 && (
+            <div className="border-b border-[hsl(220,14%,96%)] my-1" />
+          )}
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-              {totalCartoes > 0 && (
-                <span className="text-sm">
-                  <span className="text-muted-foreground">💳 Total Cartões: </span>
-                  <span className="font-semibold text-destructive">-{formatCurrency(totalCartoes)}</span>
-                </span>
-              )}
-              {totalContas > 0 && (
-                <span className="text-sm">
-                  <span className="text-muted-foreground">📋 Total Contas: </span>
-                  <span className="font-semibold text-destructive">-{formatCurrency(totalContas)}</span>
-                </span>
-              )}
-              <span className="text-sm sm:ml-auto">
-                <span className="text-muted-foreground">⚠️ Total a Pagar: </span>
-                <span className="font-bold text-destructive text-base">-{formatCurrency(totalGeral)}</span>
+          {/* BLOCO 2 — Contas Pendentes */}
+          {contasPendentes.length > 0 && (
+            <Collapsible open={contasOpen} onOpenChange={setContasOpen}>
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between cursor-pointer hover:bg-[hsl(210,20%,98%)] rounded-lg px-3 py-2.5 transition-colors border-b border-[hsl(220,14%,96%)]">
+                  <span className="text-[11px] uppercase tracking-[0.05em] text-[hsl(220,9%,64%)] font-medium">
+                    Contas Pendentes
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[hsl(220,9%,64%)]">
+                      {contasPendentes.length} {contasPendentes.length === 1 ? 'conta' : 'contas'}
+                    </span>
+                    <span className="text-sm font-semibold text-[hsl(0,84%,60%)]">
+                      -{formatCurrency(totalContas)}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${contasOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-1">
+                  {displayedContas.map((t) => {
+                    const dueDate = t.due_date || t.date;
+                    const overdue = isOverdue(dueDate);
+                    const categoryName = t.category?.name;
+
+                    return (
+                      <div
+                        key={t.id}
+                        className="flex items-center gap-3 px-3 py-2.5 border-b border-[hsl(210,20%,98%)] hover:bg-[hsl(210,20%,98%)] transition-colors"
+                      >
+                        <div className="w-7 h-7 rounded-[6px] bg-[hsl(220,14%,96%)] flex items-center justify-center shrink-0">
+                          <Receipt className="w-4 h-4 text-[hsl(220,9%,64%)]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[hsl(220,13%,10%)] truncate">
+                            {t.description || "Sem descrição"}
+                          </p>
+                          <p className="text-xs text-[hsl(220,9%,64%)] truncate">
+                            {categoryName || "Sem categoria"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-[hsl(220,9%,64%)] whitespace-nowrap hidden sm:block">
+                          {getDueDateText(dueDate)}
+                        </span>
+                        <span className="text-sm font-bold text-[hsl(0,84%,60%)] whitespace-nowrap">
+                          -{formatCurrency(t.amount)}
+                        </span>
+                        <span className={`text-[11px] font-medium rounded-[6px] px-2 py-0.5 ${
+                          overdue
+                            ? 'bg-[hsl(0,93%,94%)] text-[hsl(0,74%,35%)]'
+                            : 'bg-[hsl(48,96%,89%)] text-[hsl(32,95%,29%)]'
+                        }`}>
+                          {overdue ? 'Vencido' : 'Pendente'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {contasPendentes.length > 5 && (
+                  <div className="flex justify-center mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-[hsl(220,9%,46%)] gap-1"
+                      onClick={() => setContasExpanded(!contasExpanded)}
+                    >
+                      {contasExpanded ? (
+                        <>Mostrar menos <ChevronDown className="w-3 h-3 rotate-180" /></>
+                      ) : (
+                        <>Mostrar mais ({contasPendentes.length - 5}) <ChevronDown className="w-3 h-3" /></>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Footer totals */}
+          <div className="border-t border-[hsl(220,13%,91%)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            {totalCartoes > 0 && (
+              <span className="text-[13px]">
+                <span className="text-[hsl(220,9%,46%)]">Total Cartões: </span>
+                <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalCartoes)}</span>
               </span>
-            </div>
-
-            {rendaMensal > 0 && (
-              <>
-                <Progress
-                  value={Math.min(pctRenda, 100)}
-                  className={`h-2 ${barColor}`}
-                />
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Seus compromissos pendentes representam {pctRenda.toFixed(0)}% da sua renda
-                </p>
-              </>
             )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+            {totalContas > 0 && (
+              <span className="text-[13px]">
+                <span className="text-[hsl(220,9%,46%)]">Total Contas: </span>
+                <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalContas)}</span>
+              </span>
+            )}
+            <span className="text-[13px] sm:ml-auto flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-[hsl(220,9%,64%)]" />
+              <span className="text-[hsl(220,9%,46%)]">Total a Pagar: </span>
+              <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalGeral)}</span>
+            </span>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

@@ -278,42 +278,31 @@ export default function Dashboard() {
         const income = completeStats?.completedIncome || 0;
         const expense = completeStats?.completedExpense || 0;
         const percentual = income > 0 ? (expense / income) * 100 : 0;
-        const barColor = percentual >= 100
-          ? "[&>div]:bg-red-500"
-          : percentual > 70
-            ? "[&>div]:bg-amber-500"
-            : "[&>div]:bg-green-500";
 
         return (
-          <Card className="mb-4 rounded-xl border shadow-sm animate-fade-in">
-            <CardContent className="py-4 px-5">
-              {isStatsFetching ? (
-                <Skeleton className="h-10 w-full rounded-xl" />
-              ) : (
-                <>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <BarChart3 className="w-4 h-4" />
-                      Comprometimento da Renda
-                    </div>
-                    <span className={`text-sm font-bold ${percentual >= 100 ? 'text-red-500' : percentual > 70 ? 'text-amber-500' : 'text-green-500'}`}>
-                      {percentual.toFixed(0)}%
-                    </span>
+          <div className="border-b border-[hsl(220,13%,91%)] pb-4 mb-4 animate-fade-in">
+            {isStatsFetching ? (
+              <Skeleton className="h-6 w-full rounded-full" />
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-[13px] text-[hsl(220,9%,46%)]">
+                    <BarChart3 className="w-4 h-4 text-[hsl(220,9%,64%)]" />
+                    Comprometimento da Renda
                   </div>
-                  <Progress
-                    value={Math.min(percentual, 100)}
-                    className={`h-3 ${barColor}`}
+                  <span className="text-sm font-bold text-[hsl(220,13%,10%)]">
+                    {percentual.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-1 w-full rounded-full bg-[hsl(220,14%,96%)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[hsl(220,13%,10%)] transition-all"
+                    style={{ width: `${Math.min(percentual, 100)}%` }}
                   />
-                  {percentual >= 100 && (
-                    <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      Suas despesas ultrapassaram sua renda este mês.
-                    </p>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                </div>
+              </>
+            )}
+          </div>
         );
       })()}
 
