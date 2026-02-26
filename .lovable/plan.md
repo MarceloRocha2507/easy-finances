@@ -1,89 +1,88 @@
 
-# Tornar Blocos de "Contas a Pagar" Expansiveis/Recolhiveis
 
-## Resumo
+# Redesign "Contas a Pagar" and "Comprometimento da Renda" — Premium Fintech Style
 
-Refatorar o componente `ContasAPagar.tsx` para que os blocos "Faturas de Cartao" e "Contas Pendentes" funcionem como acordeoes independentes, iniciando recolhidos. O rodape totalizador permanece sempre visivel.
+## Summary
 
-## Arquivo modificado
+Restyle both sections to match the clean, minimal fintech aesthetic: white backgrounds, neutral stroke icons, color only as signal, no decorative backgrounds or colored borders.
 
-| Arquivo | Acao |
-|---------|------|
-| `src/components/dashboard/ContasAPagar.tsx` | Refatorar blocos como acordeoes |
+## Files modified
 
-## Mudancas detalhadas
+| File | Action |
+|------|--------|
+| `src/pages/Dashboard.tsx` | Restyle Comprometimento da Renda bar (lines 276-318) |
+| `src/components/dashboard/ContasAPagar.tsx` | Full restyle of container, headers, rows, badges, footer |
 
-### Estado
-- Substituir o estado `expanded` por dois estados independentes:
-  - `faturasOpen` (default: `false`)
-  - `contasOpen` (default: `false`)
+## 1. Comprometimento da Renda (Dashboard.tsx)
 
-### Cabecalho clicavel de cada bloco
+Replace the current Card wrapper with a minimal row:
+- Remove `Card`/`CardContent` wrapper — render as a simple `div` with `border-b border-[#E5E7EB] pb-4 mb-4`
+- Label: `text-[13px] text-[#6B7280]`, icon `BarChart3` in `text-[#9CA3AF]`
+- Percentage on right: `text-sm font-bold text-[#111827]` (always dark, no color coding)
+- Progress bar: `h-1` (4px), track `bg-[#F3F4F6]`, fill `bg-[#111827]`, `rounded-full`
+- Remove the colored bar logic and the red warning message below
+- Keep the skeleton for loading state
 
-Cada bloco tera um cabecalho clicavel que exibe:
-- Icone + titulo (mantido)
-- Badge com contagem: ex "3 faturas" ou "5 contas"
-- Valor total do bloco em vermelho
-- Icone `ChevronDown` com rotacao animada (`transition-transform duration-300`, `rotate-180` quando aberto)
+## 2. ContasAPagar.tsx — Full Restyle
 
-Estilo do cabecalho:
-- `cursor-pointer`
-- `hover:bg-gray-50` (hover cinza claro)
-- `rounded-lg` com padding
+### Container
+- Replace `Card` with a plain `div` using: `bg-white border border-[#E5E7EB] rounded-[12px] p-5 mb-4`
+- Remove `CardHeader`/`CardContent` wrappers
 
-Exemplo visual recolhido:
-```text
-💳 Faturas de Cartao  [3 faturas]  -R$ 1.753,42  ▼
-```
+### Section title (header)
+- "Contas a Pagar" in `text-sm font-bold text-[#111827]` with `ClipboardList` icon in `w-4 h-4 text-[#9CA3AF]`
+- Subtitle in `text-xs text-[#9CA3AF]` — "Compromissos pendentes de {mes}"
+- "Ver todas" link: `text-xs text-[#6B7280] hover:text-[#111827]`, no button wrapper
 
-### Conteudo expansivel
+### Sub-headers (Faturas de Cartao / Contas Pendentes accordion triggers)
+- Replace emoji text with uppercase label: `text-[11px] uppercase tracking-[0.05em] text-[#9CA3AF] font-medium`
+- No icons beside the label
+- Bottom border `border-b border-[#F3F4F6]` on the trigger row
+- Badge count and total value remain, styled in `text-xs text-[#9CA3AF]` and `text-sm font-semibold text-[#DC2626]`
+- Chevron in `text-[#9CA3AF]`
 
-- Usar `Collapsible` do Radix (ja disponivel em `@/components/ui/collapsible`) para animacao suave
-- O conteudo (lista de itens) fica dentro de `CollapsibleContent`
-- O cabecalho fica como `CollapsibleTrigger`
+### List rows (both faturas and contas)
+- Remove yellow/red backgrounds and left colored borders entirely
+- White background, separated by `border-b border-[#F9FAFB]`
+- Hover: `hover:bg-[#F9FAFB]`
+- Left icon: Replace emojis/colored CreditCard with a neutral stroke icon (`Receipt` for contas, `CreditCard` for faturas) — `w-4 h-4 text-[#9CA3AF]` inside a `w-7 h-7 bg-[#F3F4F6] rounded-[6px] flex items-center justify-center`
+- Name: `text-sm font-semibold text-[#111827]`
+- Category: `text-xs text-[#9CA3AF]`
+- Due date: `text-xs text-[#9CA3AF]` (remove red/orange/yellow coloring — keep muted gray for all)
+- Value: `text-sm font-bold text-[#DC2626]`
+- Badge: minimal pill — overdue: `bg-[#FEE2E2] text-[#991B1B]`, pending: `bg-[#FEF3C7] text-[#92400E]` — `text-[11px] font-medium rounded-[6px] px-2 py-0.5`, no animate-pulse
 
-### Bloco "Contas Pendentes" -- botao "Mostrar mais"
+### "Total em Cartoes" subtotal row (inside each collapsible)
+- Remove — the total is already visible in the collapsed header
 
-O botao "Mostrar mais" dentro do bloco de contas pendentes continua funcionando como antes (limitando a 5 itens), mas agora controlado por um terceiro estado `contasExpanded` separado do estado de abertura do acordeao.
+### Footer totals (Block 3)
+- Top border: `border-t border-[#E5E7EB] pt-3 mt-3`
+- Each total as inline text `text-[13px]`: label in `text-[#6B7280]`, value in `font-semibold text-[#DC2626]`
+- Replace emoji icons with a minimal `AlertCircle` stroke icon in `text-[#9CA3AF]` for the "Total a Pagar" line
+- Remove the progress bar and percentage text from the footer (this is now handled by the Comprometimento bar above)
 
-### Rodape totalizador
+### Empty state
+- Keep current layout but use `ClipboardList` in `text-[#9CA3AF]` with muted text
 
-Permanece **sempre visivel**, fora dos blocos recolhiveis. Sem alteracao no layout ou dados.
+## Technical details
 
-### Separador entre blocos
-
-Mantido entre os dois blocos, visivel independente do estado de abertura.
-
-## Detalhes tecnicos
-
-### Imports adicionados
+### Imports to add
 ```tsx
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Receipt, AlertCircle } from "lucide-react";
 ```
 
-### Estrutura de cada bloco
-```tsx
-<Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
-  <CollapsibleTrigger asChild>
-    <div className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2.5 transition-colors">
-      <span className="text-sm font-semibold flex items-center gap-2">
-        💳 Faturas de Cartao
-      </span>
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary" className="text-xs">
-          {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
-        </Badge>
-        <span className="text-sm font-semibold text-destructive">
-          -{formatCurrency(totalCartoes)}
-        </span>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
-      </div>
-    </div>
-  </CollapsibleTrigger>
-  <CollapsibleContent>
-    {/* lista de faturas (codigo existente) */}
-  </CollapsibleContent>
-</Collapsible>
-```
+### Imports to remove
+- Remove `Card, CardContent, CardHeader, CardTitle` (replaced with plain div)
+- Remove `Progress` (no longer used in this component)
+- Remove `Separator` (replaced with border classes)
 
-Mesma estrutura para o bloco de Contas Pendentes com `contasOpen`.
+### Key style tokens used
+- Primary text: `#111827`
+- Muted text: `#6B7280`
+- Light muted: `#9CA3AF`
+- Borders: `#E5E7EB`
+- Subtle bg: `#F3F4F6`
+- Hover bg: `#F9FAFB`
+- Red signal: `#DC2626`
+- Pending badge: bg `#FEF3C7`, text `#92400E`
+- Overdue badge: bg `#FEE2E2`, text `#991B1B`
