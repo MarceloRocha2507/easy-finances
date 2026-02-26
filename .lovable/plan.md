@@ -1,81 +1,120 @@
 
-# Mover Assinaturas para Transacoes e Adicionar Card de Resumo
+# Radar de Gastos Invisiveis
 
 ## Resumo
 
-Duas alteracoes: (1) mover "Assinaturas" do menu principal para submenu de "Transacoes", e (2) adicionar um card de resumo de assinaturas na tela de Visao Geral de Transacoes.
+Adicionar uma funcionalidade que analisa o historico de transacoes do usuario para detectar cobrancas recorrentes nao cadastradas como assinatura. A analise roda no frontend usando os dados ja disponiveis, com persistencia de itens ignorados no banco de dados.
+
+## Tabela do banco de dados
+
+Criar tabela `radar_ignorados` para persistir falsos positivos descartados pelo usuario:
+
+| Coluna | Tipo | Default |
+|--------|------|---------|
+| id | uuid | gen_random_uuid() |
+| user_id | uuid | NOT NULL |
+| descricao_pattern | text | NOT NULL |
+| created_at | timestamptz | now() |
+
+RLS: CRUD restrito a `auth.uid() = user_id`.
+
+## Arquivos a criar
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/hooks/useRadarGastos.ts` | Hook com logica de deteccao de recorrencias e gerenciamento de ignorados |
+| `src/components/assinaturas/RadarGastosInvisiveis.tsx` | Componente da secao Radar com card de alerta, lista de deteccoes e acoes |
 
 ## Arquivos a modificar
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/sidebar/SidebarNav.tsx` | Remover "Assinaturas" do `mainMenuItems`, adicionar como submenu em `transacoesMenu` |
-| `src/pages/Transactions.tsx` | Adicionar card `StatCardMinimal` de assinaturas no grid de resumo |
+| `src/pages/Assinaturas.tsx` | Importar e renderizar `RadarGastosInvisiveis` entre o header e os summary cards |
+| `src/components/sidebar/SidebarNav.tsx` | Adicionar badge numerico no item "Assinaturas" com contagem de gastos invisiveis |
+| `src/components/assinaturas/NovaAssinaturaDialog.tsx` | Aceitar props opcionais para pre-preencher dados do radar |
+| `src/components/assinaturas/index.ts` | Exportar `RadarGastosInvisiveis` |
 
-## Detalhes tecnicos
+## Logica de deteccao (useRadarGastos.ts)
 
-### 1. SidebarNav.tsx
+O hook busca todas as transacoes de despesa dos ultimos 12 meses e agrupa por descricao normalizada (lowercase, trim). Para cada grupo com 2+ ocorrencias:
 
-**Remover** a linha `{ icon: Repeat, label: "Assinaturas", href: "/assinaturas" }` do array `mainMenuItems`.
+1. **Verificar valor similar**: variacao de ate 5% entre o menor e maior valor do grupo
+2. **Estimar frequencia**: calcular intervalo medio entre datas e mapear para semanal (~7d), mensal (~30d), trimestral (~90d) ou anual (~365d)
+3. **Excluir ja cadastradas**: comparar descricao com nomes de assinaturas existentes (match parcial, case-insensitive)
+4. **Excluir ignoradas**: filtrar pela tabela `radar_ignorados`
 
-**Adicionar** ao array `transacoesMenu.subItems`:
+Retorna array de deteccoes com: `descricao`, `valorMedio`, `frequenciaEstimada`, `totalOcorrencias`, `custoAnualEstimado`, `ultimaData`.
+
+O hook tambem expoe:
+- `ignorar(descricao)`: insere na tabela `radar_ignorados`
+- `analisarAgora()`: invalida cache e refaz a query
+- `totalDetectados`: contagem para badge
+
+### Calculo de custo anual estimado
+```text
+semanal: valorMedio x 52
+mensal: valorMedio x 12
+trimestral: valorMedio x 4
+anual: valorMedio x 1
+```
+
+## Componente RadarGastosInvisiveis.tsx
+
+### Estrutura visual
+
+1. **Card de alerta** (quando ha deteccoes): fundo gradiente sutil com icone `Sparkles`, texto "A Fina IA analisou suas transacoes e encontrou N possiveis assinaturas nao cadastradas", e botao "Analisar agora" a direita
+
+2. **Lista de deteccoes**: cada item em card com:
+   - Nome da transacao (descricao)
+   - Valor medio formatado
+   - Frequencia estimada (badge: Mensal, Trimestral, etc.)
+   - Total gasto nos ultimos 12 meses
+   - **Custo anual estimado** em destaque (texto maior, cor primaria)
+   - Botao "Adicionar como Assinatura" (abre NovaAssinaturaDialog pre-preenchido)
+   - Botao "Ignorar" (com confirmacao simples)
+
+3. **Estado vazio**: mensagem "Nenhum gasto invisivel detectado. Suas assinaturas estao em dia!"
+
+### Pre-preenchimento do formulario
+
+Ao clicar "Adicionar como Assinatura", abrir `NovaAssinaturaDialog` com:
+- `nome`: descricao da transacao
+- `valor`: valor medio detectado
+- `frequencia`: frequencia estimada
+- Demais campos com defaults normais
+
+## Badge no menu lateral
+
+No `SidebarNav.tsx`, importar `useRadarGastos` e renderizar um badge numerico (circulo pequeno vermelho/amber) ao lado do label "Assinaturas" quando `totalDetectados > 0`. Usar o componente `NotificationBadge` ja existente ou um span inline.
+
+## Fluxo de dados
+
+```text
+useTransactions (12 meses) + useAssinaturas + radar_ignorados
+  -> useRadarGastos (algoritmo de deteccao no frontend)
+    -> RadarGastosInvisiveis (UI)
+    -> SidebarNav badge (contagem)
+```
+
+Nao ha necessidade de edge function pois a analise e feita no frontend com dados ja carregados. A atribuicao visual a "Fina IA" e apenas cosmetica.
+
+## Detalhes de implementacao
+
+### Normalizacao de descricao
 ```typescript
-{ icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
+const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 ```
 
-Ordem final dos subItems de Transacoes:
-1. Visao Geral (`/transactions`)
-2. Importar (`/transactions/importar`)
-3. Despesas Futuras (`/transactions/futuras`)
-4. Assinaturas (`/assinaturas`)
-
-**Atualizar** a logica de `openMenus.transacoes` para tambem abrir quando `pathname === "/assinaturas"`:
-- Estado inicial: `pathname.startsWith("/transactions") || pathname === "/assinaturas"`
-- useEffect: mesma logica com `||`
-
-**Atualizar** o `MenuCollapsible` de transacoes para incluir `includePaths={["/assinaturas"]}` ou ajustar `basePath` -- na verdade, basta que o menu abra corretamente via `openMenus`, o `MenuCollapsible` ja renderiza os subItems independentemente.
-
-### 2. Transactions.tsx
-
-**Importar** o hook `useAssinaturas` e o icone `Repeat`.
-
-**Calcular** dados de assinaturas:
+### Tolerancia de valor (5%)
 ```typescript
-const { assinaturas, isLoading: isAssinaturasLoading } = useAssinaturas();
-
-const assinaturasAtivas = assinaturas.filter(a => a.status === 'ativa');
-const totalMensal = assinaturasAtivas.reduce((sum, a) => {
-  const divisor = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 }[a.frequencia] || 1;
-  return sum + a.valor / divisor;
-}, 0);
-const renovamEssaSemana = assinaturasAtivas.filter(a => {
-  const prox = new Date(a.proxima_cobranca + 'T12:00:00');
-  const diff = (prox.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-  return diff >= 0 && diff <= 7;
-}).length;
+const similar = (min: number, max: number) => max > 0 && (max - min) / max <= 0.05;
 ```
 
-**Adicionar** um novo `StatCardMinimal` no grid (mudando de `lg:grid-cols-3` para acomodar 7 cards, possivelmente mantendo o mesmo grid):
-```tsx
-<StatCardMinimal
-  title="Assinaturas"
-  value={totalMensal}
-  icon={Repeat}
-  subInfo={
-    <>
-      {assinaturasAtivas.length} ativas
-      {renovamEssaSemana > 0 && (
-        <span className="text-amber-500 ml-1">
-          · {renovamEssaSemana} renovam essa semana
-        </span>
-      )}
-    </>
-  }
-  onClick={() => navigate('/assinaturas')}
-  delay={0.3}
-  isLoading={isAssinaturasLoading}
-  valueColor="expense"
-/>
+### Estimativa de frequencia
+```typescript
+const avgDays = totalDaysBetweenFirstAndLast / (occurrences - 1);
+if (avgDays <= 10) return 'semanal';
+if (avgDays <= 45) return 'mensal';
+if (avgDays <= 120) return 'trimestral';
+return 'anual';
 ```
-
-O card sera adicionado apos o card "Estimado", como o setimo card no grid. O subtexto combinara a contagem de ativas com um alerta em amarelo para renovacoes proximas.
