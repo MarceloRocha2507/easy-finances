@@ -1,107 +1,89 @@
 
-# Refatorar "Contas a Pagar" -- Apenas Pendentes com Blocos Separados
+# Tornar Blocos de "Contas a Pagar" Expansiveis/Recolhiveis
 
 ## Resumo
 
-Reescrever completamente o componente `ContasAPagar.tsx` para exibir exclusivamente compromissos pendentes, divididos em dois blocos: Faturas de Cartao e Contas Pendentes, com totalizador geral no rodape. O componente recebera tambem a renda do mes para calcular o percentual de comprometimento.
+Refatorar o componente `ContasAPagar.tsx` para que os blocos "Faturas de Cartao" e "Contas Pendentes" funcionem como acordeoes independentes, iniciando recolhidos. O rodape totalizador permanece sempre visivel.
 
-## Arquivos modificados
+## Arquivo modificado
 
 | Arquivo | Acao |
 |---------|------|
-| `src/components/dashboard/ContasAPagar.tsx` | Reescrever completamente |
-| `src/pages/Dashboard.tsx` | Passar prop `rendaMensal` ao componente |
-
-Nenhum arquivo novo sera criado.
+| `src/components/dashboard/ContasAPagar.tsx` | Refatorar blocos como acordeoes |
 
 ## Mudancas detalhadas
 
-### 1. `src/components/dashboard/ContasAPagar.tsx`
+### Estado
+- Substituir o estado `expanded` por dois estados independentes:
+  - `faturasOpen` (default: `false`)
+  - `contasOpen` (default: `false`)
 
-#### Props
-```tsx
-interface ContasAPagarProps {
-  mesReferencia: Date;
-  rendaMensal: number; // completeStats.completedIncome
-}
+### Cabecalho clicavel de cada bloco
+
+Cada bloco tera um cabecalho clicavel que exibe:
+- Icone + titulo (mantido)
+- Badge com contagem: ex "3 faturas" ou "5 contas"
+- Valor total do bloco em vermelho
+- Icone `ChevronDown` com rotacao animada (`transition-transform duration-300`, `rotate-180` quando aberto)
+
+Estilo do cabecalho:
+- `cursor-pointer`
+- `hover:bg-gray-50` (hover cinza claro)
+- `rounded-lg` com padding
+
+Exemplo visual recolhido:
+```text
+💳 Faturas de Cartao  [3 faturas]  -R$ 1.753,42  ▼
 ```
 
-#### Dados
-- **Faturas de cartao**: usar `useFaturasNaListagem()` existente, filtrar pelo mes de referencia e apenas pendentes (`statusFatura !== 'paga'`)
-- **Contas pendentes**: usar `useTransactions({ startDate, endDate, type: 'expense', status: 'pending' })` -- filtra apenas pendentes direto na query
+### Conteudo expansivel
 
-#### BLOCO 1 -- Faturas de Cartao
-- Titulo: "💳 Faturas de Cartao" (so exibe se houver faturas)
-- Card horizontal por cartao: icone CreditCard com cor do cartao, nome, data de vencimento, valor em vermelho, badge Pendente/Vencido
-- Rodape do bloco: "Total em Cartoes: -R$ X.XXX,XX"
+- Usar `Collapsible` do Radix (ja disponivel em `@/components/ui/collapsible`) para animacao suave
+- O conteudo (lista de itens) fica dentro de `CollapsibleContent`
+- O cabecalho fica como `CollapsibleTrigger`
 
-#### BLOCO 2 -- Contas Pendentes
-- Titulo: "📋 Contas Pendentes"
-- Cada item com:
-  - Emoji por categoria (mapeamento por nome: Moradia->🏠, Energia->⚡, Agua->💧, Internet->📡, Assinatura->📺, outros->📌)
-  - Nome + categoria em cinza
-  - Data de vencimento inteligente:
-    - Vencido: texto vermelho "Venceu ha X dias"
-    - Vence hoje: texto laranja "Vence hoje!"
-    - Vence em ate 3 dias: texto amarelo "Vence em X dias"
-    - Futuro: texto cinza "Vence DD/MM"
-  - Valor em vermelho
-  - Badge Pendente (amarelo) ou Vencido (vermelho com animate-pulse)
-- Estilo condicional:
-  - Vencido: `bg-red-50 border-l-4 border-l-red-500`
-  - Pendente: `bg-yellow-50 border-l-4 border-l-yellow-400`
-- Ordenacao: vencidos primeiro, depois pendentes por data
+### Bloco "Contas Pendentes" -- botao "Mostrar mais"
 
-#### BLOCO 3 -- Totalizador Geral (rodape)
-- Tres valores em linha (`flex-col sm:flex-row`):
-  - "💳 Total Cartoes: -R$ X.XXX,XX" vermelho
-  - "📋 Total Contas: -R$ X.XXX,XX" vermelho
-  - "⚠️ Total a Pagar: -R$ X.XXX,XX" negrito vermelho maior
-- Barra de progresso: `(totalAPagar / rendaMensal) * 100`
-  - Texto: "Seus compromissos pendentes representam XX% da sua renda"
-  - Cor: verde ate 50%, amarelo 51-80%, vermelho acima de 80%
+O botao "Mostrar mais" dentro do bloco de contas pendentes continua funcionando como antes (limitando a 5 itens), mas agora controlado por um terceiro estado `contasExpanded` separado do estado de abertura do acordeao.
 
-#### Estados
-- Loading: Skeletons
-- Vazio (sem faturas nem contas): mensagem "Nenhum compromisso pendente este mes" com icone
+### Rodape totalizador
 
-### 2. `src/pages/Dashboard.tsx`
+Permanece **sempre visivel**, fora dos blocos recolhiveis. Sem alteracao no layout ou dados.
 
-Alterar a chamada do componente para passar a renda:
-```tsx
-<ContasAPagar 
-  mesReferencia={mesReferencia} 
-  rendaMensal={completeStats?.completedIncome || 0} 
-/>
-```
+### Separador entre blocos
+
+Mantido entre os dois blocos, visivel independente do estado de abertura.
 
 ## Detalhes tecnicos
 
-### Mapeamento de emojis por categoria
+### Imports adicionados
 ```tsx
-const CATEGORY_EMOJI: Record<string, string> = {
-  'moradia': '🏠', 'aluguel': '🏠',
-  'energia': '⚡', 'luz': '⚡',
-  'agua': '💧', 'água': '💧',
-  'internet': '📡', 'telefone': '📡',
-  'assinatura': '📺', 'streaming': '📺',
-};
-// fallback: '📌'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 ```
 
-### Logica de data inteligente
+### Estrutura de cada bloco
 ```tsx
-const diffDays = Math.floor((dueDate - today) / 86400000);
-if (diffDays < 0) return { text: `Venceu há ${Math.abs(diffDays)} dias`, class: 'text-red-600' };
-if (diffDays === 0) return { text: 'Vence hoje!', class: 'text-orange-500' };
-if (diffDays <= 3) return { text: `Vence em ${diffDays} dias`, class: 'text-yellow-600' };
-return { text: `Vence ${format(dueDate, 'dd/MM')}`, class: 'text-muted-foreground' };
+<Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
+  <CollapsibleTrigger asChild>
+    <div className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-lg px-3 py-2.5 transition-colors">
+      <span className="text-sm font-semibold flex items-center gap-2">
+        💳 Faturas de Cartao
+      </span>
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary" className="text-xs">
+          {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
+        </Badge>
+        <span className="text-sm font-semibold text-destructive">
+          -{formatCurrency(totalCartoes)}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
+      </div>
+    </div>
+  </CollapsibleTrigger>
+  <CollapsibleContent>
+    {/* lista de faturas (codigo existente) */}
+  </CollapsibleContent>
+</Collapsible>
 ```
 
-### Cor da barra de comprometimento
-```tsx
-const pctRenda = rendaMensal > 0 ? (totalGeral / rendaMensal) * 100 : 0;
-const barColor = pctRenda > 80 ? '[&>div]:bg-red-500' 
-  : pctRenda > 50 ? '[&>div]:bg-amber-500' 
-  : '[&>div]:bg-green-500';
-```
+Mesma estrutura para o bloco de Contas Pendentes com `contasOpen`.
