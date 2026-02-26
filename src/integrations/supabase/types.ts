@@ -930,6 +930,27 @@ export type Database = {
         }
         Relationships: []
       }
+      radar_ignorados: {
+        Row: {
+          created_at: string
+          descricao_pattern: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao_pattern: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao_pattern?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       responsaveis: {
         Row: {
           apelido: string | null

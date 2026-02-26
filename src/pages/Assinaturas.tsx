@@ -22,6 +22,7 @@ import {
   NovaAssinaturaDialog,
   ExcluirAssinaturaDialog,
   DetalhesAssinaturaDialog,
+  RadarGastosInvisiveis,
 } from "@/components/assinaturas";
 import { useAssinaturas, Assinatura } from "@/hooks/useAssinaturas";
 import { formatCurrency } from "@/lib/formatters";
@@ -134,6 +135,9 @@ export default function Assinaturas() {
             <Plus className="h-4 w-4" /> Nova Assinatura
           </Button>
         </div>
+
+        {/* Radar de Gastos Invisíveis */}
+        <RadarGastosInvisiveis />
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
