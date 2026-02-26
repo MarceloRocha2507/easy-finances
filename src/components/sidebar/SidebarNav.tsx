@@ -28,7 +28,6 @@ const mainMenuItems = [
   { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
-  { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
 ];
 
 const transacoesMenu = {
@@ -38,6 +37,7 @@ const transacoesMenu = {
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
     { icon: Upload, label: "Importar", href: "/transactions/importar" },
     { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
+    { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
   ],
 };
 
@@ -72,7 +72,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const pathname = location.pathname;
 
   const [openMenus, setOpenMenus] = useState(() => ({
-    transacoes: pathname.startsWith("/transactions"),
+    transacoes: pathname.startsWith("/transactions") || pathname === "/assinaturas",
     cartoes: pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria",
     relatorios: pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
   }));
@@ -80,7 +80,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   useEffect(() => {
     setOpenMenus(prev => ({
       ...prev,
-      transacoes: prev.transacoes || pathname.startsWith("/transactions"),
+      transacoes: prev.transacoes || pathname.startsWith("/transactions") || pathname === "/assinaturas",
       cartoes: prev.cartoes || (pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria"),
       relatorios: prev.relatorios || pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
     }));
@@ -115,7 +115,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         icon={transacoesMenu.icon}
         label={transacoesMenu.label}
         subItems={transacoesMenu.subItems}
-        basePath="/transactions"
+        basePath={["/transactions", "/assinaturas"]}
         open={openMenus.transacoes}
         onOpenChange={handleMenuChange("transacoes")}
         onItemClick={onItemClick}
