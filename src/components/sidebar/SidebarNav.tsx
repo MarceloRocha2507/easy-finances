@@ -9,6 +9,7 @@ import {
   BarChart3,
   CreditCard,
   PiggyBank,
+  Repeat,
   Shield,
   Layers,
   Users,
@@ -27,6 +28,7 @@ const mainMenuItems = [
   { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
+  { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
 ];
 
 const transacoesMenu = {

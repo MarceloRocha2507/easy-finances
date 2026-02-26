@@ -71,6 +71,74 @@ export type Database = {
           },
         ]
       }
+      assinaturas: {
+        Row: {
+          categoria: string
+          category_id: string | null
+          created_at: string
+          data_cancelamento: string | null
+          data_inicio: string
+          data_pausa: string | null
+          frequencia: string
+          id: string
+          metodo_pagamento: string
+          moeda: string
+          nome: string
+          observacoes: string | null
+          proxima_cobranca: string
+          status: string
+          updated_at: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          category_id?: string | null
+          created_at?: string
+          data_cancelamento?: string | null
+          data_inicio?: string
+          data_pausa?: string | null
+          frequencia?: string
+          id?: string
+          metodo_pagamento?: string
+          moeda?: string
+          nome: string
+          observacoes?: string | null
+          proxima_cobranca: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          category_id?: string | null
+          created_at?: string
+          data_cancelamento?: string | null
+          data_inicio?: string
+          data_pausa?: string | null
+          frequencia?: string
+          id?: string
+          metodo_pagamento?: string
+          moeda?: string
+          nome?: string
+          observacoes?: string | null
+          proxima_cobranca?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinaturas_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria_cartao: {
         Row: {
           acao: string
