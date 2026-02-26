@@ -126,12 +126,12 @@ export default function Assinaturas() {
     <Layout>
       <div className="space-y-6 p-4 md:p-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#111827]">Assinaturas</h1>
             <p className="text-sm text-muted-foreground">Gerencie suas assinaturas recorrentes</p>
           </div>
-          <Button onClick={() => { setEditando(null); setDialogNova(true); }} className="gap-2">
+          <Button onClick={() => { setEditando(null); setDialogNova(true); }} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" /> Nova Assinatura
           </Button>
         </div>
@@ -218,9 +218,9 @@ export default function Assinaturas() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todas">Todas</SelectItem>
               <SelectItem value="ativa">Ativa</SelectItem>
@@ -229,7 +229,7 @@ export default function Assinaturas() {
             </SelectContent>
           </Select>
           <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todas">Todas Categorias</SelectItem>
               <SelectItem value="streaming">Streaming</SelectItem>
@@ -240,7 +240,7 @@ export default function Assinaturas() {
             </SelectContent>
           </Select>
           <Select value={ordenacao} onValueChange={setOrdenacao}>
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="proxima_cobranca">Próxima cobrança</SelectItem>
               <SelectItem value="valor">Valor</SelectItem>
@@ -277,6 +277,13 @@ export default function Assinaturas() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#111827] truncate">{a.nome}</p>
                       <p className="text-xs text-muted-foreground">{categoriaLabel(a.categoria)}</p>
+                      <div className="flex items-center gap-2 sm:hidden mt-0.5">
+                        <p className="text-xs font-bold text-[#111827]">{formatCurrency(a.valor)}</p>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(a.proxima_cobranca + "T12:00:00"), "dd/MM/yyyy")}
+                        </span>
+                        <Badge variant={sb.variant} className="text-[10px] h-4">{sb.label}</Badge>
+                      </div>
                     </div>
                     <div className="text-right mr-2 hidden sm:block">
                       <p className="text-sm font-bold text-[#111827]">{formatCurrency(a.valor)}</p>
