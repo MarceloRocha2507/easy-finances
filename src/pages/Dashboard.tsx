@@ -23,7 +23,13 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle } from "lucide-react";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
   AlertasInteligentes,
@@ -35,7 +41,6 @@ import {
   FiltroPeriodo,
   CartoesCredito,
   StatCardMinimal,
-  EstimatedBalanceBanner,
   PieChartWithLegend,
 } from "@/components/dashboard";
 
@@ -144,7 +149,38 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Stats Cards - Primeira Linha */}
+      {/* Card Resultado do Mês */}
+      {(() => {
+        const resultado = (completeStats?.completedIncome || 0) - (completeStats?.completedExpense || 0);
+        const isPositive = resultado >= 0;
+        return (
+          <Card
+            className="mb-3 rounded-xl border shadow-sm animate-fade-in"
+            style={{ backgroundColor: isPositive ? '#F0FDF4' : '#FEF2F2' }}
+          >
+            <CardContent className="flex flex-col items-center justify-center py-5 gap-1">
+              {isStatsFetching ? (
+                <Skeleton className="h-10 w-48" />
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {isPositive ? <CheckCircle className="w-4 h-4 text-[hsl(var(--income))]" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
+                    <span>Resultado do Mês</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${isPositive ? 'text-[hsl(var(--income))]' : 'text-destructive'}`}>
+                    {formatCurrency(resultado)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isPositive ? 'Suas finanças estão no azul este mês.' : 'Você gastou mais do que recebeu este mês.'}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Stats Cards - Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
         <StatCardMinimal
           title="Saldo Disponível"
@@ -163,17 +199,22 @@ export default function Dashboard() {
             </Button>
           }
           subInfo={
-            <div className="flex flex-col gap-0.5">
-              {(completeStats?.totalInvestido || 0) > 0 && (
-                <span className="text-xs text-primary">
-                  Investido: {formatCurrency(completeStats?.totalInvestido || 0)}
-                </span>
-              )}
-              {(completeStats?.totalMetas || 0) > 0 && (
-                <span className="text-xs text-amber-600">
-                  Em Metas: {formatCurrency(completeStats?.totalMetas || 0)}
-                </span>
-              )}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">
+                Estimado: {formatCurrency(completeStats?.estimatedBalance || 0)}
+              </span>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">Saldo real + receitas pendentes − despesas pendentes − fatura do cartão</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             </div>
           }
         />
@@ -198,62 +239,37 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Stats Cards - Segunda Linha */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCardMinimal
-          title="A Receber"
-          value={completeStats?.pendingIncome || 0}
-          icon={Clock}
-          prefix="+"
-          subInfo={<span className="hidden sm:inline">pendentes</span>}
-          delay={0.2}
-          isLoading={isStatsFetching}
-        />
+      {/* Cards Pendentes (condicional) */}
+      {(() => {
+        const pendingIncome = completeStats?.pendingIncome || 0;
+        const pendingExpense = completeStats?.pendingExpense || 0;
+        const faturaCartao = completeStats?.faturaCartao || 0;
+        const totalAPagar = pendingExpense + faturaCartao;
+        const hasAnyPending = pendingIncome > 0 || pendingExpense > 0 || faturaCartao > 0;
 
-        <StatCardMinimal
-          title="A Pagar"
-          value={completeStats?.pendingExpense || 0}
-          icon={AlertTriangle}
-          prefix="-"
-          subInfo={
-            (completeStats?.overdueCount || 0) > 0 
-              ? `${completeStats?.overdueCount} vencida(s)` 
-              : "pendentes"
-          }
-          delay={0.25}
-          isLoading={isStatsFetching}
-        />
+        if (!hasAnyPending) return null;
 
-        <StatCardMinimal
-          title="Fatura Cartão"
-          value={completeStats?.faturaCartao || 0}
-          icon={CreditCard}
-          prefix="-"
-          subInfo={<span className="hidden sm:inline">titular do mês</span>}
-          delay={0.3}
-          isLoading={isStatsFetching}
-        />
+        const cards = [];
+        if (pendingIncome > 0) cards.push(
+          <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} />
+        );
+        if (pendingExpense > 0) cards.push(
+          <StatCardMinimal key="pagar" title="A Pagar" value={pendingExpense} icon={AlertTriangle} prefix="-" subInfo={(completeStats?.overdueCount || 0) > 0 ? `${completeStats?.overdueCount} vencida(s)` : "pendentes"} delay={0.25} isLoading={isStatsFetching} />
+        );
+        if (faturaCartao > 0) cards.push(
+          <StatCardMinimal key="fatura" title="Fatura Cartão" value={faturaCartao} icon={CreditCard} prefix="-" subInfo="titular do mês" delay={0.3} isLoading={isStatsFetching} />
+        );
+        if (totalAPagar > 0) cards.push(
+          <StatCardMinimal key="total" title="Total a Pagar" value={totalAPagar} icon={Wallet} prefix="-" subInfo="contas + cartão" delay={0.35} onClick={() => setDespesasDialogOpen(true)} isLoading={isStatsFetching} />
+        );
 
-        <StatCardMinimal
-          title="Total a Pagar"
-          value={(completeStats?.pendingExpense || 0) + (completeStats?.faturaCartao || 0)}
-          icon={Wallet}
-          prefix="-"
-          subInfo={<span className="hidden sm:inline">contas + cartão</span>}
-          delay={0.35}
-          onClick={() => setDespesasDialogOpen(true)}
-          isLoading={isStatsFetching}
-        />
-      </div>
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            {cards}
+          </div>
+        );
+      })()}
 
-      {/* Banner de Saldo Estimado */}
-      <div className="mb-6">
-        <EstimatedBalanceBanner
-          value={completeStats?.estimatedBalance || 0}
-          delay={0.4}
-          isLoading={isStatsFetching}
-        />
-      </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
