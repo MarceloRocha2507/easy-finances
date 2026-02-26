@@ -23,7 +23,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Percent } from "lucide-react";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -47,6 +47,7 @@ import {
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
 import { DetalhesDespesasDialog } from "@/components/dashboard/DetalhesDespesasDialog";
+import { Progress } from "@/components/ui/progress";
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
@@ -270,6 +271,50 @@ export default function Dashboard() {
         );
       })()}
 
+
+      {/* Barra de Comprometimento da Renda */}
+      {(() => {
+        const income = completeStats?.completedIncome || 0;
+        const expense = completeStats?.completedExpense || 0;
+        const percentual = income > 0 ? (expense / income) * 100 : 0;
+        const barColor = percentual >= 100
+          ? "[&>div]:bg-red-500"
+          : percentual > 70
+            ? "[&>div]:bg-amber-500"
+            : "[&>div]:bg-green-500";
+
+        return (
+          <Card className="mb-4 rounded-xl border shadow-sm animate-fade-in">
+            <CardContent className="py-4 px-5">
+              {isStatsFetching ? (
+                <Skeleton className="h-10 w-full rounded-xl" />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <BarChart3 className="w-4 h-4" />
+                      Comprometimento da Renda
+                    </div>
+                    <span className={`text-sm font-bold ${percentual >= 100 ? 'text-red-500' : percentual > 70 ? 'text-amber-500' : 'text-green-500'}`}>
+                      {percentual.toFixed(0)}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.min(percentual, 100)}
+                    className={`h-3 ${barColor}`}
+                  />
+                  {percentual >= 100 && (
+                    <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Suas despesas ultrapassaram sua renda este mês.
+                    </p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
