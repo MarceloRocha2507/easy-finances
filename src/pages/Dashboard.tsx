@@ -318,8 +318,6 @@ export default function Dashboard() {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <PieChartWithLegend data={pieData} delay={0.45} isLoading={isCategoryFetching} />
-
         <Card className="border rounded-xl shadow-sm animate-fade-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -387,6 +385,8 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        <PieChartWithLegend data={pieData} delay={0.45} isLoading={isCategoryFetching} />
       </div>
 
       {/* Comparativo + Gastos */}
