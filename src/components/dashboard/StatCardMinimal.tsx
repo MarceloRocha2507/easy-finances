@@ -15,6 +15,7 @@ interface StatCardMinimalProps {
   isLoading?: boolean;
   formatValue?: (value: number) => string;
   actions?: ReactNode;
+  valueColor?: "income" | "expense" | "neutral";
 }
 
 export function StatCardMinimal({
@@ -28,8 +29,11 @@ export function StatCardMinimal({
   isLoading,
   formatValue,
   actions,
+  valueColor,
 }: StatCardMinimalProps) {
   const getValueColor = () => {
+    if (valueColor === "expense") return "text-[#DC2626]";
+    if (valueColor === "income") return "text-[#16A34A]";
     if (prefix === "-") return "text-[#DC2626]";
     if (prefix === "+") return "text-[#16A34A]";
     return value >= 0 ? "text-[#16A34A]" : "text-[#DC2626]";
