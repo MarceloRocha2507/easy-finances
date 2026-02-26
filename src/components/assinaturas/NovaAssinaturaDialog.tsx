@@ -180,10 +180,10 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura }: Props) 
 
           <div>
             <Label>Categoria financeira (opcional)</Label>
-            <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+          <Select value={form.category_id || "none"} onValueChange={(v) => setForm({ ...form, category_id: v === "none" ? "" : v })}>
+            <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhuma</SelectItem>
+                <SelectItem value="none">Nenhuma</SelectItem>
                 {expenseCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
