@@ -59,13 +59,15 @@ export function RadarGastosInvisiveis() {
     <div className="space-y-4">
       {/* Alert card */}
       <Card className="border rounded-xl bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardContent className="p-4 flex items-center gap-3 flex-wrap">
-          <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
-          <p className="text-sm flex-1 min-w-0">
-            A <strong>Fina IA</strong> analisou suas transações e encontrou{" "}
-            <strong>{totalDetectados}</strong> possíve{totalDetectados === 1 ? "l" : "is"} assinatura{totalDetectados === 1 ? "" : "s"} não cadastrada{totalDetectados === 1 ? "" : "s"}.
-          </p>
-          <Button variant="outline" size="sm" onClick={analisarAgora} className="gap-1.5 flex-shrink-0">
+        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+            <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 sm:mt-0" />
+            <p className="text-sm">
+              A <strong>Fina IA</strong> analisou suas transações e encontrou{" "}
+              <strong>{totalDetectados}</strong> possíve{totalDetectados === 1 ? "l" : "is"} assinatura{totalDetectados === 1 ? "" : "s"} não cadastrada{totalDetectados === 1 ? "" : "s"}.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={analisarAgora} className="gap-1.5 w-full sm:w-auto flex-shrink-0">
             <RefreshCw className="h-3.5 w-3.5" /> Analisar agora
           </Button>
         </CardContent>
@@ -76,7 +78,7 @@ export function RadarGastosInvisiveis() {
         {deteccoes.map((d) => (
           <Card key={d.descricao} className="border rounded-xl">
             <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold truncate">{d.descricao}</p>
@@ -84,7 +86,7 @@ export function RadarGastosInvisiveis() {
                       {freqLabel[d.frequenciaEstimada] || d.frequenciaEstimada}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-muted-foreground">
                     <span>Valor médio: {formatCurrency(d.valorMedio)}</span>
                     <span>{d.totalOcorrencias}x nos últimos 12 meses</span>
                     <span>Total: {formatCurrency(d.totalGasto12Meses)}</span>
@@ -94,20 +96,20 @@ export function RadarGastosInvisiveis() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => ignorar.mutate(d.descricao)}
                     disabled={ignorar.isPending}
-                    className="gap-1"
+                    className="gap-1 flex-1 sm:flex-initial"
                   >
                     <X className="h-3.5 w-3.5" /> Ignorar
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => handleAdicionar(d)}
-                    className="gap-1"
+                    className="gap-1 flex-1 sm:flex-initial"
                   >
                     <Plus className="h-3.5 w-3.5" /> Adicionar
                   </Button>
