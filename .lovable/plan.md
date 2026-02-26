@@ -1,55 +1,29 @@
 
 
-# Barra de Comprometimento de Renda
+# Ajustar Seção de Gráficos do Dashboard
 
-## O que sera feito
-Adicionar uma barra de progresso de largura total entre os Cards Pendentes e os Graficos, mostrando o percentual de comprometimento da renda (despesas / receitas).
+## O que muda
 
-## Mudancas em `src/pages/Dashboard.tsx`
+A seção de gráficos já existe com ambos os componentes implementados corretamente. A única mudança necessária é **inverter a ordem** dos gráficos no grid:
 
-### Novo bloco (apos Cards Pendentes, antes dos Graficos - entre as linhas 271 e 274)
+- **Atual**: Rosca (esquerda) | Barras (direita)
+- **Solicitado**: Barras (esquerda) | Rosca (direita)
 
-Um `Card` com:
-- Titulo: "Comprometimento da Renda" com icone `BarChart3`
-- Calculo: `percentual = (completedExpense / completedIncome) * 100` (se receita = 0, mostra 0%)
-- Barra de progresso usando o componente `Progress` existente
-- Percentual exibido a direita da barra (ex: "72%")
-- Cores da barra conforme faixa:
-  - 0-70%: verde (`[&>div]:bg-green-500`)
-  - 71-99%: amarelo/laranja (`[&>div]:bg-amber-500`)
-  - 100%+: vermelho (`[&>div]:bg-red-500`)
-- Se >= 100%, mensagem de alerta abaixo: "Suas despesas ultrapassaram sua renda este mes."
-- Skeleton durante loading (`isStatsFetching`)
+Tudo o mais já está conforme a especificação:
+- Grid 2 colunas em desktop, empilhado em mobile (`grid-cols-1 lg:grid-cols-2`)
+- BarChart com barras agrupadas verde/vermelha, eixo X com meses, tooltip BRL
+- PieChart donut com legenda lateral (cor + nome + valor + percentual)
+- Cards com `rounded-xl`, `shadow-sm`, responsivo
 
-### Imports necessarios
-- `Progress` de `@/components/ui/progress` (novo import)
-- `Percent` de `lucide-react` (novo import para o icone)
+## Mudança em `src/pages/Dashboard.tsx`
 
-### Nenhum arquivo novo
-Tudo sera implementado inline no Dashboard, usando componentes ja existentes (`Card`, `Progress`, `Skeleton`).
+Na seção de gráficos (linhas 319-392), trocar a ordem dos dois filhos do grid:
 
-## Detalhes tecnicos
-
-```text
-+----------------------------------------------------------+
-| BarChart3  Comprometimento da Renda                      |
-| [============████████████=========]              72%     |
-+----------------------------------------------------------+
-```
-
-Logica de cor:
-```tsx
-const barColor = percentual >= 100
-  ? "[&>div]:bg-red-500"
-  : percentual > 70
-    ? "[&>div]:bg-amber-500"
-    : "[&>div]:bg-green-500";
-```
-
-A barra usa `Math.min(percentual, 100)` como value para nao estourar visualmente, mas o texto exibe o valor real (ex: "126%").
+1. Primeiro: Card do BarChart "Receitas vs Despesas"
+2. Segundo: `PieChartWithLegend` "Despesas por Categoria"
 
 ## Arquivo modificado
-| Arquivo | Acao |
+| Arquivo | Ação |
 |---------|------|
-| `src/pages/Dashboard.tsx` | Adicionar bloco de comprometimento de renda entre pendentes e graficos |
+| `src/pages/Dashboard.tsx` | Inverter ordem dos gráficos no grid |
 
