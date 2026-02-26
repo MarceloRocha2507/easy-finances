@@ -42,6 +42,7 @@ import {
   CartoesCredito,
   StatCardMinimal,
   PieChartWithLegend,
+  ContasAPagar,
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
@@ -315,6 +316,9 @@ export default function Dashboard() {
           </Card>
         );
       })()}
+
+      {/* Contas a Pagar */}
+      <ContasAPagar mesReferencia={mesReferencia} />
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
