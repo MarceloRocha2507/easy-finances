@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -23,7 +23,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Percent } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Percent, Calculator } from "lucide-react";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -78,6 +78,7 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [mesReferencia, setMesReferencia] = useState(new Date());
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoDashboard | null>(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
@@ -136,12 +137,22 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <FiltroPeriodo
-          mesAtual={mesReferencia}
-          onMesChange={setMesReferencia}
-          onRefresh={() => refetch()}
-          isLoading={isFetching}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/transactions/simulador")}
+          >
+            <Calculator className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Simular Compra</span>
+          </Button>
+          <FiltroPeriodo
+            mesAtual={mesReferencia}
+            onMesChange={setMesReferencia}
+            onRefresh={() => refetch()}
+            isLoading={isFetching}
+          />
+        </div>
       </div>
 
       {/* Alertas */}

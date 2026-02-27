@@ -987,6 +987,66 @@ export type Database = {
         }
         Relationships: []
       }
+      simulacoes_compra: {
+        Row: {
+          cartao_id: string | null
+          category_id: string | null
+          created_at: string
+          data_prevista: string
+          forma_pagamento: string
+          id: string
+          nome: string
+          parcelas: number
+          user_id: string
+          valor_seguranca: number
+          valor_total: number
+          veredicto: string | null
+        }
+        Insert: {
+          cartao_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          data_prevista: string
+          forma_pagamento: string
+          id?: string
+          nome: string
+          parcelas?: number
+          user_id: string
+          valor_seguranca?: number
+          valor_total: number
+          veredicto?: string | null
+        }
+        Update: {
+          cartao_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          data_prevista?: string
+          forma_pagamento?: string
+          id?: string
+          nome?: string
+          parcelas?: number
+          user_id?: string
+          valor_seguranca?: number
+          valor_total?: number
+          veredicto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulacoes_compra_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulacoes_compra_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_config: {
         Row: {
           ativo: boolean | null
