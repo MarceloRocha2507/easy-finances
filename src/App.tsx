@@ -45,6 +45,7 @@ const InstalarPage = lazy(() => import("./pages/Instalar"));
 const AssistentePage = lazy(() => import("./pages/Assistente"));
 const ChangelogPage = lazy(() => import("./pages/Changelog"));
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
+const SimuladorCompraPage = lazy(() => import("./pages/SimuladorCompra"));
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,17 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingScreen />}>
                     <DespesasFuturasPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/transactions/simulador"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <SimuladorCompraPage />
                   </Suspense>
                 </ProtectedRoute>
               }
