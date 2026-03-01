@@ -302,7 +302,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         .from('parcelas_cartao')
         .select(`
           valor,
-          compra:compras_cartao(categoria_id, categoria:categories(id, name, icon, color))
+          compra:compras_cartao(categoria_id, categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color))
         `)
         .eq('ativo', true);
 
