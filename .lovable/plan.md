@@ -1,40 +1,46 @@
 
 
-# Fix: PWA Not Updating on Devices
+# Add Recurring Delete Confirmation Dialog
 
 ## Problem
-The PWA configuration has two conflicting issues causing devices to stay on old versions:
-
-1. **Conflicting registration mode**: `vite.config.ts` uses `registerType: "autoUpdate"` (auto-activate new SW), but `main.tsx` uses a manual `registerSW` pattern with `confirm()` dialog. These conflict -- if the user dismisses the dialog or never sees it, the old SW stays active indefinitely.
-
-2. **No periodic update check**: The Service Worker only checks for updates on page load. If a user keeps the app open (common on mobile PWAs), they never get the new version until they fully close and reopen the app.
-
-3. **Missing `skipWaiting` / `clientsClaim`**: Without these, the new Service Worker waits until ALL tabs are closed before activating, which on mobile PWAs can mean days.
+When deleting a recurring income (or expense), the system deletes only the single record without asking the user whether they want to delete all occurrences or just the current month. The `useDeleteRecurringTransactions` hook already exists with `single` and `future` modes but is never used in the UI.
 
 ## Solution
+Add a confirmation dialog specifically for recurring/installment transactions that offers two choices:
+1. "Excluir apenas este mes" (delete only this month)
+2. "Excluir este e todos os seguintes" (delete this and all future)
 
-### 1. Fix vite.config.ts -- align registration mode and add aggressive update settings
-- Change `registerType` to `"prompt"` to match the manual `confirm()` pattern in `main.tsx`
-- Add `skipWaiting: true` and `clientsClaim: true` to workbox config so new SW takes control immediately once accepted
-- Add `navigateFallbackDenylist: [/^\/~oauth/]` (required by Lovable)
+For non-recurring transactions, keep the current simple delete behavior.
 
-### 2. Fix main.tsx -- add periodic update checks
-- Add an interval that checks for SW updates every 60 seconds
-- This ensures that even if the app stays open, it will detect and prompt for updates quickly
-- Replace the native `confirm()` with a more reliable approach that auto-reloads after a short delay if the user doesn't respond
+## Changes
 
-### Changes
+### File: `src/pages/Transactions.tsx`
 
-**File: `vite.config.ts`**
-- Change `registerType: "autoUpdate"` to `registerType: "prompt"`
-- Add `skipWaiting: true` and `clientsClaim: true` to workbox section
-- Add `navigateFallbackDenylist: [/^\/~oauth/]`
+**1. Import `useDeleteRecurringTransactions`**
+- Add it to the existing import from `useTransactions`
 
-**File: `src/main.tsx`**
-- Add periodic update check (every 60 seconds) after SW registration
-- Improve the `onNeedRefresh` handler to auto-update after a brief timeout if the user doesn't respond, ensuring the update always goes through
+**2. Add state for recurring delete dialog**
+- `recurringDeleteId: string | null` -- tracks which transaction is being considered for deletion
+- `recurringDeleteOpen: boolean` -- controls dialog visibility
 
-These changes ensure that:
-- New versions are detected within 60 seconds even if the app stays open
-- The new Service Worker activates immediately (skipWaiting + clientsClaim)
-- Users get a prompt but the update proceeds automatically if they don't respond
+**3. Update `handleDelete` function**
+- Before deleting, check if the transaction is recurring (`is_recurring` or `tipo_lancamento === 'fixa'` or `tipo_lancamento === 'parcelada'`)
+- If recurring: open the new dialog instead of deleting immediately
+- If not recurring: delete as before
+
+**4. Add the recurring delete dialog**
+- An `AlertDialog` with three buttons:
+  - "Cancelar"
+  - "Excluir apenas este mes" -- calls `useDeleteRecurringTransactions` with `mode: 'single'`
+  - "Excluir este e todos os seguintes" -- calls with `mode: 'future'`
+
+**5. Update `TransactionRow` component**
+- Pass the full transaction object to `onDelete` instead of just the `id`, so the parent can check `is_recurring` / `tipo_lancamento`
+- Update the `onDelete` prop type from `(id: string) => void` to `(transaction: Transaction) => void`
+
+### Technical Details
+
+The `TransactionRow` component currently calls `onDelete(transaction.id)` in 3 places (mobile dropdown, desktop dropdown, and desktop AlertDialog). All will be updated to pass the full transaction. The parent `handleDelete` will inspect `transaction.is_recurring` or `transaction.tipo_lancamento` to decide whether to show the recurring dialog or delete directly.
+
+The existing `useDeleteRecurringTransactions` hook handles all the backend logic (grouping by `parent_id`, date-based filtering) -- no backend changes needed.
+
