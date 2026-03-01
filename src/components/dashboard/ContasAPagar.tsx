@@ -78,9 +78,9 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
   const isEmpty = faturasMes.length === 0 && contasPendentes.length === 0;
 
   return (
-    <div className="bg-white border border-[hsl(220,13%,91%)] rounded-[12px] p-5 mb-4 animate-fade-in">
+    <div className="bg-white border border-[hsl(220,13%,91%)] rounded-[12px] p-6 mb-4 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between pb-4 mb-5 border-b border-[hsl(220,13%,91%)]">
         <div>
           <div className="flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-[hsl(220,9%,64%)]" />
@@ -107,23 +107,30 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
           <p>Nenhum compromisso pendente este mês</p>
         </div>
       ) : (
-        <>
+        <div className="space-y-3">
           {/* BLOCO 1 — Faturas de Cartão */}
           {faturasMes.length > 0 && (
             <Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between cursor-pointer hover:bg-[hsl(210,20%,98%)] rounded-lg px-3 py-2.5 transition-colors border-b border-[hsl(220,14%,96%)]">
-                  <span className="text-[11px] uppercase tracking-[0.05em] text-[hsl(220,9%,64%)] font-medium">
-                    Faturas de Cartão
-                  </span>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between cursor-pointer bg-[hsl(210,20%,98%)] hover:bg-[hsl(220,14%,96%)] rounded-[10px] px-4 py-3 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-[6px] bg-white border border-[hsl(220,13%,91%)] flex items-center justify-center">
+                      <CreditCard className="w-3.5 h-3.5 text-[hsl(220,9%,64%)]" />
+                    </div>
+                    <span className="text-[13px] font-semibold text-[hsl(220,13%,10%)]">
+                      Faturas de Cartão
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <span className="text-xs text-[hsl(220,9%,64%)]">
                       {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
                     </span>
-                    <span className="text-sm font-semibold text-[hsl(0,84%,60%)]">
+                    <span className="text-sm font-bold text-[hsl(0,84%,60%)]">
                       -{formatCurrency(totalCartoes)}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white transition-colors">
+                      <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
                 </div>
               </CollapsibleTrigger>
@@ -163,27 +170,29 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
             </Collapsible>
           )}
 
-          {/* Separador */}
-          {faturasMes.length > 0 && contasPendentes.length > 0 && (
-            <div className="border-b border-[hsl(220,14%,96%)] my-1" />
-          )}
-
           {/* BLOCO 2 — Contas Pendentes */}
           {contasPendentes.length > 0 && (
             <Collapsible open={contasOpen} onOpenChange={setContasOpen}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between cursor-pointer hover:bg-[hsl(210,20%,98%)] rounded-lg px-3 py-2.5 transition-colors border-b border-[hsl(220,14%,96%)]">
-                  <span className="text-[11px] uppercase tracking-[0.05em] text-[hsl(220,9%,64%)] font-medium">
-                    Contas Pendentes
-                  </span>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between cursor-pointer bg-[hsl(210,20%,98%)] hover:bg-[hsl(220,14%,96%)] rounded-[10px] px-4 py-3 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-[6px] bg-white border border-[hsl(220,13%,91%)] flex items-center justify-center">
+                      <Receipt className="w-3.5 h-3.5 text-[hsl(220,9%,64%)]" />
+                    </div>
+                    <span className="text-[13px] font-semibold text-[hsl(220,13%,10%)]">
+                      Contas Pendentes
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <span className="text-xs text-[hsl(220,9%,64%)]">
                       {contasPendentes.length} {contasPendentes.length === 1 ? 'conta' : 'contas'}
                     </span>
-                    <span className="text-sm font-semibold text-[hsl(0,84%,60%)]">
+                    <span className="text-sm font-bold text-[hsl(0,84%,60%)]">
                       -{formatCurrency(totalContas)}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${contasOpen ? 'rotate-180' : ''}`} />
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white transition-colors">
+                      <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${contasOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
                 </div>
               </CollapsibleTrigger>
@@ -249,26 +258,28 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
           )}
 
           {/* Footer totals */}
-          <div className="border-t border-[hsl(220,13%,91%)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            {totalCartoes > 0 && (
-              <span className="text-[13px]">
-                <span className="text-[hsl(220,9%,46%)]">Total Cartões: </span>
-                <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalCartoes)}</span>
-              </span>
-            )}
-            {totalContas > 0 && (
-              <span className="text-[13px]">
-                <span className="text-[hsl(220,9%,46%)]">Total Contas: </span>
-                <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalContas)}</span>
-              </span>
-            )}
-            <span className="text-[13px] sm:ml-auto flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4 text-[hsl(220,9%,64%)]" />
-              <span className="text-[hsl(220,9%,46%)]">Total a Pagar: </span>
-              <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalGeral)}</span>
-            </span>
+          <div className="border-t-2 border-[hsl(220,13%,91%)] pt-4 mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-4">
+              {totalCartoes > 0 && (
+                <span className="text-[13px]">
+                  <span className="text-[hsl(220,9%,46%)]">Total Cartões: </span>
+                  <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalCartoes)}</span>
+                </span>
+              )}
+              {totalContas > 0 && (
+                <span className="text-[13px]">
+                  <span className="text-[hsl(220,9%,46%)]">Total Contas: </span>
+                  <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalContas)}</span>
+                </span>
+              )}
+            </div>
+            <div className="sm:ml-auto bg-[hsl(0,93%,97%)] rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-[hsl(0,84%,60%)]" />
+              <span className="text-[13px] text-[hsl(220,9%,46%)]">Total a Pagar: </span>
+              <span className="text-[15px] font-bold text-[hsl(0,84%,60%)]">-{formatCurrency(totalGeral)}</span>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
