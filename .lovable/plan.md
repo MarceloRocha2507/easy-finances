@@ -1,46 +1,61 @@
 
+# Fix: Transações recorrentes criando apenas 1 ocorrência
 
-# Mostrar contagem de transacoes no dialog de exclusao recorrente
+## Causa raiz
 
-## Problema
-O dialog de exclusao recorrente nao informa quantas transacoes serao afetadas em cada opcao, deixando o usuario sem visibilidade do impacto.
-
-## Solucao
-Quando o dialog abrir, consultar o banco de dados para contar quantas transacoes pertencem ao mesmo grupo (via `parent_id`) e quantas sao futuras (com `date >= data da transacao selecionada`). Exibir esses numeros nos botoes.
-
-## Alteracoes
-
-### Arquivo: `src/pages/Transactions.tsx`
-
-**1. Adicionar query para contar transacoes do grupo**
-
-Usar `useQuery` que dispara quando `recurringDeleteTransaction` e definido. A query busca todas as transacoes com o mesmo `parent_id` (ou onde `id === parent_id` do grupo) e conta:
-- Total do grupo (para informacao)
-- Quantidade com `date >= data da transacao selecionada` (para o botao "este e todos os seguintes")
-
-**2. Atualizar textos dos botoes**
-
-- "Excluir apenas este mes (1 lancamento)" -- sempre 1
-- "Excluir este e todos os seguintes (X lancamentos)" -- mostra a contagem real
-
-**3. Atualizar descricao do dialog**
-
-Incluir na descricao o total de lancamentos da serie para dar contexto ao usuario.
-
-### Detalhes tecnicos
-
-A query usara o `parent_id` da transacao selecionada (ou o proprio `id` se ela for a pai) para buscar o grupo:
+Quando o usuário ativa o toggle "É uma transação recorrente?" com o tipo "Única", o `handleSubmit` verifica na linha 410:
 
 ```typescript
-const groupId = recurringDeleteTransaction?.parent_id || recurringDeleteTransaction?.id;
-
-// Contar futuros: transacoes no grupo com date >= data selecionada
-const { data } = await supabase
-  .from('transactions')
-  .select('id, date')
-  .or(`parent_id.eq.${groupId},id.eq.${groupId}`)
-  .gte('date', recurringDeleteTransaction.date);
+if (formData.tipoLancamento !== 'unica') {
+  createInstallmentMutation.mutate(...); // Cria múltiplas ocorrências
+} else {
+  createMutation.mutate(data); // Cria apenas 1 registro
+}
 ```
 
-O `useQuery` tera `enabled: !!recurringDeleteTransaction` para so executar quando o dialog estiver aberto. Enquanto carrega, os botoes mostrarao "..." no lugar do numero.
+Como `tipoLancamento` continua sendo `'unica'` mesmo com `is_recurring = true`, o código cai no branch simples e cria apenas 1 registro. A lógica de geração de múltiplas ocorrências (que está no `useCreateInstallmentTransaction`) nunca é chamada.
 
+Além disso, quando o toggle recorrente está ativo, não aparece nenhum seletor de "quantos meses" — o usuário não tem como definir quantas repetições deseja.
+
+## Solução
+
+### 1. Arquivo: `src/pages/Transactions.tsx` — handleSubmit (linhas 410-429)
+
+Alterar a condição para também rotear pelo `createInstallmentMutation` quando `is_recurring` estiver ativo:
+
+```typescript
+} else if (formData.tipoLancamento !== 'unica' || formData.is_recurring) {
+  createInstallmentMutation.mutate({
+    baseTransaction: data,
+    totalParcelas: formData.totalParcelas,
+    tipoLancamento: formData.is_recurring && formData.tipoLancamento === 'unica' 
+      ? 'fixa' 
+      : formData.tipoLancamento,
+  }, { ... });
+```
+
+Isso garante que transações com `is_recurring = true` passem pela lógica que gera múltiplos registros, tratando-as como "fixa" internamente.
+
+### 2. Arquivo: `src/pages/Transactions.tsx` — Adicionar seletor de repetições para recorrentes (após linha 867)
+
+Quando `is_recurring` está ativo e `tipoLancamento === 'unica'`, exibir um seletor de "Quantos meses?" (reaproveitando o mesmo padrão já usado para "fixa"):
+
+```tsx
+{formData.is_recurring && formData.tipoLancamento === 'unica' && (
+  <div className="space-y-2">
+    <Label>Quantos meses?</Label>
+    <Select value={formData.totalParcelas.toString()} onValueChange={...}>
+      <SelectContent>
+        {[3, 6, 12, 18, 24, 36, 48].map(...)}
+      </SelectContent>
+    </Select>
+  </div>
+)}
+```
+
+### Resultado esperado
+
+- Ao criar uma transação recorrente mensal de 12x, serão gerados 12 registros individuais no banco
+- Todos compartilham o mesmo `parent_id` para identificação como grupo
+- Cada registro tem sua data incrementada mês a mês
+- O seletor de repetições aparece quando o toggle recorrente está ativo
