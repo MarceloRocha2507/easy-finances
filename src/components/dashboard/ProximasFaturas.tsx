@@ -1,8 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Clock } from "lucide-react";
 import { ProximaFatura } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const CORES_BANDEIRA: Record<string, string> = {
+  mastercard: "#eb001b",
+  visa: "#1a1f71",
+  elo: "#00a4e0",
+  amex: "#006fcf",
+  hipercard: "#b3131b",
+  default: "#6366f1",
+};
 
 interface Props {
   faturas: ProximaFatura[];
@@ -11,22 +21,23 @@ interface Props {
 
 export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
   const isMobile = useIsMobile();
+  // Filtrar apenas faturas com valor pendente (> 0)
   const faturasPendentes = faturas.filter(f => f.valor > 0);
   const limite = isMobile ? 3 : 4;
 
   if (faturasPendentes.length === 0) {
     return (
-      <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
+      <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[#9CA3AF]" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Próximas Faturas
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-6 text-[#9CA3AF]">
+          <div className="text-center py-6 text-muted-foreground">
             <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nenhuma fatura pendente</p>
+            <p>Nenhuma fatura pendente</p>
           </div>
         </CardContent>
       </Card>
@@ -34,61 +45,60 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
   }
 
   return (
-    <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
+    <Card className="border-0 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-[#9CA3AF]" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
           Próximas Faturas
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="divide-y divide-[#F3F4F6]">
-          {faturasPendentes.slice(0, limite).map((fatura) => {
-            const vencido = fatura.diasRestantes < 0;
+      <CardContent className="space-y-3">
+        {faturasPendentes.slice(0, limite).map((fatura) => {
+          const cor = CORES_BANDEIRA[fatura.bandeira?.toLowerCase() || "default"] || CORES_BANDEIRA.default;
+          const urgente = fatura.diasRestantes <= 3;
 
-            return (
-              <div
-                key={fatura.cartaoId}
-                className="flex items-center justify-between py-3 cursor-pointer transition-colors hover:bg-[#F9FAFB] -mx-2 px-2 rounded-lg first:pt-0"
-                onClick={() => onCartaoClick?.(fatura.cartaoId)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-[6px] bg-[#F3F4F6] flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-[#6B7280]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#111827] dark:text-white">{fatura.cartaoNome}</p>
-                    <p className="text-[11px] text-[#9CA3AF] flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {fatura.dataVencimento.toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
+          return (
+            <div
+              key={fatura.cartaoId}
+              className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                urgente ? "border-amber-500/30 bg-amber-500/5" : "hover:bg-muted/50"
+              }`}
+              onClick={() => onCartaoClick?.(fatura.cartaoId)}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${cor}20` }}
+                >
+                  <CreditCard className="h-5 w-5" style={{ color: cor }} />
                 </div>
-
-                <div className="text-right flex items-center gap-2">
-                  <p className="font-bold text-[#DC2626] text-sm">
-                    {formatCurrency(fatura.valor)}
+                <div>
+                  <p className="font-medium">{fatura.cartaoNome}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {fatura.dataVencimento.toLocaleDateString("pt-BR")}
                   </p>
-                  <span
-                    className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${
-                      vencido
-                        ? "bg-[#FEF2F2] text-[#DC2626]"
-                        : "bg-[#F3F4F6] text-[#374151]"
-                    }`}
-                  >
-                    {fatura.diasRestantes === 0
-                      ? "Hoje"
-                      : fatura.diasRestantes === 1
-                      ? "Amanhã"
-                      : vencido
-                      ? `${Math.abs(fatura.diasRestantes)}d atrás`
-                      : `${fatura.diasRestantes} dias`}
-                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              <div className="text-right">
+                <p className="font-semibold text-expense">
+                  {formatCurrency(fatura.valor)}
+                </p>
+                <Badge
+                  variant={urgente ? "destructive" : "secondary"}
+                  className="text-xs"
+                >
+                  {fatura.diasRestantes === 0
+                    ? "Hoje"
+                    : fatura.diasRestantes === 1
+                    ? "Amanhã"
+                    : `${fatura.diasRestantes} dias`}
+                </Badge>
+              </div>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

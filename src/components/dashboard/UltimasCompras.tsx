@@ -15,17 +15,17 @@ export function UltimasCompras({ compras }: Props) {
 
   if (compras.length === 0) {
     return (
-      <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
+      <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-[#9CA3AF]" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5" />
             Últimas Compras
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-6 text-[#9CA3AF]">
+          <div className="text-center py-6 text-muted-foreground">
             <ShoppingBag className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nenhuma compra registrada</p>
+            <p>Nenhuma compra registrada</p>
           </div>
         </CardContent>
       </Card>
@@ -33,51 +33,49 @@ export function UltimasCompras({ compras }: Props) {
   }
 
   return (
-    <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
+    <Card className="border-0 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-          <ShoppingBag className="h-4 w-4 text-[#9CA3AF]" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <ShoppingBag className="h-5 w-5" />
           Últimas Compras
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="divide-y divide-[#F3F4F6]">
-          {compras.slice(0, limite).map((compra) => (
-            <div
-              key={compra.id}
-              className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-[6px] bg-[#F3F4F6] flex items-center justify-center">
-                  <ShoppingBag className="h-4 w-4 text-[#6B7280]" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#111827] dark:text-white line-clamp-1">{compra.descricao}</p>
-                  <div className="flex items-center gap-2 text-[12px] text-[#9CA3AF]">
-                    <CreditCard className="h-3 w-3" />
-                    <span>{compra.cartaoNome}</span>
-                    <span>•</span>
-                    <span>
-                      {compra.data.toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                </div>
+      <CardContent className="space-y-3">
+        {compras.slice(0, limite).map((compra) => (
+          <div
+            key={compra.id}
+            className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShoppingBag className="h-5 w-5 text-primary" />
               </div>
-
-              <div className="text-right flex items-center gap-2">
-                <p className="font-bold text-[#111827] dark:text-white text-sm">{formatCurrency(compra.valor)}</p>
-                {compra.parcelas > 1 && (
-                  <Badge variant="outline" className="text-[11px] text-[#6B7280] border-[#E5E7EB]">
-                    {compra.parcelas}x
-                  </Badge>
-                )}
+              <div>
+                <p className="font-medium line-clamp-1">{compra.descricao}</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CreditCard className="h-3 w-3" />
+                  <span>{compra.cartaoNome}</span>
+                  <span>•</span>
+                  <span>
+                    {compra.data.toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+
+            <div className="text-right">
+              <p className="font-semibold">{formatCurrency(compra.valor)}</p>
+              {compra.parcelas > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  {compra.parcelas}x
+                </Badge>
+              )}
+            </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );

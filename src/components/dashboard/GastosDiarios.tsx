@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Area,
+  AreaChart,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { GastoDiario } from "@/hooks/useDashboardCompleto";
@@ -19,9 +21,9 @@ interface Props {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-lg shadow-sm p-3">
-        <p className="font-medium text-[#111827] dark:text-white text-sm">{label}</p>
-        <p className="text-sm text-[#6B7280]">
+      <div className="bg-popover border rounded-lg shadow-lg p-3">
+        <p className="font-medium">{label}</p>
+        <p className="text-sm text-primary">
           {formatCurrency(payload[0].value)}
         </p>
       </div>
@@ -35,79 +37,85 @@ export function GastosDiarios({ dados }: Props) {
   const mediaDiaria = totalPeriodo / dados.length;
   const maiorGasto = Math.max(...dados.map((d) => d.valor));
 
+  // Mostrar apenas alguns labels no eixo X
   const dadosComLabel = dados.map((d, i) => ({
     ...d,
     labelVisivel: i % 5 === 0 ? d.label : "",
   }));
 
   return (
-    <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
+    <Card className="border rounded-xl shadow-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-[#9CA3AF]" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
             Gastos por Dia
           </CardTitle>
           <div className="text-right text-sm">
-            <p className="text-[#6B7280] text-[11px]">Média diária</p>
-            <p className="font-bold text-[#111827] dark:text-white">{formatCurrency(mediaDiaria)}</p>
+            <p className="text-muted-foreground">Média diária</p>
+            <p className="font-semibold">{formatCurrency(mediaDiaria)}</p>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {totalPeriodo === 0 ? (
-          <div className="h-[200px] flex items-center justify-center text-[#9CA3AF]">
+          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Nenhum gasto nos últimos 30 dias</p>
+              <p>Nenhum gasto nos últimos 30 dias</p>
             </div>
           </div>
         ) : (
           <>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart
+                <AreaChart
                   data={dadosComLabel}
                   margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
                 >
+                  <defs>
+                    <linearGradient id="colorGasto" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
-                    stroke="#F3F4F6"
+                    stroke="hsl(var(--border))"
                   />
                   <XAxis
                     dataKey="labelVisivel"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                    tick={{ fontSize: 11 }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                    tick={{ fontSize: 11 }}
                     tickFormatter={(v) => `R$${v}`}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="valor"
-                    stroke="#111827"
+                    stroke="#6366f1"
                     strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4, fill: "#111827" }}
+                    fill="url(#colorGasto)"
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#F3F4F6]">
+            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
               <div className="text-center">
-                <p className="text-[11px] text-[#6B7280]">Total 30 dias</p>
-                <p className="font-bold text-[#111827] dark:text-white">{formatCurrency(totalPeriodo)}</p>
+                <p className="text-xs text-muted-foreground">Total 30 dias</p>
+                <p className="font-semibold">{formatCurrency(totalPeriodo)}</p>
               </div>
               <div className="text-center">
-                <p className="text-[11px] text-[#6B7280]">Maior gasto</p>
-                <p className="font-bold text-[#111827] dark:text-white">{formatCurrency(maiorGasto)}</p>
+                <p className="text-xs text-muted-foreground">Maior gasto</p>
+                <p className="font-semibold">{formatCurrency(maiorGasto)}</p>
               </div>
             </div>
           </>

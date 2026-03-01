@@ -26,10 +26,27 @@ interface PieChartWithLegendProps {
 }
 
 const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+  } = props;
+
   return (
     <g>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 8}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
     </g>
   );
 };
@@ -38,12 +55,17 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-lg shadow-sm p-3">
+      <div className="bg-popover border rounded-lg shadow-lg p-3">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.color }} />
-          <span className="font-medium text-sm text-[#111827] dark:text-white">{data.name}</span>
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: data.color }}
+          />
+          <span className="font-medium text-sm">{data.name}</span>
         </div>
-        <p className="text-sm text-[#6B7280] mt-1">{formatCurrency(data.value)}</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {formatCurrency(data.value)}
+        </p>
       </div>
     );
   }
@@ -52,16 +74,25 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithLegendProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
 
   return (
     <Card
-      className="border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] animate-fade-in h-full flex flex-col"
+      className="border rounded-xl shadow-sm animate-fade-in h-full flex flex-col"
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-          <PieChartIcon className="w-4 h-4 text-[#9CA3AF]" />
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <PieChartIcon className="w-4 h-4" />
           Despesas por Categoria
         </CardTitle>
       </CardHeader>
@@ -88,6 +119,7 @@ export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithL
           </div>
         ) : data.length > 0 ? (
           <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-4 h-full">
+            {/* Chart */}
             <div className="flex-shrink-0">
               <ResponsiveContainer width={200} height={200}>
                 <PieChart>
@@ -101,15 +133,17 @@ export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithL
                     innerRadius={40}
                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                     activeShape={renderActiveShape}
-                    onMouseEnter={(_: any, index: number) => setActiveIndex(index)}
-                    onMouseLeave={() => setActiveIndex(null)}
+                    onMouseEnter={onPieEnter}
+                    onMouseLeave={onPieLeave}
                   >
                     {data.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={entry.color}
                         className="transition-all duration-200"
-                        style={{ opacity: activeIndex === null || activeIndex === index ? 1 : 0.5 }}
+                        style={{
+                          opacity: activeIndex === null || activeIndex === index ? 1 : 0.5,
+                        }}
                       />
                     ))}
                   </Pie>
@@ -118,8 +152,9 @@ export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithL
               </ResponsiveContainer>
             </div>
 
+            {/* Legend */}
             <div className="w-full md:w-auto md:min-w-[180px]">
-              <div className="space-y-1 overflow-y-auto flex-1">
+              <div className="space-y-2 overflow-y-auto flex-1">
                 {data.map((item, index) => {
                   const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
                   return (
@@ -127,18 +162,29 @@ export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithL
                       key={index}
                       className={cn(
                         "flex items-center justify-between p-2 rounded-lg transition-all duration-200 cursor-pointer",
-                        activeIndex === index ? "bg-[#F3F4F6] dark:bg-[#2a2a2a]" : "hover:bg-[#F9FAFB] dark:hover:bg-[#222]"
+                        activeIndex === index
+                          ? "bg-muted/80"
+                          : "hover:bg-muted/50"
                       )}
                       onMouseEnter={() => setActiveIndex(index)}
                       onMouseLeave={() => setActiveIndex(null)}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-                        <span className="text-sm text-[#111827] dark:text-white truncate max-w-[120px]">{item.name}</span>
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-sm truncate max-w-[120px]">
+                          {item.name}
+                        </span>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-[#111827] dark:text-white">{formatCurrency(item.value)}</p>
-                        <p className="text-[11px] text-[#9CA3AF]">{percentage}%</p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(item.value)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {percentage}%
+                        </p>
                       </div>
                     </div>
                   );
@@ -147,10 +193,10 @@ export function PieChartWithLegend({ data, delay = 0, isLoading }: PieChartWithL
             </div>
           </div>
         ) : (
-          <div className="h-[200px] flex items-center justify-center text-[#9CA3AF]">
+          <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
             <div className="text-center">
               <PieChartIcon className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Nenhuma despesa registrada</p>
+              <p>Nenhuma despesa registrada</p>
             </div>
           </div>
         )}

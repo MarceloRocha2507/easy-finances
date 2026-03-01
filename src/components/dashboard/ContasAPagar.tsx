@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CreditCard, ChevronDown, Receipt, AlertTriangle } from "lucide-react";
+import { ClipboardList, CreditCard, ChevronDown, Receipt, AlertCircle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,19 +78,19 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
   const isEmpty = faturasMes.length === 0 && contasPendentes.length === 0;
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[12px] p-4 sm:p-6 mb-4 animate-fade-in">
+    <div className="bg-white border border-[hsl(220,13%,91%)] rounded-[12px] p-4 sm:p-6 mb-4 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#F3F4F6]">
+      <div className="flex items-center justify-between pb-4 mb-4 border-b border-[hsl(220,13%,91%)]">
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-[#9CA3AF] shrink-0" />
-            <span className="text-base sm:text-sm font-bold text-[#111827] dark:text-white">Contas a Pagar</span>
+            <ClipboardList className="w-4 h-4 text-[hsl(220,9%,64%)] shrink-0" />
+            <span className="text-[16px] sm:text-sm font-bold text-[hsl(220,13%,10%)]">Contas a Pagar</span>
           </div>
-          <p className="text-[12px] text-[#9CA3AF] capitalize">
+          <p className="text-[12px] text-[hsl(220,9%,64%)] capitalize">
             Compromissos pendentes de {mesNome}
           </p>
         </div>
-        <Link to="/transactions" className="text-xs text-[#6B7280] hover:text-[#111827] dark:hover:text-white transition-colors shrink-0 ml-3">
+        <Link to="/transactions" className="text-xs text-[hsl(220,9%,46%)] hover:text-[hsl(220,13%,10%)] transition-colors shrink-0 ml-3">
           Ver todas →
         </Link>
       </div>
@@ -102,8 +102,8 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
           ))}
         </div>
       ) : isEmpty ? (
-        <div className="text-center py-6 text-sm text-[#9CA3AF]">
-          <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30" />
+        <div className="text-center py-6 text-sm text-[hsl(220,9%,64%)]">
+          <ClipboardList className="w-8 h-8 mx-auto mb-2 text-[hsl(220,9%,64%)] opacity-30" />
           <p>Nenhum compromisso pendente este mês</p>
         </div>
       ) : (
@@ -112,49 +112,51 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
           {faturasMes.length > 0 && (
             <Collapsible open={faturasOpen} onOpenChange={setFaturasOpen}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-[#222] rounded-[10px] px-4 py-3 transition-colors">
-                  <div className="w-6 h-6 rounded-[6px] bg-[#F3F4F6] dark:bg-[#2a2a2a] flex items-center justify-center shrink-0">
-                    <CreditCard className="w-3.5 h-3.5 text-[#6B7280]" />
+                <div className="flex items-center gap-3 cursor-pointer bg-[hsl(210,20%,98%)] hover:bg-[hsl(220,14%,96%)] rounded-[10px] px-4 py-3 transition-colors">
+                  <div className="w-6 h-6 rounded-[6px] bg-white border border-[hsl(220,13%,91%)] flex items-center justify-center shrink-0">
+                    <CreditCard className="w-4 h-4 text-[hsl(220,9%,64%)]" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col">
-                    <span className="text-[11px] uppercase tracking-wide text-[#9CA3AF] font-medium">
+                    <span className="text-[14px] font-bold text-[hsl(220,13%,10%)] truncate">
                       Faturas de Cartão
                     </span>
-                    <span className="text-[12px] text-[#9CA3AF]">
+                    <span className="text-[12px] text-[hsl(220,9%,64%)]">
                       {faturasMes.length} {faturasMes.length === 1 ? 'fatura' : 'faturas'}
                     </span>
                   </div>
-                  <span className="text-[14px] font-bold text-[#DC2626] whitespace-nowrap shrink-0">
+                  <span className="text-[14px] font-bold text-[hsl(0,84%,60%)] whitespace-nowrap shrink-0">
                     -{formatCurrency(totalCartoes)}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-300 shrink-0 ${faturasOpen ? 'rotate-180' : ''}`} />
+                  <div className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white transition-colors shrink-0">
+                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${faturasOpen ? 'rotate-180' : ''}`} />
+                  </div>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-1 divide-y divide-[#F3F4F6]">
+                <div className="mt-1">
                   {faturasMes.map((f) => {
                     const overdue = isOverdue(f.due_date);
                     return (
                       <div
                         key={f.id}
-                        className="flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-[#F9FAFB] dark:hover:bg-[#222] transition-colors"
+                        className="flex items-center gap-2 sm:gap-3 px-3 py-2.5 border-b border-[hsl(210,20%,98%)] hover:bg-[hsl(210,20%,98%)] transition-colors"
                       >
-                        <div className="w-6 h-6 rounded-[6px] bg-[#F3F4F6] dark:bg-[#2a2a2a] flex items-center justify-center shrink-0">
-                          <CreditCard className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <div className="w-6 h-6 rounded-[6px] bg-[hsl(220,14%,96%)] flex items-center justify-center shrink-0">
+                          <CreditCard className="w-4 h-4 text-[hsl(220,9%,64%)]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[#111827] dark:text-white truncate">{f.cartaoNome}</p>
+                          <p className="text-sm font-semibold text-[hsl(220,13%,10%)] truncate">{f.cartaoNome}</p>
                         </div>
-                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap hidden sm:block">
+                        <span className="text-xs text-[hsl(220,9%,64%)] whitespace-nowrap hidden sm:block">
                           {getDueDateText(f.due_date)}
                         </span>
-                        <span className="text-sm font-bold text-[#DC2626] whitespace-nowrap shrink-0">
+                        <span className="text-sm font-bold text-[hsl(0,84%,60%)] whitespace-nowrap shrink-0">
                           -{formatCurrency(f.amount)}
                         </span>
                         <span className={`text-[11px] font-medium rounded-[6px] px-2 py-0.5 shrink-0 ${
                           overdue
-                            ? 'bg-[#FEF2F2] text-[#DC2626]'
-                            : 'bg-[#F3F4F6] text-[#374151]'
+                            ? 'bg-[hsl(0,93%,94%)] text-[hsl(0,74%,35%)]'
+                            : 'bg-[hsl(48,96%,89%)] text-[hsl(32,95%,29%)]'
                         }`}>
                           {overdue ? 'Vencido' : 'Pendente'}
                         </span>
@@ -168,33 +170,35 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
 
           {/* Divider between blocks */}
           {faturasMes.length > 0 && contasPendentes.length > 0 && (
-            <div className="border-b border-[#F3F4F6]" />
+            <div className="border-b border-[hsl(220,13%,91%)]" />
           )}
 
           {/* BLOCO 2 — Contas Pendentes */}
           {contasPendentes.length > 0 && (
             <Collapsible open={contasOpen} onOpenChange={setContasOpen}>
               <CollapsibleTrigger asChild>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-[#222] rounded-[10px] px-4 py-3 transition-colors">
-                  <div className="w-6 h-6 rounded-[6px] bg-[#F3F4F6] dark:bg-[#2a2a2a] flex items-center justify-center shrink-0">
-                    <Receipt className="w-3.5 h-3.5 text-[#6B7280]" />
+                <div className="flex items-center gap-3 cursor-pointer bg-[hsl(210,20%,98%)] hover:bg-[hsl(220,14%,96%)] rounded-[10px] px-4 py-3 transition-colors">
+                  <div className="w-6 h-6 rounded-[6px] bg-white border border-[hsl(220,13%,91%)] flex items-center justify-center shrink-0">
+                    <Receipt className="w-4 h-4 text-[hsl(220,9%,64%)]" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col">
-                    <span className="text-[11px] uppercase tracking-wide text-[#9CA3AF] font-medium">
+                    <span className="text-[14px] font-bold text-[hsl(220,13%,10%)] truncate">
                       Contas Pendentes
                     </span>
-                    <span className="text-[12px] text-[#9CA3AF]">
+                    <span className="text-[12px] text-[hsl(220,9%,64%)]">
                       {contasPendentes.length} {contasPendentes.length === 1 ? 'conta' : 'contas'}
                     </span>
                   </div>
-                  <span className="text-[14px] font-bold text-[#DC2626] whitespace-nowrap shrink-0">
+                  <span className="text-[14px] font-bold text-[hsl(0,84%,60%)] whitespace-nowrap shrink-0">
                     -{formatCurrency(totalContas)}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-300 shrink-0 ${contasOpen ? 'rotate-180' : ''}`} />
+                  <div className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white transition-colors shrink-0">
+                    <ChevronDown className={`w-4 h-4 text-[hsl(220,9%,64%)] transition-transform duration-300 ${contasOpen ? 'rotate-180' : ''}`} />
+                  </div>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-1 divide-y divide-[#F3F4F6]">
+                <div className="mt-1">
                   {displayedContas.map((t) => {
                     const dueDate = t.due_date || t.date;
                     const overdue = isOverdue(dueDate);
@@ -203,29 +207,29 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
                     return (
                       <div
                         key={t.id}
-                        className="flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-[#F9FAFB] dark:hover:bg-[#222] transition-colors"
+                        className="flex items-center gap-2 sm:gap-3 px-3 py-2.5 border-b border-[hsl(210,20%,98%)] hover:bg-[hsl(210,20%,98%)] transition-colors"
                       >
-                        <div className="w-6 h-6 rounded-[6px] bg-[#F3F4F6] dark:bg-[#2a2a2a] flex items-center justify-center shrink-0">
-                          <Receipt className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <div className="w-6 h-6 rounded-[6px] bg-[hsl(220,14%,96%)] flex items-center justify-center shrink-0">
+                          <Receipt className="w-4 h-4 text-[hsl(220,9%,64%)]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[#111827] dark:text-white truncate">
+                          <p className="text-sm font-semibold text-[hsl(220,13%,10%)] truncate">
                             {t.description || "Sem descrição"}
                           </p>
-                          <p className="text-xs text-[#9CA3AF] truncate">
+                          <p className="text-xs text-[hsl(220,9%,64%)] truncate">
                             {categoryName || "Sem categoria"}
                           </p>
                         </div>
-                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap hidden sm:block">
+                        <span className="text-xs text-[hsl(220,9%,64%)] whitespace-nowrap hidden sm:block">
                           {getDueDateText(dueDate)}
                         </span>
-                        <span className="text-sm font-bold text-[#DC2626] whitespace-nowrap shrink-0">
+                        <span className="text-sm font-bold text-[hsl(0,84%,60%)] whitespace-nowrap shrink-0">
                           -{formatCurrency(t.amount)}
                         </span>
                         <span className={`text-[11px] font-medium rounded-[6px] px-2 py-0.5 shrink-0 ${
                           overdue
-                            ? 'bg-[#FEF2F2] text-[#DC2626]'
-                            : 'bg-[#F3F4F6] text-[#374151]'
+                            ? 'bg-[hsl(0,93%,94%)] text-[hsl(0,74%,35%)]'
+                            : 'bg-[hsl(48,96%,89%)] text-[hsl(32,95%,29%)]'
                         }`}>
                           {overdue ? 'Vencido' : 'Pendente'}
                         </span>
@@ -239,7 +243,7 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs text-[#6B7280] gap-1"
+                      className="text-xs text-[hsl(220,9%,46%)] gap-1"
                       onClick={() => setContasExpanded(!contasExpanded)}
                     >
                       {contasExpanded ? (
@@ -255,25 +259,25 @@ export function ContasAPagar({ mesReferencia, rendaMensal }: ContasAPagarProps) 
           )}
 
           {/* Footer totals */}
-          <div className="border-t border-[#E5E7EB] pt-4 mt-1">
+          <div className="border-t-2 border-[hsl(220,13%,91%)] pt-4 mt-1">
             <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-4">
               {totalCartoes > 0 && (
                 <span className="text-[13px]">
-                  <span className="text-[#9CA3AF]">Total Cartões: </span>
-                  <span className="font-semibold text-[#DC2626]">-{formatCurrency(totalCartoes)}</span>
+                  <span className="text-[hsl(220,9%,46%)]">Total Cartões: </span>
+                  <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalCartoes)}</span>
                 </span>
               )}
               {totalContas > 0 && (
                 <span className="text-[13px]">
-                  <span className="text-[#9CA3AF]">Total Contas: </span>
-                  <span className="font-semibold text-[#DC2626]">-{formatCurrency(totalContas)}</span>
+                  <span className="text-[hsl(220,9%,46%)]">Total Contas: </span>
+                  <span className="font-semibold text-[hsl(0,84%,60%)]">-{formatCurrency(totalContas)}</span>
                 </span>
               )}
             </div>
-            <div className="mt-3 sm:mt-2 border-t border-[#F3F4F6] pt-3 flex items-center gap-1.5 w-full">
-              <AlertTriangle className="w-4 h-4 text-[#D97706] shrink-0" />
-              <span className="text-[14px] text-[#6B7280]">Total a Pagar: </span>
-              <span className="text-[15px] font-bold text-[#DC2626]">-{formatCurrency(totalGeral)}</span>
+            <div className="mt-3 sm:mt-2 bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-3 flex items-center gap-1.5 w-full">
+              <AlertCircle className="w-4 h-4 text-[hsl(0,84%,60%)] shrink-0" />
+              <span className="text-[14px] text-[hsl(220,9%,46%)]">Total a Pagar: </span>
+              <span className="text-[15px] sm:text-[15px] font-bold text-[hsl(0,84%,60%)]">-{formatCurrency(totalGeral)}</span>
             </div>
           </div>
         </div>

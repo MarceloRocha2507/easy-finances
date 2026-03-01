@@ -45,18 +45,15 @@ export function StatCardMinimal({
     <div
       className={cn(
         "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px] p-4",
-        "animate-fade-in-up transition-all duration-200",
-        "hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
-        onClick && "cursor-pointer hover:-translate-y-0.5"
+        "shadow-[0_1px_3px_rgba(0,0,0,0.07)] animate-fade-in-up transition-all duration-200",
+        onClick && "cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
       )}
       style={{ animationDelay: `${delay}s`, opacity: 0 }}
       onClick={onClick}
     >
       <div className="absolute top-4 right-4 flex items-center gap-1">
         {actions}
-        <div className="w-7 h-7 rounded-[6px] bg-[#F3F4F6] dark:bg-[#2a2a2a] flex items-center justify-center">
-          <Icon className="h-3.5 w-3.5 text-[#9CA3AF]" />
-        </div>
+        <Icon className="h-4 w-4 text-foreground/30" />
       </div>
 
       <p className="text-[#6B7280] text-xs sm:text-sm mb-1">{title}</p>

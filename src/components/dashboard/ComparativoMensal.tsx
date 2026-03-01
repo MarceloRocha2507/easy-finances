@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { ComparativoMensal as ComparativoType } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
 
@@ -10,53 +10,92 @@ interface Props {
 export function ComparativoMensal({ comparativo }: Props) {
   const { mesAtual, mesAnterior, variacao, variacaoPct, tipo } = comparativo;
 
-  const pctColor = tipo === "reducao" ? "text-[#16A34A]" : tipo === "aumento" ? "text-[#DC2626]" : "text-[#6B7280]";
-  const PctIcon = tipo === "reducao" ? TrendingDown : tipo === "aumento" ? TrendingUp : Minus;
+  const config = {
+    aumento: {
+      icon: TrendingUp,
+      arrowIcon: ArrowUpRight,
+      color: "text-red-500",
+      bgColor: "bg-red-500/10",
+      label: "a mais",
+    },
+    reducao: {
+      icon: TrendingDown,
+      arrowIcon: ArrowDownRight,
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
+      label: "a menos",
+    },
+    igual: {
+      icon: Minus,
+      arrowIcon: Minus,
+      color: "text-gray-500",
+      bgColor: "bg-gray-500/10",
+      label: "igual",
+    },
+  };
+
+  const { icon: Icon, arrowIcon: ArrowIcon, color, bgColor, label } = config[tipo];
 
   return (
-    <Card className="border border-[#E5E7EB] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] dark:border-[#2a2a2a]">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-[#9CA3AF]" />
+    <Card className="border rounded-xl shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
           Comparativo Mensal
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <PctIcon className={`h-4 w-4 ${pctColor}`} />
-          <span className={`font-bold text-lg ${pctColor}`}>
-            {Math.abs(variacaoPct).toFixed(1)}%
-          </span>
-          <span className="text-[13px] text-[#6B7280]">
-            {tipo === "igual"
-              ? "Gastos iguais ao mês anterior"
-              : <>
-                  {formatCurrency(Math.abs(variacao))} {tipo === "reducao" ? "a menos" : "a mais"} que no mês passado
-                </>
-            }
-          </span>
+        <div className="text-center mb-6">
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${bgColor}`}
+          >
+            <ArrowIcon className={`h-5 w-5 ${color}`} />
+            <span className={`font-bold text-lg ${color}`}>
+              {Math.abs(variacaoPct).toFixed(1)}%
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {tipo === "igual" ? (
+              "Gastos iguais ao mês anterior"
+            ) : (
+              <>
+                Você gastou{" "}
+                <span className={`font-semibold ${color}`}>
+                  {formatCurrency(Math.abs(variacao))}
+                </span>{" "}
+                {label} que no mês passado
+              </>
+            )}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <p className="text-[11px] text-[#9CA3AF] mb-1">Mês Atual</p>
-            <p className="text-xl font-bold text-[#111827] dark:text-white">{formatCurrency(mesAtual)}</p>
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Mês Atual</p>
+            <p className="text-xl font-bold">{formatCurrency(mesAtual)}</p>
           </div>
-          <div className="text-center">
-            <p className="text-[11px] text-[#9CA3AF] mb-1">Mês Anterior</p>
-            <p className="text-xl font-bold text-[#111827] dark:text-white">{formatCurrency(mesAnterior)}</p>
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Mês Anterior</p>
+            <p className="text-xl font-bold text-muted-foreground">
+              {formatCurrency(mesAnterior)}
+            </p>
           </div>
         </div>
 
-        {tipo !== "igual" && (
-          <p className="text-[11px] text-[#9CA3AF] text-center mt-4">
-            {tipo === "reducao"
-              ? "Você está economizando em relação ao mês anterior."
-              : variacaoPct > 20
-                ? "Atenção: seus gastos aumentaram significativamente."
-                : "Pequeno aumento nos gastos em relação ao mês anterior."
-            }
-          </p>
+        {tipo === "reducao" && (
+          <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+              🎉 Parabéns! Você está economizando!
+            </p>
+          </div>
+        )}
+
+        {tipo === "aumento" && variacaoPct > 20 && (
+          <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              ⚠️ Atenção aos gastos este mês!
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
