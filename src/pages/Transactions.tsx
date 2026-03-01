@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
@@ -238,6 +238,7 @@ export default function Transactions() {
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
@@ -278,6 +279,7 @@ export default function Transactions() {
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
+  const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
 
   // Filtrar transações por busca
@@ -453,8 +455,13 @@ export default function Transactions() {
     markAsPaidMutation.mutate(id);
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+  const handleDelete = (transaction: Transaction) => {
+    const isRecurring = transaction.is_recurring || transaction.tipo_lancamento === 'fixa' || transaction.tipo_lancamento === 'parcelada';
+    if (isRecurring) {
+      setRecurringDeleteTransaction(transaction);
+    } else {
+      deleteMutation.mutate(transaction.id);
+    }
   };
 
   const handleDuplicate = (transaction: Transaction) => {
@@ -1174,6 +1181,43 @@ export default function Transactions() {
           onOpenChange={(open) => !open && setViewingTransaction(null)}
           onEdit={handleEdit}
         />
+
+        {/* Dialog exclusão recorrente */}
+        <AlertDialog open={!!recurringDeleteTransaction} onOpenChange={(open) => !open && setRecurringDeleteTransaction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir lançamento recorrente</AlertDialogTitle>
+              <AlertDialogDescription>
+                Este lançamento faz parte de uma série {recurringDeleteTransaction?.tipo_lancamento === 'parcelada' ? 'parcelada' : 'recorrente'}. O que deseja fazer?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (recurringDeleteTransaction) {
+                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'single' });
+                    setRecurringDeleteTransaction(null);
+                  }
+                }}
+              >
+                Excluir apenas este mês
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (recurringDeleteTransaction) {
+                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'future' });
+                    setRecurringDeleteTransaction(null);
+                  }
+                }}
+              >
+                Excluir este e todos os seguintes
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
@@ -1183,7 +1227,7 @@ export default function Transactions() {
 interface TransactionRowProps {
   transaction: Transaction;
   onEdit: (transaction: Transaction) => void;
-  onDelete: (id: string) => void;
+  onDelete: (transaction: Transaction) => void;
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
@@ -1359,7 +1403,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction.id)}>
+              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
               </DropdownMenuItem>
@@ -1416,7 +1460,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(transaction.id)} className="bg-destructive text-destructive-foreground">
+                <AlertDialogAction onClick={() => onDelete(transaction)} className="bg-destructive text-destructive-foreground">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
