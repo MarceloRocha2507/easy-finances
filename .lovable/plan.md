@@ -1,90 +1,40 @@
 
 
-# Performance Fix: Slow UI Updates After Mutations
+# Fix: PWA Not Updating on Devices
 
 ## Problem
-When you update a transaction (or any record), the system takes too long to reflect changes because:
+The PWA configuration has two conflicting issues causing devices to stay on old versions:
 
-1. Each mutation triggers **7 separate cache invalidations** simultaneously
-2. Two of those queries -- `complete-stats` and `dashboard-completo` -- are extremely heavy, each making **8+ sequential database calls**
-3. These two queries overlap significantly, querying the same tables redundantly
-4. The QueryClient has no default `staleTime`, so every invalidation immediately triggers a full refetch
+1. **Conflicting registration mode**: `vite.config.ts` uses `registerType: "autoUpdate"` (auto-activate new SW), but `main.tsx` uses a manual `registerSW` pattern with `confirm()` dialog. These conflict -- if the user dismisses the dialog or never sees it, the old SW stays active indefinitely.
+
+2. **No periodic update check**: The Service Worker only checks for updates on page load. If a user keeps the app open (common on mobile PWAs), they never get the new version until they fully close and reopen the app.
+
+3. **Missing `skipWaiting` / `clientsClaim`**: Without these, the new Service Worker waits until ALL tabs are closed before activating, which on mobile PWAs can mean days.
 
 ## Solution
 
-### 1. Add default staleTime to QueryClient
-**File:** `src/App.tsx`
+### 1. Fix vite.config.ts -- align registration mode and add aggressive update settings
+- Change `registerType` to `"prompt"` to match the manual `confirm()` pattern in `main.tsx`
+- Add `skipWaiting: true` and `clientsClaim: true` to workbox config so new SW takes control immediately once accepted
+- Add `navigateFallbackDenylist: [/^\/~oauth/]` (required by Lovable)
 
-Configure the QueryClient with a default `staleTime` of 30 seconds. This prevents queries that were just fetched from being refetched unnecessarily when multiple invalidations fire.
+### 2. Fix main.tsx -- add periodic update checks
+- Add an interval that checks for SW updates every 60 seconds
+- This ensures that even if the app stays open, it will detect and prompt for updates quickly
+- Replace the native `confirm()` with a more reliable approach that auto-reloads after a short delay if the user doesn't respond
 
-### 2. Batch invalidations with a single helper
-**File:** `src/hooks/useTransactions.ts`
+### Changes
 
-Create a helper function `invalidateTransactionCaches(queryClient)` that consolidates all 7 invalidation calls. Instead of calling them sequentially, use `Promise.all()` and add `{ refetchType: 'none' }` to heavy queries, then only actively refetch the lightweight ones. This prevents `complete-stats` and `dashboard-completo` from refetching until the user actually looks at them.
+**File: `vite.config.ts`**
+- Change `registerType: "autoUpdate"` to `registerType: "prompt"`
+- Add `skipWaiting: true` and `clientsClaim: true` to workbox section
+- Add `navigateFallbackDenylist: [/^\/~oauth/]`
 
-### 3. Add staleTime to transaction queries that lack it
-**File:** `src/hooks/useTransactions.ts`
+**File: `src/main.tsx`**
+- Add periodic update check (every 60 seconds) after SW registration
+- Improve the `onNeedRefresh` handler to auto-update after a brief timeout if the user doesn't respond, ensuring the update always goes through
 
-Add `staleTime: 1000 * 30` (30 seconds) to the main `useTransactions`, `useTransactionStats`, `useExpensesByCategory`, and `useMonthlyData` queries. This prevents duplicate refetches during the invalidation cascade.
-
-### 4. Add staleTime to complete-stats
-**File:** `src/hooks/useTransactions.ts`
-
-The `useCompleteStats` query currently has **no staleTime**, so it refetches on every invalidation. Add `staleTime: 1000 * 60 * 2` (2 minutes) to match `dashboard-completo`.
-
----
-
-## Technical Details
-
-### Changes to `src/App.tsx` (line 48)
-```typescript
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 30, // 30 seconds default
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-```
-
-### Changes to `src/hooks/useTransactions.ts`
-
-**New helper function** (used by all 6 mutation hooks):
-```typescript
-function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClient>) {
-  // Lightweight queries: refetch immediately
-  queryClient.invalidateQueries({ queryKey: ['transactions'] });
-  queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-  queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-  queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-  queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-  
-  // Heavy queries: mark stale but don't refetch until accessed
-  queryClient.invalidateQueries({ 
-    queryKey: ['complete-stats'], 
-    refetchType: 'none' 
-  });
-  queryClient.invalidateQueries({ 
-    queryKey: ['dashboard-completo'], 
-    refetchType: 'none' 
-  });
-}
-```
-
-This change alone will drastically cut update time -- the two heaviest queries (which make 8+ DB calls each) will only refetch when the user navigates to a page that needs them, instead of blocking the UI immediately.
-
-**Add staleTime** to `useCompleteStats`:
-```typescript
-staleTime: 1000 * 60 * 2, // 2 minutes
-```
-
-### Mutations updated
-All 6 mutation hooks (`useCreateTransaction`, `useCreateInstallmentTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, `useDeleteRecurringTransaction`, `useMarkAsPaid`) will use the new `invalidateTransactionCaches` helper instead of 7 individual calls.
-
-## Expected Impact
-- Immediate UI update for transaction list (the lightweight query)
-- Heavy dashboard stats only refetch when the user views them
-- No redundant refetches within the 30-second stale window
-- Overall perceived update time drops from several seconds to under 1 second
-
+These changes ensure that:
+- New versions are detected within 60 seconds even if the app stays open
+- The new Service Worker activates immediately (skipWaiting + clientsClaim)
+- Users get a prompt but the update proceeds automatically if they don't respond
