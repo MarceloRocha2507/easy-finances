@@ -317,6 +317,40 @@ export function useAnaliseGastos(mesReferencia?: Date) {
         gastosPorCategoria[catId].quantidade += 1;
       });
 
+      // 5b. Buscar assinaturas ativas do mês e somar aos gastos
+      const { data: assinaturas } = await supabase
+        .from("assinaturas")
+        .select(`valor, category_id, categoria:categories!assinaturas_category_id_fkey(id, name, icon, color)`)
+        .eq("user_id", user!.id)
+        .eq("status", "ativa")
+        .gte("proxima_cobranca", inicioMes)
+        .lte("proxima_cobranca", fimMes);
+
+      (assinaturas || []).forEach((a: any) => {
+        const valor = Number(a.valor) || 0;
+        totalGasto += valor;
+
+        const catId = a.category_id || "sem-categoria";
+        const cat = a.categoria as any;
+
+        if (!gastosPorCategoria[catId]) {
+          gastosPorCategoria[catId] = {
+            categoriaId: catId,
+            categoriaNome: cat?.name || "Sem categoria",
+            categoriaIcone: cat?.icon || "tag",
+            categoriaCor: cat?.color || "#6366f1",
+            total: 0,
+            quantidade: 0,
+            percentual: 0,
+            orcamento: orcamentoMap[catId],
+            status: "ok",
+          };
+        }
+
+        gastosPorCategoria[catId].total += valor;
+        gastosPorCategoria[catId].quantidade += 1;
+      });
+
       // 5. Calcular percentuais e status
       const listaGastos = Object.values(gastosPorCategoria)
         .map((g) => {

@@ -226,6 +226,23 @@ export function useTransactionStats(filters?: TransactionFilters) {
         });
       }
 
+      // Somar assinaturas ativas do período
+      if (filters?.startDate && filters?.endDate) {
+        const { data: assinaturas } = await supabase
+          .from('assinaturas')
+          .select('valor, category_id')
+          .eq('user_id', user!.id)
+          .eq('status', 'ativa')
+          .gte('proxima_cobranca', filters.startDate)
+          .lte('proxima_cobranca', filters.endDate);
+
+        (assinaturas || []).forEach((a: any) => {
+          const catId = a.category_id;
+          if (metaCategoryIds.length > 0 && catId && metaCategoryIds.includes(catId)) return;
+          stats.totalExpense += Number(a.valor) || 0;
+        });
+      }
+
       stats.balance = stats.totalIncome - stats.totalExpense;
 
       return stats;
@@ -342,6 +359,39 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
           });
         }
       });
+
+      // Somar assinaturas ativas do período por categoria
+      if (filters?.startDate && filters?.endDate) {
+        const { data: assinaturas } = await supabase
+          .from('assinaturas')
+          .select('valor, category_id, categoria:categories!assinaturas_category_id_fkey(id, name, icon, color)')
+          .eq('user_id', user!.id)
+          .eq('status', 'ativa')
+          .gte('proxima_cobranca', filters.startDate)
+          .lte('proxima_cobranca', filters.endDate);
+
+        (assinaturas || []).forEach((a: any) => {
+          const cat = a.categoria as any;
+          const catId = a.category_id || 'uncategorized';
+          if (metaCategoryIds.length > 0 && metaCategoryIds.includes(catId)) return;
+
+          const valor = Number(a.valor) || 0;
+          const categoryName = cat?.name || 'Sem categoria';
+          const categoryIcon = cat?.icon || '📦';
+          const categoryColor = cat?.color || '#6366f1';
+
+          if (categoryMap.has(catId)) {
+            categoryMap.get(catId)!.total += valor;
+          } else {
+            categoryMap.set(catId, {
+              name: categoryName,
+              icon: categoryIcon,
+              color: categoryColor,
+              total: valor,
+            });
+          }
+        });
+      }
 
       return Array.from(categoryMap.entries()).map(([id, data]) => ({
         id,
