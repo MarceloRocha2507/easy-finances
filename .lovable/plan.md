@@ -1,41 +1,76 @@
 
 
-# Incluir despesas de cartao nos graficos e relatorios
+# Cadastrar compras de cartao com categoria "Fatura do Cartao" e subcategorias
 
-## Problema
+## Resumo
 
-Os hooks `useTransactionStats`, `useExpensesByCategory` e `useMonthlyData` consultam apenas a tabela `transactions`, ignorando completamente as parcelas de cartao de credito (`parcelas_cartao`). Isso faz com que o grafico de pizza, o grafico de barras mensal e os cards de totais no Dashboard e nos Relatorios nao reflitam os gastos reais do usuario.
-
-O hook `useAnaliseGastos` (tela Economia) ja faz essa integracao corretamente e serve como referencia.
-
-## Solucao
-
-Alterar os 3 hooks em `src/hooks/useTransactions.ts` para buscar e somar as parcelas de cartao do periodo, seguindo o mesmo padrao ja usado em `useEconomia.ts`.
+Todas as compras de cartao de credito passarao a ser automaticamente classificadas na categoria "Fatura do Cartao". Alem disso, o usuario podera informar uma subcategoria opcional para detalhar o tipo de gasto (ex: Alimentacao, Transporte). Nos graficos, as despesas de cartao aparecerao agrupadas sob "Fatura do Cartao".
 
 ---
 
-### 1. `useTransactionStats` (cards de Receitas/Despesas/Resultado)
+## O que muda para o usuario
 
-Apos buscar as transacoes, fazer uma query adicional em `parcelas_cartao` com join em `compras_cartao` para obter `categoria_id`. Somar o valor de cada parcela ativa ao `totalExpense`, excluindo categorias de meta. Evitar dupla contagem verificando que a parcela nao corresponde a uma transacao ja contabilizada (o sistema atual nao cria transacoes duplicadas para cartoes, entao basta somar).
-
-### 2. `useExpensesByCategory` (grafico de pizza)
-
-Apos agrupar as transacoes por categoria, buscar `parcelas_cartao` com join em `compras_cartao(categoria_id, categoria:categories(id, name, icon, color))` no mesmo periodo. Somar cada parcela ativa ao mapa de categorias existente, criando a entrada se necessario.
-
-### 3. `useMonthlyData` (grafico de barras anual)
-
-Apos agrupar as transacoes por mes, buscar `parcelas_cartao` do ano inteiro com `mes_referencia` entre janeiro e dezembro. Para cada parcela ativa, somar o valor ao mes correspondente como despesa.
+1. No formulario de nova compra e edicao de compra, o campo "Categoria" sera renomeado para "Subcategoria (opcional)" -- o usuario pode detalhar o gasto se quiser
+2. Nos graficos de pizza e totais, todas as despesas de cartao aparecerao agrupadas como "Fatura do Cartao" com icone de cartao de credito e cor roxa
+3. Nenhuma tela nova sera criada
 
 ---
 
-### Detalhes tecnicos
+## Detalhes tecnicos
 
-- Filtro de parcelas: `ativo = true` (exclui parcelas estornadas)
-- Periodo: usar `mes_referencia` (nao `created_at`) para parcelas, alinhado ao ciclo de faturamento
-- Categoria: via join `compra:compras_cartao(categoria_id, categoria:categories(...))`
-- Sem dupla contagem: o sistema nao cria `transactions` automaticamente para compras de cartao, entao somar parcelas diretamente e seguro
+### 1. Adicionar coluna `subcategoria_id` na tabela `compras_cartao`
 
-### Arquivo alterado
+Migracacao SQL para adicionar a nova coluna e copiar os dados existentes de `categoria_id` para `subcategoria_id`:
 
-`src/hooks/useTransactions.ts` -- funcoes `useTransactionStats`, `useExpensesByCategory`, `useMonthlyData`
+```sql
+ALTER TABLE compras_cartao ADD COLUMN subcategoria_id uuid REFERENCES categories(id);
+UPDATE compras_cartao SET subcategoria_id = categoria_id WHERE categoria_id IS NOT NULL;
+```
+
+### 2. Criar categoria "Fatura do Cartao" para todos os usuarios
+
+- Adicionar ao trigger `create_default_categories` para novos usuarios
+- Executar INSERT para usuarios existentes que ainda nao possuem essa categoria
+
+```sql
+INSERT INTO categories (user_id, name, icon, color, type, is_default)
+SELECT DISTINCT user_id, 'Fatura do Cartão', 'credit-card', '#8b5cf6', 'expense', true
+FROM profiles
+WHERE NOT EXISTS (
+  SELECT 1 FROM categories c WHERE c.user_id = profiles.user_id AND c.name = 'Fatura do Cartão'
+);
+```
+
+### 3. Atualizar `criarCompraCartao` (`src/services/compras-cartao.ts`)
+
+- Ao criar uma compra, buscar a categoria "Fatura do Cartao" do usuario e setar como `categoria_id`
+- Salvar a categoria selecionada pelo usuario como `subcategoria_id`
+
+### 4. Atualizar `NovaCompraCartaoDialog` (`src/components/cartoes/NovaCompraCartaoDialog.tsx`)
+
+- Renomear o campo de categoria para "Subcategoria (opcional)"
+- Internamente, o campo `categoriaId` do form passa a ser a subcategoria
+- A categoria principal "Fatura do Cartao" sera setada automaticamente no service
+
+### 5. Atualizar `EditarCompraDialog` (`src/components/cartoes/EditarCompraDialog.tsx`)
+
+- Mesma mudanca: renomear campo para "Subcategoria" e mapear para `subcategoria_id`
+
+### 6. Atualizar hooks de graficos (`src/hooks/useTransactions.ts`)
+
+- Em `useExpensesByCategory`: agrupar parcelas de cartao sob a categoria "Fatura do Cartao" (usar `categoria_id` da compra, que agora sempre sera "Fatura do Cartao")
+- A subcategoria podera ser usada futuramente para drill-down, mas nao altera o agrupamento principal
+
+### 7. Atualizar listagem de parcelas (`src/services/compras-cartao.ts`)
+
+- Incluir `subcategoria_id` no select e no mapeamento de `ParcelaFatura`
+- Adicionar campos de subcategoria ao tipo `ParcelaFatura`
+
+### Arquivos alterados
+
+- `src/services/compras-cartao.ts` -- tipos e funcao de criar/listar
+- `src/components/cartoes/NovaCompraCartaoDialog.tsx` -- campo subcategoria
+- `src/components/cartoes/EditarCompraDialog.tsx` -- campo subcategoria  
+- `src/hooks/useTransactions.ts` -- agrupamento nos graficos
+- Migracao SQL para nova coluna e categoria padrao
 
