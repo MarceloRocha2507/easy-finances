@@ -302,7 +302,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         .from('parcelas_cartao')
         .select(`
           valor,
-          compra:compras_cartao(categoria_id, categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color))
+          compra:compras_cartao(categoria_id, categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color), responsavel:responsaveis(is_titular))
         `)
         .eq('ativo', true);
 
@@ -316,6 +316,9 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
       const { data: parcelas } = await parcelasQuery;
 
       (parcelas || []).forEach((p: any) => {
+        // Filtrar: apenas compras do titular (is_titular !== false)
+        if (p.compra?.responsavel?.is_titular === false) return;
+
         const catId = p.compra?.categoria_id || 'uncategorized';
         const cat = p.compra?.categoria as any;
         const categoryName = cat?.name || 'Sem categoria';

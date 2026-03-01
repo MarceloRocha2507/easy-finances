@@ -283,13 +283,16 @@ export function useAnaliseGastos(mesReferencia?: Date) {
         .select(`
           valor,
           ativo,
-          compra:compras_cartao(categoria_id, categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color))
+          compra:compras_cartao(categoria_id, categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color), responsavel:responsaveis(is_titular))
         `)
         .gte("mes_referencia", inicioMes)
         .lte("mes_referencia", fimMes)
         .eq("ativo", true);
 
       (parcelasCartao || []).forEach((p: any) => {
+        // Filtrar: apenas compras do titular (is_titular !== false)
+        if (p.compra?.responsavel?.is_titular === false) return;
+
         const valor = Number(p.valor) || 0;
         totalGasto += valor;
 
