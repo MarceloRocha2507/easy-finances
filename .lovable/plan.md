@@ -1,38 +1,38 @@
 
 
-# Fix: Dialog de exclusão recorrente cortado no desktop
+# Fix: Dialog de exclusão recorrente ainda cortando no desktop
 
-## Problema
-O `AlertDialogFooter` usa `sm:flex-row`, colocando os 3 botoes lado a lado no desktop. Como os textos sao longos ("Excluir apenas este mes", "Excluir este e todos os seguintes"), eles ficam cortados ou apertados.
+## Causa raiz
+O componente `AlertDialogFooter` (linha 52 de `alert-dialog.tsx`) aplica classes base `sm:flex-row sm:justify-end sm:space-x-2`. Quando passamos `className="flex-col gap-2"`, o Tailwind Merge nao consegue resolver o conflito corretamente, e os botoes acabam em linha no desktop, ficando cortados pelo `max-w-lg` do `AlertDialogContent`.
 
 ## Solucao
+Nao usar `AlertDialogFooter` para este caso especifico. Substituir por uma `div` simples com layout em coluna, garantindo que os botoes nunca fiquem lado a lado (ja que os textos sao longos demais para caber em linha).
 
-### Arquivo: `src/pages/Transactions.tsx` (linhas 1196-1220)
+### Arquivo: `src/pages/Transactions.tsx` (linhas 1196-1224)
 
-Mudar o `AlertDialogFooter` para manter os botoes empilhados verticalmente tambem no desktop, ja que sao 3 botoes com textos longos:
-
-- Trocar `className="flex-col sm:flex-row gap-2"` por `className="flex-col gap-2 sm:flex-row sm:justify-end"`
-- Alternativamente, manter `flex-col` sempre (sem `sm:flex-row`) para garantir que os botoes nunca fiquem cortados
-- Adicionar `w-full sm:w-auto` nos botoes para ficarem proporcionais
-
-A abordagem mais limpa: manter layout em coluna com os 2 botoes destrutivos lado a lado em um grupo separado:
-
-```
+Substituir:
+```tsx
 <AlertDialogFooter className="flex-col gap-2">
   <div className="flex flex-col sm:flex-row gap-2">
-    <Button variant="destructive" className="flex-1">
-      Excluir apenas este mes
-    </Button>
-    <Button variant="destructive" className="flex-1">
-      Excluir este e todos os seguintes
-    </Button>
+    ...buttons...
   </div>
-  <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+  <AlertDialogCancel className="w-full mt-0">Cancelar</AlertDialogCancel>
 </AlertDialogFooter>
 ```
 
-Isso garante que:
-- No desktop, os 2 botoes destrutivos ficam lado a lado e o Cancelar embaixo
-- No mobile, tudo fica empilhado verticalmente
-- Nenhum texto fica cortado
+Por:
+```tsx
+<div className="flex flex-col gap-2 pt-2">
+  <Button variant="destructive" onClick={...}>
+    Excluir apenas este mes
+  </Button>
+  <Button variant="destructive" onClick={...}>
+    Excluir este e todos os seguintes
+  </Button>
+  <Button variant="outline" onClick={() => setRecurringDeleteTransaction(null)}>
+    Cancelar
+  </Button>
+</div>
+```
 
+Isso elimina completamente o conflito de classes do `AlertDialogFooter` e garante layout vertical em todas as telas.
