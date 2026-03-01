@@ -1,8 +1,8 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
   AlertCircle,
+  Bell,
   Calendar,
   Info,
   CheckCircle,
@@ -14,35 +14,32 @@ import { useState } from "react";
 const ICONE_MAP: Record<string, React.ReactNode> = {
   "alert-triangle": <AlertTriangle className="h-4 w-4" />,
   "alert-circle": <AlertCircle className="h-4 w-4" />,
+  bell: <Bell className="h-4 w-4" />,
   calendar: <Calendar className="h-4 w-4" />,
   info: <Info className="h-4 w-4" />,
   "check-circle": <CheckCircle className="h-4 w-4" />,
 };
 
-const CORES_TIPO: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+const CORES_TIPO: Record<string, { borderL: string; iconBg: string; iconColor: string }> = {
   danger: {
-    bg: "bg-expense/5",
-    border: "border-expense/20",
-    text: "text-expense",
-    icon: "text-expense",
+    borderL: "border-l-red-500",
+    iconBg: "bg-red-100 dark:bg-red-950",
+    iconColor: "text-red-600 dark:text-red-400",
   },
   warning: {
-    bg: "bg-amber-500/5",
-    border: "border-amber-500/20",
-    text: "text-amber-600 dark:text-amber-500",
-    icon: "text-amber-500",
+    borderL: "border-l-amber-500",
+    iconBg: "bg-amber-100 dark:bg-amber-950",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   info: {
-    bg: "bg-primary/5",
-    border: "border-primary/20",
-    text: "text-primary",
-    icon: "text-primary",
+    borderL: "border-l-blue-500",
+    iconBg: "bg-blue-100 dark:bg-blue-950",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   success: {
-    bg: "bg-income/5",
-    border: "border-income/20",
-    text: "text-income",
-    icon: "text-income",
+    borderL: "border-l-green-500",
+    iconBg: "bg-green-100 dark:bg-green-950",
+    iconColor: "text-green-600 dark:text-green-400",
   },
 };
 
@@ -63,32 +60,30 @@ export function AlertasInteligentes({ alertas }: Props) {
         const cores = CORES_TIPO[alerta.tipo] || CORES_TIPO.info;
 
         return (
-          <Card
+          <div
             key={alerta.id}
-            className={`${cores.bg} ${cores.border} border`}
+            className={`group bg-white dark:bg-card shadow-sm rounded-lg border border-l-[3px] ${cores.borderL} p-4 flex items-start justify-between gap-3`}
           >
-            <CardContent className="p-3 flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className={cores.icon}>
-                  {ICONE_MAP[alerta.icone] || <Info className="h-4 w-4" />}
-                </div>
-                <div>
-                  <p className={`text-sm font-medium ${cores.text}`}>{alerta.titulo}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {alerta.mensagem}
-                  </p>
-                </div>
+            <div className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cores.iconBg} ${cores.iconColor}`}>
+                {ICONE_MAP[alerta.icone] || <Info className="h-4 w-4" />}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                onClick={() => setDispensados((prev) => [...prev, alerta.id])}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{alerta.titulo}</p>
+                <p className="text-xs text-muted-foreground">
+                  {alerta.mensagem}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setDispensados((prev) => [...prev, alerta.id])}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         );
       })}
     </div>
