@@ -2,11 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  CreditCard,
-  AlertTriangle,
-  Clock,
-} from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { CartaoDashboard, ResumoCartoes } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,73 +14,31 @@ interface CartaoCardProps {
 
 function CartaoCard({ cartao, onClick }: CartaoCardProps) {
   const corCartao = cartao.cor || "#64748b";
-  const limiteAlto = cartao.usoPct >= 80;
-  const venceEmBreve = cartao.diasParaVencimento <= 3 && cartao.diasParaVencimento >= 0;
 
   return (
     <div
       onClick={onClick}
-      className="p-4 border rounded-md hover:bg-secondary/30 transition-colors cursor-pointer"
+      className="p-3 border rounded-md hover:bg-secondary/30 transition-colors cursor-pointer"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-md flex items-center justify-center"
-            style={{ backgroundColor: `${corCartao}15` }}
-          >
-            <CreditCard className="h-4 w-4" style={{ color: corCartao }} />
-          </div>
-          <div>
-            <p className="text-sm font-medium">{cartao.nome}</p>
-            <p className="text-xs text-muted-foreground">
-              {cartao.bandeira || "Crédito"}
-            </p>
-          </div>
+      <div className="flex items-center gap-3 mb-2">
+        <div
+          className="w-8 h-8 rounded-md flex items-center justify-center"
+          style={{ backgroundColor: `${corCartao}15` }}
+        >
+          <CreditCard className="h-4 w-4" style={{ color: corCartao }} />
         </div>
-
-        <div className="flex items-center gap-2">
-          {limiteAlto && (
-            <span className="flex items-center gap-1 text-xs text-expense">
-              <AlertTriangle className="h-3 w-3" />
-              {cartao.usoPct.toFixed(0)}%
-            </span>
-          )}
-          {venceEmBreve && cartao.totalPendente > 0 && (
-            <span className="flex items-center gap-1 text-xs text-amber-600">
-              <Clock className="h-3 w-3" />
-              {cartao.diasParaVencimento === 0
-                ? "Hoje"
-                : `${cartao.diasParaVencimento}d`}
-            </span>
-          )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{cartao.nome}</p>
+          <p className="text-xs text-muted-foreground">
+            {cartao.bandeira || "Crédito"}
+          </p>
         </div>
+        <span className="text-sm font-medium text-expense whitespace-nowrap">
+          {formatCurrency(cartao.totalPendente)}
+        </span>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Fatura</span>
-          <span className="font-medium text-expense">
-            {formatCurrency(cartao.totalPendente)}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Disponível</span>
-          <span className="font-medium text-income">
-            {formatCurrency(cartao.disponivel)}
-          </span>
-        </div>
-
-        <Progress
-          value={cartao.usoPct}
-          className="h-1"
-        />
-
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{cartao.usoPct.toFixed(0)}% do limite</span>
-          <span>Venc. dia {cartao.dia_vencimento}</span>
-        </div>
-      </div>
+      <Progress value={cartao.usoPct} className="h-1" />
     </div>
   );
 }
