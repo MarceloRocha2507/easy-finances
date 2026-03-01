@@ -364,6 +364,7 @@ export type Database = {
           parcela_inicial: number
           parcelas: number
           responsavel_id: string | null
+          subcategoria_id: string | null
           tipo_lancamento: string
           updated_at: string | null
           user_id: string
@@ -382,6 +383,7 @@ export type Database = {
           parcela_inicial?: number
           parcelas?: number
           responsavel_id?: string | null
+          subcategoria_id?: string | null
           tipo_lancamento?: string
           updated_at?: string | null
           user_id: string
@@ -400,6 +402,7 @@ export type Database = {
           parcela_inicial?: number
           parcelas?: number
           responsavel_id?: string | null
+          subcategoria_id?: string | null
           tipo_lancamento?: string
           updated_at?: string | null
           user_id?: string
@@ -432,6 +435,13 @@ export type Database = {
             columns: ["responsavel_id"]
             isOneToOne: false
             referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_cartao_subcategoria_id_fkey"
+            columns: ["subcategoria_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]

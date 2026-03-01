@@ -454,22 +454,22 @@ export function NovaCompraCartaoDialog({
             required
           />
 
-          {/* Categoria */}
+          {/* Subcategoria */}
           <div className="space-y-2">
             <Label htmlFor="categoria" className="flex items-center gap-2">
               <Tag className="h-4 w-4" />
-              Categoria (opcional)
+              Subcategoria (opcional)
             </Label>
             <Select
               value={form.categoriaId}
               onValueChange={(v) => setForm({ ...form, categoriaId: v })}
             >
               <SelectTrigger id="categoria">
-                <SelectValue placeholder="Selecionar categoria" />
+                <SelectValue placeholder="Selecionar subcategoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Sem categoria</SelectItem>
-                {categorias.map((cat) => (
+                <SelectItem value="none">Sem subcategoria</SelectItem>
+                {categorias.filter(c => c.name !== 'Fatura do Cartão').map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     <div className="flex items-center gap-2">
                       <div

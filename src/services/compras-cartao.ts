@@ -19,17 +19,22 @@ export type ParcelaFatura = {
   descricao: string;
   data_compra: string;
   tipo_lancamento?: string;
-  updated_at?: string; // Hora da última alteração
+  updated_at?: string;
   // Campos do responsável
   responsavel_id?: string;
   responsavel_nome?: string;
   responsavel_apelido?: string;
   is_titular?: boolean;
-  // Campos de categoria
+  // Campos de categoria principal (sempre "Fatura do Cartão")
   categoria_id?: string;
   categoria_nome?: string;
   categoria_cor?: string;
   categoria_icone?: string;
+  // Campos de subcategoria (detalhe opcional)
+  subcategoria_id?: string;
+  subcategoria_nome?: string;
+  subcategoria_cor?: string;
+  subcategoria_icone?: string;
 };
 
 export type CompraCartaoInput = {
@@ -63,6 +68,16 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
 
+  // Buscar categoria "Fatura do Cartão" do usuário
+  const { data: faturaCategory } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("name", "Fatura do Cartão")
+    .single();
+
+  const faturaCategoryId = faturaCategory?.id || null;
+
   // 1. Criar a compra
   const { data: compra, error: compraError } = await (supabase as any)
     .from("compras_cartao")
@@ -76,7 +91,8 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
       tipo_lancamento: input.tipoLancamento,
       mes_inicio: input.mesFatura.toISOString().split("T")[0],
       data_compra: input.dataCompra.toISOString().split("T")[0],
-      categoria_id: input.categoriaId || null,
+      categoria_id: faturaCategoryId,
+      subcategoria_id: input.categoriaId || null,
       responsavel_id: input.responsavelId,
     })
     .select()
@@ -152,11 +168,13 @@ export async function listarParcelasDaFatura(
         data_compra,
         tipo_lancamento,
         categoria_id,
+        subcategoria_id,
         responsavel_id,
         cartao_id,
         created_at,
         updated_at,
         categoria:categories(id, name, color, icon),
+        subcategoria:categories!compras_cartao_subcategoria_id_fkey(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
       )
     `)
@@ -188,6 +206,10 @@ export async function listarParcelasDaFatura(
     categoria_nome: p.compra?.categoria?.name || null,
     categoria_cor: p.compra?.categoria?.color || null,
     categoria_icone: p.compra?.categoria?.icon || null,
+    subcategoria_id: p.compra?.subcategoria?.id || null,
+    subcategoria_nome: p.compra?.subcategoria?.name || null,
+    subcategoria_cor: p.compra?.subcategoria?.color || null,
+    subcategoria_icone: p.compra?.subcategoria?.icon || null,
     tipo_lancamento: p.compra?.tipo_lancamento || null,
   }));
 }
@@ -515,7 +537,7 @@ export async function editarCompra(
   const updateData: any = {};
   
   if (dados.descricao !== undefined) updateData.descricao = dados.descricao;
-  if (dados.categoriaId !== undefined) updateData.categoria_id = dados.categoriaId || null;
+  if (dados.categoriaId !== undefined) updateData.subcategoria_id = dados.categoriaId || null;
   if (dados.responsavelId !== undefined) updateData.responsavel_id = dados.responsavelId;
 
   // Atualizar compra principal
