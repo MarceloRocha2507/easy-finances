@@ -93,7 +93,7 @@ export function EditarCompraDialog({
 
   const [descricao, setDescricao] = useState("");
   const [valorTotal, setValorTotal] = useState(0);
-  const [categoriaId, setCategoriaId] = useState<string | null>(null);
+  const [categoriaId, setCategoriaId] = useState<string | null>(null); // This is now subcategoria_id
   const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [mesFatura, setMesFatura] = useState("");
   const [parcelaInicial, setParcelaInicial] = useState("1");
@@ -148,14 +148,14 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, categoria_id, responsavel_id")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id")
           .eq("id", parcela.compra_id)
           .single();
 
         if (compra) {
           setDescricao(compra.descricao || "");
           setValorTotal(compra.valor_total || 0);
-          setCategoriaId(compra.categoria_id || null);
+          setCategoriaId(compra.subcategoria_id || null);
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
@@ -357,7 +357,7 @@ export function EditarCompraDialog({
               {/* Categoria */}
               {categorias.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Categoria</Label>
+                  <Label>Subcategoria (opcional)</Label>
                   <Select
                     value={categoriaId || "sem-categoria"}
                     onValueChange={(v) =>
@@ -365,13 +365,13 @@ export function EditarCompraDialog({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
+                      <SelectValue placeholder="Selecione uma subcategoria" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sem-categoria">
-                        <span className="text-muted-foreground">Sem categoria</span>
+                        <span className="text-muted-foreground">Sem subcategoria</span>
                       </SelectItem>
-                      {categorias.map((cat) => (
+                      {categorias.filter(c => c.nome !== 'Fatura do Cartão').map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           <div className="flex items-center gap-2">
                             <div
