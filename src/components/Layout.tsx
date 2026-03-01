@@ -99,7 +99,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile Sidebar - Floating Drawer */}
       <aside
         className={cn(
-          "lg:hidden fixed top-16 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-premium z-40 flex flex-col overflow-hidden",
+          "lg:hidden fixed top-14 left-0 bottom-0 w-[280px] max-w-[75vw] sidebar-premium z-40 flex flex-col",
           !isDragging && "transition-transform duration-300 ease-out",
           !isDragging && (sidebarOpen ? "translate-x-0" : "-translate-x-full")
         )}
