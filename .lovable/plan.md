@@ -1,35 +1,56 @@
 
 
-# Melhorar visual das notificações do Dashboard
+# Modernizar seções "Próximas Faturas" e "Últimas Compras"
 
-## Alterações no arquivo `src/components/dashboard/AlertasInteligentes.tsx`
+## Próximas Faturas (`src/components/dashboard/ProximasFaturas.tsx`)
 
-### 1. Ícones coloridos em fundo circular
-Substituir os ícones inline por versões dentro de um container circular com fundo colorido (laranja para warning, vermelho para danger, azul para info, verde para success). Adicionar `Bell` ao mapa de ícones.
+### Layout compacto
+- Reduzir ícone de `w-10 h-10` para `w-8 h-8` e ícone interno de `h-5 w-5` para `h-4 w-4`
+- Reduzir padding de `p-3` para `p-2.5`
+- Reduzir `space-y-3` para `space-y-2`
 
-### 2. Borda colorida à esquerda
-Cada card terá uma `border-l-[3px]` com cor semântica (laranja para warning, vermelho para danger, etc.) usando `border-l-amber-500`, `border-l-red-500`, etc.
+### Remover data por extenso
+- Eliminar a linha com `Clock` + `dataVencimento.toLocaleDateString`
+- Manter apenas nome do cartao na linha principal, valor em vermelho e badge de dias
 
-### 3. Fundo branco com sombra
-Cards usarão `bg-white dark:bg-card shadow-sm` em vez do fundo colorido translúcido atual, criando contraste com o fundo cinza da página.
+### Badge de dias com cores por urgencia
+- Vermelho (`destructive`): dias restantes <= 3
+- Laranja (`bg-amber-100 text-amber-700`): dias restantes <= 7
+- Cinza (`secondary`): dias restantes > 7
 
-### 4. Espaçamento interno maior
-Aumentar padding de `p-3` para `p-4` nos cards.
+### Tipografia
+- Nome do cartao: `text-sm font-medium`
+- Valor: `text-sm font-semibold text-expense`
 
-### 5. Hierarquia de texto
-- Título: `text-sm font-semibold text-foreground` (mais escuro, semi-bold)
-- Mensagem: texto com partes em destaque -- o nome do banco/cartão ficará com `font-medium text-foreground`, o restante em `text-muted-foreground`
+---
 
-### 6. Botão X sutil no hover
-O botão de fechar terá `opacity-0 group-hover:opacity-100 transition-opacity` e o card receberá a classe `group`.
+## Ultimas Compras (`src/components/dashboard/UltimasCompras.tsx`)
 
-### 7. Mapa de cores atualizado
+### Avatar com iniciais coloridas
+- Substituir icone de sacola por um circulo colorido com as 2 primeiras letras do estabelecimento
+- Gerar cor a partir do hash do nome (paleta fixa de ~8 cores)
 
-```text
-CORES_TIPO:
-  danger  -> border-l: red-500,    icon-bg: red-100,    icon: red-600
-  warning -> border-l: amber-500,  icon-bg: amber-100,  icon: amber-600
-  info    -> border-l: blue-500,   icon-bg: blue-100,   icon: blue-600
-  success -> border-l: green-500,  icon-bg: green-100,  icon: green-600
-```
+### Layout compacto em linha unica
+- Nome do estabelecimento + cartao + data numa unica linha compacta
+- Descricao como `text-sm font-medium`, cartao e data como `text-xs text-muted-foreground` inline
 
+### Valor e parcelas lado a lado
+- Valor alinhado a direita com badge de parcelas inline (ex: `R$ 84,00  8x`)
+
+### Limite de 4 itens + "Ver todas"
+- Fixar limite em 4 itens (mobile e desktop)
+- Adicionar link "Ver todas" ao final apontando para `/cartoes`
+
+### Estilo geral
+- Reduzir padding e espacamento similar ao Proximas Faturas
+- Icone avatar `w-8 h-8 rounded-full`
+
+---
+
+## Alteracoes no container (Dashboard.tsx)
+
+Nenhuma alteracao necessaria -- as duas secoes ja estao lado a lado em `grid grid-cols-1 lg:grid-cols-2`.
+
+## Cards gerais
+
+Ambos os cards manterao `border-0 shadow-lg` existente (fundo branco com sombra). O titulo sera reduzido de `text-lg` para `text-base` para tipografia mais leve.
