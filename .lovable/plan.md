@@ -1,56 +1,48 @@
 
 
-# Modernizar seções "Próximas Faturas" e "Últimas Compras"
+# Modernizar seção de gráficos do Dashboard
 
-## Próximas Faturas (`src/components/dashboard/ProximasFaturas.tsx`)
+## 1. Reorganizar layout dos gráficos (`src/pages/Dashboard.tsx`)
 
-### Layout compacto
-- Reduzir ícone de `w-10 h-10` para `w-8 h-8` e ícone interno de `h-5 w-5` para `h-4 w-4`
-- Reduzir padding de `p-3` para `p-2.5`
-- Reduzir `space-y-3` para `space-y-2`
+### Novo layout
+- "Receitas vs Despesas" ocupa largura total (100%) no topo, fora do grid 2 colunas
+- "Despesas por Categoria" e "Comparativo Mensal" ficam lado a lado (grid 2 colunas)
+- "Gastos por Dia" fica abaixo, largura total
 
-### Remover data por extenso
-- Eliminar a linha com `Clock` + `dataVencimento.toLocaleDateString`
-- Manter apenas nome do cartao na linha principal, valor em vermelho e badge de dias
+### Mudanças no JSX
+- Extrair o card "Receitas vs Despesas" do grid atual para um bloco solo com `mb-4`
+- Mover `PieChartWithLegend` e `ComparativoMensal` para um grid `lg:grid-cols-2` juntos
+- `GastosDiarios` fica sozinho abaixo
 
-### Badge de dias com cores por urgencia
-- Vermelho (`destructive`): dias restantes <= 3
-- Laranja (`bg-amber-100 text-amber-700`): dias restantes <= 7
-- Cinza (`secondary`): dias restantes > 7
+## 2. Modernizar "Receitas vs Despesas" (`src/pages/Dashboard.tsx`)
 
-### Tipografia
-- Nome do cartao: `text-sm font-medium`
-- Valor: `text-sm font-semibold text-expense`
+- Aumentar altura do gráfico de 220px para 280px (aproveitando largura total)
+- Barras com cores: `#22c55e` (receitas) e `#f87171` (despesas)
+- Manter `radius={[6, 6, 0, 0]}` para cantos mais arredondados
+- Adicionar legenda compacta inline no header (bolinhas coloridas + texto)
+- Tooltip já existente, manter com estilo atual
 
----
+## 3. Compactar "Comparativo Mensal" (`src/components/dashboard/ComparativoMensal.tsx`)
 
-## Ultimas Compras (`src/components/dashboard/UltimasCompras.tsx`)
+- Remover o banner verde "Parabéns! Você está economizando!" e o banner amarelo de atenção
+- Substituir por texto inline sutil com ícone ao lado do percentual (ex: icone check verde + "Economizando" em texto pequeno)
+- Reduzir `CardHeader` padding e título para `text-base font-medium`
+- Reduzir `mb-6` do bloco central para `mb-3`
+- Grid "Mês Atual / Mês Anterior" com padding reduzido (`p-3`) e valores `text-lg` em vez de `text-xl`
+- O badge de percentual continua como destaque principal (manter estilo pill com cor)
 
-### Avatar com iniciais coloridas
-- Substituir icone de sacola por um circulo colorido com as 2 primeiras letras do estabelecimento
-- Gerar cor a partir do hash do nome (paleta fixa de ~8 cores)
+## 4. "Despesas por Categoria" -- sem alterações no componente
 
-### Layout compacto em linha unica
-- Nome do estabelecimento + cartao + data numa unica linha compacta
-- Descricao como `text-sm font-medium`, cartao e data como `text-xs text-muted-foreground` inline
+O `PieChartWithLegend` já está bem implementado com donut chart, legenda lateral interativa e empty state. Nenhuma mudança necessária no componente em si.
 
-### Valor e parcelas lado a lado
-- Valor alinhado a direita com badge de parcelas inline (ex: `R$ 84,00  8x`)
+## 5. "Gastos por Dia" -- sem alterações
 
-### Limite de 4 itens + "Ver todas"
-- Fixar limite em 4 itens (mobile e desktop)
-- Adicionar link "Ver todas" ao final apontando para `/cartoes`
+Componente já está alinhado com o design system. Mantém posição atual.
 
-### Estilo geral
-- Reduzir padding e espacamento similar ao Proximas Faturas
-- Icone avatar `w-8 h-8 rounded-full`
+## Resumo de arquivos alterados
 
----
+| Arquivo | Tipo de alteração |
+|---|---|
+| `src/pages/Dashboard.tsx` | Reorganizar grid dos gráficos, atualizar cores das barras, adicionar legenda inline, aumentar altura |
+| `src/components/dashboard/ComparativoMensal.tsx` | Compactar card, remover banners, texto inline sutil, reduzir espaçamentos |
 
-## Alteracoes no container (Dashboard.tsx)
-
-Nenhuma alteracao necessaria -- as duas secoes ja estao lado a lado em `grid grid-cols-1 lg:grid-cols-2`.
-
-## Cards gerais
-
-Ambos os cards manterao `border-0 shadow-lg` existente (fundo branco com sombra). O titulo sera reduzido de `text-lg` para `text-base` para tipografia mais leve.
