@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Clock } from "lucide-react";
+import { Calendar, CreditCard } from "lucide-react";
 import { ProximaFatura } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const CORES_BANDEIRA: Record<string, string> = {
   mastercard: "#eb001b",
@@ -20,17 +19,14 @@ interface Props {
 }
 
 export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
-  const isMobile = useIsMobile();
-  // Filtrar apenas faturas com valor pendente (> 0)
   const faturasPendentes = faturas.filter(f => f.valor > 0);
-  const limite = isMobile ? 3 : 4;
 
   if (faturasPendentes.length === 0) {
     return (
       <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
             Próximas Faturas
           </CardTitle>
         </CardHeader>
@@ -47,53 +43,53 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+        <CardTitle className="text-base flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
           Próximas Faturas
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {faturasPendentes.slice(0, limite).map((fatura) => {
+      <CardContent className="space-y-2">
+        {faturasPendentes.slice(0, 4).map((fatura) => {
           const cor = CORES_BANDEIRA[fatura.bandeira?.toLowerCase() || "default"] || CORES_BANDEIRA.default;
-          const urgente = fatura.diasRestantes <= 3;
+
+          const badgeVariant = fatura.diasRestantes <= 3
+            ? "destructive"
+            : fatura.diasRestantes <= 7
+            ? "outline"
+            : "secondary";
+
+          const badgeClass = fatura.diasRestantes <= 7 && fatura.diasRestantes > 3
+            ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+            : "";
+
+          const diasLabel = fatura.diasRestantes === 0
+            ? "Hoje"
+            : fatura.diasRestantes === 1
+            ? "Amanhã"
+            : `${fatura.diasRestantes} dias`;
 
           return (
             <div
               key={fatura.cartaoId}
-              className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
-                urgente ? "border-amber-500/30 bg-amber-500/5" : "hover:bg-muted/50"
-              }`}
+              className="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/50"
               onClick={() => onCartaoClick?.(fatura.cartaoId)}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${cor}20` }}
                 >
-                  <CreditCard className="h-5 w-5" style={{ color: cor }} />
+                  <CreditCard className="h-4 w-4" style={{ color: cor }} />
                 </div>
-                <div>
-                  <p className="font-medium">{fatura.cartaoNome}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {fatura.dataVencimento.toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
+                <p className="text-sm font-medium">{fatura.cartaoNome}</p>
               </div>
 
-              <div className="text-right">
-                <p className="font-semibold text-expense">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-expense">
                   {formatCurrency(fatura.valor)}
                 </p>
-                <Badge
-                  variant={urgente ? "destructive" : "secondary"}
-                  className="text-xs"
-                >
-                  {fatura.diasRestantes === 0
-                    ? "Hoje"
-                    : fatura.diasRestantes === 1
-                    ? "Amanhã"
-                    : `${fatura.diasRestantes} dias`}
+                <Badge variant={badgeVariant} className={`text-xs ${badgeClass}`}>
+                  {diasLabel}
                 </Badge>
               </div>
             </div>
