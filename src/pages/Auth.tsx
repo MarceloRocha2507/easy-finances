@@ -25,7 +25,14 @@ export default function Auth() {
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({
+          title: "Não foi possível entrar",
+          description: error.message || "Verifique suas credenciais.",
+          variant: "destructive",
+        });
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Verifique suas credenciais.";
       toast({
