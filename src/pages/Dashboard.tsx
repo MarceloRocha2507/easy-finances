@@ -278,90 +278,103 @@ export default function Dashboard() {
       {/* Contas a Pagar */}
       <ContasAPagar mesReferencia={mesReferencia} rendaMensal={completeStats?.completedIncome || 0} />
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Card className="border rounded-xl shadow-sm animate-fade-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
-          <CardHeader className="pb-2">
+      {/* Receitas vs Despesas - largura total */}
+      <Card className="border rounded-xl shadow-sm animate-fade-in mb-4" style={{ animationDelay: '0.5s', opacity: 0 }}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Receitas vs Despesas ({mesReferencia.getFullYear()})
             </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isMonthlyFetching ? (
-              <div className="h-[220px] flex items-center justify-center">
-                <Skeleton className="w-full h-[200px] rounded-xl" />
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                Receitas
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} />
+                Despesas
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isMonthlyFetching ? (
+            <div className="h-[280px] flex items-center justify-center">
+              <Skeleton className="w-full h-[260px] rounded-xl" />
+            </div>
+          ) : hasMonthlyData ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={monthlyData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  tickFormatter={formatYAxis}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11 }}
+                  width={60}
+                />
+                <Tooltip content={<CustomBarTooltip />} />
+                <Bar
+                  dataKey="income"
+                  fill="#22c55e"
+                  name="Receitas"
+                  radius={[6, 6, 0, 0]}
+                  animationBegin={200}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+                <Bar
+                  dataKey="expense"
+                  fill="#f87171"
+                  name="Despesas"
+                  radius={[6, 6, 0, 0]}
+                  animationBegin={200}
+                  animationDuration={800}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="text-center">
+                <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p>Nenhum dado registrado</p>
               </div>
-            ) : hasMonthlyData ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={monthlyData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickFormatter={formatYAxis}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11 }}
-                    width={60}
-                  />
-                  <Tooltip content={<CustomBarTooltip />} />
-                  <Bar
-                    dataKey="income"
-                    fill="hsl(var(--income))"
-                    name="Receitas"
-                    radius={[4, 4, 0, 0]}
-                    animationBegin={200}
-                    animationDuration={800}
-                    animationEasing="ease-out"
-                  />
-                  <Bar
-                    dataKey="expense"
-                    fill="hsl(var(--expense))"
-                    name="Despesas"
-                    radius={[4, 4, 0, 0]}
-                    animationBegin={200}
-                    animationDuration={800}
-                    animationEasing="ease-out"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-                <div className="text-center">
-                  <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p>Nenhum dado registrado</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
+      {/* Categoria + Comparativo lado a lado */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <PieChartWithLegend data={pieData} delay={0.45} isLoading={isCategoryFetching} />
-      </div>
-
-      {/* Comparativo + Gastos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {dashboardData?.comparativo && (
           <div className="hidden sm:block">
             <ComparativoMensal comparativo={dashboardData.comparativo} />
           </div>
         )}
-        {dashboardData?.gastosDiarios && (
-          <GastosDiarios dados={dashboardData.gastosDiarios} />
-        )}
       </div>
+
+      {/* Gastos por Dia - largura total */}
+      {dashboardData?.gastosDiarios && (
+        <div className="mb-6">
+          <GastosDiarios dados={dashboardData.gastosDiarios} />
+        </div>
+      )}
 
       {/* Cartões */}
       <div className="mb-6">
