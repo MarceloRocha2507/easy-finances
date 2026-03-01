@@ -1,27 +1,51 @@
 
 
-# Corrigir faturas desaparecidas -- join ambiguo com categories
+# Filtrar relatórios para mostrar apenas compras do titular ("EU")
 
-## Causa raiz
+## Resumo
 
-Ao adicionar a coluna `subcategoria_id` (que tambem referencia `categories`), a tabela `compras_cartao` passou a ter **dois foreign keys** para `categories`. Quando o codigo faz `categoria:categories(...)` sem especificar qual FK usar, o PostgREST retorna **HTTP 300** (ambiguidade) em vez dos dados. Isso faz com que todas as listagens de parcelas retornem vazio.
+Atualmente, todas as compras de cartão (incluindo de outros responsáveis) são somadas nos relatórios e gráficos. A mudança fará com que apenas as compras onde o responsável é o titular ("EU" / `is_titular = true`) sejam contabilizadas.
 
-## Correcao
+## O que muda para o usuário
 
-Alterar todos os joins `categoria:categories(...)` em `compras_cartao` para usar o FK explicito: `categoria:categories!compras_cartao_categoria_id_fkey(...)`.
+- Nos gráficos de pizza, barras e totais, apenas as compras do titular serão contabilizadas
+- Compras de outros responsáveis (dependentes) não afetarão os valores dos relatórios
+- A listagem de compras dentro dos cartões permanece inalterada (mostra tudo)
 
-### Arquivos afetados
+## Detalhes técnicos
 
-1. **`src/services/compras-cartao.ts`** (linha 176) -- `listarParcelasDaFatura`
-   - De: `categoria:categories(id, name, color, icon)`
-   - Para: `categoria:categories!compras_cartao_categoria_id_fkey(id, name, color, icon)`
+### Arquivos alterados
 
-2. **`src/hooks/useTransactions.ts`** (linha 305) -- `useExpensesByCategory`
-   - De: `categoria:categories(id, name, icon, color)`
-   - Para: `categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color)`
+#### 1. `src/hooks/useTransactions.ts` -- `useExpensesByCategory`
 
-3. **`src/hooks/useEconomia.ts`** (linha 286) -- `useAnaliseGastos`
-   - De: `categoria:categories(id, name, icon, color)`
-   - Para: `categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color)`
+Na query de `parcelas_cartao` (linha ~301), adicionar o join com `responsaveis` via `compras_cartao` e filtrar apenas `is_titular = true`:
 
-Sao 3 alteracoes de uma unica linha cada, sem mudanca de logica. As faturas voltarao a aparecer imediatamente.
+```text
+De:
+  compra:compras_cartao(categoria_id, categoria:categories!...(...))
+
+Para:
+  compra:compras_cartao!inner(
+    categoria_id, 
+    categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color),
+    responsavel:responsaveis!inner(is_titular)
+  )
+```
+
+E adicionar filtro: `.eq('compra.responsavel.is_titular', true)`
+
+Alternativamente, filtrar no forEach client-side verificando `p.compra?.responsavel?.is_titular === true`.
+
+#### 2. `src/hooks/useEconomia.ts` -- `useAnaliseGastos`
+
+Mesma mudança na query de `parcelas_cartao` (linha ~281): incluir join com responsaveis e filtrar por `is_titular = true`.
+
+#### 3. `src/pages/Reports.tsx` (se necessário)
+
+Os relatórios usam `useExpensesByCategory` e `useTransactions`, então a correção nos hooks já cobre os gráficos. Se houver alguma query adicional direta, será ajustada.
+
+### Abordagem
+
+Filtrar no lado do cliente (forEach) em vez de complicar a query do Supabase, verificando `p.compra?.responsavel?.is_titular !== false`. Compras sem responsável definido (null) continuam contando normalmente. Apenas compras explicitamente atribuídas a não-titulares serão excluídas.
+
+Para isso, basta incluir `responsavel:responsaveis(is_titular)` no select e checar no forEach.
