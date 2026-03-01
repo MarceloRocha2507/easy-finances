@@ -1193,30 +1193,34 @@ export default function Transactions() {
                 Este lançamento faz parte de uma série {recurringDeleteTransaction?.tipo_lancamento === 'parcelada' ? 'parcelada' : 'recorrente'}. O que deseja fazer?
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (recurringDeleteTransaction) {
-                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'single' });
-                    setRecurringDeleteTransaction(null);
-                  }
-                }}
-              >
-                Excluir apenas este mês
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (recurringDeleteTransaction) {
-                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'future' });
-                    setRecurringDeleteTransaction(null);
-                  }
-                }}
-              >
-                Excluir este e todos os seguintes
-              </Button>
+            <AlertDialogFooter className="flex-col gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    if (recurringDeleteTransaction) {
+                      deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'single' });
+                      setRecurringDeleteTransaction(null);
+                    }
+                  }}
+                >
+                  Excluir apenas este mês
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    if (recurringDeleteTransaction) {
+                      deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'future' });
+                      setRecurringDeleteTransaction(null);
+                    }
+                  }}
+                >
+                  Excluir este e todos os seguintes
+                </Button>
+              </div>
+              <AlertDialogCancel className="w-full mt-0">Cancelar</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
