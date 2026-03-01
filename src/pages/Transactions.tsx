@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight, Repeat } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight, Repeat, Sparkles } from 'lucide-react';
 import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +34,7 @@ import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
+import { useAutoCategory } from '@/hooks/useAutoCategory';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
@@ -240,6 +241,7 @@ export default function Transactions() {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
+  const [isSuggested, setIsSuggested] = useState(false);
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
@@ -259,6 +261,16 @@ export default function Transactions() {
   const totalGuardado = transactionsData?.totalGuardado || 0;
   const ultimaTransacaoId = transactionsData?.ultimaTransacaoId;
   const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const filteredCategoriesForAuto = useMemo(() => categories?.filter((c) => c.type === formData.type) || [], [categories, formData.type]);
+  const { suggestedCategoryId, isSuggestion } = useAutoCategory(formData.description, filteredCategoriesForAuto, !editingId);
+
+  // Aplicar sugestão automática quando disponível e nenhuma categoria foi escolhida manualmente
+  useEffect(() => {
+    if (suggestedCategoryId && isSuggestion && !formData.category_id) {
+      setFormData(prev => ({ ...prev, category_id: suggestedCategoryId }));
+      setIsSuggested(true);
+    }
+  }, [suggestedCategoryId, isSuggestion]);
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
@@ -434,6 +446,7 @@ export default function Transactions() {
   const resetForm = () => {
     setFormData(initialFormData);
     setEditingId(null);
+    setIsSuggested(false);
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -609,12 +622,33 @@ export default function Transactions() {
                     />
                   </div>
 
+                  {/* Description - antes da categoria para acionar auto-sugestão */}
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      placeholder="Ex: Almoço no restaurante, Uber para o trabalho..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+
                   {/* Category */}
                   <div className="space-y-2">
-                    <Label>Categoria</Label>
+                    <div className="flex items-center gap-2">
+                      <Label>Categoria</Label>
+                      {isSuggested && formData.category_id && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border-0">
+                          <Sparkles className="w-3 h-3" />
+                          Sugestão automática
+                        </Badge>
+                      )}
+                    </div>
                     <Select 
                       value={formData.category_id} 
-                      onValueChange={(v) => setFormData({ ...formData, category_id: v })}
+                      onValueChange={(v) => {
+                        setFormData({ ...formData, category_id: v });
+                        setIsSuggested(false);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -646,38 +680,6 @@ export default function Transactions() {
                         Vá em Categorias para criar categorias de {formData.type === 'income' ? 'receita' : 'despesa'}
                       </p>
                     )}
-                  </div>
-
-                  {/* Date */}
-                  <div className="space-y-2">
-                    <Label>Data</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {format(formData.date, 'PPP', { locale: ptBR })}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={formData.date}
-                          onSelect={(date) => date && setFormData({ ...formData, date })}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label>Descrição (opcional)</Label>
-                    <Textarea
-                      placeholder="Adicione uma descrição..."
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
                   </div>
 
                   {/* Tipo de Lançamento - Somente para despesas e nova transação */}
