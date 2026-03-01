@@ -257,7 +257,6 @@ export default function Dashboard() {
         const pendingIncome = completeStats?.pendingIncome || 0;
         const pendingExpense = completeStats?.pendingExpense || 0;
         const faturaCartao = completeStats?.faturaCartao || 0;
-        const totalAPagar = pendingExpense + faturaCartao;
         const hasAnyPending = pendingIncome > 0 || pendingExpense > 0 || faturaCartao > 0;
 
         if (!hasAnyPending) return null;
@@ -272,12 +271,9 @@ export default function Dashboard() {
         if (faturaCartao > 0) cards.push(
           <StatCardMinimal key="fatura" title="Fatura Cartão" value={faturaCartao} icon={CreditCard} prefix="-" subInfo="titular do mês" delay={0.3} isLoading={isStatsFetching} />
         );
-        if (totalAPagar > 0) cards.push(
-          <StatCardMinimal key="total" title="Total a Pagar" value={totalAPagar} icon={Wallet} prefix="-" subInfo="contas + cartão" delay={0.35} onClick={() => setDespesasDialogOpen(true)} isLoading={isStatsFetching} />
-        );
 
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             {cards}
           </div>
         );
