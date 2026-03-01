@@ -460,7 +460,9 @@ export default function Transactions() {
     if (isRecurring) {
       setRecurringDeleteTransaction(transaction);
     } else {
-      deleteMutation.mutate(transaction.id);
+      if (window.confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
+        deleteMutation.mutate(transaction.id);
+      }
     }
   };
 
@@ -1445,27 +1447,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(transaction)} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(transaction)} className="bg-destructive text-destructive-foreground">
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7 text-destructive hover:text-destructive" 
+            onClick={() => onDelete(transaction)}
+            title="Excluir"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
       </div>
     </div>
