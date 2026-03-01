@@ -138,14 +138,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/transactions/simulador")}
-          >
-            <Calculator className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Simular Compra</span>
-          </Button>
           <FiltroPeriodo
             mesAtual={mesReferencia}
             onMesChange={setMesReferencia}
