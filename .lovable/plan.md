@@ -1,35 +1,35 @@
 
 
-# Simplificar cards de cartões no Dashboard
+# Melhorar visual das notificações do Dashboard
 
-## O que muda
+## Alterações no arquivo `src/components/dashboard/AlertasInteligentes.tsx`
 
-Nos cards individuais de cada cartão dentro da seção "Cartões de Crédito" do Dashboard, remover informações detalhadas e manter apenas o essencial:
+### 1. Ícones coloridos em fundo circular
+Substituir os ícones inline por versões dentro de um container circular com fundo colorido (laranja para warning, vermelho para danger, azul para info, verde para success). Adicionar `Bell` ao mapa de ícones.
 
-**Manter:**
-- Icone + Nome do cartão + Bandeira
-- Valor da fatura atual (em vermelho)
-- Barra de progresso do limite usado
+### 2. Borda colorida à esquerda
+Cada card terá uma `border-l-[3px]` com cor semântica (laranja para warning, vermelho para danger, etc.) usando `border-l-amber-500`, `border-l-red-500`, etc.
 
-**Remover dos cards individuais:**
-- Linha "Disponível" com valor em verde
-- Texto "X% do limite"
-- Texto "Venc. dia X"
-- Badges de alerta de limite alto e vencimento próximo
+### 3. Fundo branco com sombra
+Cards usarão `bg-white dark:bg-card shadow-sm` em vez do fundo colorido translúcido atual, criando contraste com o fundo cinza da página.
 
-O resumo geral no topo (Faturas, Limite, Disponível) permanece inalterado.
+### 4. Espaçamento interno maior
+Aumentar padding de `p-3` para `p-4` nos cards.
 
-## Alterações técnicas
+### 5. Hierarquia de texto
+- Título: `text-sm font-semibold text-foreground` (mais escuro, semi-bold)
+- Mensagem: texto com partes em destaque -- o nome do banco/cartão ficará com `font-medium text-foreground`, o restante em `text-muted-foreground`
 
-### Arquivo: `src/components/dashboard/CartoesCredito.tsx`
+### 6. Botão X sutil no hover
+O botão de fechar terá `opacity-0 group-hover:opacity-100 transition-opacity` e o card receberá a classe `group`.
 
-Simplificar o componente interno `CartaoCard`:
+### 7. Mapa de cores atualizado
 
-1. Remover do bloco de valores: a div "Disponível" e seu valor
-2. Remover a div inferior com "X% do limite" e "Venc. dia X"
-3. Remover os badges de alerta (AlertTriangle para limite alto e Clock para vencimento próximo) do header
-4. Manter: header com icone/nome/bandeira, linha de fatura, e barra de progresso
-5. Reduzir padding e espaçamento para um card mais compacto
-
-O resultado será um card mais limpo com ~3 linhas de informação: nome, fatura e barra de uso.
+```text
+CORES_TIPO:
+  danger  -> border-l: red-500,    icon-bg: red-100,    icon: red-600
+  warning -> border-l: amber-500,  icon-bg: amber-100,  icon: amber-600
+  info    -> border-l: blue-500,   icon-bg: blue-100,   icon: blue-600
+  success -> border-l: green-500,  icon-bg: green-100,  icon: green-600
+```
 
