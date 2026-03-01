@@ -759,15 +759,14 @@ export default function DespesasCartao() {
                   <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                   <TableHead className="hidden md:table-cell">Responsável</TableHead>
                   <TableHead className="text-center w-20">Parcela</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="hidden xl:table-cell text-center">Alterado</TableHead>
-                  <TableHead className="w-20"></TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
@@ -775,7 +774,7 @@ export default function DespesasCartao() {
 
                 {!loading && parcelasFiltradas.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12">
+                    <TableCell colSpan={8} className="text-center py-12">
                       <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
                       <p className="text-muted-foreground text-sm">
                         {temFiltrosAtivos
@@ -875,22 +874,6 @@ export default function DespesasCartao() {
                         </Badge>
                       </TableCell>
 
-                      <TableCell className="text-right">
-                        <span className={cn(
-                          "font-semibold",
-                          p.paga 
-                            ? "line-through text-muted-foreground" 
-                            : p.valor < 0 
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-destructive"
-                        )}>
-                          {p.valor < 0 
-                            ? `- ${formatCurrency(Math.abs(p.valor))}`
-                            : formatCurrency(p.valor)
-                          }
-                        </span>
-                      </TableCell>
-
                       <TableCell className="hidden xl:table-cell text-center">
                         <span className="text-xs text-muted-foreground">
                           {p.updated_at ? formatarTempoRelativo(p.updated_at) : '-'}
@@ -898,73 +881,36 @@ export default function DespesasCartao() {
                       </TableCell>
 
                       <TableCell data-action-cell>
-                        <div className="flex items-center justify-end gap-0.5">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => {
-                                    setParcelaSelecionada(p);
-                                    setEditarCompraOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-center">
-                                  <div>Editar</div>
-                                  {p.updated_at && (
-                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                      Alterado {formatarTempoRelativo(p.updated_at)}
-                                    </div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => {
-                                    setParcelaSelecionada(p);
-                                    setEstornarCompraOpen(true);
-                                  }}
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Estornar</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => {
-                                    setParcelaSelecionada(p);
-                                    setExcluirCompraOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Excluir</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setParcelaSelecionada(p);
+                              setEditarCompraOpen(true);
+                            }}>
+                              <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setParcelaSelecionada(p);
+                              setEstornarCompraOpen(true);
+                            }}>
+                              <RotateCcw className="h-3.5 w-3.5 mr-2" /> Estornar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => {
+                                setParcelaSelecionada(p);
+                                setExcluirCompraOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
