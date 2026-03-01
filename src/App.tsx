@@ -9,23 +9,22 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Transactions from "./pages/Transactions";
-import Categories from "./pages/Categories";
-import Reports from "./pages/Reports";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import Cartoes from "./pages/Cartoes";
-import Economia from "./pages/Economia";
-import DespesasCartao from "./pages/DespesasCartao";
-import Admin from "./pages/Admin";
-import Notificacoes from "./pages/Notificacoes";
-import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
-import Responsaveis from "./pages/Responsaveis";
-
-// Importar páginas com lazy
 import { lazy, Suspense } from "react";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Profile = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Cartoes = lazy(() => import("./pages/Cartoes"));
+const Economia = lazy(() => import("./pages/Economia"));
+const DespesasCartao = lazy(() => import("./pages/DespesasCartao"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const ConfiguracoesNotificacoes = lazy(() => import("./pages/ConfiguracoesNotificacoes"));
+const Responsaveis = lazy(() => import("./pages/Responsaveis"));
 const MetasPage = lazy(() => import("./pages/Metas"));
 const InvestimentosPage = lazy(() => import("./pages/Investimentos"));
 const FaturasPage = lazy(() => import("./pages/cartoes/Faturas"));
@@ -38,7 +37,6 @@ const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategori
 const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
-
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 const InstalarPage = lazy(() => import("./pages/Instalar"));
@@ -57,6 +55,7 @@ const App = () => (
           <Toaster />
           <Sonner />
         <BrowserRouter>
+          <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth" element={<Auth />} />
@@ -382,6 +381,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
