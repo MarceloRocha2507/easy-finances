@@ -109,6 +109,7 @@ export function useTransactions(filters?: TransactionFilters) {
           *,
           category:categories(*)
         `)
+        .eq('user_id', user!.id)
         .order('date', { ascending: false });
 
       if (filters?.startDate) {
@@ -154,6 +155,7 @@ export function useTransactionStats(filters?: TransactionFilters) {
       let query = supabase
         .from('transactions')
         .select('type, amount, category_id')
+        .eq('user_id', user!.id)
         .eq('status', 'completed');
 
       if (filters?.startDate) {
@@ -214,6 +216,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
           amount,
           category:categories(id, name, icon, color)
         `)
+        .eq('user_id', user!.id)
         .eq('type', 'expense')
         .eq('status', 'completed');
 
@@ -276,6 +279,8 @@ export function useMonthlyData(year: number) {
       const { data, error } = await supabase
         .from('transactions')
         .select('type, amount, date')
+        .eq('user_id', user!.id)
+        .eq('status', 'completed')
         .gte('date', startDate)
         .lte('date', endDate);
 
@@ -796,7 +801,8 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
         .select('id, type, amount, status, created_at')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(10000);
 
       if (allError) throw allError;
 
@@ -890,6 +896,7 @@ export function useCompleteStats(mesReferencia?: Date) {
   return useQuery({
     queryKey: ['complete-stats', user?.id, inicioMes],
     queryFn: async () => {
+     try {
       // Buscar soma de saldo_inicial de todos os bancos ativos
       const { data: bancos } = await supabase
         .from('bancos')
@@ -944,7 +951,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('transactions')
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .limit(10000);
 
       if (allCompletedError) throw allCompletedError;
 
@@ -1071,6 +1079,17 @@ export function useCompleteStats(mesReferencia?: Date) {
         totalInvestido,
         totalGuardado,
       };
+     } catch (error) {
+        console.error('Erro ao calcular estatísticas completas:', error);
+        // Retornar valores zerados para não quebrar o dashboard
+        return {
+          saldoInicial: 0, completedIncome: 0, completedExpense: 0,
+          pendingIncome: 0, pendingExpense: 0, overdueCount: 0, pendingCount: 0,
+          faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
+          realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
+          totalMetas: 0, totalGuardado: 0,
+        };
+      }
     },
     enabled: !!user,
   });
