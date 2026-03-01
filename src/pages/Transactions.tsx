@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
@@ -1185,46 +1186,16 @@ export default function Transactions() {
         />
 
         {/* Dialog exclusão recorrente */}
-        <AlertDialog open={!!recurringDeleteTransaction} onOpenChange={(open) => !open && setRecurringDeleteTransaction(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir lançamento recorrente</AlertDialogTitle>
-              <AlertDialogDescription>
-                Este lançamento faz parte de uma série {recurringDeleteTransaction?.tipo_lancamento === 'parcelada' ? 'parcelada' : 'recorrente'}. O que deseja fazer?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="flex flex-col gap-2 pt-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (recurringDeleteTransaction) {
-                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'single' });
-                    setRecurringDeleteTransaction(null);
-                  }
-                }}
-              >
-                Excluir apenas este mês
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (recurringDeleteTransaction) {
-                    deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode: 'future' });
-                    setRecurringDeleteTransaction(null);
-                  }
-                }}
-              >
-                Excluir este e todos os seguintes
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setRecurringDeleteTransaction(null)}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </AlertDialogContent>
-        </AlertDialog>
+        <RecurringDeleteDialog
+          transaction={recurringDeleteTransaction}
+          onClose={() => setRecurringDeleteTransaction(null)}
+          onDelete={(mode) => {
+            if (recurringDeleteTransaction) {
+              deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode });
+              setRecurringDeleteTransaction(null);
+            }
+          }}
+        />
       </div>
     </Layout>
   );
