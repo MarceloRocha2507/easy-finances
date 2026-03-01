@@ -7,6 +7,8 @@ import {
   Info,
   CheckCircle,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Alerta } from "@/hooks/useDashboardCompleto";
 import { useState } from "react";
@@ -49,6 +51,7 @@ interface Props {
 
 export function AlertasInteligentes({ alertas }: Props) {
   const [dispensados, setDispensados] = useState<string[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
 
   const alertasVisiveis = alertas.filter((a) => !dispensados.includes(a.id));
 
@@ -56,13 +59,22 @@ export function AlertasInteligentes({ alertas }: Props) {
 
   return (
     <div className="space-y-2">
-      {alertasVisiveis.map((alerta) => {
+      <button
+        onClick={() => setCollapsed((prev) => !prev)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+      >
+        <Bell className="h-4 w-4" />
+        <span>Notificações ({alertasVisiveis.length})</span>
+        {collapsed ? <ChevronDown className="h-4 w-4 ml-auto" /> : <ChevronUp className="h-4 w-4 ml-auto" />}
+      </button>
+
+      {!collapsed && alertasVisiveis.map((alerta) => {
         const cores = CORES_TIPO[alerta.tipo] || CORES_TIPO.info;
 
         return (
           <div
             key={alerta.id}
-            className={`group bg-white dark:bg-card shadow-sm rounded-lg border border-l-[3px] ${cores.borderL} p-4 flex items-start justify-between gap-3`}
+            className={`group bg-white dark:bg-card shadow-sm rounded-lg border border-l-[3px] ${cores.borderL} p-4 flex items-start justify-between gap-3 animate-fade-in`}
           >
             <div className="flex items-start gap-3">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cores.iconBg} ${cores.iconColor}`}>
