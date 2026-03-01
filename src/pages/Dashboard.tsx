@@ -23,7 +23,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Percent, Calculator } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Calculator } from "lucide-react";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -280,38 +280,8 @@ export default function Dashboard() {
       })()}
 
 
-      {/* Barra de Comprometimento da Renda */}
-      {(() => {
-        const income = completeStats?.completedIncome || 0;
-        const expense = completeStats?.completedExpense || 0;
-        const percentual = income > 0 ? (expense / income) * 100 : 0;
 
-        return (
-          <div className="border-b border-[hsl(220,13%,91%)] pb-4 mb-4 animate-fade-in">
-            {isStatsFetching ? (
-              <Skeleton className="h-6 w-full rounded-full" />
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-[13px] text-[hsl(220,9%,46%)]">
-                    <BarChart3 className="w-4 h-4 text-[hsl(220,9%,64%)]" />
-                    Comprometimento da Renda
-                  </div>
-                  <span className="text-sm font-bold text-[hsl(220,13%,10%)]">
-                    {percentual.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="h-1 w-full rounded-full bg-[hsl(220,14%,96%)] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[hsl(220,13%,10%)] transition-all"
-                    style={{ width: `${Math.min(percentual, 100)}%` }}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        );
-      })()}
+
 
       {/* Contas a Pagar */}
       <ContasAPagar mesReferencia={mesReferencia} rendaMensal={completeStats?.completedIncome || 0} />
