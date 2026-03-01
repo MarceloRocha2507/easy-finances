@@ -234,7 +234,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         `)
         .eq('user_id', user!.id)
         .eq('type', 'expense')
-        .eq('status', 'completed');
+        .in('status', ['completed', 'pending']);
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
