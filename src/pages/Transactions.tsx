@@ -407,12 +407,14 @@ export default function Transactions() {
           resetForm();
         },
       });
-    } else if (formData.tipoLancamento !== 'unica') {
-      // Usar hook de parcelamento
+    } else if (formData.tipoLancamento !== 'unica' || formData.is_recurring) {
+      // Usar hook de parcelamento para parceladas, fixas E recorrentes
       createInstallmentMutation.mutate({
         baseTransaction: data,
         totalParcelas: formData.totalParcelas,
-        tipoLancamento: formData.tipoLancamento,
+        tipoLancamento: formData.is_recurring && formData.tipoLancamento === 'unica' 
+          ? 'fixa' 
+          : formData.tipoLancamento,
       }, {
         onSuccess: () => {
           setDialogOpen(false);
@@ -860,6 +862,28 @@ export default function Transactions() {
                           {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                             <SelectItem key={day} value={day.toString()}>
                               Dia {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Seletor de repetições para recorrentes */}
+                  {formData.is_recurring && formData.tipoLancamento === 'unica' && (
+                    <div className="space-y-2">
+                      <Label>Quantos meses?</Label>
+                      <Select 
+                        value={formData.totalParcelas.toString()} 
+                        onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[3, 6, 12, 18, 24, 36, 48].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n} meses
                             </SelectItem>
                           ))}
                         </SelectContent>
