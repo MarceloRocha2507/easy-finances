@@ -1,46 +1,38 @@
 
 
-# Add Recurring Delete Confirmation Dialog
+# Fix: Dialog de exclusão recorrente cortado no desktop
 
-## Problem
-When deleting a recurring income (or expense), the system deletes only the single record without asking the user whether they want to delete all occurrences or just the current month. The `useDeleteRecurringTransactions` hook already exists with `single` and `future` modes but is never used in the UI.
+## Problema
+O `AlertDialogFooter` usa `sm:flex-row`, colocando os 3 botoes lado a lado no desktop. Como os textos sao longos ("Excluir apenas este mes", "Excluir este e todos os seguintes"), eles ficam cortados ou apertados.
 
-## Solution
-Add a confirmation dialog specifically for recurring/installment transactions that offers two choices:
-1. "Excluir apenas este mes" (delete only this month)
-2. "Excluir este e todos os seguintes" (delete this and all future)
+## Solucao
 
-For non-recurring transactions, keep the current simple delete behavior.
+### Arquivo: `src/pages/Transactions.tsx` (linhas 1196-1220)
 
-## Changes
+Mudar o `AlertDialogFooter` para manter os botoes empilhados verticalmente tambem no desktop, ja que sao 3 botoes com textos longos:
 
-### File: `src/pages/Transactions.tsx`
+- Trocar `className="flex-col sm:flex-row gap-2"` por `className="flex-col gap-2 sm:flex-row sm:justify-end"`
+- Alternativamente, manter `flex-col` sempre (sem `sm:flex-row`) para garantir que os botoes nunca fiquem cortados
+- Adicionar `w-full sm:w-auto` nos botoes para ficarem proporcionais
 
-**1. Import `useDeleteRecurringTransactions`**
-- Add it to the existing import from `useTransactions`
+A abordagem mais limpa: manter layout em coluna com os 2 botoes destrutivos lado a lado em um grupo separado:
 
-**2. Add state for recurring delete dialog**
-- `recurringDeleteId: string | null` -- tracks which transaction is being considered for deletion
-- `recurringDeleteOpen: boolean` -- controls dialog visibility
+```
+<AlertDialogFooter className="flex-col gap-2">
+  <div className="flex flex-col sm:flex-row gap-2">
+    <Button variant="destructive" className="flex-1">
+      Excluir apenas este mes
+    </Button>
+    <Button variant="destructive" className="flex-1">
+      Excluir este e todos os seguintes
+    </Button>
+  </div>
+  <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+</AlertDialogFooter>
+```
 
-**3. Update `handleDelete` function**
-- Before deleting, check if the transaction is recurring (`is_recurring` or `tipo_lancamento === 'fixa'` or `tipo_lancamento === 'parcelada'`)
-- If recurring: open the new dialog instead of deleting immediately
-- If not recurring: delete as before
-
-**4. Add the recurring delete dialog**
-- An `AlertDialog` with three buttons:
-  - "Cancelar"
-  - "Excluir apenas este mes" -- calls `useDeleteRecurringTransactions` with `mode: 'single'`
-  - "Excluir este e todos os seguintes" -- calls with `mode: 'future'`
-
-**5. Update `TransactionRow` component**
-- Pass the full transaction object to `onDelete` instead of just the `id`, so the parent can check `is_recurring` / `tipo_lancamento`
-- Update the `onDelete` prop type from `(id: string) => void` to `(transaction: Transaction) => void`
-
-### Technical Details
-
-The `TransactionRow` component currently calls `onDelete(transaction.id)` in 3 places (mobile dropdown, desktop dropdown, and desktop AlertDialog). All will be updated to pass the full transaction. The parent `handleDelete` will inspect `transaction.is_recurring` or `transaction.tipo_lancamento` to decide whether to show the recurring dialog or delete directly.
-
-The existing `useDeleteRecurringTransactions` hook handles all the backend logic (grouping by `parent_id`, date-based filtering) -- no backend changes needed.
+Isso garante que:
+- No desktop, os 2 botoes destrutivos ficam lado a lado e o Cancelar embaixo
+- No mobile, tudo fica empilhado verticalmente
+- Nenhum texto fica cortado
 
