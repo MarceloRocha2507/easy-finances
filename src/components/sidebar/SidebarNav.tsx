@@ -22,7 +22,7 @@ import {
   CalendarClock,
   Bot,
   Sparkles,
-  Calculator,
+  
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -40,7 +40,7 @@ const transacoesMenu = {
     { icon: Upload, label: "Importar", href: "/transactions/importar" },
     { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
     { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
-    { icon: Calculator, label: "Simulador", href: "/transactions/simulador" },
+    
   ],
 };
 
