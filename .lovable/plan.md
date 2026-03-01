@@ -1,48 +1,41 @@
 
 
-# Modernizar seção de gráficos do Dashboard
+# Melhorar responsividade mobile das seções do Dashboard
 
-## 1. Reorganizar layout dos gráficos (`src/pages/Dashboard.tsx`)
+## 1. Receitas vs Despesas (`src/pages/Dashboard.tsx`)
 
-### Novo layout
-- "Receitas vs Despesas" ocupa largura total (100%) no topo, fora do grid 2 colunas
-- "Despesas por Categoria" e "Comparativo Mensal" ficam lado a lado (grid 2 colunas)
-- "Gastos por Dia" fica abaixo, largura total
+### Titulo e legenda em linha unica no mobile
+- Alterar o header para empilhar titulo e legenda verticalmente em telas pequenas (`flex-col sm:flex-row`)
+- Reduzir fonte do titulo para `text-sm` no mobile via classe responsiva
+- Legenda fica abaixo do titulo no mobile, alinhada a esquerda
 
-### Mudanças no JSX
-- Extrair o card "Receitas vs Despesas" do grid atual para um bloco solo com `mb-4`
-- Mover `PieChartWithLegend` e `ComparativoMensal` para um grid `lg:grid-cols-2` juntos
-- `GastosDiarios` fica sozinho abaixo
+### Grafico sem cortes
+- Reduzir altura do grafico de `280px` para `220px` no mobile (via estado com `useIsMobile`)
+- Reduzir `margin.left` e `YAxis width` para economizar espaco
+- Usar `tick={{ fontSize: 10 }}` nos eixos para telas pequenas
+- Adicionar `tickFormatter` no XAxis para abreviar meses (ex: "jan." em vez de "janeiro")
 
-## 2. Modernizar "Receitas vs Despesas" (`src/pages/Dashboard.tsx`)
+## 2. Proximas Faturas (`src/components/dashboard/ProximasFaturas.tsx`)
 
-- Aumentar altura do gráfico de 220px para 280px (aproveitando largura total)
-- Barras com cores: `#22c55e` (receitas) e `#f87171` (despesas)
-- Manter `radius={[6, 6, 0, 0]}` para cantos mais arredondados
-- Adicionar legenda compacta inline no header (bolinhas coloridas + texto)
-- Tooltip já existente, manter com estilo atual
+### Manter tudo em uma linha
+- Adicionar `truncate` e `max-w-[80px] sm:max-w-none` no nome do cartao para evitar quebra
+- Reduzir fonte do valor para `text-xs sm:text-sm` para telas muito pequenas
+- Reduzir `gap-2` para `gap-1.5` entre valor e badge
+- Adicionar `whitespace-nowrap` no container de valor + badge
 
-## 3. Compactar "Comparativo Mensal" (`src/components/dashboard/ComparativoMensal.tsx`)
+## 3. Ultimas Compras (`src/components/dashboard/UltimasCompras.tsx`)
 
-- Remover o banner verde "Parabéns! Você está economizando!" e o banner amarelo de atenção
-- Substituir por texto inline sutil com ícone ao lado do percentual (ex: icone check verde + "Economizando" em texto pequeno)
-- Reduzir `CardHeader` padding e título para `text-base font-medium`
-- Reduzir `mb-6` do bloco central para `mb-3`
-- Grid "Mês Atual / Mês Anterior" com padding reduzido (`p-3`) e valores `text-lg` em vez de `text-xl`
-- O badge de percentual continua como destaque principal (manter estilo pill com cor)
+### Linha unica sem cortes
+- Adicionar `truncate` no nome da descricao (ja tem) e limitar largura com `max-w-[120px] sm:max-w-[180px]`
+- Reduzir avatar de `w-8 h-8` para `w-7 h-7 sm:w-8 sm:h-8` no mobile
+- Adicionar `whitespace-nowrap` e `shrink-0` no container de valor + badge de parcelas
+- Reduzir fonte do valor para `text-xs sm:text-sm`
+- Link "Ver todas" recebe `pt-2 pb-1` para espaçamento adequado
 
-## 4. "Despesas por Categoria" -- sem alterações no componente
+## Arquivos alterados
 
-O `PieChartWithLegend` já está bem implementado com donut chart, legenda lateral interativa e empty state. Nenhuma mudança necessária no componente em si.
-
-## 5. "Gastos por Dia" -- sem alterações
-
-Componente já está alinhado com o design system. Mantém posição atual.
-
-## Resumo de arquivos alterados
-
-| Arquivo | Tipo de alteração |
+| Arquivo | Alteracao |
 |---|---|
-| `src/pages/Dashboard.tsx` | Reorganizar grid dos gráficos, atualizar cores das barras, adicionar legenda inline, aumentar altura |
-| `src/components/dashboard/ComparativoMensal.tsx` | Compactar card, remover banners, texto inline sutil, reduzir espaçamentos |
-
+| `src/pages/Dashboard.tsx` | Header responsivo do grafico, altura adaptativa, eixos menores no mobile |
+| `src/components/dashboard/ProximasFaturas.tsx` | Truncate no nome, fonte menor no valor, whitespace-nowrap |
+| `src/components/dashboard/UltimasCompras.tsx` | Limites de largura, avatar menor, whitespace-nowrap, espacamento do link |
