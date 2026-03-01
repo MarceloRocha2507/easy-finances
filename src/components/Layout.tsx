@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, Wallet } from "lucide-react";
+import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WhatsNewDialog } from "@/components/WhatsNewDialog";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const SIDEBAR_WIDTH = 280;
 
@@ -19,6 +20,9 @@ export function Layout({ children }: LayoutProps) {
   const { isAdmin, isCheckingRole } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isDashboard = location.pathname === "/dashboard";
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
@@ -141,7 +145,18 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
-        <div className="p-6 flex-1">{children}</div>
+        <div className="p-6 flex-1">
+          {!isDashboard && (
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer min-h-[44px] min-w-[44px] mb-3"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          )}
+          {children}
+        </div>
       </main>
 
       <WhatsNewDialog />
