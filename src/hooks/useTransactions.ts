@@ -46,6 +46,20 @@ async function enviarNotificacaoTelegram(params: {
   }
 }
 
+// Helper: batch invalidation for all transaction-related caches
+function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClient>) {
+  // Lightweight queries: refetch immediately
+  queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+  queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
+  queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+  queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+
+  // Heavy queries: mark stale but don't refetch until accessed
+  queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'none' });
+  queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'none' });
+}
+
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 
 export type TipoLancamento = 'unica' | 'parcelada' | 'fixa';
@@ -134,6 +148,7 @@ export function useTransactions(filters?: TransactionFilters) {
       return data as Transaction[];
     },
     enabled: !!user,
+    staleTime: 1000 * 30,
   });
 }
 
@@ -192,6 +207,7 @@ export function useTransactionStats(filters?: TransactionFilters) {
       return stats;
     },
     enabled: !!user,
+    staleTime: 1000 * 30,
   });
 }
 
@@ -264,6 +280,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
       }));
     },
     enabled: !!user,
+    staleTime: 1000 * 30,
   });
 }
 
@@ -304,6 +321,7 @@ export function useMonthlyData(year: number) {
       return monthlyData;
     },
     enabled: !!user,
+    staleTime: 1000 * 30,
   });
 }
 
@@ -338,13 +356,7 @@ export function useCreateTransaction() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       toast({
         title: 'Registro criado',
         description: 'O registro financeiro foi criado com sucesso.',
@@ -478,13 +490,7 @@ export function useCreateInstallmentTransaction() {
       return [parentTransaction];
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       
       const msg = variables.tipoLancamento === 'parcelada'
         ? `${variables.totalParcelas} parcelas foram criadas.`
@@ -550,13 +556,7 @@ export function useUpdateTransaction() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       toast({
         title: 'Registro atualizado',
         description: 'O registro financeiro foi atualizado com sucesso.',
@@ -586,13 +586,7 @@ export function useDeleteTransaction() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       toast({
         title: 'Registro removido',
         description: 'O registro financeiro foi removido com sucesso.',
@@ -675,13 +669,7 @@ export function useDeleteRecurringTransactions() {
       }
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       toast({
         title: 'Registro(s) removido(s)',
         description: variables.mode === 'single'
@@ -720,11 +708,7 @@ export function useMarkAsPaid() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['complete-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-completo'] });
+      invalidateTransactionCaches(queryClient);
       toast({
         title: 'Marcado como pago',
         description: 'A transação foi marcada como realizada.',
@@ -884,6 +868,7 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
       };
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 }
 
