@@ -369,12 +369,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Gastos por Dia - largura total */}
-      {dashboardData?.gastosDiarios && (
-        <div className="mb-6">
-          <GastosDiarios dados={dashboardData.gastosDiarios} />
-        </div>
-      )}
 
       {/* Cartões */}
       <div className="mb-6">
