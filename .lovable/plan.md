@@ -1,14 +1,18 @@
 
 
-# Remover Simulador do Menu Lateral
+# Remover card redundante "Total a Pagar"
 
-## O que será feito
+## Problema
 
-Remover o item "Simulador" do submenu de Transações no menu lateral. A rota `/transactions/simulador` continua existindo e acessível por botões/links (como o botão "Simular Compra" no Dashboard), mas não aparece mais como item de navegação no sidebar.
+O card "Total a Pagar" aparece duplicado: uma vez na linha de cards de resumo e outra no rodape da secao "Contas a Pagar".
 
-## Alteração
+## Alteracao
 
-### `src/components/sidebar/SidebarNav.tsx`
+### `src/pages/Dashboard.tsx` (linhas 255-284)
 
-Remover a linha `{ icon: Calculator, label: "Simulador", href: "/transactions/simulador" }` do array `subItems` dentro de `transacoesMenu`. Também remover o import do ícone `Calculator` se não for mais usado em outro lugar deste arquivo.
+1. Remover o bloco que adiciona o card "Total a Pagar" (linhas 275-277)
+2. Ajustar o grid de `lg:grid-cols-4` para `lg:grid-cols-3`, mantendo apenas "A Receber", "A Pagar" e "Fatura Cartao"
+3. Remover a variavel `totalAPagar` que so era usada para esse card
+
+O rodape da secao "Contas a Pagar" (componente `ContasAPagar`) ja exibe o total consolidado e permanece inalterado.
 
