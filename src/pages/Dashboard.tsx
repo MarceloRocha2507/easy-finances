@@ -63,8 +63,8 @@ function formatYAxis(value: number): string {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover border rounded-lg shadow-lg p-3 text-sm">
-        <p className="font-medium capitalize mb-1">{label}</p>
+      <div className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-lg shadow-sm p-3 text-sm">
+        <p className="font-medium capitalize mb-1 text-[#111827] dark:text-white">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} style={{ color: entry.fill }}>
             {entry.name}: {formatCurrency(entry.value)}
@@ -159,29 +159,23 @@ export default function Dashboard() {
         const resultado = (completeStats?.completedIncome || 0) - (completeStats?.completedExpense || 0);
         const isPositive = resultado >= 0;
         return (
-          <Card
-            className="mb-3 rounded-xl border shadow-sm animate-fade-in"
-            style={{ backgroundColor: isPositive ? '#F0FDF4' : '#FEF2F2' }}
-          >
-            <CardContent className="flex flex-col items-center justify-center py-5 gap-1">
-              {isStatsFetching ? (
-                <Skeleton className="h-10 w-48" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {isPositive ? <CheckCircle className="w-4 h-4 text-[hsl(var(--income))]" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
-                    <span>Resultado do Mês</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${isPositive ? 'text-[hsl(var(--income))]' : 'text-destructive'}`}>
+          <div className="mb-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-xl p-4 animate-fade-in">
+            {isStatsFetching ? (
+              <Skeleton className="h-10 w-48" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[12px] text-[#6B7280]">Resultado do Mês</p>
+                  <p className={`text-2xl font-bold ${isPositive ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
                     {formatCurrency(resultado)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">
                     {isPositive ? 'Suas finanças estão no azul este mês.' : 'Você gastou mais do que recebeu este mês.'}
                   </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                </div>
+              </div>
+            )}
+          </div>
         );
       })()}
 
@@ -280,10 +274,10 @@ export default function Dashboard() {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Card className="border rounded-xl shadow-sm animate-fade-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
+        <Card className="border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-xl shadow-none bg-white dark:bg-[#1a1a1a] animate-fade-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
+            <CardTitle className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-[#9CA3AF]" />
               Receitas vs Despesas ({mesReferencia.getFullYear()})
             </CardTitle>
           </CardHeader>
@@ -301,25 +295,25 @@ export default function Dashboard() {
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
-                    stroke="hsl(var(--border))"
+                    stroke="#F3F4F6"
                   />
                   <XAxis
                     dataKey="month"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: "#9CA3AF" }}
                   />
                   <YAxis
                     tickFormatter={formatYAxis}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: "#9CA3AF" }}
                     width={60}
                   />
                   <Tooltip content={<CustomBarTooltip />} />
                   <Bar
                     dataKey="income"
-                    fill="hsl(var(--income))"
+                    fill="#16A34A"
                     name="Receitas"
                     radius={[4, 4, 0, 0]}
                     animationBegin={200}
@@ -328,7 +322,7 @@ export default function Dashboard() {
                   />
                   <Bar
                     dataKey="expense"
-                    fill="hsl(var(--expense))"
+                    fill="#DC2626"
                     name="Despesas"
                     radius={[4, 4, 0, 0]}
                     animationBegin={200}
@@ -338,10 +332,10 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[220px] flex items-center justify-center text-[#9CA3AF]">
                 <div className="text-center">
                   <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p>Nenhum dado registrado</p>
+                  <p className="text-sm">Nenhum dado registrado</p>
                 </div>
               </div>
             )}
