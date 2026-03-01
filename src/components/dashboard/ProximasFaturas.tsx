@@ -74,18 +74,18 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
               className="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/50"
               onClick={() => onCartaoClick?.(fatura.cartaoId)}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${cor}20` }}
                 >
                   <CreditCard className="h-4 w-4" style={{ color: cor }} />
                 </div>
-                <p className="text-sm font-medium">{fatura.cartaoNome}</p>
+                <p className="text-sm font-medium truncate max-w-[80px] sm:max-w-none">{fatura.cartaoNome}</p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-expense">
+              <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <p className="text-xs sm:text-sm font-semibold text-expense">
                   {formatCurrency(fatura.valor)}
                 </p>
                 <Badge variant={badgeVariant} className={`text-xs ${badgeClass}`}>

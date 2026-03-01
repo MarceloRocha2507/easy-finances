@@ -69,21 +69,21 @@ export function UltimasCompras({ compras }: Props) {
               key={compra.id}
               className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${colorClass}`}>
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${colorClass}`}>
                   {getInitials(compra.descricao)}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{compra.descricao}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm font-medium truncate max-w-[120px] sm:max-w-[180px]">{compra.descricao}</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     <CreditCard className="h-3 w-3 inline mr-1" />
                     {compra.cartaoNome} · {compra.data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                <p className="text-sm font-semibold">{formatCurrency(compra.valor)}</p>
+              <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <p className="text-xs sm:text-sm font-semibold">{formatCurrency(compra.valor)}</p>
                 {compra.parcelas > 1 && (
                   <Badge variant="outline" className="text-xs px-1.5 py-0">
                     {compra.parcelas}x
@@ -97,7 +97,7 @@ export function UltimasCompras({ compras }: Props) {
         {compras.length > 4 && (
           <Link
             to="/cartoes"
-            className="block text-center text-xs text-primary hover:underline pt-1"
+            className="block text-center text-xs text-primary hover:underline pt-2 pb-1"
           >
             Ver todas
           </Link>
