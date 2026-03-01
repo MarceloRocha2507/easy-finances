@@ -1,39 +1,90 @@
 
-# Mobile-Responsive "Contas a Pagar" Redesign
 
-## Overview
-Redesign the `ContasAPagar` component to be fully mobile-responsive, applying the specific spacing, typography, layout, and color requirements from the request.
+# Performance Fix: Slow UI Updates After Mutations
 
-## Changes (single file: `src/components/dashboard/ContasAPagar.tsx`)
+## Problem
+When you update a transaction (or any record), the system takes too long to reflect changes because:
 
-### 1. Outer container
-- Change `p-6` to `p-4` on mobile for 16px lateral padding
-- Keep `p-6` on `sm:` breakpoint and above
+1. Each mutation triggers **7 separate cache invalidations** simultaneously
+2. Two of those queries -- `complete-stats` and `dashboard-completo` -- are extremely heavy, each making **8+ sequential database calls**
+3. These two queries overlap significantly, querying the same tables redundantly
+4. The QueryClient has no default `staleTime`, so every invalidation immediately triggers a full refetch
 
-### 2. Header section
-- Title: `text-[16px]` on mobile (currently `text-sm` which is 14px), keep inline with "Ver todas" link
-- Subtitle: explicit `text-[12px]` with secondary color (already `text-xs`, just confirm consistency)
-- Replace `mb-5` with `mb-4` and use `gap-1` for tighter mobile spacing
+## Solution
 
-### 3. Collapsible trigger cards (Faturas de Cartao / Contas Pendentes)
-- Restructure layout to a two-row approach on mobile:
-  - Row 1: Icon (24px / `w-6 h-6`) + Title column (title 14px bold + count 12px gray below) + Value (14px bold red) + Chevron
-  - Move quantity text below title instead of beside the value on mobile
-  - Add `min-w-0` to flex children to prevent text overflow
-- Increase icon container to `w-6 h-6` with icon at `w-4 h-4` (24px visual area)
-- Use `py-3` (12px vertical padding) and `gap-3` instead of margins
-- Add subtle bottom divider between the two collapsible blocks
+### 1. Add default staleTime to QueryClient
+**File:** `src/App.tsx`
 
-### 4. Expanded item rows
-- Ensure `min-w-0` on all flex children
-- Use `gap-2` or `gap-3` consistently instead of margins
+Configure the QueryClient with a default `staleTime` of 30 seconds. This prevents queries that were just fetched from being refetched unnecessarily when multiple invalidations fire.
 
-### 5. Footer totals
-- On mobile: use `grid grid-cols-2 gap-3` for "Total Cartoes" and "Total Contas"
-- On `sm:` and above: keep current flex row layout
-- "Total a Pagar" highlight: full width on mobile with `bg-[#FEF2F2]`, `border border-[#FCA5A5]`, `rounded-lg` (8px), `p-3` (12px), `text-[14px]`
-- Ensure it spans full width (`col-span-2` on mobile grid)
+### 2. Batch invalidations with a single helper
+**File:** `src/hooks/useTransactions.ts`
 
-### Technical details
+Create a helper function `invalidateTransactionCaches(queryClient)` that consolidates all 7 invalidation calls. Instead of calling them sequentially, use `Promise.all()` and add `{ refetchType: 'none' }` to heavy queries, then only actively refetch the lightweight ones. This prevents `complete-stats` and `dashboard-completo` from refetching until the user actually looks at them.
 
-All changes are CSS/layout only in one file. No logic, data, or behavior changes. The restructured trigger uses a flex column for title+count on mobile while keeping the value and chevron on the right.
+### 3. Add staleTime to transaction queries that lack it
+**File:** `src/hooks/useTransactions.ts`
+
+Add `staleTime: 1000 * 30` (30 seconds) to the main `useTransactions`, `useTransactionStats`, `useExpensesByCategory`, and `useMonthlyData` queries. This prevents duplicate refetches during the invalidation cascade.
+
+### 4. Add staleTime to complete-stats
+**File:** `src/hooks/useTransactions.ts`
+
+The `useCompleteStats` query currently has **no staleTime**, so it refetches on every invalidation. Add `staleTime: 1000 * 60 * 2` (2 minutes) to match `dashboard-completo`.
+
+---
+
+## Technical Details
+
+### Changes to `src/App.tsx` (line 48)
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 30, // 30 seconds default
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+```
+
+### Changes to `src/hooks/useTransactions.ts`
+
+**New helper function** (used by all 6 mutation hooks):
+```typescript
+function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClient>) {
+  // Lightweight queries: refetch immediately
+  queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
+  queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
+  queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
+  queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+  
+  // Heavy queries: mark stale but don't refetch until accessed
+  queryClient.invalidateQueries({ 
+    queryKey: ['complete-stats'], 
+    refetchType: 'none' 
+  });
+  queryClient.invalidateQueries({ 
+    queryKey: ['dashboard-completo'], 
+    refetchType: 'none' 
+  });
+}
+```
+
+This change alone will drastically cut update time -- the two heaviest queries (which make 8+ DB calls each) will only refetch when the user navigates to a page that needs them, instead of blocking the UI immediately.
+
+**Add staleTime** to `useCompleteStats`:
+```typescript
+staleTime: 1000 * 60 * 2, // 2 minutes
+```
+
+### Mutations updated
+All 6 mutation hooks (`useCreateTransaction`, `useCreateInstallmentTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, `useDeleteRecurringTransaction`, `useMarkAsPaid`) will use the new `invalidateTransactionCaches` helper instead of 7 individual calls.
+
+## Expected Impact
+- Immediate UI update for transaction list (the lightweight query)
+- Heavy dashboard stats only refetch when the user views them
+- No redundant refetches within the 30-second stale window
+- Overall perceived update time drops from several seconds to under 1 second
+
