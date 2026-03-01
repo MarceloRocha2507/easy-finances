@@ -1,38 +1,46 @@
 
 
-# Fix: Dialog de exclusão recorrente ainda cortando no desktop
+# Mostrar contagem de transacoes no dialog de exclusao recorrente
 
-## Causa raiz
-O componente `AlertDialogFooter` (linha 52 de `alert-dialog.tsx`) aplica classes base `sm:flex-row sm:justify-end sm:space-x-2`. Quando passamos `className="flex-col gap-2"`, o Tailwind Merge nao consegue resolver o conflito corretamente, e os botoes acabam em linha no desktop, ficando cortados pelo `max-w-lg` do `AlertDialogContent`.
+## Problema
+O dialog de exclusao recorrente nao informa quantas transacoes serao afetadas em cada opcao, deixando o usuario sem visibilidade do impacto.
 
 ## Solucao
-Nao usar `AlertDialogFooter` para este caso especifico. Substituir por uma `div` simples com layout em coluna, garantindo que os botoes nunca fiquem lado a lado (ja que os textos sao longos demais para caber em linha).
+Quando o dialog abrir, consultar o banco de dados para contar quantas transacoes pertencem ao mesmo grupo (via `parent_id`) e quantas sao futuras (com `date >= data da transacao selecionada`). Exibir esses numeros nos botoes.
 
-### Arquivo: `src/pages/Transactions.tsx` (linhas 1196-1224)
+## Alteracoes
 
-Substituir:
-```tsx
-<AlertDialogFooter className="flex-col gap-2">
-  <div className="flex flex-col sm:flex-row gap-2">
-    ...buttons...
-  </div>
-  <AlertDialogCancel className="w-full mt-0">Cancelar</AlertDialogCancel>
-</AlertDialogFooter>
+### Arquivo: `src/pages/Transactions.tsx`
+
+**1. Adicionar query para contar transacoes do grupo**
+
+Usar `useQuery` que dispara quando `recurringDeleteTransaction` e definido. A query busca todas as transacoes com o mesmo `parent_id` (ou onde `id === parent_id` do grupo) e conta:
+- Total do grupo (para informacao)
+- Quantidade com `date >= data da transacao selecionada` (para o botao "este e todos os seguintes")
+
+**2. Atualizar textos dos botoes**
+
+- "Excluir apenas este mes (1 lancamento)" -- sempre 1
+- "Excluir este e todos os seguintes (X lancamentos)" -- mostra a contagem real
+
+**3. Atualizar descricao do dialog**
+
+Incluir na descricao o total de lancamentos da serie para dar contexto ao usuario.
+
+### Detalhes tecnicos
+
+A query usara o `parent_id` da transacao selecionada (ou o proprio `id` se ela for a pai) para buscar o grupo:
+
+```typescript
+const groupId = recurringDeleteTransaction?.parent_id || recurringDeleteTransaction?.id;
+
+// Contar futuros: transacoes no grupo com date >= data selecionada
+const { data } = await supabase
+  .from('transactions')
+  .select('id, date')
+  .or(`parent_id.eq.${groupId},id.eq.${groupId}`)
+  .gte('date', recurringDeleteTransaction.date);
 ```
 
-Por:
-```tsx
-<div className="flex flex-col gap-2 pt-2">
-  <Button variant="destructive" onClick={...}>
-    Excluir apenas este mes
-  </Button>
-  <Button variant="destructive" onClick={...}>
-    Excluir este e todos os seguintes
-  </Button>
-  <Button variant="outline" onClick={() => setRecurringDeleteTransaction(null)}>
-    Cancelar
-  </Button>
-</div>
-```
+O `useQuery` tera `enabled: !!recurringDeleteTransaction` para so executar quando o dialog estiver aberto. Enquanto carrega, os botoes mostrarao "..." no lugar do numero.
 
-Isso elimina completamente o conflito de classes do `AlertDialogFooter` e garante layout vertical em todas as telas.
