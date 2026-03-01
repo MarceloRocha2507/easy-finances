@@ -1,61 +1,59 @@
 
-# Fix: Transações recorrentes criando apenas 1 ocorrência
 
-## Causa raiz
+# Clique no texto do mês para voltar ao mês atual
 
-Quando o usuário ativa o toggle "É uma transação recorrente?" com o tipo "Única", o `handleSubmit` verifica na linha 410:
+## Alterações
 
-```typescript
-if (formData.tipoLancamento !== 'unica') {
-  createInstallmentMutation.mutate(...); // Cria múltiplas ocorrências
-} else {
-  createMutation.mutate(data); // Cria apenas 1 registro
-}
-```
+### 1. `src/components/FiltroDataRange.tsx` (usado na página de Transações)
 
-Como `tipoLancamento` continua sendo `'unica'` mesmo com `is_recurring = true`, o código cai no branch simples e cria apenas 1 registro. A lógica de geração de múltiplas ocorrências (que está no `useCreateInstallmentTransaction`) nunca é chamada.
+- Adicionar variável `isMesAtual` que compara `mesSelecionado` com o mês/ano corrente
+- Transformar o `<span>` do label do mês em elemento clicável que reseta para o mês atual
+- Adicionar `cursor-pointer` quando não é o mês atual, e `cursor-default` quando já é
+- Envolver com `Tooltip` do Radix com texto "Voltar para o mês atual"
+- Ao clicar, chamar `setMesSelecionado`, `onStartDateChange` e `onEndDateChange` com o mês atual
 
-Além disso, quando o toggle recorrente está ativo, não aparece nenhum seletor de "quantos meses" — o usuário não tem como definir quantas repetições deseja.
+### 2. `src/components/dashboard/FiltroPeriodo.tsx` (usado no Dashboard e outras páginas)
 
-## Solução
+- Transformar o `SelectTrigger` / label do mês no seletor em algo que, ao clicar diretamente no texto, resete para o mês atual
+- Como esse componente já tem um botão "Hoje" que aparece quando não está no mês atual, a abordagem será adicionar o mesmo comportamento de reset ao clicar no texto do `SelectValue` -- porém, como ele usa um `Select` dropdown, a melhor abordagem é manter o comportamento atual (já tem o botão "Hoje")
 
-### 1. Arquivo: `src/pages/Transactions.tsx` — handleSubmit (linhas 410-429)
+**Foco principal: `FiltroDataRange.tsx`** que é o componente mostrado na screenshot e usado em `/transactions`.
 
-Alterar a condição para também rotear pelo `createInstallmentMutation` quando `is_recurring` estiver ativo:
-
-```typescript
-} else if (formData.tipoLancamento !== 'unica' || formData.is_recurring) {
-  createInstallmentMutation.mutate({
-    baseTransaction: data,
-    totalParcelas: formData.totalParcelas,
-    tipoLancamento: formData.is_recurring && formData.tipoLancamento === 'unica' 
-      ? 'fixa' 
-      : formData.tipoLancamento,
-  }, { ... });
-```
-
-Isso garante que transações com `is_recurring = true` passem pela lógica que gera múltiplos registros, tratando-as como "fixa" internamente.
-
-### 2. Arquivo: `src/pages/Transactions.tsx` — Adicionar seletor de repetições para recorrentes (após linha 867)
-
-Quando `is_recurring` está ativo e `tipoLancamento === 'unica'`, exibir um seletor de "Quantos meses?" (reaproveitando o mesmo padrão já usado para "fixa"):
+### Detalhes técnicos
 
 ```tsx
-{formData.is_recurring && formData.tipoLancamento === 'unica' && (
-  <div className="space-y-2">
-    <Label>Quantos meses?</Label>
-    <Select value={formData.totalParcelas.toString()} onValueChange={...}>
-      <SelectContent>
-        {[3, 6, 12, 18, 24, 36, 48].map(...)}
-      </SelectContent>
-    </Select>
-  </div>
-)}
+// Nova variável
+const isMesAtual = mesSelecionado.getFullYear() === hoje.getFullYear() 
+  && mesSelecionado.getMonth() === hoje.getMonth();
+
+// Função de reset
+const handleResetMesAtual = () => {
+  if (isMesAtual) return;
+  const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  setMesSelecionado(mesAtual);
+  onStartDateChange(startOfMonth(mesAtual));
+  onEndDateChange(endOfMonth(mesAtual));
+};
+
+// Label clicável com Tooltip
+<Tooltip>
+  <TooltipTrigger asChild>
+    <span
+      onClick={handleResetMesAtual}
+      className={cn(
+        "text-xs font-medium capitalize min-w-[110px] text-center select-none",
+        isMesAtivo && "text-accent-foreground",
+        !isMesAtual && "cursor-pointer hover:text-primary",
+        isMesAtual && "cursor-default"
+      )}
+    >
+      {mesLabel}
+    </span>
+  </TooltipTrigger>
+  {!isMesAtual && (
+    <TooltipContent>Voltar para o mês atual</TooltipContent>
+  )}
+</Tooltip>
 ```
 
-### Resultado esperado
-
-- Ao criar uma transação recorrente mensal de 12x, serão gerados 12 registros individuais no banco
-- Todos compartilham o mesmo `parent_id` para identificação como grupo
-- Cada registro tem sua data incrementada mês a mês
-- O seletor de repetições aparece quando o toggle recorrente está ativo
+O componente será envolvido com `TooltipProvider` para que o tooltip funcione.
