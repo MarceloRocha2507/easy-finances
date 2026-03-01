@@ -1,41 +1,23 @@
 
 
-# Melhorar responsividade mobile das seções do Dashboard
+# Corrigir sidebar cortada no mobile
 
-## 1. Receitas vs Despesas (`src/pages/Dashboard.tsx`)
+## Problema
+A sidebar mobile usa `overflow-hidden` no container, o que impede a rolagem quando o conteudo da navegacao e maior que a area visivel. O `SidebarUserSection` no rodape fica cortado ou invisivel em telas pequenas.
 
-### Titulo e legenda em linha unica no mobile
-- Alterar o header para empilhar titulo e legenda verticalmente em telas pequenas (`flex-col sm:flex-row`)
-- Reduzir fonte do titulo para `text-sm` no mobile via classe responsiva
-- Legenda fica abaixo do titulo no mobile, alinhada a esquerda
+## Solucao
 
-### Grafico sem cortes
-- Reduzir altura do grafico de `280px` para `220px` no mobile (via estado com `useIsMobile`)
-- Reduzir `margin.left` e `YAxis width` para economizar espaco
-- Usar `tick={{ fontSize: 10 }}` nos eixos para telas pequenas
-- Adicionar `tickFormatter` no XAxis para abreviar meses (ex: "jan." em vez de "janeiro")
+### Arquivo: `src/components/Layout.tsx`
 
-## 2. Proximas Faturas (`src/components/dashboard/ProximasFaturas.tsx`)
+1. **Trocar `overflow-hidden` por estrutura flex adequada** no aside mobile (linha 102):
+   - Remover `overflow-hidden` do container
+   - O container ja usa `flex flex-col`, entao o `SidebarNav` (que tem `flex-1` e `overflow-y-auto`) vai ocupar o espaco disponivel e rolar internamente
+   - O `SidebarUserSection` fica fixo no rodape
 
-### Manter tudo em uma linha
-- Adicionar `truncate` e `max-w-[80px] sm:max-w-none` no nome do cartao para evitar quebra
-- Reduzir fonte do valor para `text-xs sm:text-sm` para telas muito pequenas
-- Reduzir `gap-2` para `gap-1.5` entre valor e badge
-- Adicionar `whitespace-nowrap` no container de valor + badge
+2. **Ajustar `top-16` para `top-14`** -- o header mobile tem `h-14` (56px), mas `top-16` e 64px, criando um gap de 8px. Corrigir para `top-14` para alinhar corretamente.
 
-## 3. Ultimas Compras (`src/components/dashboard/UltimasCompras.tsx`)
+### Resultado esperado
+- A navegacao rola internamente quando o conteudo e maior que a tela
+- A secao do usuario (avatar, nome, notificacoes) fica sempre visivel no rodape
+- Nenhum conteudo e cortado em telas de 320px ate 768px
 
-### Linha unica sem cortes
-- Adicionar `truncate` no nome da descricao (ja tem) e limitar largura com `max-w-[120px] sm:max-w-[180px]`
-- Reduzir avatar de `w-8 h-8` para `w-7 h-7 sm:w-8 sm:h-8` no mobile
-- Adicionar `whitespace-nowrap` e `shrink-0` no container de valor + badge de parcelas
-- Reduzir fonte do valor para `text-xs sm:text-sm`
-- Link "Ver todas" recebe `pt-2 pb-1` para espaçamento adequado
-
-## Arquivos alterados
-
-| Arquivo | Alteracao |
-|---|---|
-| `src/pages/Dashboard.tsx` | Header responsivo do grafico, altura adaptativa, eixos menores no mobile |
-| `src/components/dashboard/ProximasFaturas.tsx` | Truncate no nome, fonte menor no valor, whitespace-nowrap |
-| `src/components/dashboard/UltimasCompras.tsx` | Limites de largura, avatar menor, whitespace-nowrap, espacamento do link |
