@@ -45,7 +45,7 @@ const InstalarPage = lazy(() => import("./pages/Instalar"));
 const AssistentePage = lazy(() => import("./pages/Assistente"));
 const ChangelogPage = lazy(() => import("./pages/Changelog"));
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
-const SimuladorCompraPage = lazy(() => import("./pages/SimuladorCompra"));
+const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
 
 const queryClient = new QueryClient();
 
