@@ -173,7 +173,7 @@ export async function listarParcelasDaFatura(
         cartao_id,
         created_at,
         updated_at,
-        categoria:categories(id, name, color, icon),
+        categoria:categories!compras_cartao_categoria_id_fkey(id, name, color, icon),
         subcategoria:categories!compras_cartao_subcategoria_id_fkey(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
       )
