@@ -1,26 +1,26 @@
 
 
-# Corrigir gráfico "Despesas por Categoria" vazio
+# Otimizar tabela de despesas do cartao para mobile
 
-## Problema
-O hook `useExpensesByCategory` filtra apenas transações com `status = 'completed'`. No início do mês, todas as despesas ainda estão pendentes, resultando em um gráfico vazio -- mesmo quando existem despesas cadastradas visíveis em outras partes do Dashboard.
+## Alteracoes no arquivo `src/pages/DespesasCartao.tsx`
 
-## Causa raiz
-Arquivo `src/hooks/useTransactions.ts`, linha 237:
-```
-.eq('status', 'completed')
-```
-Essa linha exclui todas as despesas pendentes da contagem por categoria.
+### 1. Remover coluna "Valor" da tabela
+- Remover o `<TableHead>` "Valor" (linha 762)
+- Remover o `<TableCell>` com o valor formatado (linhas 878-892)
+- Reduzir o `colSpan` das celulas de loading/empty de 9 para 8
 
-## Solucao
+### 2. Substituir botoes inline por dropdown de 3 pontos
+- Remover todo o bloco de botoes individuais (Editar, Estornar, Excluir) com tooltips (linhas 900-968)
+- Substituir por um `DropdownMenu` com `MoreVertical` como trigger e 3 itens:
+  - Editar (icone Pencil)
+  - Estornar (icone RotateCcw)  
+  - Excluir (icone Trash2, com estilo destructive)
 
-### Arquivo: `src/hooks/useTransactions.ts`
-
-Substituir o filtro `.eq('status', 'completed')` por `.in('status', ['completed', 'pending'])` na funcao `useExpensesByCategory`.
-
-Isso inclui tanto despesas ja realizadas quanto as previstas para o mes, alinhando o grafico com o comportamento dos outros componentes do Dashboard que ja mostram ambos os status.
+### 3. Remover coluna de acoes do header
+- O `<TableHead className="w-20">` (linha 764) que servia de header para os botoes sera mantido mas com largura menor (`w-10`) para acomodar apenas o botao de 3 pontos
 
 ### Resultado esperado
-- O grafico de pizza mostra todas as despesas do mes (realizadas + previstas)
-- Consistencia visual com o restante do Dashboard
-- Sem impacto nos modulos de Relatorios e Economia (que usam hooks diferentes)
+- Tabela mais compacta: sem coluna de valor, sem 3 botoes por linha
+- Valor acessivel apenas pelo modal de detalhes (clique na linha)
+- Acoes agrupadas num dropdown discreto
+- Melhor legibilidade em telas pequenas
