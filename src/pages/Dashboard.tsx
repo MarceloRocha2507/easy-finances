@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,6 +79,7 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [mesReferencia, setMesReferencia] = useState(new Date());
   const [cartaoSelecionado, setCartaoSelecionado] = useState<CartaoDashboard | null>(null);
@@ -281,12 +283,12 @@ export default function Dashboard() {
       {/* Receitas vs Despesas - largura total */}
       <Card className="border rounded-xl shadow-sm animate-fade-in mb-4" style={{ animationDelay: '0.5s', opacity: 0 }}>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+            <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-2 whitespace-nowrap">
+              <BarChart3 className="w-4 h-4 shrink-0" />
               Receitas vs Despesas ({mesReferencia.getFullYear()})
             </CardTitle>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
                 Receitas
@@ -300,14 +302,14 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           {isMonthlyFetching ? (
-            <div className="h-[280px] flex items-center justify-center">
-              <Skeleton className="w-full h-[260px] rounded-xl" />
+            <div className={`${isMobile ? 'h-[220px]' : 'h-[280px]'} flex items-center justify-center`}>
+              <Skeleton className="w-full h-full rounded-xl" />
             </div>
           ) : hasMonthlyData ? (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
               <BarChart
                 data={monthlyData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                margin={{ top: 10, right: 5, left: isMobile ? -10 : 0, bottom: 0 }}
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -318,14 +320,15 @@ export default function Dashboard() {
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: isMobile ? 10 : 11 }}
+                  tickFormatter={(value: string) => isMobile ? value.slice(0, 3) + '.' : value}
                 />
                 <YAxis
                   tickFormatter={formatYAxis}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11 }}
-                  width={60}
+                  tick={{ fontSize: isMobile ? 10 : 11 }}
+                  width={isMobile ? 45 : 60}
                 />
                 <Tooltip content={<CustomBarTooltip />} />
                 <Bar
@@ -349,7 +352,7 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className={`${isMobile ? 'h-[220px]' : 'h-[280px]'} flex items-center justify-center text-sm text-muted-foreground`}>
               <div className="text-center">
                 <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
                 <p>Nenhum dado registrado</p>
