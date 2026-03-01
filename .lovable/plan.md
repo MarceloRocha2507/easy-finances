@@ -1,59 +1,35 @@
 
 
-# Clique no texto do mês para voltar ao mês atual
+# Simplificar cards de cartões no Dashboard
 
-## Alterações
+## O que muda
 
-### 1. `src/components/FiltroDataRange.tsx` (usado na página de Transações)
+Nos cards individuais de cada cartão dentro da seção "Cartões de Crédito" do Dashboard, remover informações detalhadas e manter apenas o essencial:
 
-- Adicionar variável `isMesAtual` que compara `mesSelecionado` com o mês/ano corrente
-- Transformar o `<span>` do label do mês em elemento clicável que reseta para o mês atual
-- Adicionar `cursor-pointer` quando não é o mês atual, e `cursor-default` quando já é
-- Envolver com `Tooltip` do Radix com texto "Voltar para o mês atual"
-- Ao clicar, chamar `setMesSelecionado`, `onStartDateChange` e `onEndDateChange` com o mês atual
+**Manter:**
+- Icone + Nome do cartão + Bandeira
+- Valor da fatura atual (em vermelho)
+- Barra de progresso do limite usado
 
-### 2. `src/components/dashboard/FiltroPeriodo.tsx` (usado no Dashboard e outras páginas)
+**Remover dos cards individuais:**
+- Linha "Disponível" com valor em verde
+- Texto "X% do limite"
+- Texto "Venc. dia X"
+- Badges de alerta de limite alto e vencimento próximo
 
-- Transformar o `SelectTrigger` / label do mês no seletor em algo que, ao clicar diretamente no texto, resete para o mês atual
-- Como esse componente já tem um botão "Hoje" que aparece quando não está no mês atual, a abordagem será adicionar o mesmo comportamento de reset ao clicar no texto do `SelectValue` -- porém, como ele usa um `Select` dropdown, a melhor abordagem é manter o comportamento atual (já tem o botão "Hoje")
+O resumo geral no topo (Faturas, Limite, Disponível) permanece inalterado.
 
-**Foco principal: `FiltroDataRange.tsx`** que é o componente mostrado na screenshot e usado em `/transactions`.
+## Alterações técnicas
 
-### Detalhes técnicos
+### Arquivo: `src/components/dashboard/CartoesCredito.tsx`
 
-```tsx
-// Nova variável
-const isMesAtual = mesSelecionado.getFullYear() === hoje.getFullYear() 
-  && mesSelecionado.getMonth() === hoje.getMonth();
+Simplificar o componente interno `CartaoCard`:
 
-// Função de reset
-const handleResetMesAtual = () => {
-  if (isMesAtual) return;
-  const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  setMesSelecionado(mesAtual);
-  onStartDateChange(startOfMonth(mesAtual));
-  onEndDateChange(endOfMonth(mesAtual));
-};
+1. Remover do bloco de valores: a div "Disponível" e seu valor
+2. Remover a div inferior com "X% do limite" e "Venc. dia X"
+3. Remover os badges de alerta (AlertTriangle para limite alto e Clock para vencimento próximo) do header
+4. Manter: header com icone/nome/bandeira, linha de fatura, e barra de progresso
+5. Reduzir padding e espaçamento para um card mais compacto
 
-// Label clicável com Tooltip
-<Tooltip>
-  <TooltipTrigger asChild>
-    <span
-      onClick={handleResetMesAtual}
-      className={cn(
-        "text-xs font-medium capitalize min-w-[110px] text-center select-none",
-        isMesAtivo && "text-accent-foreground",
-        !isMesAtual && "cursor-pointer hover:text-primary",
-        isMesAtual && "cursor-default"
-      )}
-    >
-      {mesLabel}
-    </span>
-  </TooltipTrigger>
-  {!isMesAtual && (
-    <TooltipContent>Voltar para o mês atual</TooltipContent>
-  )}
-</Tooltip>
-```
+O resultado será um card mais limpo com ~3 linhas de informação: nome, fatura e barra de uso.
 
-O componente será envolvido com `TooltipProvider` para que o tooltip funcione.
