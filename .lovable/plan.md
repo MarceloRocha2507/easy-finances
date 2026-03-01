@@ -1,51 +1,54 @@
 
-
-# Filtrar relatórios para mostrar apenas compras do titular ("EU")
+# Incluir assinaturas nos gráficos e relatórios
 
 ## Resumo
 
-Atualmente, todas as compras de cartão (incluindo de outros responsáveis) são somadas nos relatórios e gráficos. A mudança fará com que apenas as compras onde o responsável é o titular ("EU" / `is_titular = true`) sejam contabilizadas.
+Assinaturas ativas cujo vencimento (`proxima_cobranca`) cai dentro do período filtrado serão contabilizadas automaticamente nos totais de despesas, gráficos de pizza e análises econômicas -- sem necessidade de clicar "marcar como paga".
 
 ## O que muda para o usuário
 
-- Nos gráficos de pizza, barras e totais, apenas as compras do titular serão contabilizadas
-- Compras de outros responsáveis (dependentes) não afetarão os valores dos relatórios
-- A listagem de compras dentro dos cartões permanece inalterada (mostra tudo)
+- Assinaturas ativas aparecem nos gráficos de categorias e totais de despesas
+- Evita dupla contagem: se a assinatura já foi marcada como paga (gerando uma transação), ela não será somada novamente porque o `proxima_cobranca` já terá avançado para o próximo período
+- A categoria usada será a `category_id` da assinatura
 
 ## Detalhes técnicos
 
+### Lógica de inclusão
+
+Consultar assinaturas com `status = 'ativa'` e `proxima_cobranca` dentro do intervalo de datas do filtro. Cada assinatura encontrada será somada como despesa no valor de `assinatura.valor`, agrupada pela sua `category_id`.
+
 ### Arquivos alterados
 
-#### 1. `src/hooks/useTransactions.ts` -- `useExpensesByCategory`
+#### 1. `src/hooks/useTransactions.ts` -- `useTransactionStats`
 
-Na query de `parcelas_cartao` (linha ~301), adicionar o join com `responsaveis` via `compras_cartao` e filtrar apenas `is_titular = true`:
+Após somar parcelas de cartão (~linha 227), adicionar query:
 
-```text
-De:
-  compra:compras_cartao(categoria_id, categoria:categories!...(...))
+```typescript
+const { data: assinaturas } = await supabase
+  .from('assinaturas')
+  .select('valor, category_id')
+  .eq('user_id', user!.id)
+  .eq('status', 'ativa')
+  .gte('proxima_cobranca', filters.startDate)
+  .lte('proxima_cobranca', filters.endDate);
 
-Para:
-  compra:compras_cartao!inner(
-    categoria_id, 
-    categoria:categories!compras_cartao_categoria_id_fkey(id, name, icon, color),
-    responsavel:responsaveis!inner(is_titular)
-  )
+(assinaturas || []).forEach((a: any) => {
+  const catId = a.category_id;
+  if (metaCategoryIds.length > 0 && catId && metaCategoryIds.includes(catId)) return;
+  stats.totalExpense += Number(a.valor) || 0;
+});
 ```
 
-E adicionar filtro: `.eq('compra.responsavel.is_titular', true)`
+#### 2. `src/hooks/useTransactions.ts` -- `useExpensesByCategory`
 
-Alternativamente, filtrar no forEach client-side verificando `p.compra?.responsavel?.is_titular === true`.
+Após somar parcelas de cartão (~linha 344), adicionar query similar com join na categoria para pegar nome/ícone/cor, e agregar no `categoryMap`.
 
-#### 2. `src/hooks/useEconomia.ts` -- `useAnaliseGastos`
+#### 3. `src/hooks/useEconomia.ts` -- `useAnaliseGastos`
 
-Mesma mudança na query de `parcelas_cartao` (linha ~281): incluir join com responsaveis e filtrar por `is_titular = true`.
+Após somar parcelas de cartão (~linha 318), adicionar a mesma lógica para incluir assinaturas ativas no `totalGasto` e `gastosPorCategoria`.
 
-#### 3. `src/pages/Reports.tsx` (se necessário)
+### Prevenção de dupla contagem
 
-Os relatórios usam `useExpensesByCategory` e `useTransactions`, então a correção nos hooks já cobre os gráficos. Se houver alguma query adicional direta, será ajustada.
-
-### Abordagem
-
-Filtrar no lado do cliente (forEach) em vez de complicar a query do Supabase, verificando `p.compra?.responsavel?.is_titular !== false`. Compras sem responsável definido (null) continuam contando normalmente. Apenas compras explicitamente atribuídas a não-titulares serão excluídas.
-
-Para isso, basta incluir `responsavel:responsaveis(is_titular)` no select e checar no forEach.
+Não há dupla contagem porque:
+- Quando o usuário marca como paga, `proxima_cobranca` avança para o próximo ciclo (ex: mês seguinte)
+- Portanto, no período atual, ou a assinatura está pendente (contada via esta query) ou já foi paga (contada via transactions) -- nunca ambos
