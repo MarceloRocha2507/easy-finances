@@ -191,7 +191,6 @@ export function useTransactionStats(filters?: TransactionFilters) {
       };
 
       data?.forEach((t) => {
-        // Excluir categorias de meta
         if (metaCategoryIds.length > 0 && t.category_id && metaCategoryIds.includes(t.category_id)) {
           return;
         }
@@ -201,6 +200,31 @@ export function useTransactionStats(filters?: TransactionFilters) {
           stats.totalExpense += Number(t.amount);
         }
       });
+
+      // Somar parcelas de cartão de crédito do período
+      if (filters?.startDate || filters?.endDate) {
+        let parcelasQuery = (supabase as any)
+          .from('parcelas_cartao')
+          .select('valor, compra:compras_cartao(categoria_id)')
+          .eq('ativo', true);
+
+        if (filters?.startDate) {
+          parcelasQuery = parcelasQuery.gte('mes_referencia', filters.startDate);
+        }
+        if (filters?.endDate) {
+          parcelasQuery = parcelasQuery.lte('mes_referencia', filters.endDate);
+        }
+
+        const { data: parcelas } = await parcelasQuery;
+
+        (parcelas || []).forEach((p: any) => {
+          const catId = p.compra?.categoria_id;
+          if (metaCategoryIds.length > 0 && catId && metaCategoryIds.includes(catId)) {
+            return;
+          }
+          stats.totalExpense += Number(p.valor) || 0;
+        });
+      }
 
       stats.balance = stats.totalIncome - stats.totalExpense;
 
@@ -254,7 +278,6 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         const categoryId = cat?.id || 'uncategorized';
         const categoryName = cat?.name || 'Sem categoria';
 
-        // Excluir categorias de meta
         if (metaCategoryIds.length > 0 && metaCategoryIds.includes(categoryId)) {
           return;
         }
@@ -270,6 +293,49 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
             icon: categoryIcon,
             color: categoryColor,
             total: Number(t.amount),
+          });
+        }
+      });
+
+      // Somar parcelas de cartão de crédito por categoria
+      let parcelasQuery = (supabase as any)
+        .from('parcelas_cartao')
+        .select(`
+          valor,
+          compra:compras_cartao(categoria_id, categoria:categories(id, name, icon, color))
+        `)
+        .eq('ativo', true);
+
+      if (filters?.startDate) {
+        parcelasQuery = parcelasQuery.gte('mes_referencia', filters.startDate);
+      }
+      if (filters?.endDate) {
+        parcelasQuery = parcelasQuery.lte('mes_referencia', filters.endDate);
+      }
+
+      const { data: parcelas } = await parcelasQuery;
+
+      (parcelas || []).forEach((p: any) => {
+        const catId = p.compra?.categoria_id || 'uncategorized';
+        const cat = p.compra?.categoria as any;
+        const categoryName = cat?.name || 'Sem categoria';
+
+        if (metaCategoryIds.length > 0 && metaCategoryIds.includes(catId)) {
+          return;
+        }
+
+        const categoryIcon = cat?.icon || '📦';
+        const categoryColor = cat?.color || '#6366f1';
+        const valor = Number(p.valor) || 0;
+
+        if (categoryMap.has(catId)) {
+          categoryMap.get(catId)!.total += valor;
+        } else {
+          categoryMap.set(catId, {
+            name: categoryName,
+            icon: categoryIcon,
+            color: categoryColor,
+            total: valor,
           });
         }
       });
@@ -316,6 +382,19 @@ export function useMonthlyData(year: number) {
         } else {
           monthlyData[month].expense += Number(t.amount);
         }
+      });
+
+      // Somar parcelas de cartão de crédito por mês
+      const { data: parcelas } = await (supabase as any)
+        .from('parcelas_cartao')
+        .select('valor, mes_referencia')
+        .eq('ativo', true)
+        .gte('mes_referencia', startDate)
+        .lte('mes_referencia', endDate);
+
+      (parcelas || []).forEach((p: any) => {
+        const month = new Date(p.mes_referencia).getMonth();
+        monthlyData[month].expense += Number(p.valor) || 0;
       });
 
       return monthlyData;
