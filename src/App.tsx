@@ -45,7 +45,14 @@ const ChangelogPage = lazy(() => import("./pages/Changelog"));
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
 const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 30,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
