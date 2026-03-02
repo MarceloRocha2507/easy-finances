@@ -1,54 +1,97 @@
 
-# Incluir assinaturas nos gráficos e relatórios
+
+# Vinculacao automatica entre transacoes de cartao e assinaturas
 
 ## Resumo
 
-Assinaturas ativas cujo vencimento (`proxima_cobranca`) cai dentro do período filtrado serão contabilizadas automaticamente nos totais de despesas, gráficos de pizza e análises econômicas -- sem necessidade de clicar "marcar como paga".
+Criar um sistema que, ao registrar ou importar compras no cartao, verifica automaticamente se correspondem a assinaturas cadastradas. Quando encontra correspondencia, marca a assinatura como paga e vincula visualmente a compra do cartao.
 
-## O que muda para o usuário
+## Mudancas no banco de dados
 
-- Assinaturas ativas aparecem nos gráficos de categorias e totais de despesas
-- Evita dupla contagem: se a assinatura já foi marcada como paga (gerando uma transação), ela não será somada novamente porque o `proxima_cobranca` já terá avançado para o próximo período
-- A categoria usada será a `category_id` da assinatura
+Adicionar colunas na tabela `assinaturas` para rastrear o vinculo com compras de cartao:
 
-## Detalhes técnicos
+- `compra_cartao_id` (uuid, nullable) -- referencia a compra do cartao vinculada
+- `cartao_id_pagamento` (uuid, nullable) -- qual cartao pagou
+- `data_pagamento` (date, nullable) -- data exata do pagamento
+- `valor_cobrado` (numeric, nullable) -- valor real cobrado no cartao
+- `vinculo_automatico` (boolean, default false) -- se foi vinculado automaticamente
 
-### Lógica de inclusão
+## Arquivos novos
 
-Consultar assinaturas com `status = 'ativa'` e `proxima_cobranca` dentro do intervalo de datas do filtro. Cada assinatura encontrada será somada como despesa no valor de `assinatura.valor`, agrupada pela sua `category_id`.
+### `src/services/vincular-assinaturas.ts`
 
-### Arquivos alterados
+Servico central com a logica de correspondencia:
 
-#### 1. `src/hooks/useTransactions.ts` -- `useTransactionStats`
+- `verificarCorrespondencia(descricao, valor, mesReferencia, userId)` -- busca assinaturas ativas que correspondem
+  - Nome: verifica se a descricao da compra contem o nome da assinatura (case-insensitive, sem acentos)
+  - Valor: tolerancia de R$ 0,50
+  - Periodo: mes/ano da transacao bate com o mes de `proxima_cobranca`
+- `vincularAssinaturaAutomaticamente(assinaturaId, compraCartaoId, cartaoId, dataPagamento, valorCobrado)` -- executa o vinculo
+  - Atualiza `proxima_cobranca` para o proximo ciclo
+  - Preenche os campos de vinculo
+- `verificarCorrespondenciaParcial(descricao, valor, mesReferencia, userId)` -- retorna matches com divergencia de valor
 
-Após somar parcelas de cartão (~linha 227), adicionar query:
+## Arquivos modificados
 
-```typescript
-const { data: assinaturas } = await supabase
-  .from('assinaturas')
-  .select('valor, category_id')
-  .eq('user_id', user!.id)
-  .eq('status', 'ativa')
-  .gte('proxima_cobranca', filters.startDate)
-  .lte('proxima_cobranca', filters.endDate);
+### `src/services/compras-cartao.ts` -- `criarCompraCartao`
 
-(assinaturas || []).forEach((a: any) => {
-  const catId = a.category_id;
-  if (metaCategoryIds.length > 0 && catId && metaCategoryIds.includes(catId)) return;
-  stats.totalExpense += Number(a.valor) || 0;
-});
+Apos criar a compra com sucesso, chamar `verificarCorrespondencia`. Se encontrar match exato (nome + valor + periodo), vincular automaticamente. Se match parcial (nome + periodo mas valor diverge), nao vincular -- sera tratado na UI.
+
+### `src/services/importar-compras-cartao.ts` -- `importarComprasEmLote`
+
+Apos importar cada compra, executar a mesma verificacao. Acumular resultados de vinculacoes realizadas para exibir ao usuario.
+
+### `src/hooks/useAssinaturas.ts`
+
+- Expandir a interface `Assinatura` com os novos campos (`compra_cartao_id`, `cartao_id_pagamento`, `data_pagamento`, `valor_cobrado`, `vinculo_automatico`)
+- Ajustar `marcarComoPaga` para **nao criar transacao duplicada** quando a assinatura ja esta vinculada a uma compra de cartao (a despesa ja existe no cartao)
+- Adicionar query para buscar nome do cartao vinculado (join com `cartoes`)
+
+### `src/pages/Assinaturas.tsx` -- Listagem
+
+Na listagem de assinaturas, quando houver vinculo:
+- Exibir badge "Pago via [nome do cartao]" em vez de apenas "Ativa"
+- Mostrar data do pagamento e valor cobrado
+- Mudar icone para indicar vinculo com cartao
+
+Assinaturas sem vinculo no mes vigente permanecem como "pendente" normalmente.
+
+### `src/components/assinaturas/DetalhesAssinaturaDialog.tsx`
+
+Adicionar secao mostrando detalhes do vinculo quando existir:
+- Nome do cartao
+- Data do pagamento
+- Valor cobrado
+- Indicador se foi vinculo automatico
+
+### `src/hooks/useTransactions.ts` e `src/hooks/useEconomia.ts`
+
+Ajustar a logica de inclusao de assinaturas nos relatorios: se a assinatura ja tem `compra_cartao_id` preenchido (paga via cartao), **nao somar** nos relatorios pois a despesa ja esta contabilizada via parcelas do cartao. Apenas assinaturas ativas **sem vinculo** no periodo devem ser somadas.
+
+## Fluxo completo
+
+```text
+Usuario registra/importa compra no cartao
+  |
+  v
+Sistema busca assinaturas ativas do usuario
+  |
+  v
+Para cada assinatura, verifica:
+  - descricao contem nome? (ex: "SPOTIFY" em "Spotify Premium")
+  - valor dentro de R$ 0,50 de tolerancia?
+  - mes/ano corresponde ao proxima_cobranca?
+  |
+  +--> Match exato: vincula automaticamente, avanca proxima_cobranca
+  |
+  +--> Match parcial (valor diverge): nao vincula, sinalizacao futura
+  |
+  +--> Sem match: nada acontece
 ```
 
-#### 2. `src/hooks/useTransactions.ts` -- `useExpensesByCategory`
+## Prevencao de dupla contagem
 
-Após somar parcelas de cartão (~linha 344), adicionar query similar com join na categoria para pegar nome/ícone/cor, e agregar no `categoryMap`.
+- Assinatura vinculada a cartao: despesa ja existe em `parcelas_cartao`, entao a assinatura NAO gera lancamento separado e NAO e somada nos relatorios
+- Assinatura sem vinculo: contabilizada normalmente via query de assinaturas ativas (logica ja implementada)
+- `marcarComoPaga` manual: se a assinatura ja tem vinculo com cartao, pula a criacao de transacao
 
-#### 3. `src/hooks/useEconomia.ts` -- `useAnaliseGastos`
-
-Após somar parcelas de cartão (~linha 318), adicionar a mesma lógica para incluir assinaturas ativas no `totalGasto` e `gastosPorCategoria`.
-
-### Prevenção de dupla contagem
-
-Não há dupla contagem porque:
-- Quando o usuário marca como paga, `proxima_cobranca` avança para o próximo ciclo (ex: mês seguinte)
-- Portanto, no período atual, ou a assinatura está pendente (contada via esta query) ou já foi paga (contada via transactions) -- nunca ambos
