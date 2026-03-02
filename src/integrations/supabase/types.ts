@@ -73,11 +73,14 @@ export type Database = {
       }
       assinaturas: {
         Row: {
+          cartao_id_pagamento: string | null
           categoria: string
           category_id: string | null
+          compra_cartao_id: string | null
           created_at: string
           data_cancelamento: string | null
           data_inicio: string
+          data_pagamento: string | null
           data_pausa: string | null
           frequencia: string
           id: string
@@ -90,13 +93,18 @@ export type Database = {
           updated_at: string
           user_id: string
           valor: number
+          valor_cobrado: number | null
+          vinculo_automatico: boolean
         }
         Insert: {
+          cartao_id_pagamento?: string | null
           categoria?: string
           category_id?: string | null
+          compra_cartao_id?: string | null
           created_at?: string
           data_cancelamento?: string | null
           data_inicio?: string
+          data_pagamento?: string | null
           data_pausa?: string | null
           frequencia?: string
           id?: string
@@ -109,13 +117,18 @@ export type Database = {
           updated_at?: string
           user_id: string
           valor: number
+          valor_cobrado?: number | null
+          vinculo_automatico?: boolean
         }
         Update: {
+          cartao_id_pagamento?: string | null
           categoria?: string
           category_id?: string | null
+          compra_cartao_id?: string | null
           created_at?: string
           data_cancelamento?: string | null
           data_inicio?: string
+          data_pagamento?: string | null
           data_pausa?: string | null
           frequencia?: string
           id?: string
@@ -128,13 +141,29 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor?: number
+          valor_cobrado?: number | null
+          vinculo_automatico?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "assinaturas_cartao_id_pagamento_fkey"
+            columns: ["cartao_id_pagamento"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "assinaturas_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinaturas_compra_cartao_id_fkey"
+            columns: ["compra_cartao_id"]
+            isOneToOne: false
+            referencedRelation: "compras_cartao"
             referencedColumns: ["id"]
           },
         ]

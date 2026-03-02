@@ -3,6 +3,7 @@ import {
   calcularMesReferenciaParcela, 
   formatarDataISO 
 } from "@/lib/dateUtils";
+import { tentarVincularAutomaticamente } from "./vincular-assinaturas";
 
 /* ======================================================
    TIPOS
@@ -131,6 +132,25 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
     .insert(parcelasData);
 
   if (parcelasError && parcelasError.code !== "23505") throw parcelasError;
+
+  // Tentar vincular automaticamente a uma assinatura (apenas compras únicas/fixas de 1 parcela)
+  if (input.parcelas === 1) {
+    const mesStr = input.mesFatura.toISOString().split("T")[0].slice(0, 7); // "YYYY-MM"
+    try {
+      await tentarVincularAutomaticamente(
+        compra.id,
+        input.cartaoId,
+        input.descricao,
+        input.valorTotal,
+        input.dataCompra.toISOString().split("T")[0],
+        mesStr,
+        user.id
+      );
+    } catch (e) {
+      // Não falhar a criação da compra por erro na vinculação
+      console.error("Erro ao tentar vincular assinatura:", e);
+    }
+  }
 }
 
 /* ======================================================

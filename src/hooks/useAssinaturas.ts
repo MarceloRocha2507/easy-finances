@@ -21,9 +21,17 @@ export interface Assinatura {
   data_pausa: string | null;
   created_at: string;
   updated_at: string;
+  // Campos de vínculo com cartão
+  compra_cartao_id: string | null;
+  cartao_id_pagamento: string | null;
+  data_pagamento: string | null;
+  valor_cobrado: number | null;
+  vinculo_automatico: boolean;
+  // Campo virtual (join)
+  cartao_nome?: string;
 }
 
-export type AssinaturaInsert = Omit<Assinatura, "id" | "created_at" | "updated_at">;
+export type AssinaturaInsert = Omit<Assinatura, "id" | "created_at" | "updated_at" | "compra_cartao_id" | "cartao_id_pagamento" | "data_pagamento" | "valor_cobrado" | "vinculo_automatico" | "cartao_nome">;
 
 const INVALIDATE_KEYS = [
   ["assinaturas"],
@@ -51,13 +59,16 @@ export function useAssinaturas() {
   const query = useQuery({
     queryKey: ["assinaturas"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("assinaturas" as any)
-        .select("*")
+      const { data, error } = await (supabase as any)
+        .from("assinaturas")
+        .select("*, cartao:cartoes!assinaturas_cartao_id_pagamento_fkey(nome)")
         .eq("user_id", user!.id)
         .order("proxima_cobranca", { ascending: true });
       if (error) throw error;
-      return data as unknown as Assinatura[];
+      return (data || []).map((a: any) => ({
+        ...a,
+        cartao_nome: a.cartao?.nome || null,
+      })) as Assinatura[];
     },
     enabled: !!user,
   });
@@ -121,21 +132,23 @@ export function useAssinaturas() {
         .eq("id", assinatura.id);
       if (errUpdate) throw errUpdate;
 
-      // 3. Create transaction
-      const hoje = new Date().toISOString().split("T")[0];
-      const { error: errTx } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: user!.id,
-          type: "expense",
-          status: "completed",
-          amount: assinatura.valor,
-          description: `Assinatura - ${assinatura.nome}`,
-          category_id: assinatura.category_id,
-          date: hoje,
-          paid_date: hoje,
-        });
-      if (errTx) throw errTx;
+      // 3. Create transaction only if NOT linked to a card purchase
+      if (!assinatura.compra_cartao_id) {
+        const hoje = new Date().toISOString().split("T")[0];
+        const { error: errTx } = await supabase
+          .from("transactions")
+          .insert({
+            user_id: user!.id,
+            type: "expense",
+            status: "completed",
+            amount: assinatura.valor,
+            description: `Assinatura - ${assinatura.nome}`,
+            category_id: assinatura.category_id,
+            date: hoje,
+            paid_date: hoje,
+          });
+        if (errTx) throw errTx;
+      }
     },
     onSuccess: () => {
       invalidateAll();

@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { Assinatura } from "@/hooks/useAssinaturas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { CreditCard, Zap } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -78,6 +79,35 @@ export function DetalhesAssinaturaDialog({ open, onOpenChange, assinatura }: Pro
               <span className="font-medium">{r.value}</span>
             </div>
           ))}
+
+          {/* Seção de vínculo com cartão */}
+          {assinatura.compra_cartao_id && (
+            <div className="pt-3 mt-3 border-t space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <CreditCard className="h-4 w-4 text-primary" />
+                Pagamento via Cartão
+                {assinatura.vinculo_automatico && (
+                  <Badge variant="secondary" className="text-[10px] h-4 gap-1">
+                    <Zap className="h-3 w-3" /> Auto
+                  </Badge>
+                )}
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Cartão</span>
+                <span className="font-medium">{assinatura.cartao_nome || "—"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Data do pagamento</span>
+                <span className="font-medium">{formatDate(assinatura.data_pagamento)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Valor cobrado</span>
+                <span className="font-medium">
+                  {assinatura.valor_cobrado != null ? formatCurrency(assinatura.valor_cobrado) : "—"}
+                </span>
+              </div>
+            </div>
+          )}
 
           {assinatura.observacoes && (
             <div className="pt-2 border-t">
