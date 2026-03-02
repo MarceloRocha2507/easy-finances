@@ -43,6 +43,7 @@ import {
   CheckCircle,
   Trash2,
   Eye,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -262,6 +263,7 @@ export default function Assinaturas() {
             ) : (
               filtered.map((a) => {
                 const sb = statusBadge[a.status] ?? statusBadge.ativa;
+                const pagoViaCartao = !!a.compra_cartao_id;
                 return (
                   <div
                     key={a.id}
@@ -272,7 +274,11 @@ export default function Assinaturas() {
                     onClick={() => setDetalhes(a)}
                   >
                     <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <Repeat className="w-4 h-4 text-muted-foreground" />
+                      {pagoViaCartao ? (
+                        <CreditCard className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Repeat className="w-4 h-4 text-muted-foreground" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#111827] truncate">{a.nome}</p>
@@ -282,7 +288,13 @@ export default function Assinaturas() {
                         <span className="text-[10px] text-muted-foreground">
                           {format(new Date(a.proxima_cobranca + "T12:00:00"), "dd/MM/yyyy")}
                         </span>
-                        <Badge variant={sb.variant} className="text-[10px] h-4">{sb.label}</Badge>
+                        {pagoViaCartao ? (
+                          <Badge variant="default" className="text-[10px] h-4 gap-0.5">
+                            <CreditCard className="h-3 w-3" /> {a.cartao_nome || "Cartão"}
+                          </Badge>
+                        ) : (
+                          <Badge variant={sb.variant} className="text-[10px] h-4">{sb.label}</Badge>
+                        )}
                       </div>
                     </div>
                     <div className="text-right mr-2 hidden sm:block">
@@ -291,7 +303,13 @@ export default function Assinaturas() {
                         {format(new Date(a.proxima_cobranca + "T12:00:00"), "dd/MM/yyyy")}
                       </p>
                     </div>
-                    <Badge variant={sb.variant} className="hidden sm:inline-flex">{sb.label}</Badge>
+                    {pagoViaCartao ? (
+                      <Badge variant="default" className="hidden sm:inline-flex gap-1">
+                        <CreditCard className="h-3 w-3" /> Pago via {a.cartao_nome || "Cartão"}
+                      </Badge>
+                    ) : (
+                      <Badge variant={sb.variant} className="hidden sm:inline-flex">{sb.label}</Badge>
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

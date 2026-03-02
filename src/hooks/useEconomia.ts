@@ -317,12 +317,13 @@ export function useAnaliseGastos(mesReferencia?: Date) {
         gastosPorCategoria[catId].quantidade += 1;
       });
 
-      // 5b. Buscar assinaturas ativas do mês e somar aos gastos
-      const { data: assinaturas } = await supabase
+      // 5b. Buscar assinaturas ativas do mês e somar aos gastos (apenas sem vínculo com cartão)
+      const { data: assinaturas } = await (supabase as any)
         .from("assinaturas")
         .select(`valor, category_id, categoria:categories!assinaturas_category_id_fkey(id, name, icon, color)`)
         .eq("user_id", user!.id)
         .eq("status", "ativa")
+        .is("compra_cartao_id", null)
         .gte("proxima_cobranca", inicioMes)
         .lte("proxima_cobranca", fimMes);
 
