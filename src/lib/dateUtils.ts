@@ -138,6 +138,59 @@ export function calcularDiasAte(data: Date): number {
 }
 
 /* ======================================================
+   CICLO ATIVO DO CARTÃO
+====================================================== */
+
+/**
+ * Calcula o ciclo ativo (fechamento + vencimento) de um cartão de crédito.
+ * 
+ * Permanece no ciclo atual enquanto o vencimento não tiver passado.
+ * Só avança para o próximo ciclo quando o vencimento também já passou.
+ *
+ * Exemplo (fech=2, venc=9, hoje=03/03):
+ * - Fechamento 02/03 já passou, mas vencimento 09/03 ainda não → mostra ciclo de março
+ */
+export function calcularCicloAtualCartao(
+  diaFechamento: number,
+  diaVencimento: number,
+  base = new Date()
+): { dataFechamento: Date; dataVencimento: Date } {
+  const ano = base.getFullYear();
+  const mes = base.getMonth();
+  const hoje = new Date(ano, mes, base.getDate());
+
+  // Fechamento do mês atual
+  const fechAtual = new Date(ano, mes, clampDiaNoMes(ano, mes, diaFechamento));
+  const vencAtual = calcularDataVencimentoCartao(fechAtual, diaFechamento, diaVencimento);
+
+  // Fechamento do mês anterior
+  const mesAnt = mes - 1;
+  const anoAnt = mesAnt < 0 ? ano - 1 : ano;
+  const mesAntIdx = mesAnt < 0 ? 11 : mesAnt;
+  const fechAnt = new Date(anoAnt, mesAntIdx, clampDiaNoMes(anoAnt, mesAntIdx, diaFechamento));
+  const vencAnt = calcularDataVencimentoCartao(fechAnt, diaFechamento, diaVencimento);
+
+  // Se o vencimento do ciclo anterior ainda não passou, usar ciclo anterior
+  if (vencAnt >= hoje) {
+    return { dataFechamento: fechAnt, dataVencimento: vencAnt };
+  }
+
+  // Se o vencimento do ciclo atual ainda não passou, usar ciclo atual
+  if (vencAtual >= hoje) {
+    return { dataFechamento: fechAtual, dataVencimento: vencAtual };
+  }
+
+  // Ambos passaram → próximo ciclo
+  const proxMes = mes + 1;
+  const anoProx = proxMes > 11 ? ano + 1 : ano;
+  const mesProxIdx = proxMes > 11 ? 0 : proxMes;
+  const fechProx = new Date(anoProx, mesProxIdx, clampDiaNoMes(anoProx, mesProxIdx, diaFechamento));
+  const vencProx = calcularDataVencimentoCartao(fechProx, diaFechamento, diaVencimento);
+
+  return { dataFechamento: fechProx, dataVencimento: vencProx };
+}
+
+/* ======================================================
    UTILITÁRIOS GERAIS DE DATA
 ====================================================== */
 

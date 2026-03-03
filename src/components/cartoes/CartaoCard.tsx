@@ -2,8 +2,7 @@ import { CreditCard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { listarParcelasDaFatura } from "@/services/compras-cartao";
 import {
-  calcularProximaOcorrenciaDia,
-  calcularDataVencimentoCartao,
+  calcularCicloAtualCartao,
   calcularDiasAte,
 } from "@/lib/dateUtils";
 
@@ -81,12 +80,8 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
       : "hsl(142, 71%, 45%)";
 
   const { dataFechamento, dataVencimento, diasFechamento, diasVencimento } = useMemo(() => {
-    const fechamento = calcularProximaOcorrenciaDia(cartao.dia_fechamento);
-    const vencimento = calcularDataVencimentoCartao(
-      fechamento,
-      cartao.dia_fechamento,
-      cartao.dia_vencimento
-    );
+    const { dataFechamento: fechamento, dataVencimento: vencimento } =
+      calcularCicloAtualCartao(cartao.dia_fechamento, cartao.dia_vencimento);
 
     return {
       dataFechamento: fechamento,
