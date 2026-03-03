@@ -1,21 +1,48 @@
 
-## Ajuste de Contraste: muted-foreground
 
-### Problema
-A cor `--muted-foreground` no modo claro (`hsl(220, 9%, 46%)`) sobre o fundo (`hsl(0, 0%, 98.4%)`) tem ratio de contraste de aproximadamente **4.2:1**, abaixo do minimo WCAG AA de **4.5:1** para texto normal.
+## Problema
 
-No modo escuro o contraste ja passa (~5.8:1), entao so precisa de ajuste no light mode.
+No `CartaoCard`, as datas de fechamento e vencimento sao calculadas de forma independente usando `calcularProximaOcorrenciaDia`, que retorna a proxima ocorrencia FUTURA de um dia. Para o Mercado Pago (fechamento dia 2, vencimento dia 9), em 03/03/2026:
 
-### Solucao
-Escurecer levemente o `--muted-foreground` do light mode de **46%** para **42%** de lightness. Isso eleva o ratio para ~**5.0:1**, passando o criterio WCAG AA sem alterar visivelmente o design (a cor fica apenas um tom mais escuro).
+- `calcularProximaOcorrenciaDia(2)` → dia 2 ja passou → retorna **02/04/2026**
+- `calcularDataVencimentoCartao(02/04, 2, 9)` → 9 > 2, mesmo mes → **09/04/2026**
 
-### Alteracao
+Resultado: mostra abril, mas a fatura de marco fechou dia 2 e ainda vence dia 9 (daqui 6 dias). O usuario precisa ver as datas do ciclo ATIVO, nao do proximo ciclo.
 
-**Arquivo: `src/index.css`**
-- Linha 25: alterar `--muted-foreground: 220 9% 46%` para `--muted-foreground: 220 9% 42%`
+## Logica correta
 
-### Impacto
-- Todos os textos que usam `text-muted-foreground` ficam levemente mais escuros no modo claro
-- Nenhuma alteracao funcional
-- Melhoria no score de acessibilidade do Lighthouse
-- Modo escuro nao e afetado
+O cartao tem um ciclo: fecha no dia X, vence no dia Y. Se hoje esta ENTRE o fechamento e o vencimento do ciclo atual, deve mostrar as datas desse ciclo (fechamento ja passou, vencimento ainda por vir). So avanca para o proximo ciclo quando o vencimento tambem ja passou.
+
+## Alteracoes
+
+### 1. `src/lib/dateUtils.ts` — nova funcao `calcularCicloAtualCartao`
+
+Adicionar funcao que calcula o ciclo ativo do cartao:
+
+```typescript
+export function calcularCicloAtualCartao(
+  diaFechamento: number,
+  diaVencimento: number,
+  base = new Date()
+): { dataFechamento: Date; dataVencimento: Date } {
+  // Calcula o fechamento mais recente (passado ou hoje)
+  // e o proximo fechamento, depois determina qual ciclo esta ativo
+  // baseado em se o vencimento desse ciclo ja passou ou nao
+}
+```
+
+Logica:
+- Calcular fechamento do mes atual e do mes anterior
+- Para cada fechamento, calcular o vencimento correspondente
+- Se o vencimento do ciclo anterior ainda nao passou → usar ciclo anterior
+- Caso contrario → usar ciclo atual (proximo fechamento)
+
+### 2. `src/components/cartoes/CartaoCard.tsx` — usar nova funcao
+
+Substituir o `useMemo` (linhas 82-97) para usar `calcularCicloAtualCartao` em vez de `calcularProximaOcorrenciaDia` + `calcularDataVencimentoCartao` separadamente.
+
+### Resultado esperado (03/03/2026, Mercado Pago, fech=2, venc=9)
+
+- Fechamento: 02/03/2026 (em -1 dia → "passou")
+- Vencimento: 09/03/2026 (em 6 dias)
+
