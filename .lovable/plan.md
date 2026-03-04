@@ -2,47 +2,25 @@
 
 ## Problema
 
-No `CartaoCard`, as datas de fechamento e vencimento sao calculadas de forma independente usando `calcularProximaOcorrenciaDia`, que retorna a proxima ocorrencia FUTURA de um dia. Para o Mercado Pago (fechamento dia 2, vencimento dia 9), em 03/03/2026:
+Quando uma transacao e adicionada/editada/removida, a funcao `invalidateTransactionCaches` marca as queries `complete-stats` e `dashboard-completo` como stale com `refetchType: 'none'` (linha 59-60 de `useTransactions.ts`). Isso significa que os dados so sao rebuscados quando o componente remonta — mas como o Dashboard ja esta montado, os cards nao atualizam.
 
-- `calcularProximaOcorrenciaDia(2)` → dia 2 ja passou → retorna **02/04/2026**
-- `calcularDataVencimentoCartao(02/04, 2, 9)` → 9 > 2, mesmo mes → **09/04/2026**
+## Solucao
 
-Resultado: mostra abril, mas a fatura de marco fechou dia 2 e ainda vence dia 9 (daqui 6 dias). O usuario precisa ver as datas do ciclo ATIVO, nao do proximo ciclo.
+Alterar `refetchType: 'none'` para `refetchType: 'active'` nas duas queries pesadas. Isso faz com que, se o Dashboard estiver visivel (queries ativas), elas sejam refetchadas imediatamente. Se o usuario estiver em outra pagina, os dados ficam apenas marcados como stale (sem fetch desnecessario).
 
-## Logica correta
+## Alteracao
 
-O cartao tem um ciclo: fecha no dia X, vence no dia Y. Se hoje esta ENTRE o fechamento e o vencimento do ciclo atual, deve mostrar as datas desse ciclo (fechamento ja passou, vencimento ainda por vir). So avanca para o proximo ciclo quando o vencimento tambem ja passou.
-
-## Alteracoes
-
-### 1. `src/lib/dateUtils.ts` — nova funcao `calcularCicloAtualCartao`
-
-Adicionar funcao que calcula o ciclo ativo do cartao:
+**Arquivo: `src/hooks/useTransactions.ts`** (linhas 59-60)
 
 ```typescript
-export function calcularCicloAtualCartao(
-  diaFechamento: number,
-  diaVencimento: number,
-  base = new Date()
-): { dataFechamento: Date; dataVencimento: Date } {
-  // Calcula o fechamento mais recente (passado ou hoje)
-  // e o proximo fechamento, depois determina qual ciclo esta ativo
-  // baseado em se o vencimento desse ciclo ja passou ou nao
-}
+// Antes:
+queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'none' });
+queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'none' });
+
+// Depois:
+queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
+queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
 ```
 
-Logica:
-- Calcular fechamento do mes atual e do mes anterior
-- Para cada fechamento, calcular o vencimento correspondente
-- Se o vencimento do ciclo anterior ainda nao passou → usar ciclo anterior
-- Caso contrario → usar ciclo atual (proximo fechamento)
-
-### 2. `src/components/cartoes/CartaoCard.tsx` — usar nova funcao
-
-Substituir o `useMemo` (linhas 82-97) para usar `calcularCicloAtualCartao` em vez de `calcularProximaOcorrenciaDia` + `calcularDataVencimentoCartao` separadamente.
-
-### Resultado esperado (03/03/2026, Mercado Pago, fech=2, venc=9)
-
-- Fechamento: 02/03/2026 (em -1 dia → "passou")
-- Vencimento: 09/03/2026 (em 6 dias)
+`refetchType: 'active'` refetcha apenas queries que tem observers ativos (componentes montados usando esses dados). E o comportamento padrao do `invalidateQueries` — seguro e sem overhead extra.
 
