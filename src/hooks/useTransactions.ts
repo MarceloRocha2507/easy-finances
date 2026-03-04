@@ -56,8 +56,8 @@ function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClie
   queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
 
   // Heavy queries: mark stale but don't refetch until accessed
-  queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'none' });
-  queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'none' });
+  queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
+  queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
 }
 
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
