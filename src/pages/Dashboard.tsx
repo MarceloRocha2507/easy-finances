@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Calculator } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, Pencil, Clock, AlertTriangle, CreditCard, BarChart3, CheckCircle, HelpCircle, Calculator, RefreshCw } from "lucide-react";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -133,20 +133,25 @@ export default function Dashboard() {
       <div className="page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
+        <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
             Olá, {user?.user_metadata?.full_name || "Usuário"}
           </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-8 w-8"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <FiltroPeriodo
-            mesAtual={mesReferencia}
-            onMesChange={setMesReferencia}
-            onRefresh={() => refetch()}
-            isLoading={isFetching}
-          />
-        </div>
+        <FiltroPeriodo
+          mesAtual={mesReferencia}
+          onMesChange={setMesReferencia}
+        />
       </div>
 
       {/* Alertas */}
