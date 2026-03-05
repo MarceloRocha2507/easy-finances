@@ -2,43 +2,38 @@
 
 ## Problema
 
-O `FiltroPeriodo` renderiza botões de navegação, select de mês, botão "Hoje" e botão de refresh todos em uma linha horizontal. Em telas de celular, isso ultrapassa a largura da tela.
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
 ## Solução
 
-Mover o botão de atualizar (refresh) para fora do `FiltroPeriodo`, colocando-o ao lado do nome do usuário ou como um botão independente no header do Dashboard. Assim o `FiltroPeriodo` fica mais compacto.
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
 
-### Alterações
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
 
-**Arquivo: `src/pages/Dashboard.tsx` (linhas 135-149)**
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
 
-Reorganizar o header: mover o `onRefresh` para fora do `FiltroPeriodo` e posicioná-lo como um botão separado no header, ao lado da saudação do usuário:
+## Alterações
 
-```tsx
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-  <div className="flex items-center gap-2">
-    <p className="text-sm text-muted-foreground">
-      Olá, {user?.user_metadata?.full_name || "Usuário"}
-    </p>
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => refetch()}
-      disabled={isFetching}
-      className="h-8 w-8"
-    >
-      <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-    </Button>
-  </div>
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
 
-  <FiltroPeriodo
-    mesAtual={mesReferencia}
-    onMesChange={setMesReferencia}
-  />
-</div>
-```
+Reescrever o componente:
 
-- Remover as props `onRefresh` e `isLoading` da chamada do `FiltroPeriodo`
-- Importar `RefreshCw` de `lucide-react` no Dashboard (se ainda não importado)
-- O `FiltroPeriodo` continua funcionando normalmente, apenas sem renderizar o botão de refresh (ele já tem a condicional `{onRefresh && ...}`)
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
+
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
 
