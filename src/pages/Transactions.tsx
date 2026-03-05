@@ -682,6 +682,28 @@ export default function Transactions() {
                     )}
                   </div>
 
+                  {/* Data */}
+                  <div className="space-y-2">
+                    <Label>Data</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start font-normal">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {format(formData.date, "dd/MM/yyyy", { locale: ptBR })}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={formData.date}
+                          onSelect={(date) => date && setFormData({ ...formData, date })}
+                          locale={ptBR}
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
                   {/* Tipo de Lançamento - Somente para despesas e nova transação */}
                   {formData.type === 'expense' && !editingId && (
                     <div className="space-y-3">
