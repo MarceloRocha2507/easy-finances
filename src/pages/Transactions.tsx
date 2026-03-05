@@ -149,6 +149,14 @@ const GRUPO_CONFIG = {
     key: 'receitas_avulsas',
     label: 'Receitas',
   },
+  despesas_pendentes: {
+    key: 'despesas_pendentes',
+    label: 'Despesas Pendentes',
+  },
+  receitas_pendentes: {
+    key: 'receitas_pendentes',
+    label: 'Receitas Pendentes',
+  },
 } as const;
 
 function classificarItem(item: Transaction | FaturaVirtual): string {
@@ -176,6 +184,11 @@ function agruparTransacoes(items: (Transaction | FaturaVirtual)[], activeTab: Ta
     if (activeTab === 'expense' && grupoKey.startsWith('receitas')) {
       grupoKey = 'despesas';
     }
+    // Na tab "pending", agrupar por tipo
+    if (activeTab === 'pending') {
+      const isIncome = 'type' in item && item.type === 'income';
+      grupoKey = isIncome ? 'receitas_pendentes' : 'despesas_pendentes';
+    }
 
     if (!gruposMap.has(grupoKey)) {
       gruposMap.set(grupoKey, []);
@@ -184,7 +197,7 @@ function agruparTransacoes(items: (Transaction | FaturaVirtual)[], activeTab: Ta
   }
 
   // Ordem dos grupos
-  const ordemGrupos = ['faturas', 'fixas', 'despesas', 'receitas_fixas', 'receitas_avulsas', 'receitas'];
+  const ordemGrupos = ['faturas', 'fixas', 'despesas', 'receitas_fixas', 'receitas_avulsas', 'receitas', 'despesas_pendentes', 'receitas_pendentes'];
 
   return ordemGrupos
     .filter(key => gruposMap.has(key))
@@ -365,7 +378,7 @@ export default function Transactions() {
   }, [activeTransactions]);
 
   // Tabs que usam agrupamento
-  const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income';
+  const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income' || activeTab === 'pending';
 
   const grupos = useMemo(() => {
     if (!useGrouping) return [];
