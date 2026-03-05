@@ -2,25 +2,42 @@
 
 ## Problema
 
-Quando uma transacao e adicionada/editada/removida, a funcao `invalidateTransactionCaches` marca as queries `complete-stats` e `dashboard-completo` como stale com `refetchType: 'none'` (linha 59-60 de `useTransactions.ts`). Isso significa que os dados so sao rebuscados quando o componente remonta — mas como o Dashboard ja esta montado, os cards nao atualizam.
+O formulário de "Novo Registro" (receita e despesa) está sem o campo **Data**. O formData tem `date: Date` e o `handleSubmit` usa `formData.date`, mas nenhum date picker é renderizado no dialog. A data está sempre fixada em `new Date()` (hoje), sem possibilidade de o usuário alterar.
+
+Comparando as duas screenshots com o código (linhas 568-895), o formulário pula direto de Categoria para "Tipo de lançamento" (despesa) ou para o toggle de recorrência (receita), sem campo de data.
 
 ## Solucao
 
-Alterar `refetchType: 'none'` para `refetchType: 'active'` nas duas queries pesadas. Isso faz com que, se o Dashboard estiver visivel (queries ativas), elas sejam refetchadas imediatamente. Se o usuario estiver em outra pagina, os dados ficam apenas marcados como stale (sem fetch desnecessario).
+Adicionar um **Date Picker** no formulário, posicionado entre a Categoria e o "Tipo de lançamento". O componente Calendar + Popover já estão importados no arquivo.
 
 ## Alteracao
 
-**Arquivo: `src/hooks/useTransactions.ts`** (linhas 59-60)
+**Arquivo: `src/pages/Transactions.tsx`**
 
-```typescript
-// Antes:
-queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'none' });
-queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'none' });
+Inserir entre o bloco de Categoria (após linha ~683) e o bloco de "Tipo de lançamento" (linha 685) um campo de data:
 
-// Depois:
-queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
-queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
+```tsx
+{/* Data */}
+<div className="space-y-2">
+  <Label>Data</Label>
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button variant="outline" className="w-full justify-start font-normal">
+        <Calendar className="mr-2 h-4 w-4" />
+        {format(formData.date, "dd/MM/yyyy", { locale: ptBR })}
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent className="w-auto p-0" align="start">
+      <CalendarComponent
+        mode="single"
+        selected={formData.date}
+        onSelect={(date) => date && setFormData({ ...formData, date })}
+        locale={ptBR}
+      />
+    </PopoverContent>
+  </Popover>
+</div>
 ```
 
-`refetchType: 'active'` refetcha apenas queries que tem observers ativos (componentes montados usando esses dados). E o comportamento padrao do `invalidateQueries` — seguro e sem overhead extra.
+Todos os imports necessarios (Calendar, Popover, CalendarComponent, format, ptBR) ja estao presentes no arquivo.
 
