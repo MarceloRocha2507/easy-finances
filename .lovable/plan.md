@@ -2,42 +2,26 @@
 
 ## Problema
 
-O formulário de "Novo Registro" (receita e despesa) está sem o campo **Data**. O formData tem `date: Date` e o `handleSubmit` usa `formData.date`, mas nenhum date picker é renderizado no dialog. A data está sempre fixada em `new Date()` (hoje), sem possibilidade de o usuário alterar.
-
-Comparando as duas screenshots com o código (linhas 568-895), o formulário pula direto de Categoria para "Tipo de lançamento" (despesa) ou para o toggle de recorrência (receita), sem campo de data.
+Na aba "Pendentes", todas as transacoes aparecem numa lista flat sem separacao entre despesas e receitas. O usuario quer que sejam agrupadas.
 
 ## Solucao
 
-Adicionar um **Date Picker** no formulário, posicionado entre a Categoria e o "Tipo de lançamento". O componente Calendar + Popover já estão importados no arquivo.
+Ativar o sistema de agrupamento para a aba `pending`, com dois grupos simples: "Despesas Pendentes" e "Receitas Pendentes".
 
-## Alteracao
+## Alteracoes
 
 **Arquivo: `src/pages/Transactions.tsx`**
 
-Inserir entre o bloco de Categoria (após linha ~683) e o bloco de "Tipo de lançamento" (linha 685) um campo de data:
+1. **Linha 127-152** — Adicionar configs de grupo para pendentes no `GRUPO_CONFIG`:
+   - `despesas_pendentes: { key: 'despesas_pendentes', label: 'Despesas Pendentes' }`
+   - `receitas_pendentes: { key: 'receitas_pendentes', label: 'Receitas Pendentes' }`
 
-```tsx
-{/* Data */}
-<div className="space-y-2">
-  <Label>Data</Label>
-  <Popover>
-    <PopoverTrigger asChild>
-      <Button variant="outline" className="w-full justify-start font-normal">
-        <Calendar className="mr-2 h-4 w-4" />
-        {format(formData.date, "dd/MM/yyyy", { locale: ptBR })}
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-auto p-0" align="start">
-      <CalendarComponent
-        mode="single"
-        selected={formData.date}
-        onSelect={(date) => date && setFormData({ ...formData, date })}
-        locale={ptBR}
-      />
-    </PopoverContent>
-  </Popover>
-</div>
-```
+2. **Linha 165-204** — Na funcao `agruparTransacoes`, adicionar logica para `activeTab === 'pending'`:
+   - Classificar itens como `despesas_pendentes` ou `receitas_pendentes` baseado no `type`
+   - Adicionar esses keys na `ordemGrupos`
 
-Todos os imports necessarios (Calendar, Popover, CalendarComponent, format, ptBR) ja estao presentes no arquivo.
+3. **Linha 368** — Alterar `useGrouping` para incluir `pending`:
+   ```typescript
+   const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income' || activeTab === 'pending';
+   ```
 
