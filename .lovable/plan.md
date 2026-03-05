@@ -2,26 +2,43 @@
 
 ## Problema
 
-Na aba "Pendentes", todas as transacoes aparecem numa lista flat sem separacao entre despesas e receitas. O usuario quer que sejam agrupadas.
+O `FiltroPeriodo` renderiza botões de navegação, select de mês, botão "Hoje" e botão de refresh todos em uma linha horizontal. Em telas de celular, isso ultrapassa a largura da tela.
 
-## Solucao
+## Solução
 
-Ativar o sistema de agrupamento para a aba `pending`, com dois grupos simples: "Despesas Pendentes" e "Receitas Pendentes".
+Mover o botão de atualizar (refresh) para fora do `FiltroPeriodo`, colocando-o ao lado do nome do usuário ou como um botão independente no header do Dashboard. Assim o `FiltroPeriodo` fica mais compacto.
 
-## Alteracoes
+### Alterações
 
-**Arquivo: `src/pages/Transactions.tsx`**
+**Arquivo: `src/pages/Dashboard.tsx` (linhas 135-149)**
 
-1. **Linha 127-152** — Adicionar configs de grupo para pendentes no `GRUPO_CONFIG`:
-   - `despesas_pendentes: { key: 'despesas_pendentes', label: 'Despesas Pendentes' }`
-   - `receitas_pendentes: { key: 'receitas_pendentes', label: 'Receitas Pendentes' }`
+Reorganizar o header: mover o `onRefresh` para fora do `FiltroPeriodo` e posicioná-lo como um botão separado no header, ao lado da saudação do usuário:
 
-2. **Linha 165-204** — Na funcao `agruparTransacoes`, adicionar logica para `activeTab === 'pending'`:
-   - Classificar itens como `despesas_pendentes` ou `receitas_pendentes` baseado no `type`
-   - Adicionar esses keys na `ordemGrupos`
+```tsx
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <div className="flex items-center gap-2">
+    <p className="text-sm text-muted-foreground">
+      Olá, {user?.user_metadata?.full_name || "Usuário"}
+    </p>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => refetch()}
+      disabled={isFetching}
+      className="h-8 w-8"
+    >
+      <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+    </Button>
+  </div>
 
-3. **Linha 368** — Alterar `useGrouping` para incluir `pending`:
-   ```typescript
-   const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income' || activeTab === 'pending';
-   ```
+  <FiltroPeriodo
+    mesAtual={mesReferencia}
+    onMesChange={setMesReferencia}
+  />
+</div>
+```
+
+- Remover as props `onRefresh` e `isLoading` da chamada do `FiltroPeriodo`
+- Importar `RefreshCw` de `lucide-react` no Dashboard (se ainda não importado)
+- O `FiltroPeriodo` continua funcionando normalmente, apenas sem renderizar o botão de refresh (ele já tem a condicional `{onRefresh && ...}`)
 
