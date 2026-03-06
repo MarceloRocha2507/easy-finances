@@ -256,24 +256,19 @@ export default function Dashboard() {
         const pendingIncome = completeStats?.pendingIncome || 0;
         const pendingExpense = completeStats?.pendingExpense || 0;
         const faturaCartao = completeStats?.faturaCartao || 0;
-        const hasAnyPending = pendingIncome > 0 || pendingExpense > 0 || faturaCartao > 0;
+        const totalAPagar = pendingExpense + faturaCartao;
+        const hasAnyPending = pendingIncome > 0 || totalAPagar > 0;
 
         if (!hasAnyPending) return null;
 
-        const cards = [];
-        if (pendingIncome > 0) cards.push(
-          <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} />
-        );
-        if (pendingExpense > 0) cards.push(
-          <StatCardMinimal key="pagar" title="A Pagar" value={pendingExpense} icon={AlertTriangle} prefix="-" subInfo={(completeStats?.overdueCount || 0) > 0 ? `${completeStats?.overdueCount} vencida(s)` : "pendentes"} delay={0.25} isLoading={isStatsFetching} />
-        );
-        if (faturaCartao > 0) cards.push(
-          <StatCardMinimal key="fatura" title="Fatura Cartão" value={faturaCartao} icon={CreditCard} prefix="-" subInfo="titular do mês" delay={0.3} isLoading={isStatsFetching} />
-        );
-
         return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            {cards}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            {pendingIncome > 0 && (
+              <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} />
+            )}
+            {totalAPagar > 0 && (
+              <TotalAPagarCard mesReferencia={mesReferencia} />
+            )}
           </div>
         );
       })()}
