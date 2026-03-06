@@ -1,39 +1,38 @@
 
 
-## Problema
+## Plano: Unificar cards pendentes em "Total a Pagar" expansivel
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+### O que muda
 
-## Solução
+**1. Novo componente `TotalAPagarCard`** (substitui os 2 cards + ContasAPagar)
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+Um card no estilo `StatCardMinimal` (fundo branco, borda arredondada, icone no canto) que:
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+- **Colapsado**: mostra "Total a Pagar" como titulo, valor total (contas + faturas) em vermelho grande, duas linhas de detalhe abaixo:
+  - `🧾 Contas pendentes: -R$ XXX`  
+  - `💳 Fatura do cartão: -R$ XXX`
+  - Chevron no canto indicando expansao
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+- **Expandido**: ao clicar, expande mostrando:
+  - Secao "Contas Pendentes" com lista de cada conta (descricao, vencimento, valor)
+  - Separador visual
+  - Secao "Fatura Cartão" com cada lancamento (nome cartao, vencimento, valor)
+  - Rodape com link "Ver todas"
 
-## Alterações
+O componente reutiliza a logica de dados do `ContasAPagar` atual (queries de transactions pendentes + faturas).
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+**2. Dashboard.tsx**
 
-Reescrever o componente:
+- Na secao "Cards Pendentes" (linhas 254-279): manter apenas o card "A Receber" como `StatCardMinimal` + o novo `TotalAPagarCard` lado a lado
+- Remover os cards separados "A Pagar" e "Fatura Cartão"
+- Remover a linha `<ContasAPagar />` (linha 286)
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+**3. Arquivos**
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+| Arquivo | Acao |
+|---|---|
+| `src/components/dashboard/TotalAPagarCard.tsx` | Criar - novo componente expansivel |
+| `src/components/dashboard/ContasAPagar.tsx` | Remover (substituido) |
+| `src/components/dashboard/index.ts` | Trocar export ContasAPagar por TotalAPagarCard |
+| `src/pages/Dashboard.tsx` | Atualizar secao de cards pendentes, remover ContasAPagar |
 
