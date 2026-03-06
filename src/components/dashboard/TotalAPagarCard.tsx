@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CreditCard, ChevronDown, Receipt } from "lucide-react";
+import { AlertTriangle, CreditCard, ChevronDown, Receipt } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTransactions, Transaction } from "@/hooks/useTransactions";
-import { useFaturasNaListagem, FaturaVirtual } from "@/hooks/useFaturasNaListagem";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useFaturasNaListagem } from "@/hooks/useFaturasNaListagem";
 import { formatCurrency } from "@/lib/formatters";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
-interface ContasAPagarProps {
+interface TotalAPagarCardProps {
   mesReferencia: Date;
-  rendaMensal: number;
 }
 
 function getDueDateShort(dueDateStr: string): string {
@@ -33,7 +31,7 @@ function isOverdue(dueDateStr: string): boolean {
   return new Date(dueDateStr + "T00:00:00") < today;
 }
 
-export function ContasAPagar({ mesReferencia }: ContasAPagarProps) {
+export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
   const [open, setOpen] = useState(false);
 
   const inicioMes = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}-01`;
@@ -65,91 +63,59 @@ export function ContasAPagar({ mesReferencia }: ContasAPagarProps) {
   const totalCartoes = faturasMes.reduce((s, f) => s + f.amount, 0);
   const totalContas = contasPendentes.reduce((s, t) => s + t.amount, 0);
   const totalGeral = totalCartoes + totalContas;
-  const totalItens = faturasMes.length + contasPendentes.length;
-
-  const isEmpty = totalItens === 0;
-
-  if (isLoading) {
-    return (
-      <div className="bg-card border border-border rounded-xl p-4 mb-4">
-        <Skeleton className="h-12 w-full rounded-lg" />
-      </div>
-    );
-  }
-
-  if (isEmpty) {
-    return (
-      <div className="bg-card border border-border rounded-xl p-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-            <ClipboardList className="w-4 h-4 text-muted-foreground" />
-          </div>
-          <span className="text-sm font-medium text-muted-foreground">Nenhuma conta pendente</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="bg-card border border-border rounded-xl mb-4 overflow-hidden">
-        {/* Header compacto */}
+      <div
+        className={cn(
+          "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px]",
+          "shadow-[0_1px_3px_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden"
+        )}
+        style={{ animationDelay: "0.25s", opacity: 0 }}
+      >
+        {/* Header - estilo StatCardMinimal */}
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left">
-            <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-              <ClipboardList className="w-4 h-4 text-destructive" />
+          <button className="w-full text-left p-4 hover:bg-muted/30 transition-colors">
+            <div className="absolute top-4 right-4 flex items-center gap-1">
+              <ChevronDown className={cn("h-4 w-4 text-foreground/30 transition-transform duration-200", open && "rotate-180")} />
             </div>
-            <span className="text-sm font-semibold text-foreground flex-1">Contas a Pagar</span>
-            <Badge variant="secondary" className="text-[11px] px-2 py-0.5 font-medium">
-              {totalItens}
-            </Badge>
-            <span className="text-sm font-bold text-destructive whitespace-nowrap">
-              -{formatCurrency(totalGeral)}
-            </span>
-            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+
+            <p className="text-[#6B7280] text-xs sm:text-sm mb-1">Total a Pagar</p>
+
+            {isLoading ? (
+              <Skeleton className="h-6 w-24 sm:h-7 sm:w-28 bg-gray-200/60 dark:bg-gray-700/40" />
+            ) : (
+              <p className="text-lg sm:text-xl font-bold tabular-nums text-[#DC2626]">
+                -{formatCurrency(totalGeral)}
+              </p>
+            )}
+
+            {isLoading ? (
+              <Skeleton className="h-3 w-40 mt-2 bg-gray-200/60 dark:bg-gray-700/40" />
+            ) : (
+              <div className="mt-2 space-y-0.5">
+                <p className="text-[11px] text-[#6B7280] flex items-center gap-1.5">
+                  <Receipt className="w-3 h-3" />
+                  Contas pendentes: <span className="text-destructive font-medium">-{formatCurrency(totalContas)}</span>
+                </p>
+                <p className="text-[11px] text-[#6B7280] flex items-center gap-1.5">
+                  <CreditCard className="w-3 h-3" />
+                  Fatura do cartão: <span className="text-destructive font-medium">-{formatCurrency(totalCartoes)}</span>
+                </p>
+              </div>
+            )}
           </button>
         </CollapsibleTrigger>
 
         {/* Conteúdo expandido */}
         <CollapsibleContent>
           <div className="border-t border-border">
-            {/* Faturas de Cartão */}
-            {faturasMes.length > 0 && (
-              <div>
-                <div className="px-4 pt-3 pb-1.5">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Faturas ({faturasMes.length})
-                  </span>
-                </div>
-                {faturasMes.map((f) => {
-                  const overdue = isOverdue(f.due_date);
-                  return (
-                    <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
-                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-foreground truncate flex-1">{f.cartaoNome}</span>
-                      <span className={`text-[11px] ${overdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
-                        {getDueDateShort(f.due_date)}
-                      </span>
-                      <span className="text-sm font-semibold text-destructive whitespace-nowrap">
-                        -{formatCurrency(f.amount)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Separador */}
-            {faturasMes.length > 0 && contasPendentes.length > 0 && (
-              <div className="border-t border-border mx-4" />
-            )}
-
             {/* Contas Pendentes */}
             {contasPendentes.length > 0 && (
               <div>
                 <div className="px-4 pt-3 pb-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Contas ({contasPendentes.length})
+                    Contas Pendentes ({contasPendentes.length})
                   </span>
                 </div>
                 {contasPendentes.map((t) => {
@@ -161,7 +127,7 @@ export function ContasAPagar({ mesReferencia }: ContasAPagarProps) {
                       <span className="text-sm text-foreground truncate flex-1">
                         {t.description || "Sem descrição"}
                       </span>
-                      <span className={`text-[11px] ${overdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                      <span className={cn("text-[11px]", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
                         {getDueDateShort(dueDate)}
                       </span>
                       <span className="text-sm font-semibold text-destructive whitespace-nowrap">
@@ -173,7 +139,38 @@ export function ContasAPagar({ mesReferencia }: ContasAPagarProps) {
               </div>
             )}
 
-            {/* Rodapé com total */}
+            {/* Separador */}
+            {contasPendentes.length > 0 && faturasMes.length > 0 && (
+              <div className="border-t border-border mx-4" />
+            )}
+
+            {/* Fatura Cartão */}
+            {faturasMes.length > 0 && (
+              <div>
+                <div className="px-4 pt-3 pb-1.5">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Fatura Cartão ({faturasMes.length})
+                  </span>
+                </div>
+                {faturasMes.map((f) => {
+                  const overdue = isOverdue(f.due_date);
+                  return (
+                    <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground truncate flex-1">{f.cartaoNome}</span>
+                      <span className={cn("text-[11px]", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
+                        {getDueDateShort(f.due_date)}
+                      </span>
+                      <span className="text-sm font-semibold text-destructive whitespace-nowrap">
+                        -{formatCurrency(f.amount)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Rodapé */}
             <div className="border-t border-border px-4 py-3 flex items-center justify-between">
               <Link to="/transactions" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                 Ver todas →
