@@ -277,8 +277,6 @@ export default function Dashboard() {
 
 
 
-      {/* Contas a Pagar */}
-      <ContasAPagar mesReferencia={mesReferencia} rendaMensal={completeStats?.completedIncome || 0} />
 
       {/* Receitas vs Despesas - largura total */}
       <Card className="border rounded-xl shadow-sm animate-fade-in mb-4" style={{ animationDelay: '0.5s', opacity: 0 }}>

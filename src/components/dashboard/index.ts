@@ -15,4 +15,4 @@ export { StatCardSecondary } from "./StatCardSecondary";
 
 export { PieChartWithLegend } from "./PieChartWithLegend";
 export { StatCardMinimal } from "./StatCardMinimal";
-export { ContasAPagar } from "./ContasAPagar";
+export { TotalAPagarCard } from "./TotalAPagarCard";
