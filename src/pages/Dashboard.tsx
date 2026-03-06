@@ -43,7 +43,7 @@ import {
   CartoesCredito,
   StatCardMinimal,
   PieChartWithLegend,
-  ContasAPagar,
+  TotalAPagarCard,
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
