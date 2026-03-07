@@ -1,39 +1,40 @@
 
 
-## Problema
+## Problema identificado
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+Dois bugs no hook `useFaturasNaListagem` que causam faturas de cartao ausentes no "Total a Pagar":
 
-## Solução
+### Bug 1: Janela fixa de 4 meses
+O hook busca parcelas apenas do "mes atual + proximos 3 meses" (linhas 40-49). Quando o usuario navega para meses passados ou meses alem dessa janela no Dashboard, nenhuma fatura de cartao aparece porque os dados simplesmente nao foram buscados.
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+### Bug 2: Compras sem responsavel sao ignoradas
+Na linha 71-72, o filtro `compra?.responsavel?.is_titular === true` exclui compras onde `responsavel_id` e null. Como esse campo e nullable, compras feitas sem atribuir responsavel (que deveriam ser tratadas como do titular) sao ignoradas.
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+## Solucao
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+**Arquivo: `src/hooks/useFaturasNaListagem.ts`**
 
-## Alterações
+1. Aceitar um parametro opcional `mesReferencia?: Date` para determinar a janela de busca dinamicamente, em vez de usar sempre o mes atual
+2. Quando `mesReferencia` for fornecido, centralizar a janela nesse mes (1 mes antes + 3 meses depois)
+3. Incluir a queryKey com o mes de referencia para invalidar corretamente
+4. Corrigir o filtro de titular: tratar `responsavel_id` null ou `responsavel` null como titular (`isTitular = true`)
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+**Arquivo: `src/components/dashboard/TotalAPagarCard.tsx`**
 
-Reescrever o componente:
+- Passar `mesReferencia` para `useFaturasNaListagem(mesReferencia)` para que o hook busque dados do mes correto
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+### Alteracao no filtro de titular (linha 70-72 do hook):
+```typescript
+// Antes:
+const isTitular = compra?.responsavel?.is_titular === true;
+if (!isTitular) continue;
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
+// Depois:
+const responsavel = compra?.responsavel;
+const isTitular = responsavel === null || responsavel?.is_titular === true;
+if (!isTitular) continue;
+```
 
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+### Alteracao na janela de meses (linhas 40-49 do hook):
+Usar o `mesReferencia` passado como parametro para calcular o range, garantindo que o mes selecionado no Dashboard sempre esteja coberto.
 
