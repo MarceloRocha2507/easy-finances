@@ -47,7 +47,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
     status: "pending",
   });
 
-  const { data: todasFaturas, isLoading: isLoadingFaturas } = useFaturasNaListagem();
+  const { data: todasFaturas, isLoading: isLoadingFaturas } = useFaturasNaListagem(mesReferencia);
 
   const isLoading = isLoadingTx || isLoadingFaturas;
 

@@ -67,8 +67,9 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const cartaoId = compra?.cartao_id;
         if (!cartaoId) continue;
 
-        // Filtrar apenas parcelas do titular
-        const isTitular = compra?.responsavel?.is_titular === true;
+        // Filtrar apenas parcelas do titular (null = sem responsável = titular)
+        const responsavel = compra?.responsavel;
+        const isTitular = responsavel === null || responsavel === undefined || responsavel?.is_titular === true;
         if (!isTitular) continue;
 
         const mesRef = p.mes_referencia;
