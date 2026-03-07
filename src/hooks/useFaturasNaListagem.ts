@@ -103,13 +103,14 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         let statusFatura: FaturaVirtual['statusFatura'];
         const mesRefMonth = mesRefDate.getMonth();
         const mesRefYear = mesRefDate.getFullYear();
+        const hoje = new Date();
         const hojeMonth = hoje.getMonth();
         const hojeYear = hoje.getFullYear();
 
         if (mesRefYear === hojeYear && mesRefMonth === hojeMonth) {
           // Mês atual
           statusFatura = hoje.getDate() >= cartao.dia_fechamento ? 'fechada' : 'aberta';
-        } else if (mesRefDate > mesAtual) {
+        } else if (mesRefDate > startOfMonth(hoje)) {
           statusFatura = 'pendente';
         } else {
           // Mês passado que ainda não foi pago
