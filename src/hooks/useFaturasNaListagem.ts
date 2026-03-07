@@ -21,11 +21,12 @@ export interface FaturaVirtual {
   mesReferencia: string;
 }
 
-export function useFaturasNaListagem() {
+export function useFaturasNaListagem(mesReferencia?: Date) {
   const { user } = useAuth();
+  const mesRefKey = mesReferencia ? format(startOfMonth(mesReferencia), 'yyyy-MM') : 'current';
 
   return useQuery({
-    queryKey: ['faturas-na-listagem', user?.id],
+    queryKey: ['faturas-na-listagem', user?.id, mesRefKey],
     queryFn: async (): Promise<FaturaVirtual[]> => {
       if (!user) return [];
 
@@ -37,12 +38,11 @@ export function useFaturasNaListagem() {
 
       if (cartoesError || !cartoes?.length) return [];
 
-      // 2. Calcular range de meses: mês atual + próximos 3
-      const hoje = new Date();
-      const mesAtual = startOfMonth(hoje);
+      // 2. Calcular range de meses centralizado no mês de referência
+      const base = mesReferencia ? startOfMonth(mesReferencia) : startOfMonth(new Date());
       const mesesRange: Date[] = [];
-      for (let i = 0; i < 4; i++) {
-        mesesRange.push(addMonths(mesAtual, i));
+      for (let i = -1; i <= 3; i++) {
+        mesesRange.push(addMonths(base, i));
       }
 
       const mesInicioStr = format(mesesRange[0], 'yyyy-MM-dd');
