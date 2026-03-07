@@ -21,11 +21,12 @@ export interface FaturaVirtual {
   mesReferencia: string;
 }
 
-export function useFaturasNaListagem() {
+export function useFaturasNaListagem(mesReferencia?: Date) {
   const { user } = useAuth();
+  const mesRefKey = mesReferencia ? format(startOfMonth(mesReferencia), 'yyyy-MM') : 'current';
 
   return useQuery({
-    queryKey: ['faturas-na-listagem', user?.id],
+    queryKey: ['faturas-na-listagem', user?.id, mesRefKey],
     queryFn: async (): Promise<FaturaVirtual[]> => {
       if (!user) return [];
 
@@ -37,12 +38,11 @@ export function useFaturasNaListagem() {
 
       if (cartoesError || !cartoes?.length) return [];
 
-      // 2. Calcular range de meses: mês atual + próximos 3
-      const hoje = new Date();
-      const mesAtual = startOfMonth(hoje);
+      // 2. Calcular range de meses centralizado no mês de referência
+      const base = mesReferencia ? startOfMonth(mesReferencia) : startOfMonth(new Date());
       const mesesRange: Date[] = [];
-      for (let i = 0; i < 4; i++) {
-        mesesRange.push(addMonths(mesAtual, i));
+      for (let i = -1; i <= 3; i++) {
+        mesesRange.push(addMonths(base, i));
       }
 
       const mesInicioStr = format(mesesRange[0], 'yyyy-MM-dd');
@@ -67,8 +67,9 @@ export function useFaturasNaListagem() {
         const cartaoId = compra?.cartao_id;
         if (!cartaoId) continue;
 
-        // Filtrar apenas parcelas do titular
-        const isTitular = compra?.responsavel?.is_titular === true;
+        // Filtrar apenas parcelas do titular (null = sem responsável = titular)
+        const responsavel = compra?.responsavel;
+        const isTitular = responsavel === null || responsavel === undefined || responsavel?.is_titular === true;
         if (!isTitular) continue;
 
         const mesRef = p.mes_referencia;
@@ -102,13 +103,14 @@ export function useFaturasNaListagem() {
         let statusFatura: FaturaVirtual['statusFatura'];
         const mesRefMonth = mesRefDate.getMonth();
         const mesRefYear = mesRefDate.getFullYear();
+        const hoje = new Date();
         const hojeMonth = hoje.getMonth();
         const hojeYear = hoje.getFullYear();
 
         if (mesRefYear === hojeYear && mesRefMonth === hojeMonth) {
           // Mês atual
           statusFatura = hoje.getDate() >= cartao.dia_fechamento ? 'fechada' : 'aberta';
-        } else if (mesRefDate > mesAtual) {
+        } else if (mesRefDate > startOfMonth(hoje)) {
           statusFatura = 'pendente';
         } else {
           // Mês passado que ainda não foi pago
