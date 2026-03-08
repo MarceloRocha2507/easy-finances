@@ -1,39 +1,15 @@
 
-
 ## Problema
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+Os cards "A Receber" e "Total a Pagar" estão em um `grid` que por padrão usa `align-items: stretch`. Quando o "Total a Pagar" expande, o "A Receber" estica verticalmente para acompanhar a mesma altura.
 
 ## Solução
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+Adicionar `items-start` ao grid container na linha 265 do Dashboard para que cada card mantenha sua altura natural.
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
-
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
-
-## Alterações
-
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
-
-Reescrever o componente:
-
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
-
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
-
+```tsx
+// De:
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+// Para:
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 items-start">
+```
