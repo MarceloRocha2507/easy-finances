@@ -1,39 +1,62 @@
 
 
-## Problema
+## Plano: Melhorar estrutura e design do modal Total a Pagar
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+O modal atual tem um layout funcional mas básico. Vou refiná-lo seguindo o design system premium da aplicação.
 
-## Solução
+### Mudanças no `TotalAPagarCard.tsx`
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+**1. Header do modal mais estruturado**
+- Fundo sutil (`bg-muted/50`) com borda inferior, seguindo o padrão de modais do sistema
+- Valor total grande e destacado abaixo do título
+- Contadores de itens como badges discretos
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+**2. Seções com melhor hierarquia visual**
+- Cada seção (Contas Pendentes / Faturas) com ícone + título em linha, separados por borda
+- Itens com fundo alternado sutil no hover e padding consistente
+- Badge de vencimento com cores semânticas: vermelho para atrasado, âmbar para "Hoje", neutro para futuro
+- Ícone de status (circle dot) antes da data para itens atrasados
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+**3. Empty state**
+- Mensagem amigável quando não há itens em alguma seção
 
-## Alterações
+**4. Rodapé mais limpo**
+- Barra de total com fundo sutil (`bg-muted/30`)
+- Botão "Ver todas" como link estilizado
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+**5. Card principal**
+- Manter consistente com `StatCardMinimal` (já está bom)
+- Adicionar cursor-pointer e hover sutil
 
-Reescrever o componente:
+### Resultado visual esperado
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+```text
+┌──────────────────────────────┐
+│  Total a Pagar               │
+│  -R$ 2.450,00          [eye] │
+│  🧾 Contas: -R$ 1.200       │
+│  💳 Faturas: -R$ 1.250      │
+└──────────────────────────────┘
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
+         ↓ clique ↓
 
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
+┌─── Modal ────────────────────┐
+│ Total a Pagar                │
+│ -R$ 2.450,00                 │
+│ 3 contas · 2 faturas         │
+├──────────────────────────────┤
+│ CONTAS PENDENTES (3)         │
+│ ● Aluguel       Hoje  -1200 │
+│ ● Internet      3d     -150 │
+│ ● Luz          12/04   -200 │
+├──────────────────────────────┤
+│ FATURA CARTÃO (2)            │
+│ ● Nubank       2d atrás -800│
+│ ● Inter        15/04   -450 │
+├──────────────────────────────┤
+│ Ver todas →    Total: -2450  │
+└──────────────────────────────┘
+```
 
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+Arquivo alterado: `src/components/dashboard/TotalAPagarCard.tsx`
 
