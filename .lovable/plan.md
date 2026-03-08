@@ -1,23 +1,39 @@
 
 
-## Plano: Alinhar cards A Receber e Total a Pagar
+## Problema
 
-### Mudanças
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
-**`src/pages/Dashboard.tsx` (linha 265)**
-- Trocar `grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 items-start` por `flex flex-col md:flex-row items-stretch gap-3 mb-4`
+## Solução
 
-**`src/pages/Dashboard.tsx` (linha 267)**
-- Adicionar wrapper `<div className="flex-1">` ao redor do `StatCardMinimal` de "A Receber"
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
 
-**`src/pages/Dashboard.tsx` (linhas 269-271)**
-- Adicionar wrapper `<div className="flex-1">` ao redor do `TotalAPagarCard`
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
 
-**`src/components/dashboard/TotalAPagarCard.tsx`**
-- Garantir que o wrapper principal tenha `h-full` (já deve ter da edição anterior)
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
 
-**`src/components/dashboard/StatCardMinimal.tsx`**
-- Verificar/adicionar `h-full` no card raiz para que ele estique dentro do flex container
+## Alterações
 
-Resultado: ambos os cards ficam com a mesma altura, com o menor crescendo para acompanhar o maior.
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+
+Reescrever o componente:
+
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
+
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
 
