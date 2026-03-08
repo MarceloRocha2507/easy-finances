@@ -31,6 +31,7 @@ export function StatCardMinimal({
   formatValue,
   actions,
   valueColor,
+  className,
 }: StatCardMinimalProps) {
   const getValueColor = () => {
     if (valueColor === "expense") return "text-[#DC2626]";
