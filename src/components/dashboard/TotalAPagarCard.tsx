@@ -143,7 +143,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
                       Contas Pendentes
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-destructive tabular-nums">
+                  <span className="text-xs font-semibold text-foreground tabular-nums">
                     -{formatCurrency(totalContas)}
                   </span>
                 </div>
