@@ -262,7 +262,7 @@ export default function Dashboard() {
         if (!hasAnyPending) return null;
 
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 items-start">
             {pendingIncome > 0 && (
               <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} />
             )}
