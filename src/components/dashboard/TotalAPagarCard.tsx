@@ -74,13 +74,13 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
       {/* Card trigger */}
       <div
         className={cn(
-          "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px]",
+          "relative h-full bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px]",
           "shadow-[0_1px_3px_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden",
           "cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-200"
         )}
         style={{ animationDelay: "0.25s", opacity: 0 }}
       >
-        <button className="w-full text-left p-4" onClick={() => setOpen(true)}>
+        <button className="w-full h-full text-left p-4" onClick={() => setOpen(true)}>
           <div className="absolute top-4 right-4">
             <Eye className="h-4 w-4 text-foreground/30" />
           </div>
