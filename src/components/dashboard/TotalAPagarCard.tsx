@@ -201,7 +201,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
                       Fatura Cartão
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-destructive tabular-nums">
+                  <span className="text-xs font-semibold text-foreground tabular-nums">
                     -{formatCurrency(totalCartoes)}
                   </span>
                 </div>
