@@ -95,20 +95,6 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
             </p>
           )}
 
-          {isLoading ? (
-            <Skeleton className="h-3 w-40 mt-2 bg-muted/60" />
-          ) : (
-            <div className="mt-2 space-y-0.5">
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <Receipt className="w-3 h-3" />
-                Contas pendentes: <span className="text-destructive font-medium">-{formatCurrency(totalContas)}</span>
-              </p>
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <CreditCard className="w-3 h-3" />
-                Fatura do cartão: <span className="text-destructive font-medium">-{formatCurrency(totalCartoes)}</span>
-              </p>
-            </div>
-          )}
         </button>
       </div>
 
