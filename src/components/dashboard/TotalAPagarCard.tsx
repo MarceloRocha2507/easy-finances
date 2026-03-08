@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, CreditCard, ChevronDown, Receipt } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CreditCard, Receipt, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFaturasNaListagem } from "@/hooks/useFaturasNaListagem";
