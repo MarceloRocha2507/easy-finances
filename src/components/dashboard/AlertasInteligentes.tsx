@@ -51,7 +51,7 @@ interface Props {
 
 export function AlertasInteligentes({ alertas }: Props) {
   const [dispensados, setDispensados] = useState<string[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const alertasVisiveis = alertas.filter((a) => !dispensados.includes(a.id));
 
