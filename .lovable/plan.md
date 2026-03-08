@@ -1,39 +1,17 @@
 
 
-## Problema
+## Plano: Alinhar cards A Receber e Total a Pagar
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+O problema é que o `items-start` (adicionado anteriormente) faz cada card manter sua altura natural, e o "Total a Pagar" tem 2 linhas extras de sub-info que o "A Receber" não tem.
 
-## Solução
+### Solução
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+**Arquivo: `src/pages/Dashboard.tsx` (linha 265)**
+- Remover `items-start` do grid para permitir que ambos os cards estiquem à mesma altura (comportamento padrão do grid: `align-items: stretch`)
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+**Arquivo: `src/components/dashboard/TotalAPagarCard.tsx` (linha 75-80)**
+- Adicionar `h-full` ao card wrapper para garantir que preencha o grid cell completamente
+- Adicionar `h-full` ao button interno para distribuir o espaço
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
-
-## Alterações
-
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
-
-Reescrever o componente:
-
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
-
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+Isso resolve o problema original (o modal agora abre separadamente em vez de expandir inline, então não há mais risco do card vizinho esticar quando o conteúdo expande) e mantém os dois cards com a mesma altura visual.
 
