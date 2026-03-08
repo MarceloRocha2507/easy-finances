@@ -1,25 +1,39 @@
 
-## Plano: Exibir subtotal por categoria no modal
 
-**Arquivo: `src/components/dashboard/TotalAPagarCard.tsx`**
+## Problema
 
-Adicionar o valor total de cada seção ao lado do título da categoria:
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
-1. **Linha 141-143** (Contas Pendentes header) — adicionar `totalContas` à direita:
-```tsx
-<div className="flex items-center justify-between mb-2">
-  <div className="flex items-center gap-2">
-    <div className="w-6 h-6 rounded-md bg-[#F3F4F6] dark:bg-muted flex items-center justify-center">
-      <Receipt className="w-3.5 h-3.5 text-[#6B7280]" />
-    </div>
-    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-      Contas Pendentes
-    </span>
-  </div>
-  <span className="text-xs font-semibold text-destructive tabular-nums">
-    -{formatCurrency(totalContas)}
-  </span>
-</div>
-```
+## Solução
 
-2. **Linha 190-196** (Fatura Cartão header) — mesmo padrão com `totalCartoes`.
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
+
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
+
+## Alterações
+
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+
+Reescrever o componente:
+
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
+
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+
