@@ -16,6 +16,7 @@ interface StatCardMinimalProps {
   formatValue?: (value: number) => string;
   actions?: ReactNode;
   valueColor?: "income" | "expense" | "neutral";
+  className?: string;
 }
 
 export function StatCardMinimal({

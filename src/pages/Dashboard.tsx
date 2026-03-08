@@ -262,12 +262,16 @@ export default function Dashboard() {
         if (!hasAnyPending) return null;
 
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 items-start">
+          <div className="flex flex-col md:flex-row items-stretch gap-3 mb-4">
             {pendingIncome > 0 && (
-              <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} />
+              <div className="flex-1">
+                <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} className="h-full" />
+              </div>
             )}
             {totalAPagar > 0 && (
-              <TotalAPagarCard mesReferencia={mesReferencia} />
+              <div className="flex-1">
+                <TotalAPagarCard mesReferencia={mesReferencia} />
+              </div>
             )}
           </div>
         );
