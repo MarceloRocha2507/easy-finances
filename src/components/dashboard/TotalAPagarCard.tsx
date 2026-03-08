@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, CreditCard, ChevronDown, Receipt } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CreditCard, Receipt, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFaturasNaListagem } from "@/hooks/useFaturasNaListagem";
@@ -65,7 +65,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
   const totalGeral = totalCartoes + totalContas;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <>
       <div
         className={cn(
           "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px]",
@@ -73,56 +73,59 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
         )}
         style={{ animationDelay: "0.25s", opacity: 0 }}
       >
-        {/* Header - estilo StatCardMinimal */}
-        <CollapsibleTrigger asChild>
-          <button className="w-full text-left p-4 hover:bg-muted/30 transition-colors">
-            <div className="absolute top-4 right-4 flex items-center gap-1">
-              <ChevronDown className={cn("h-4 w-4 text-foreground/30 transition-transform duration-200", open && "rotate-180")} />
-            </div>
+        <button className="w-full text-left p-4 hover:bg-muted/30 transition-colors" onClick={() => setOpen(true)}>
+          <div className="absolute top-4 right-4">
+            <Eye className="h-4 w-4 text-foreground/30" />
+          </div>
 
-            <p className="text-[#6B7280] text-xs sm:text-sm mb-1">Total a Pagar</p>
+          <p className="text-muted-foreground text-xs sm:text-sm mb-1">Total a Pagar</p>
 
-            {isLoading ? (
-              <Skeleton className="h-6 w-24 sm:h-7 sm:w-28 bg-gray-200/60 dark:bg-gray-700/40" />
-            ) : (
-              <p className="text-lg sm:text-xl font-bold tabular-nums text-[#DC2626]">
-                -{formatCurrency(totalGeral)}
+          {isLoading ? (
+            <Skeleton className="h-6 w-24 sm:h-7 sm:w-28 bg-muted/60" />
+          ) : (
+            <p className="text-lg sm:text-xl font-bold tabular-nums text-destructive">
+              -{formatCurrency(totalGeral)}
+            </p>
+          )}
+
+          {isLoading ? (
+            <Skeleton className="h-3 w-40 mt-2 bg-muted/60" />
+          ) : (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <Receipt className="w-3 h-3" />
+                Contas pendentes: <span className="text-destructive font-medium">-{formatCurrency(totalContas)}</span>
               </p>
-            )}
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <CreditCard className="w-3 h-3" />
+                Fatura do cartão: <span className="text-destructive font-medium">-{formatCurrency(totalCartoes)}</span>
+              </p>
+            </div>
+          )}
+        </button>
+      </div>
 
-            {isLoading ? (
-              <Skeleton className="h-3 w-40 mt-2 bg-gray-200/60 dark:bg-gray-700/40" />
-            ) : (
-              <div className="mt-2 space-y-0.5">
-                <p className="text-[11px] text-[#6B7280] flex items-center gap-1.5">
-                  <Receipt className="w-3 h-3" />
-                  Contas pendentes: <span className="text-destructive font-medium">-{formatCurrency(totalContas)}</span>
-                </p>
-                <p className="text-[11px] text-[#6B7280] flex items-center gap-1.5">
-                  <CreditCard className="w-3 h-3" />
-                  Fatura do cartão: <span className="text-destructive font-medium">-{formatCurrency(totalCartoes)}</span>
-                </p>
-              </div>
-            )}
-          </button>
-        </CollapsibleTrigger>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Total a Pagar</span>
+              <span className="text-destructive font-bold">-{formatCurrency(totalGeral)}</span>
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* Conteúdo expandido */}
-        <CollapsibleContent>
-          <div className="border-t border-border">
-            {/* Contas Pendentes */}
-            {contasPendentes.length > 0 && (
-              <div>
-                <div className="px-4 pt-3 pb-1.5">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Contas Pendentes ({contasPendentes.length})
-                  </span>
-                </div>
+          {/* Contas Pendentes */}
+          {contasPendentes.length > 0 && (
+            <div>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Contas Pendentes ({contasPendentes.length})
+              </span>
+              <div className="mt-1.5">
                 {contasPendentes.map((t) => {
                   const dueDate = t.due_date || t.date;
                   const overdue = isOverdue(dueDate);
                   return (
-                    <div key={t.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                    <div key={t.id} className="flex items-center gap-3 py-2.5 hover:bg-muted/30 transition-colors rounded-md px-1">
                       <Receipt className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm text-foreground truncate flex-1">
                         {t.description || "Sem descrição"}
@@ -137,25 +140,25 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
                   );
                 })}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Separador */}
-            {contasPendentes.length > 0 && faturasMes.length > 0 && (
-              <div className="border-t border-border mx-4" />
-            )}
+          {/* Separador */}
+          {contasPendentes.length > 0 && faturasMes.length > 0 && (
+            <div className="border-t border-border" />
+          )}
 
-            {/* Fatura Cartão */}
-            {faturasMes.length > 0 && (
-              <div>
-                <div className="px-4 pt-3 pb-1.5">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Fatura Cartão ({faturasMes.length})
-                  </span>
-                </div>
+          {/* Fatura Cartão */}
+          {faturasMes.length > 0 && (
+            <div>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Fatura Cartão ({faturasMes.length})
+              </span>
+              <div className="mt-1.5">
                 {faturasMes.map((f) => {
                   const overdue = isOverdue(f.due_date);
                   return (
-                    <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                    <div key={f.id} className="flex items-center gap-3 py-2.5 hover:bg-muted/30 transition-colors rounded-md px-1">
                       <CreditCard className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm text-foreground truncate flex-1">{f.cartaoNome}</span>
                       <span className={cn("text-[11px]", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
@@ -168,21 +171,21 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
                   );
                 })}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Rodapé */}
-            <div className="border-t border-border px-4 py-3 flex items-center justify-between">
-              <Link to="/transactions" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                Ver todas →
-              </Link>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Total:</span>
-                <span className="text-sm font-bold text-destructive">-{formatCurrency(totalGeral)}</span>
-              </div>
+          {/* Rodapé */}
+          <div className="border-t border-border pt-3 flex items-center justify-between">
+            <Link to="/transactions" className="text-xs text-muted-foreground hover:text-foreground transition-colors" onClick={() => setOpen(false)}>
+              Ver todas →
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Total:</span>
+              <span className="text-sm font-bold text-destructive">-{formatCurrency(totalGeral)}</span>
             </div>
           </div>
-        </CollapsibleContent>
-      </div>
-    </Collapsible>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
