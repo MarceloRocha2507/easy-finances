@@ -56,6 +56,7 @@ const initialFormData: TransactionFormData = {
   type: 'expense',
   amount: '',
   category_id: '',
+  banco_id: null,
   description: '',
   date: new Date(),
   status: 'completed',
