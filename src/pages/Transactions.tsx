@@ -35,6 +35,7 @@ import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section'
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
 import { useAutoCategory } from '@/hooks/useAutoCategory';
+import { BancoSelector } from '@/components/bancos/BancoSelector';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
