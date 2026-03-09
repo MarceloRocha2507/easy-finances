@@ -496,7 +496,7 @@ export default function Transactions() {
     if (isRecurring) {
       setRecurringDeleteTransaction(transaction);
     } else {
-      if (window.confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
+      if (window.confirm('Mover este registro para a lixeira?')) {
         deleteMutation.mutate(transaction.id);
       }
     }
