@@ -722,16 +722,17 @@ export function useDeleteTransaction() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('transactions')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       invalidateTransactionCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
       toast({
-        title: 'Registro removido',
-        description: 'O registro financeiro foi removido com sucesso.',
+        title: 'Registro movido para lixeira',
+        description: 'Você pode restaurá-lo a qualquer momento.',
       });
     },
     onError: () => {
