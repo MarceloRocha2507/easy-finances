@@ -1,32 +1,39 @@
 
 
-## Padronização de Loading e Performance dos Cards
+## Problema
 
-### Problema Atual
-1. O card "Assinaturas" usa `isAssinaturasLoading` (query separada), enquanto os demais usam `isStatsFetching` — causando loading dessincronizado
-2. `useCompleteStats` não tem `staleTime`, fazendo re-fetch a cada re-render/navegação de aba
-3. `useAssinaturas` também não tem `staleTime`
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
-### Correções
+## Solução
 
-**1. `src/hooks/useTransactions.ts` — Adicionar `staleTime` ao `useCompleteStats`**
-- Adicionar `staleTime: 1000 * 60 * 2` (2 min) e `gcTime: 1000 * 60 * 10` (10 min cache) na query `complete-stats`
-- Isso evita re-fetch ao navegar entre abas ou re-renders
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
 
-**2. `src/hooks/useAssinaturas.ts` — Adicionar `staleTime` à query de assinaturas**
-- Adicionar `staleTime: 1000 * 60 * 2` e `gcTime: 1000 * 60 * 10`
-- Dados só serão re-buscados após mutação (invalidação) ou após 2 min
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
 
-**3. `src/pages/Transactions.tsx` — Unificar loading do card Assinaturas**
-- Trocar `isLoading: isAssinaturasLoading` por `isLoading: isStatsFetching || isAssinaturasLoading` para que o skeleton do card Assinaturas acompanhe o mesmo ciclo dos demais
-- Usar `isFetching` no lugar de `isLoading` para assinaturas (consistente com os outros cards que usam `isFetching`)
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
 
-**4. `src/hooks/useTransactions.ts` — Adicionar `staleTime` às queries `useTransactionStats`, `useExpensesByCategory`, `useMonthlyData`**
-- As queries de `useTransactionStats` e `useExpensesByCategory` já têm `staleTime: 1000 * 30` (30s) — aumentar para `1000 * 60 * 2` para consistência
-- `useMonthlyData` já tem `staleTime: 1000 * 30` — aumentar para `1000 * 60 * 2`
+## Alterações
 
-### Resultado
-- Todos os cards carregam/mostram skeleton de forma sincronizada
-- Dados ficam em cache por 2 min, evitando re-fetch desnecessário em navegação entre abas
-- Mutações (criar/editar/excluir) continuam invalidando o cache normalmente via `invalidateTransactionCaches`
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+
+Reescrever o componente:
+
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
+
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
 

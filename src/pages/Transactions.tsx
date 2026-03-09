@@ -1087,7 +1087,7 @@ export default function Transactions() {
               }
               onClick={() => navigate('/assinaturas')}
               delay={0.3}
-              isLoading={isAssinaturasLoading}
+              isLoading={isStatsFetching || isAssinaturasLoading}
               valueColor="expense"
             />
           </AnimatedSection>
