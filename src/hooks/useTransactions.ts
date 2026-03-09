@@ -873,7 +873,8 @@ export function usePendingStats() {
       const { data, error } = await supabase
         .from('transactions')
         .select('type, amount, due_date')
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .is('deleted_at', null);
 
       if (error) throw error;
 
