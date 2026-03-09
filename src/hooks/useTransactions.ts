@@ -809,11 +809,12 @@ export function useDeleteRecurringTransactions() {
     },
     onSuccess: (_, variables) => {
       invalidateTransactionCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
       toast({
-        title: 'Registro(s) removido(s)',
+        title: 'Movido para lixeira',
         description: variables.mode === 'single'
-          ? 'O lançamento foi removido.'
-          : 'Este e todos os lançamentos futuros foram removidos.',
+          ? 'O lançamento foi movido para a lixeira.'
+          : 'Este e todos os lançamentos futuros foram movidos para a lixeira.',
       });
     },
     onError: () => {
