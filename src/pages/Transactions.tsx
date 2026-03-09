@@ -415,6 +415,7 @@ export default function Transactions() {
       type: formData.type,
       amount: parseFloat(formData.amount),
       category_id: formData.category_id || undefined,
+      banco_id: formData.banco_id || null,
       description: formData.description || undefined,
       date: format(formData.date, 'yyyy-MM-dd'),
       status: autoStatus,
