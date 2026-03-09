@@ -173,7 +173,8 @@ export function useTransactionStats(filters?: TransactionFilters) {
         .from('transactions')
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .is('deleted_at', null);
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
