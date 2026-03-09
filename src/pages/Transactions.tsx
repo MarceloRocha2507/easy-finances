@@ -35,11 +35,13 @@ import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section'
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
 import { useAutoCategory } from '@/hooks/useAutoCategory';
+import { BancoSelector } from '@/components/bancos/BancoSelector';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
   amount: string;
   category_id: string;
+  banco_id: string | null;
   description: string;
   date: Date;
   status: TransactionStatus;
@@ -54,6 +56,7 @@ const initialFormData: TransactionFormData = {
   type: 'expense',
   amount: '',
   category_id: '',
+  banco_id: null,
   description: '',
   date: new Date(),
   status: 'completed',
@@ -412,6 +415,7 @@ export default function Transactions() {
       type: formData.type,
       amount: parseFloat(formData.amount),
       category_id: formData.category_id || undefined,
+      banco_id: formData.banco_id || null,
       description: formData.description || undefined,
       date: format(formData.date, 'yyyy-MM-dd'),
       status: autoStatus,
@@ -467,6 +471,7 @@ export default function Transactions() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category_id: transaction.category_id || '',
+      banco_id: transaction.banco_id || null,
       description: transaction.description || '',
       date: new Date(transaction.date),
       status: transaction.status || 'completed',
@@ -500,13 +505,14 @@ export default function Transactions() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category_id: transaction.category_id || '',
+      banco_id: transaction.banco_id || null,
       description: transaction.description || '',
-      date: new Date(), // Data atual para a duplicação
+      date: new Date(),
       status: 'completed',
       due_date: undefined,
       is_recurring: transaction.is_recurring || false,
       recurrence_day: transaction.recurrence_day || 1,
-      tipoLancamento: 'unica', // Reset para única na duplicação
+      tipoLancamento: 'unica',
       totalParcelas: 2,
     });
     setEditingId(null); // Nova transação
@@ -694,6 +700,14 @@ export default function Transactions() {
                       </p>
                     )}
                   </div>
+
+                  {/* Conta Bancária */}
+                  <BancoSelector
+                    value={formData.banco_id}
+                    onChange={(bancoId) => setFormData({ ...formData, banco_id: bancoId })}
+                    label="Conta Bancária"
+                    placeholder="Selecione a conta"
+                  />
 
                   {/* Data */}
                   <div className="space-y-2">
