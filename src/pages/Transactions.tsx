@@ -165,7 +165,7 @@ const GRUPO_CONFIG = {
 function classificarItem(item: Transaction | FaturaVirtual): string {
   if ('isFaturaCartao' in item) return 'faturas';
   const t = item as Transaction;
-  if (t.category?.name === 'Fatura de Cartão') return 'faturas';
+  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') return 'faturas';
   if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
     return t.type === 'income' ? 'receitas_fixas' : 'fixas';
   }
