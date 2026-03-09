@@ -1091,9 +1091,18 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão']);
 
-      const metaCategoryIds = new Set((metaCategories || []).map(c => c.id));
+      const metaCategoryIds = new Set(
+        (metaCategories || [])
+          .filter(c => c.name !== 'Fatura do Cartão')
+          .map(c => c.id)
+      );
+      const faturaCategoryIds = new Set(
+        (metaCategories || [])
+          .filter(c => c.name === 'Fatura do Cartão')
+          .map(c => c.id)
+      );
 
       // 3. Buscar transações completed DO MÊS para receitas/despesas exibidas
       const { data: completedDoMes, error: completedDoMesError } = await supabase
@@ -1110,7 +1119,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 3. Buscar pending DO MÊS para A Receber/A Pagar
       const { data: pendingDoMes, error: pendingDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount, due_date')
+        .select('type, amount, due_date, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'pending')
         .is('deleted_at', null)
@@ -1181,9 +1190,16 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
+        const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
         stats.pendingCount++;
-        if (t.type === 'income') stats.pendingIncome += amount;
-        else stats.pendingExpense += amount;
+        if (t.type === 'income') {
+          stats.pendingIncome += amount;
+        } else {
+          // Despesas com categoria "Fatura do Cartão" já estão em faturaCartaoTitular
+          if (!isFaturaCartao) {
+            stats.pendingExpense += amount;
+          }
+        }
         if (t.due_date && t.due_date < today) stats.overdueCount++;
       });
 
