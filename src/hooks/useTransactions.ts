@@ -752,10 +752,11 @@ export function useDeleteRecurringTransactions() {
 
   return useMutation({
     mutationFn: async ({ transactionId, mode }: { transactionId: string; mode: 'single' | 'future' }) => {
+      const deletedAt = new Date().toISOString();
       if (mode === 'single') {
         const { error } = await supabase
           .from('transactions')
-          .delete()
+          .update({ deleted_at: deletedAt } as any)
           .eq('id', transactionId);
         if (error) throw error;
         return;
