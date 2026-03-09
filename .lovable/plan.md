@@ -1,39 +1,59 @@
 
 
-## Problema
+## Correção: Saldo Estimado com dupla contabilização de despesas
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+### Problema identificado
 
-## Solução
+A fórmula atual do Saldo Estimado é:
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+```text
+Saldo Estimado = Saldo Disponível + Receitas Pendentes − Despesas Pendentes − Fatura do Cartão (Titular)
+```
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+O campo `pendingExpense` inclui **todas** as transações pendentes de despesa da tabela `transactions`, inclusive aquelas com categoria "Fatura do Cartão" (criadas quando o usuário agenda o pagamento de uma fatura). Porém, `faturaCartaoTitular` já cobre exatamente esse valor a partir da tabela `parcelas_cartao`. Resultado: a fatura do cartão é subtraída **duas vezes**.
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+### Solução
 
-## Alterações
+Na query de transações pendentes do mês (`pendingDoMes`), incluir o `category_id` na seleção. No loop de cálculo, separar as despesas pendentes em dois grupos:
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+- **Despesas pendentes comuns** (fora do cartão) → continuam subtraindo do Saldo Estimado
+- **Despesas pendentes com categoria "Fatura do Cartão"** → excluídas do cálculo do Saldo Estimado (já cobertas por `faturaCartaoTitular`)
 
-Reescrever o componente:
+### Alterações em `src/hooks/useTransactions.ts`
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+1. **Linha 1113**: Adicionar `category_id` ao select da query `pendingDoMes`:
+   ```typescript
+   .select('type, amount, due_date, category_id')
+   ```
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
+2. **Linhas 1182-1188**: No loop de pendentes, excluir despesas da categoria "Fatura do Cartão" do `pendingExpense`:
+   ```typescript
+   (pendingDoMes || []).forEach((t) => {
+     const amount = Number(t.amount);
+     const isFaturaCartao = t.category_id && metaCategoryIds_fatura.has(t.category_id);
+     stats.pendingCount++;
+     if (t.type === 'income') {
+       stats.pendingIncome += amount;
+     } else {
+       // Despesas de fatura de cartão já estão em faturaCartaoTitular
+       if (!isFaturaCartao) {
+         stats.pendingExpense += amount;
+       }
+     }
+     if (t.due_date && t.due_date < today) stats.overdueCount++;
+   });
+   ```
 
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
+3. **Antes do loop**: Buscar o ID da categoria "Fatura do Cartão" usando a query de categorias já existente (`metaCategories`), expandindo-a para incluir "Fatura do Cartão":
+   ```typescript
+   .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão'])
+   ```
+   E criar um set separado `faturaCategoryIds` para as categorias de fatura.
 
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+### Resultado
+
+- **Saldo Estimado** = Disponível + A Receber − Despesas Pendentes (sem cartão) − Fatura Cartão
+- Sem dupla contabilização
+- Cards de "A Pagar" continuam exibindo o total correto (despesas pendentes + fatura)
+- Nenhuma outra parte do sistema é afetada
 
