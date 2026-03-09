@@ -926,6 +926,7 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
         .select('id, type, amount, status, created_at')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
         .limit(10000);
 
