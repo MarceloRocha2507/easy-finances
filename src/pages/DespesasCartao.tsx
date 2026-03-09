@@ -738,6 +738,7 @@ export default function DespesasCartao() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="hidden lg:table-cell p-0">
                     <Button
                       variant="ghost"
