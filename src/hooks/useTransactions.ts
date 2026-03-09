@@ -1228,3 +1228,96 @@ export function useCompleteStats(mesReferencia?: Date) {
     gcTime: 1000 * 60 * 10,
   });
 }
+
+// ==================== LIXEIRA ====================
+
+export function useDeletedTransactions() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['deleted-transactions', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .eq('user_id', user!.id)
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+      return data as (Transaction & { deleted_at: string })[];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useRestoreTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ deleted_at: null } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Transação restaurada', description: 'A transação voltou para a listagem.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível restaurar.', variant: 'destructive' });
+    },
+  });
+}
+
+export function usePermanentDeleteTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Excluído permanentemente', description: 'A transação foi removida definitivamente.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível excluir.', variant: 'destructive' });
+    },
+  });
+}
+
+export function useEmptyTrash() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user!.id)
+        .not('deleted_at', 'is', null);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Lixeira esvaziada', description: 'Todas as transações foram removidas permanentemente.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível esvaziar a lixeira.', variant: 'destructive' });
+    },
+  });
+}
