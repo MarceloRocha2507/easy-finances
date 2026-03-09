@@ -1,39 +1,23 @@
 
 
-## Problema
+## Plano: Adicionar seletor de conta bancária nas transações
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+O objetivo é permitir que o usuário escolha em qual conta bancária a transação está vinculada, refletindo no saldo de cada banco.
 
-## Solução
+A tabela `transactions` já possui a coluna `banco_id` -- só falta integrar no formulário.
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+### Alterações
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+**1. `src/hooks/useTransactions.ts`** — Adicionar `banco_id` ao `TransactionInsert` e ao `Transaction` type, e incluí-lo nas mutations de create/update.
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+**2. `src/pages/Transactions.tsx`**:
+- Adicionar `banco_id` ao `TransactionFormData` (string | null)
+- Importar `BancoSelector` de `@/components/bancos/BancoSelector`
+- Adicionar o seletor no formulário (após o campo de categoria)
+- Enviar `banco_id` no `handleSubmit`
+- Preencher `banco_id` no `handleEdit` e `handleDuplicate`
 
-## Alterações
+**3. Nenhuma migração necessária** — a coluna `banco_id` já existe na tabela `transactions`.
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
-
-Reescrever o componente:
-
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
-
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+O saldo por banco já é calculado em `listarBancosComResumo()` usando transações com `banco_id`, então ao vincular transações a bancos, o saldo será refletido automaticamente nos cards de banco e no Dashboard.
 
