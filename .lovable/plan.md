@@ -1,39 +1,60 @@
 
 
-## Problema
+## Lixeira de Transações — Soft Delete + Restauração
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+### 1. Migração: Adicionar coluna `deleted_at` na tabela `transactions`
 
-## Solução
+```sql
+ALTER TABLE public.transactions ADD COLUMN deleted_at timestamptz DEFAULT NULL;
+```
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+Transações com `deleted_at IS NOT NULL` são consideradas "excluídas" (soft delete).
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+### 2. Filtrar transações excluídas em TODAS as queries
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+Adicionar `.is('deleted_at', null)` em todas as queries da tabela `transactions` em `src/hooks/useTransactions.ts`:
 
-## Alterações
+- `useTransactions` (linha 121)
+- `useTransactionStats` (linha 171)
+- `usePendingStats` (linha 871)
+- `useTransactionsWithBalance` — query de allCompleted (linha 921) e query filtrada (linha 974)
+- `useCompleteStats` — allCompleted (linha 1073), completedDoMes (linha 1092), pendingDoMes (linha 1103)
+- `useExpensesByCategory` e `useMonthlyData` (precisam ser verificados, mas seguem o mesmo padrão)
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+### 3. Alterar `useDeleteTransaction` para soft delete
 
-Reescrever o componente:
+Em vez de `.delete()`, fazer `.update({ deleted_at: new Date().toISOString() })`.
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+### 4. Alterar `useDeleteRecurringTransactions` para soft delete
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
+Substituir todas as chamadas `.delete()` por `.update({ deleted_at: new Date().toISOString() })`.
 
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
+### 5. Novo hook: `useDeletedTransactions`
 
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+Em `src/hooks/useTransactions.ts`, adicionar:
+
+- `useDeletedTransactions()` — busca transações com `deleted_at IS NOT NULL`, incluindo category join
+- `useRestoreTransaction()` — mutation que faz `.update({ deleted_at: null })` e invalida caches
+- `usePermanentDeleteTransaction()` — mutation que faz `.delete()` real
+- `useEmptyTrash()` — mutation que deleta todas as transações com `deleted_at IS NOT NULL`
+
+### 6. Componente: `LixeiraDialog`
+
+Criar `src/components/transactions/LixeiraDialog.tsx`:
+
+- Dialog acessível via botão com ícone de lixeira na página de Transações
+- Lista transações excluídas com: descrição, valor, categoria, data original, data de exclusão
+- Botão "Restaurar" por item
+- Botão "Excluir permanentemente" por item (com confirmação AlertDialog)
+- Botão "Esvaziar lixeira" no topo (com confirmação AlertDialog)
+- Empty state quando não há itens
+
+### 7. Integrar na página `Transactions.tsx`
+
+- Adicionar botão "Lixeira" (ícone Trash2) ao lado dos filtros/ações existentes
+- Badge com contagem de itens na lixeira
+
+### Impacto nos saldos
+
+Como todas as queries já filtrarão `deleted_at IS NULL`, transações na lixeira automaticamente deixam de ser contabilizadas nos cards de Receitas, Despesas, Saldo Real e Estimado. Ao restaurar, a invalidação de cache recalcula tudo.
 
