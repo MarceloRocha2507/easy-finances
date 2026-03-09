@@ -1163,12 +1163,39 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
+              const isFaturasGroup = grupo.key === 'faturas';
+              // Filter paid invoices if toggle is on
+              const displayItems = isFaturasGroup && ocultarPagas
+                ? grupo.items.filter(item => !('isFaturaCartao' in item) || (item as FaturaVirtual).statusFatura !== 'paga')
+                : grupo.items;
+              
+              if (isFaturasGroup && displayItems.length === 0 && ocultarPagas) {
+                return null;
+              }
+
               return (
                 <AnimatedItem key={grupo.key} index={grupoIdx} className="mb-4">
-                  <GroupHeader grupo={grupo} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <GroupHeader grupo={{...grupo, items: displayItems}} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
+                    </div>
+                    {isFaturasGroup && (
+                      <div className="flex items-center gap-1.5 shrink-0 pb-1">
+                        <Label htmlFor="ocultar-pagas" className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">
+                          Ocultar pagas
+                        </Label>
+                        <Switch
+                          id="ocultar-pagas"
+                          checked={ocultarPagas}
+                          onCheckedChange={setOcultarPagas}
+                          className="scale-75"
+                        />
+                      </div>
+                    )}
+                  </div>
                   {!isCollapsed && (
                     <div className="divide-y divide-border/30">
-                      {grupo.items.map((item, itemIdx) => (
+                      {displayItems.map((item, itemIdx) => (
                         <div
                           key={item.id}
                           className="stagger-item"
