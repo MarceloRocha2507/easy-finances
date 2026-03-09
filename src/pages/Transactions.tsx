@@ -471,6 +471,7 @@ export default function Transactions() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category_id: transaction.category_id || '',
+      banco_id: transaction.banco_id || null,
       description: transaction.description || '',
       date: new Date(transaction.date),
       status: transaction.status || 'completed',
