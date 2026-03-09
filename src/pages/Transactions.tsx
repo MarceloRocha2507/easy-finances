@@ -41,6 +41,7 @@ interface TransactionFormData {
   type: 'income' | 'expense';
   amount: string;
   category_id: string;
+  banco_id: string | null;
   description: string;
   date: Date;
   status: TransactionStatus;
