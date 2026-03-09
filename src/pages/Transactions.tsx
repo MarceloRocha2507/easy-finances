@@ -566,6 +566,7 @@ export default function Transactions() {
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-semibold text-foreground">Transações</h1>
           <div className="flex gap-2">
+            <LixeiraDialog />
             <Button 
               variant="outline" 
               size="sm"
