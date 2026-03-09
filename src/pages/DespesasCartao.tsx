@@ -833,6 +833,15 @@ export default function DespesasCartao() {
                         </div>
                       </TableCell>
 
+                      <TableCell className="text-right">
+                        <span className={cn(
+                          "font-semibold text-sm tabular-nums",
+                          p.valor < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
+                        )}>
+                          {formatCurrency(Math.abs(p.valor))}
+                        </span>
+                      </TableCell>
+
                       <TableCell className="hidden lg:table-cell">
                         <span className="text-sm text-muted-foreground">
                           {p.data_compra 
