@@ -1112,6 +1112,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .select('type, amount, due_date')
         .eq('user_id', user!.id)
         .eq('status', 'pending')
+        .is('deleted_at', null)
         .gte('due_date', inicioMes)
         .lte('due_date', fimMes);
 
