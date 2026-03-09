@@ -165,7 +165,7 @@ const GRUPO_CONFIG = {
 function classificarItem(item: Transaction | FaturaVirtual): string {
   if ('isFaturaCartao' in item) return 'faturas';
   const t = item as Transaction;
-  if (t.category?.name === 'Fatura de Cartão') return 'faturas';
+  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') return 'faturas';
   if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
     return t.type === 'income' ? 'receitas_fixas' : 'fixas';
   }
@@ -1318,7 +1318,7 @@ interface TransactionRowProps {
 }
 
 function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
-  const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.description?.startsWith('Fatura ');
+  const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];

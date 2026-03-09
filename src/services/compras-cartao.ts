@@ -892,35 +892,48 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
       year: "numeric",
     });
 
-    // Buscar ou criar categoria "Fatura de Cartão"
+    // Buscar ou criar categoria "Fatura do Cartão" (alinhado com trigger create_default_categories)
     let categoryId: string | null = null;
     
     const { data: categoriaExistente } = await (supabase as any)
       .from("categories")
       .select("id")
       .eq("user_id", user.id)
-      .eq("name", "Fatura de Cartão")
+      .eq("name", "Fatura do Cartão")
       .eq("type", "expense")
       .single();
 
     if (categoriaExistente) {
       categoryId = categoriaExistente.id;
     } else {
-      // Criar categoria automaticamente
-      const { data: novaCategoria } = await (supabase as any)
+      // Fallback: buscar com nome antigo "Fatura de Cartão"
+      const { data: categoriaFallback } = await (supabase as any)
         .from("categories")
-        .insert({
-          user_id: user.id,
-          name: "Fatura de Cartão",
-          icon: "credit-card",
-          color: "#8B5CF6",
-          type: "expense",
-          is_default: true,
-        })
         .select("id")
+        .eq("user_id", user.id)
+        .eq("name", "Fatura de Cartão")
+        .eq("type", "expense")
         .single();
-      
-      categoryId = novaCategoria?.id || null;
+
+      if (categoriaFallback) {
+        categoryId = categoriaFallback.id;
+      } else {
+        // Criar categoria automaticamente
+        const { data: novaCategoria } = await (supabase as any)
+          .from("categories")
+          .insert({
+            user_id: user.id,
+            name: "Fatura do Cartão",
+            icon: "credit-card",
+            color: "#8B5CF6",
+            type: "expense",
+            is_default: true,
+          })
+          .select("id")
+          .single();
+        
+        categoryId = novaCategoria?.id || null;
+      }
     }
 
     const { error: transactionError } = await (supabase as any)
@@ -1484,34 +1497,47 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<Adiant
 
   if (parcelaError) throw parcelaError;
 
-  // 3. Buscar ou criar categoria "Fatura de Cartão"
+  // 3. Buscar ou criar categoria "Fatura do Cartão"
   let categoryId: string | null = null;
 
   const { data: categoriaExistente } = await (supabase as any)
     .from("categories")
     .select("id")
     .eq("user_id", user.id)
-    .eq("name", "Fatura de Cartão")
+    .eq("name", "Fatura do Cartão")
     .eq("type", "expense")
     .single();
 
   if (categoriaExistente) {
     categoryId = categoriaExistente.id;
   } else {
-    const { data: novaCategoria } = await (supabase as any)
+    // Fallback: buscar com nome antigo "Fatura de Cartão"
+    const { data: categoriaFallback } = await (supabase as any)
       .from("categories")
-      .insert({
-        user_id: user.id,
-        name: "Fatura de Cartão",
-        icon: "credit-card",
-        color: "#8B5CF6",
-        type: "expense",
-        is_default: true,
-      })
       .select("id")
+      .eq("user_id", user.id)
+      .eq("name", "Fatura de Cartão")
+      .eq("type", "expense")
       .single();
 
-    categoryId = novaCategoria?.id || null;
+    if (categoriaFallback) {
+      categoryId = categoriaFallback.id;
+    } else {
+      const { data: novaCategoria } = await (supabase as any)
+        .from("categories")
+        .insert({
+          user_id: user.id,
+          name: "Fatura do Cartão",
+          icon: "credit-card",
+          color: "#8B5CF6",
+          type: "expense",
+          is_default: true,
+        })
+        .select("id")
+        .single();
+
+      categoryId = novaCategoria?.id || null;
+    }
   }
 
   // 4. Criar transação de despesa no saldo real
