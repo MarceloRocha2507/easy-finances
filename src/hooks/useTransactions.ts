@@ -425,6 +425,7 @@ export function useMonthlyData(year: number) {
         .select('type, amount, date')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .gte('date', startDate)
         .lte('date', endDate);
 
