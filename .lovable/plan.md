@@ -1,39 +1,38 @@
 
 
-## Problema
+## Diagnóstico: Fatura paga não cria transação de despesa
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+### O que encontrei
 
-## Solução
+**Problema principal:** Quando todas as compras de um cartão são estornadas, o total da fatura vai para 0 ou negativo. Na função `pagarFaturaComTransacao` (linha 889), existe a condição:
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+```typescript
+if (input.valorTotal > 0) {
+  // cria transação de despesa
+}
+```
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+Ou seja, se o valor total é ≤ 0 (após estornos), a transação de despesa simplesmente não é criada. O pagamento apenas marca as parcelas como pagas sem registrar nada no saldo.
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+**Problema secundário:** Inconsistência no nome da categoria:
+- O trigger `create_default_categories` cria "Fatura **do** Cartão"
+- A função `pagarFaturaComTransacao` busca "Fatura **de** Cartão"
+- Resultado: o mesmo usuário tem as duas categorias duplicadas no banco
 
-## Alterações
+### Correções
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+**1. `src/services/compras-cartao.ts` — Unificar nome da categoria**
+- Na função `pagarFaturaComTransacao`, trocar `"Fatura de Cartão"` por `"Fatura do Cartão"` (alinhado com o trigger e o resto do sistema)
+- Adicionar fallback: se não encontrar "Fatura do Cartão", buscar "Fatura de Cartão" como alternativa
 
-Reescrever o componente:
+**2. `src/services/compras-cartao.ts` — Permitir transação mesmo com valor 0**
+- Manter a condição `valorTotal > 0` para não criar transação de R$0 (faz sentido)
+- Mas garantir que quando o usuário explicitamente clica "Pagar Fatura", o fluxo não falhe silenciosamente
+- Adicionar log/toast informativo quando valor é 0 para o usuário entender que não há nada a pagar
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+**3. `src/pages/Transactions.tsx` — Classificação robusta**
+- Atualizar o filtro para aceitar ambos os nomes: `'Fatura de Cartão'` ou `'Fatura do Cartão'`
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+**4. `src/components/cartoes/PagarFaturaDialog.tsx` — Feedback quando total é zero**
+- Se `totalFatura <= 0`, mostrar mensagem explicativa ao invés de permitir confirmação silenciosa sem efeito
 
