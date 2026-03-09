@@ -90,6 +90,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       const faturas: FaturaVirtual[] = [];
 
       for (const [key, grupo] of grupos) {
+        if (grupo.total <= 0) continue;
         const cartao = cartaoMap.get(grupo.cartaoId);
         if (!cartao) continue;
 
