@@ -1,39 +1,32 @@
 
 
-## Problema
+## Plano: Diferenciar faturas pagas na listagem
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+### Problema atual
+O hook `useFaturasNaListagem` filtra apenas parcelas com `paga: false`. Quando uma fatura é paga, ela desaparece da lista.
 
-## Solução
+### Alterações
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+**1. `src/hooks/useFaturasNaListagem.ts`**
+- Remover o filtro `.eq('paga', false)` da query de parcelas
+- Adicionar campo `paga: boolean` ao tipo `FaturaVirtual` e ao `statusFatura` (novo valor `'paga'`)
+- Na agrupação, separar totais pagos e não pagos por cartão+mês
+- Se todas as parcelas de um grupo estão pagas → `statusFatura = 'paga'`
+- Na ordenação final: faturas não pagas primeiro, pagas por último
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+**2. `src/pages/Transactions.tsx` — `FaturaCartaoRow`**
+- Adicionar config de status `paga: { label: 'Paga', className: 'bg-green-100 text-green-700 ...' }`
+- Quando `fatura.statusFatura === 'paga'`: valor em verde (`text-green-600`)
+- Ícone de fundo muda para verde quando paga
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+**3. `src/pages/Transactions.tsx` — Toggle "Ocultar pagas"**
+- Adicionar state `ocultarPagas` (default: false)
+- Renderizar um Switch/toggle acima da lista de faturas no grupo "Faturas de Cartão"
+- Quando ativo, filtrar faturas com `statusFatura === 'paga'` antes de renderizar
 
-## Alterações
+### Detalhes técnicos
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+No hook, a query passa a buscar todas as parcelas (pagas e não pagas). A agrupação verifica se **todas** parcelas de um cartão+mês estão pagas para definir `statusFatura = 'paga'`. A ordenação coloca pagas no final.
 
-Reescrever o componente:
-
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
-
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+O toggle será um `Switch` simples com label "Ocultar pagas" posicionado no header do grupo "Faturas de Cartão" via `GroupHeader` ou inline.
 
