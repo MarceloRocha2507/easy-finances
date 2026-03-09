@@ -1190,9 +1190,16 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
+        const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
         stats.pendingCount++;
-        if (t.type === 'income') stats.pendingIncome += amount;
-        else stats.pendingExpense += amount;
+        if (t.type === 'income') {
+          stats.pendingIncome += amount;
+        } else {
+          // Despesas com categoria "Fatura do Cartão" já estão em faturaCartaoTitular
+          if (!isFaturaCartao) {
+            stats.pendingExpense += amount;
+          }
+        }
         if (t.due_date && t.due_date < today) stats.overdueCount++;
       });
 
