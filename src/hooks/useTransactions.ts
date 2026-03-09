@@ -775,28 +775,23 @@ export function useDeleteRecurringTransactions() {
       const groupId = transaction.parent_id || transaction.id;
       const transactionDate = transaction.date;
 
-      // Delete all in group with date >= selected date
-      // This includes: parent (if groupId === parent itself and date matches) + children
+      // Soft delete all in group with date >= selected date
       const { error: deleteChildrenError } = await supabase
         .from('transactions')
-        .delete()
+        .update({ deleted_at: deletedAt } as any)
         .eq('parent_id', groupId)
         .gte('date', transactionDate);
 
       if (deleteChildrenError) throw deleteChildrenError;
 
-      // Also delete the parent itself if it's in range
       if (!transaction.parent_id) {
-        // The selected IS the parent, already handled above via children delete
-        // But we also need to delete the parent record itself
         const { error: deleteParentError } = await supabase
           .from('transactions')
-          .delete()
+          .update({ deleted_at: deletedAt } as any)
           .eq('id', groupId)
           .gte('date', transactionDate);
         if (deleteParentError) throw deleteParentError;
       } else {
-        // Selected is a child; check if parent date is also >= and delete it too
         const { data: parent } = await supabase
           .from('transactions')
           .select('id, date')
@@ -806,7 +801,7 @@ export function useDeleteRecurringTransactions() {
         if (parent && parent.date >= transactionDate) {
           const { error: deleteParentError } = await supabase
             .from('transactions')
-            .delete()
+            .update({ deleted_at: deletedAt } as any)
             .eq('id', parent.id);
           if (deleteParentError) throw deleteParentError;
         }
