@@ -68,6 +68,7 @@ export interface Transaction {
   id: string;
   user_id: string;
   category_id: string | null;
+  banco_id: string | null;
   type: 'income' | 'expense';
   amount: number;
   description: string | null;
