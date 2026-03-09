@@ -1524,18 +1524,30 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
     aberta: { label: 'Em aberto', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
     fechada: { label: 'Fechada', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
     pendente: { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
+    paga: { label: 'Paga', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
   };
 
   const status = statusConfig[fatura.statusFatura];
+  const isPaga = fatura.statusFatura === 'paga';
 
   return (
     <div 
-      className="group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
+      className={cn(
+        "group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer",
+        isPaga && "opacity-70"
+      )}
       onClick={onClick}
     >
-      {/* Ícone de cartão com fundo roxo */}
-      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0 bg-violet-100 dark:bg-violet-900/30">
-        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-600" />
+      {/* Ícone de cartão */}
+      <div className={cn(
+        "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
+        isPaga ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-violet-100 dark:bg-violet-900/30"
+      )}>
+        {isPaga ? (
+          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+        ) : (
+          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-600" />
+        )}
       </div>
       
       {/* Descrição + Status */}
@@ -1549,7 +1561,7 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
           </Badge>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-          <span>Vence {format(parseISO(fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}</span>
+          <span>{isPaga ? 'Paga em' : 'Vence'} {format(parseISO(fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}</span>
           <span className="hidden sm:inline text-muted-foreground/50">•</span>
           <span className="hidden sm:inline" style={{ color: fatura.cartaoCor }}>
             {fatura.cartaoNome}
@@ -1558,7 +1570,10 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
       </div>
 
       {/* Valor da fatura */}
-      <span className="font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base text-muted-foreground">
+      <span className={cn(
+        "font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base",
+        isPaga ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+      )}>
         {formatCurrency(fatura.amount)}
       </span>
     </div>
