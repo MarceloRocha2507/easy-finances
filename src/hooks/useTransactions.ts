@@ -48,14 +48,13 @@ async function enviarNotificacaoTelegram(params: {
 
 // Helper: batch invalidation for all transaction-related caches
 function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClient>) {
-  // Lightweight queries: refetch immediately
   queryClient.invalidateQueries({ queryKey: ['transactions'] });
   queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
   queryClient.invalidateQueries({ queryKey: ['expenses-by-category'] });
   queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
   queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
+  queryClient.invalidateQueries({ queryKey: ['bancos-resumo'] });
 
-  // Heavy queries: mark stale but don't refetch until accessed
   queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
   queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
 }
