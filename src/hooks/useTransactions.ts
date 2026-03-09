@@ -91,6 +91,7 @@ export interface TransactionInsert {
   type: 'income' | 'expense';
   amount: number;
   category_id?: string;
+  banco_id?: string | null;
   description?: string;
   date?: string;
   status?: TransactionStatus;

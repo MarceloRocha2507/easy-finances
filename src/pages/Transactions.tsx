@@ -701,6 +701,14 @@ export default function Transactions() {
                     )}
                   </div>
 
+                  {/* Conta Bancária */}
+                  <BancoSelector
+                    value={formData.banco_id}
+                    onChange={(bancoId) => setFormData({ ...formData, banco_id: bancoId })}
+                    label="Conta Bancária"
+                    placeholder="Selecione a conta"
+                  />
+
                   {/* Data */}
                   <div className="space-y-2">
                     <Label>Data</Label>
