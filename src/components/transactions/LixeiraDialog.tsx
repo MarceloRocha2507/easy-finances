@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, RotateCcw, AlertTriangle, Package } from 'lucide-react';
+import { Trash2, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -23,14 +23,9 @@ export function LixeiraDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
+        <Button variant="outline" size="sm">
           <Trash2 className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">Lixeira</span>
-          {count > 0 && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 min-w-5 px-1 text-[10px]">
-              {count}
-            </Badge>
-          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -38,13 +33,13 @@ export function LixeiraDialog() {
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-muted-foreground" />
-              Lixeira ({count})
+              Lixeira
             </DialogTitle>
             {count > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Esvaziar
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs">
+                    Esvaziar tudo
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -78,17 +73,17 @@ export function LixeiraDialog() {
             message="Nenhuma transação excluída."
           />
         ) : (
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <div className="divide-y divide-border max-h-[60vh] overflow-y-auto -mx-4 sm:-mx-6">
             {deletedTransactions?.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-card"
+                className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {t.description || 'Sem descrição'}
                   </p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                     <span className={cn(
                       "text-sm font-semibold tabular-nums",
                       t.type === 'income' ? 'text-emerald-600' : 'text-red-500'
@@ -96,18 +91,20 @@ export function LixeiraDialog() {
                       {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                     </span>
                     {t.category && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 hidden sm:inline-flex">
                         {(t.category as any).name}
                       </Badge>
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     {format(parseISO(t.date), "dd/MM/yyyy", { locale: ptBR })}
-                    {' · Excluída em '}
-                    {format(parseISO(t.deleted_at), "dd/MM HH:mm", { locale: ptBR })}
+                    <span className="hidden sm:inline">
+                      {' · Excluída em '}
+                      {format(parseISO(t.deleted_at), "dd/MM HH:mm", { locale: ptBR })}
+                    </span>
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"
