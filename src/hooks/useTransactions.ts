@@ -1091,9 +1091,18 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão']);
 
-      const metaCategoryIds = new Set((metaCategories || []).map(c => c.id));
+      const metaCategoryIds = new Set(
+        (metaCategories || [])
+          .filter(c => c.name !== 'Fatura do Cartão')
+          .map(c => c.id)
+      );
+      const faturaCategoryIds = new Set(
+        (metaCategories || [])
+          .filter(c => c.name === 'Fatura do Cartão')
+          .map(c => c.id)
+      );
 
       // 3. Buscar transações completed DO MÊS para receitas/despesas exibidas
       const { data: completedDoMes, error: completedDoMesError } = await supabase
