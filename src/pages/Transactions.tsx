@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
+import { LixeiraDialog } from '@/components/transactions/LixeiraDialog';
 import { Layout } from '@/components/Layout';
 import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
@@ -495,7 +496,7 @@ export default function Transactions() {
     if (isRecurring) {
       setRecurringDeleteTransaction(transaction);
     } else {
-      if (window.confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
+      if (window.confirm('Mover este registro para a lixeira?')) {
         deleteMutation.mutate(transaction.id);
       }
     }
@@ -565,6 +566,7 @@ export default function Transactions() {
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-semibold text-foreground">Transações</h1>
           <div className="flex gap-2">
+            <LixeiraDialog />
             <Button 
               variant="outline" 
               size="sm"

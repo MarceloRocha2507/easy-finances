@@ -1123,6 +1123,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           date: string
+          deleted_at: string | null
           description: string | null
           due_date: string | null
           id: string
@@ -1144,6 +1145,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           date?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
@@ -1165,6 +1167,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           date?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string

@@ -54,6 +54,7 @@ function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClie
   queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
   queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
   queryClient.invalidateQueries({ queryKey: ['bancos-resumo'] });
+  queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
 
   queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
   queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
@@ -125,6 +126,7 @@ export function useTransactions(filters?: TransactionFilters) {
           category:categories(*)
         `)
         .eq('user_id', user!.id)
+        .is('deleted_at', null)
         .order('date', { ascending: false });
 
       if (filters?.startDate) {
@@ -172,7 +174,8 @@ export function useTransactionStats(filters?: TransactionFilters) {
         .from('transactions')
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .is('deleted_at', null);
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -278,7 +281,8 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         `)
         .eq('user_id', user!.id)
         .eq('type', 'expense')
-        .in('status', ['completed', 'pending']);
+        .in('status', ['completed', 'pending'])
+        .is('deleted_at', null);
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -422,6 +426,7 @@ export function useMonthlyData(year: number) {
         .select('type, amount, date')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .gte('date', startDate)
         .lte('date', endDate);
 
@@ -718,16 +723,17 @@ export function useDeleteTransaction() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('transactions')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       invalidateTransactionCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
       toast({
-        title: 'Registro removido',
-        description: 'O registro financeiro foi removido com sucesso.',
+        title: 'Registro movido para lixeira',
+        description: 'Você pode restaurá-lo a qualquer momento.',
       });
     },
     onError: () => {
@@ -747,10 +753,11 @@ export function useDeleteRecurringTransactions() {
 
   return useMutation({
     mutationFn: async ({ transactionId, mode }: { transactionId: string; mode: 'single' | 'future' }) => {
+      const deletedAt = new Date().toISOString();
       if (mode === 'single') {
         const { error } = await supabase
           .from('transactions')
-          .delete()
+          .update({ deleted_at: deletedAt } as any)
           .eq('id', transactionId);
         if (error) throw error;
         return;
@@ -769,28 +776,23 @@ export function useDeleteRecurringTransactions() {
       const groupId = transaction.parent_id || transaction.id;
       const transactionDate = transaction.date;
 
-      // Delete all in group with date >= selected date
-      // This includes: parent (if groupId === parent itself and date matches) + children
+      // Soft delete all in group with date >= selected date
       const { error: deleteChildrenError } = await supabase
         .from('transactions')
-        .delete()
+        .update({ deleted_at: deletedAt } as any)
         .eq('parent_id', groupId)
         .gte('date', transactionDate);
 
       if (deleteChildrenError) throw deleteChildrenError;
 
-      // Also delete the parent itself if it's in range
       if (!transaction.parent_id) {
-        // The selected IS the parent, already handled above via children delete
-        // But we also need to delete the parent record itself
         const { error: deleteParentError } = await supabase
           .from('transactions')
-          .delete()
+          .update({ deleted_at: deletedAt } as any)
           .eq('id', groupId)
           .gte('date', transactionDate);
         if (deleteParentError) throw deleteParentError;
       } else {
-        // Selected is a child; check if parent date is also >= and delete it too
         const { data: parent } = await supabase
           .from('transactions')
           .select('id, date')
@@ -800,7 +802,7 @@ export function useDeleteRecurringTransactions() {
         if (parent && parent.date >= transactionDate) {
           const { error: deleteParentError } = await supabase
             .from('transactions')
-            .delete()
+            .update({ deleted_at: deletedAt } as any)
             .eq('id', parent.id);
           if (deleteParentError) throw deleteParentError;
         }
@@ -808,11 +810,12 @@ export function useDeleteRecurringTransactions() {
     },
     onSuccess: (_, variables) => {
       invalidateTransactionCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
       toast({
-        title: 'Registro(s) removido(s)',
+        title: 'Movido para lixeira',
         description: variables.mode === 'single'
-          ? 'O lançamento foi removido.'
-          : 'Este e todos os lançamentos futuros foram removidos.',
+          ? 'O lançamento foi movido para a lixeira.'
+          : 'Este e todos os lançamentos futuros foram movidos para a lixeira.',
       });
     },
     onError: () => {
@@ -871,7 +874,8 @@ export function usePendingStats() {
       const { data, error } = await supabase
         .from('transactions')
         .select('type, amount, due_date')
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .is('deleted_at', null);
 
       if (error) throw error;
 
@@ -923,6 +927,7 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
         .select('id, type, amount, status, created_at')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
         .limit(10000);
 
@@ -977,6 +982,7 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
           *,
           category:categories(*)
         `)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (filters?.startDate) {
@@ -1075,6 +1081,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .limit(10000);
 
       if (allCompletedError) throw allCompletedError;
@@ -1094,6 +1101,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .gte('date', inicioMes)
         .lte('date', fimMes);
 
@@ -1105,6 +1113,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .select('type, amount, due_date')
         .eq('user_id', user!.id)
         .eq('status', 'pending')
+        .is('deleted_at', null)
         .gte('due_date', inicioMes)
         .lte('due_date', fimMes);
 
@@ -1217,5 +1226,98 @@ export function useCompleteStats(mesReferencia?: Date) {
     enabled: !!user,
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 10,
+  });
+}
+
+// ==================== LIXEIRA ====================
+
+export function useDeletedTransactions() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['deleted-transactions', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .eq('user_id', user!.id)
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+      return data as (Transaction & { deleted_at: string })[];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useRestoreTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ deleted_at: null } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Transação restaurada', description: 'A transação voltou para a listagem.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível restaurar.', variant: 'destructive' });
+    },
+  });
+}
+
+export function usePermanentDeleteTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Excluído permanentemente', description: 'A transação foi removida definitivamente.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível excluir.', variant: 'destructive' });
+    },
+  });
+}
+
+export function useEmptyTrash() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user!.id)
+        .not('deleted_at', 'is', null);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Lixeira esvaziada', description: 'Todas as transações foram removidas permanentemente.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível esvaziar a lixeira.', variant: 'destructive' });
+    },
   });
 }
