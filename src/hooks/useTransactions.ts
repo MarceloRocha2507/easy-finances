@@ -54,6 +54,7 @@ function invalidateTransactionCaches(queryClient: ReturnType<typeof useQueryClie
   queryClient.invalidateQueries({ queryKey: ['monthly-data'] });
   queryClient.invalidateQueries({ queryKey: ['transactions-with-balance'] });
   queryClient.invalidateQueries({ queryKey: ['bancos-resumo'] });
+  queryClient.invalidateQueries({ queryKey: ['deleted-transactions'] });
 
   queryClient.invalidateQueries({ queryKey: ['complete-stats'], refetchType: 'active' });
   queryClient.invalidateQueries({ queryKey: ['dashboard-completo'], refetchType: 'active' });
