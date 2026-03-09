@@ -237,6 +237,32 @@ export function PagarFaturaDialog({
     );
   }
 
+  // Se total da fatura é zero ou negativo (ex: estornos), avisar o usuário
+  if (totalFatura <= 0 && !carregandoResumo) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-500" />
+              Fatura sem valor a pagar
+            </DialogTitle>
+            <DialogDescription>
+              O total da fatura de <span className="capitalize">{mesLabel}</span> é{" "}
+              <strong>{formatCurrency(totalFatura)}</strong> (provavelmente devido a estornos).
+              Não há valor a ser debitado do seu saldo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end pt-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const canConfirm = modo !== "dividir_valores" || dividirValido;
 
   return (

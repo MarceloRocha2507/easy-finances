@@ -1318,7 +1318,7 @@ interface TransactionRowProps {
 }
 
 function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
-  const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.description?.startsWith('Fatura ');
+  const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
   const today = new Date().toISOString().split('T')[0];
