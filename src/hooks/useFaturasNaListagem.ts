@@ -90,6 +90,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       const faturas: FaturaVirtual[] = [];
 
       for (const [key, grupo] of grupos) {
+        if (grupo.total <= 0) continue;
         const cartao = cartaoMap.get(grupo.cartaoId);
         if (!cartao) continue;
 
@@ -104,7 +105,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const dataVencStr = format(dataVencimento, 'yyyy-MM-dd');
 
         // Determinar status
-        const paga = !grupo.temPendente;
+        const paga = !grupo.temPendente || grupo.total <= 0;
         let statusFatura: FaturaVirtual['statusFatura'];
 
         if (paga) {

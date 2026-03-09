@@ -2,25 +2,38 @@
 
 ## Problema
 
-Quando todas as compras de um cartão são estornadas, parcelas negativas (estorno) são criadas com `paga: false`. Na agrupação da fatura, o total líquido fica 0 ou negativo, mas `temPendente` continua `true` porque as parcelas de estorno também têm `paga: false`. Isso faz a fatura aparecer como pendente e descontar do saldo repetidamente.
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
-## Correção
+## Solução
 
-**Arquivo: `src/hooks/useFaturasNaListagem.ts`**
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
 
-Na lógica de determinação de status (linhas 107-126), adicionar uma verificação: se o `total` do grupo for <= 0, tratar como `paga` independentemente de `temPendente`. Faturas com total <= 0 significam que os estornos cobriram ou excederam o valor original.
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
 
-```typescript
-// Linha 107 - Após calcular grupo.total e grupo.temPendente
-const paga = !grupo.temPendente || grupo.total <= 0;
-```
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
 
-Além disso, excluir completamente faturas com total <= 0 da listagem (não faz sentido mostrar uma fatura de R$ 0,00 ou negativa):
+## Alterações
 
-```typescript
-// Antes de criar a FaturaVirtual, pular grupos com total <= 0
-if (grupo.total <= 0) continue;
-```
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
 
-Isso resolve o problema de forma limpa: faturas totalmente estornadas simplesmente não aparecem na lista, e não afetam o saldo.
+Reescrever o componente:
+
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
+
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
 
