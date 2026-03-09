@@ -505,13 +505,14 @@ export default function Transactions() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category_id: transaction.category_id || '',
+      banco_id: transaction.banco_id || null,
       description: transaction.description || '',
-      date: new Date(), // Data atual para a duplicação
+      date: new Date(),
       status: 'completed',
       due_date: undefined,
       is_recurring: transaction.is_recurring || false,
       recurrence_day: transaction.recurrence_day || 1,
-      tipoLancamento: 'unica', // Reset para única na duplicação
+      tipoLancamento: 'unica',
       totalParcelas: 2,
     });
     setEditingId(null); // Nova transação
