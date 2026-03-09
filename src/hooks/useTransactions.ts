@@ -1100,6 +1100,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .select('type, amount, category_id')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .gte('date', inicioMes)
         .lte('date', fimMes);
 
