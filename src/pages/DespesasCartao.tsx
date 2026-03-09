@@ -738,6 +738,7 @@ export default function DespesasCartao() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="hidden lg:table-cell p-0">
                     <Button
                       variant="ghost"
@@ -766,7 +767,7 @@ export default function DespesasCartao() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
@@ -774,7 +775,7 @@ export default function DespesasCartao() {
 
                 {!loading && parcelasFiltradas.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
                       <p className="text-muted-foreground text-sm">
                         {temFiltrosAtivos
@@ -830,6 +831,15 @@ export default function DespesasCartao() {
                             {p.descricao}
                           </p>
                         </div>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <span className={cn(
+                          "font-semibold text-sm tabular-nums",
+                          p.valor < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
+                        )}>
+                          {formatCurrency(Math.abs(p.valor))}
+                        </span>
                       </TableCell>
 
                       <TableCell className="hidden lg:table-cell">
