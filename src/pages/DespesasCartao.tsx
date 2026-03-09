@@ -775,7 +775,7 @@ export default function DespesasCartao() {
 
                 {!loading && parcelasFiltradas.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-20" />
                       <p className="text-muted-foreground text-sm">
                         {temFiltrosAtivos
