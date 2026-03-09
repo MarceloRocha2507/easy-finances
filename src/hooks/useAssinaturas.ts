@@ -71,6 +71,8 @@ export function useAssinaturas() {
       })) as Assinatura[];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
   });
 
   const criar = useMutation({
