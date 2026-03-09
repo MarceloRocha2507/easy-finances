@@ -1183,7 +1183,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       (completedDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
-        if (!isMetaCategory) {
+        const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
+        if (!isMetaCategory && !isFaturaCartao) {
           if (t.type === 'income') stats.completedIncome += amount;
           else stats.completedExpense += amount;
         }
