@@ -17,8 +17,9 @@ export interface FaturaVirtual {
   cartaoNome: string;
   cartaoCor: string;
   cartaoId: string;
-  statusFatura: 'aberta' | 'fechada' | 'pendente';
+  statusFatura: 'aberta' | 'fechada' | 'pendente' | 'paga';
   mesReferencia: string;
+  paga: boolean;
 }
 
 export function useFaturasNaListagem(mesReferencia?: Date) {
@@ -48,11 +49,10 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       const mesInicioStr = format(mesesRange[0], 'yyyy-MM-dd');
       const mesFimStr = format(mesesRange[mesesRange.length - 1], 'yyyy-MM-dd');
 
-      // 3. Buscar parcelas não pagas agrupadas
+      // 3. Buscar parcelas (pagas e não pagas)
       const { data: parcelas, error: parcelasError } = await supabase
         .from('parcelas_cartao')
-        .select('valor, mes_referencia, compra_id, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
-        .eq('paga', false)
+        .select('valor, mes_referencia, compra_id, paga, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
         .eq('ativo', true)
         .gte('mes_referencia', mesInicioStr)
         .lte('mes_referencia', mesFimStr);
@@ -60,7 +60,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       if (parcelasError || !parcelas?.length) return [];
 
       // 4. Agrupar por cartao_id + mes_referencia
-      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number }>();
+      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number; temPendente: boolean }>();
 
       for (const p of parcelas) {
         const compra = p.compras_cartao as any;
@@ -76,9 +76,13 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const key = `${cartaoId}-${mesRef}`;
         
         if (!grupos.has(key)) {
-          grupos.set(key, { cartaoId, mesRef, total: 0 });
+          grupos.set(key, { cartaoId, mesRef, total: 0, temPendente: false });
         }
-        grupos.get(key)!.total += Number(p.valor);
+        const grupo = grupos.get(key)!;
+        grupo.total += Number(p.valor);
+        if (!p.paga) {
+          grupo.temPendente = true;
+        }
       }
 
       // 5. Converter em FaturaVirtual
@@ -100,21 +104,25 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const dataVencStr = format(dataVencimento, 'yyyy-MM-dd');
 
         // Determinar status
+        const paga = !grupo.temPendente;
         let statusFatura: FaturaVirtual['statusFatura'];
-        const mesRefMonth = mesRefDate.getMonth();
-        const mesRefYear = mesRefDate.getFullYear();
-        const hoje = new Date();
-        const hojeMonth = hoje.getMonth();
-        const hojeYear = hoje.getFullYear();
 
-        if (mesRefYear === hojeYear && mesRefMonth === hojeMonth) {
-          // Mês atual
-          statusFatura = hoje.getDate() >= cartao.dia_fechamento ? 'fechada' : 'aberta';
-        } else if (mesRefDate > startOfMonth(hoje)) {
-          statusFatura = 'pendente';
+        if (paga) {
+          statusFatura = 'paga';
         } else {
-          // Mês passado que ainda não foi pago
-          statusFatura = 'fechada';
+          const mesRefMonth = mesRefDate.getMonth();
+          const mesRefYear = mesRefDate.getFullYear();
+          const hoje = new Date();
+          const hojeMonth = hoje.getMonth();
+          const hojeYear = hoje.getFullYear();
+
+          if (mesRefYear === hojeYear && mesRefMonth === hojeMonth) {
+            statusFatura = hoje.getDate() >= cartao.dia_fechamento ? 'fechada' : 'aberta';
+          } else if (mesRefDate > startOfMonth(hoje)) {
+            statusFatura = 'pendente';
+          } else {
+            statusFatura = 'fechada';
+          }
         }
 
         faturas.push({
@@ -132,11 +140,17 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
           cartaoId: cartao.id,
           statusFatura,
           mesReferencia: grupo.mesRef,
+          paga,
         });
       }
 
-      // Ordenar por data
-      faturas.sort((a, b) => a.date.localeCompare(b.date));
+      // Ordenar: não pagas primeiro, depois por data
+      faturas.sort((a, b) => {
+        const aPaga = a.statusFatura === 'paga';
+        const bPaga = b.statusFatura === 'paga';
+        if (aPaga !== bPaga) return aPaga ? 1 : -1;
+        return a.date.localeCompare(b.date);
+      });
 
       return faturas;
     },
