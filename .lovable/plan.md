@@ -1,46 +1,39 @@
 
 
-## Correção: Dupla contabilização ao pagar fatura do cartão
+## Problema
 
-### Problema
+A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
 
-Quando o usuário paga a fatura do cartão, o sistema cria uma transação "completed" com categoria "Fatura do Cartão". Essa transação entra no cálculo de `allCompletedExpense`, reduzindo o `saldoDisponivel`. Porém, se as parcelas do cartão ainda não foram marcadas como pagas (ou no período antes da sincronização), a `faturaCartaoTitular` continua subtraindo o mesmo valor. Resultado: o valor da fatura é subtraído **duas vezes** do Saldo Estimado.
+## Solução
 
-### Solução
+Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
 
-Excluir transações com categoria "Fatura do Cartão" do cálculo de `allCompletedExpense` e `allCompletedIncome`, pois o sistema de cartões já rastreia esses valores separadamente via `parcelas_cartao`. Também excluir do cálculo de `completedExpense` do mês (cards de Receitas/Despesas).
+**Estado colapsado (padrão):**
+- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
+- Compacto, ocupa mínimo de espaço no Dashboard
 
-### Alterações em `src/hooks/useTransactions.ts`
+**Estado expandido (ao clicar):**
+- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
+- Total geral no rodapé
 
-**1. Loop de `allCompleted` (linhas 1158-1162):** Filtrar transações "Fatura do Cartão":
+## Alterações
 
-```typescript
-(allCompleted || []).forEach((t) => {
-  const amount = Number(t.amount);
-  const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
-  if (isFaturaCartao) return; // já rastreado pelo sistema de cartões
-  if (t.type === 'income') allCompletedIncome += amount;
-  else allCompletedExpense += amount;
-});
-```
+**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
 
-**2. Loop de `completedDoMes` (linhas 1181-1188):** Adicionar mesma exclusão (além da de metas):
+Reescrever o componente:
 
-```typescript
-(completedDoMes || []).forEach((t) => {
-  const amount = Number(t.amount);
-  const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
-  const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
-  if (!isMetaCategory && !isFaturaCartao) {
-    if (t.type === 'income') stats.completedIncome += amount;
-    else stats.completedExpense += amount;
-  }
-});
-```
+1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
 
-### Resultado
+2. **Header compacto clicável** — uma linha com:
+   - Icone + "Contas a Pagar"
+   - Badge com quantidade total (faturas + contas)
+   - Valor total em vermelho
+   - Chevron
 
-- Pagamento de fatura do cartão não reduz mais o saldo real/estimado (já coberto por `faturaCartaoTitular`)
-- Quando parcelas são pagas, `faturaCartaoTitular` zera naturalmente
-- Cards de Receitas/Despesas do mês não incluem pagamentos de fatura (evita inflar despesas)
+3. **Conteúdo expandido** — ao abrir:
+   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
+   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
+   - Rodapé com total geral
+
+4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
 
