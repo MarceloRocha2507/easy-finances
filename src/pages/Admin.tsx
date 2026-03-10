@@ -311,8 +311,6 @@ export default function Admin() {
             { label: "Inativos", value: usuariosInativos, icon: UserX, bg: "bg-rose-500/20", iconColor: "text-rose-600" },
             { label: "Expirando", value: expirandoEmBreve, icon: Clock, bg: "bg-amber-500/20", iconColor: "text-amber-600" },
             { label: "Transações", value: stats?.total_transacoes ?? "-", icon: ArrowRightLeft, bg: "bg-blue-500/20", iconColor: "text-blue-600" },
-            { label: "Cartões", value: stats?.total_cartoes ?? "-", icon: CreditCard, bg: "bg-violet-500/20", iconColor: "text-violet-600" },
-            { label: "Bancos", value: stats?.total_bancos ?? "-", icon: Building2, bg: "bg-teal-500/20", iconColor: "text-teal-600" },
           ].map(({ label, value, icon: Icon, bg, iconColor }, i) => (
             <Card key={label} className="shadow-sm rounded-xl animate-fade-in-up" style={{ animationDelay: `${i * 0.03}s` }}>
               <CardContent className="p-4">
