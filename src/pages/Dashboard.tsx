@@ -9,6 +9,7 @@ import {
   useMonthlyData,
   useCompleteStats,
 } from "@/hooks/useTransactions";
+import { useMesesComMovimentacao } from "@/hooks/useMesesComMovimentacao";
 import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
 
