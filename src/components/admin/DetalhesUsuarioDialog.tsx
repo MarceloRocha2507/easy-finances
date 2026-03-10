@@ -29,8 +29,6 @@ export function DetalhesUsuarioDialog({ user, open, onOpenChange, onFetchDetails
 
   const items = [
     { icon: ArrowRightLeft, label: "Transações", value: details?.total_transacoes ?? "-" },
-    { icon: CreditCard, label: "Cartões", value: details?.total_cartoes ?? "-" },
-    { icon: Building2, label: "Bancos", value: details?.total_bancos ?? "-" },
   ];
 
   return (
