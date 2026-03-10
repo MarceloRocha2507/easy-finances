@@ -159,7 +159,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      <WhatsNewDialog />
+      
     </div>
   );
 }
