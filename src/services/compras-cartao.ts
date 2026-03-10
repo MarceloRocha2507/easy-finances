@@ -871,6 +871,7 @@ export type PagarFaturaInput = {
   nomeCartao: string;
   mesReferencia: Date;
   valorTotal: number;
+  bancoId?: string | null;
   acertosRecebidos: Array<{
     responsavel_id: string;
     valor: number;
@@ -948,6 +949,7 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
         paid_date: new Date().toISOString().split("T")[0],
         category_id: categoryId,
         tipo_lancamento: "unica",
+        banco_id: input.bancoId || null,
       });
 
     if (transactionError) throw transactionError;

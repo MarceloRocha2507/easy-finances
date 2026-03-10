@@ -17,7 +17,8 @@ import { Cartao } from "@/services/cartoes";
 import { ParcelaFatura } from "@/services/compras-cartao";
 import { calcularResumoPorResponsavel } from "@/services/compras-cartao";
 import { pagarFaturaComTransacao } from "@/services/compras-cartao";
-import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHorizontal } from "lucide-react";
+import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHorizontal, Building2 } from "lucide-react";
+import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -55,6 +56,7 @@ export function PagarFaturaDialog({
   const [responsaveis, setResponsaveis] = useState<ResponsavelPagamento[]>([]);
   const [loading, setLoading] = useState(false);
   const [carregandoResumo, setCarregandoResumo] = useState(false);
+  const [bancoIdSelecionado, setBancoIdSelecionado] = useState<string | null>(cartao?.banco_id || null);
 
   // Calcular resumo por responsável quando abrir
   useEffect(() => {
@@ -191,6 +193,7 @@ export function PagarFaturaDialog({
         nomeCartao: cartao.nome,
         mesReferencia,
         valorTotal: parseFloat(valorQueEuPago.toFixed(2)),
+        bancoId: bancoIdSelecionado,
         acertosRecebidos,
       });
 
@@ -298,6 +301,17 @@ export function PagarFaturaDialog({
                 </span>
               </div>
             </div>
+
+            {/* Banco de débito */}
+            {!cartao.banco_id && (
+              <BancoSelector
+                value={bancoIdSelecionado}
+                onChange={setBancoIdSelecionado}
+                label="Debitar do banco"
+                placeholder="Selecione o banco"
+                showAddButton={false}
+              />
+            )}
 
             {/* Responsáveis com débito */}
             {outrosResponsaveis.length > 0 && modo !== "dividir_valores" && (
