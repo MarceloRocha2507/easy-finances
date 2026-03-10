@@ -41,7 +41,7 @@ const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 const InstalarPage = lazy(() => import("./pages/Instalar"));
 const AssistentePage = lazy(() => import("./pages/Assistente"));
-const ChangelogPage = lazy(() => import("./pages/Changelog"));
+
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
 const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
 
@@ -357,16 +357,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/changelog"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <ChangelogPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/admin"
