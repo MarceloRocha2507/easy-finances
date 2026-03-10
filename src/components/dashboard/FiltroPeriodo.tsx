@@ -20,8 +20,8 @@ function getMesOptions() {
   const options = [];
   const hoje = new Date();
 
-  // Mês atual + 24 meses anteriores (mais recentes primeiro)
-  for (let i = 0; i < 24; i++) {
+  // 24 meses anteriores (do mais antigo ao mais recente)
+  for (let i = 23; i >= 1; i--) {
     const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
     const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     const label = new Intl.DateTimeFormat("pt-BR", {
@@ -32,8 +32,8 @@ function getMesOptions() {
     options.push({ value, label, date: data });
   }
 
-  // 12 meses futuros (mais próximos primeiro)
-  for (let i = 1; i <= 12; i++) {
+  // Mês atual + 12 meses futuros (ordem crescente)
+  for (let i = 0; i <= 12; i++) {
     const data = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
     const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     const label = new Intl.DateTimeFormat("pt-BR", {
