@@ -6,7 +6,7 @@ import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { WhatsNewDialog } from "@/components/WhatsNewDialog";
+
 import { useLocation, useNavigate } from "react-router-dom";
 
 const SIDEBAR_WIDTH = 280;
@@ -159,7 +159,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      <WhatsNewDialog />
+      
     </div>
   );
 }
