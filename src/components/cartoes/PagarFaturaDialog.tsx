@@ -56,6 +56,7 @@ export function PagarFaturaDialog({
   const [responsaveis, setResponsaveis] = useState<ResponsavelPagamento[]>([]);
   const [loading, setLoading] = useState(false);
   const [carregandoResumo, setCarregandoResumo] = useState(false);
+  const [bancoIdSelecionado, setBancoIdSelecionado] = useState<string | null>(cartao?.banco_id || null);
 
   // Calcular resumo por responsável quando abrir
   useEffect(() => {
