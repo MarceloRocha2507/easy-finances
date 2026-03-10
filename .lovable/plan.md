@@ -1,39 +1,29 @@
 
 
-## Problema
+## Problem
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+When paying a credit card invoice ("Pagar Fatura"), the system creates a transaction in the `transactions` table but does **not** set the `banco_id` field. Since the "Saldo Real" is calculated as `saldo_inicial + sum(transactions where banco_id = banco.id)`, the payment transaction is invisible to the balance calculation.
 
-## Solução
+## Root Cause
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+In `src/services/compras-cartao.ts`, the `pagarFaturaComTransacao` function (line 939-953) inserts a transaction without `banco_id`. The card (`cartao`) has a `banco_id` field linking it to a bank, but this value is never passed through.
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+## Plan
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+### 1. Pass `banco_id` from the card to the payment function
 
-## Alterações
+**File: `src/services/compras-cartao.ts`**
+- Add `bancoId: string | null` to the `PagarFaturaInput` type
+- Include `banco_id: input.bancoId` in the transaction insert (line 941)
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
+### 2. Pass the card's `banco_id` from the dialog
 
-Reescrever o componente:
+**File: `src/components/cartoes/PagarFaturaDialog.tsx`**
+- Add `banco_id` to the `pagarFaturaComTransacao` call, sourcing it from `cartao.banco_id`
 
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
+### 3. Add bank selector fallback in the dialog
 
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
+If the card has no linked bank (`banco_id` is null), add an optional `BancoSelector` in the payment summary section so the user can choose which bank to debit. This ensures transactions always have a `banco_id` when possible.
 
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+This will make the payment correctly deduct from the "Saldo Real" by linking the expense transaction to the appropriate bank account.
 
