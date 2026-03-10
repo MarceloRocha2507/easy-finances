@@ -9,6 +9,7 @@ import {
   useMonthlyData,
   useCompleteStats,
 } from "@/hooks/useTransactions";
+import { useMesesComMovimentacao } from "@/hooks/useMesesComMovimentacao";
 import { useDashboardCompleto, CartaoDashboard } from "@/hooks/useDashboardCompleto";
 import { formatCurrency } from "@/lib/formatters";
 
@@ -112,6 +113,8 @@ export default function Dashboard() {
     refetch,
   } = useDashboardCompleto(mesReferencia);
 
+  const { data: mesesDisponiveis } = useMesesComMovimentacao();
+
   const pieData =
     expensesByCategory?.map((cat) => ({
       name: cat.name,
@@ -151,6 +154,7 @@ export default function Dashboard() {
         <FiltroPeriodo
           mesAtual={mesReferencia}
           onMesChange={setMesReferencia}
+          mesesDisponiveis={mesesDisponiveis}
         />
       </div>
 
@@ -276,6 +280,7 @@ export default function Dashboard() {
           </div>
         );
       })()}
+  
 
 
 

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,45 +15,46 @@ interface Props {
   onRefresh?: () => void;
   isLoading?: boolean;
   onResetToCurrentMonth?: () => void;
+  mesesDisponiveis?: string[]; // format: "YYYY-MM"
 }
 
-function getMesOptions() {
-  const options = [];
+function buildOptions(mesesDisponiveis?: string[]) {
   const hoje = new Date();
+  const mesAtualKey = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
 
-  // Mês atual no topo, seguido dos 12 meses futuros
-  for (let i = 0; i <= 12; i++) {
-    const data = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
-    const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+  let keys: string[];
+
+  if (mesesDisponiveis && mesesDisponiveis.length > 0) {
+    // Ensure current month is always included
+    const set = new Set(mesesDisponiveis);
+    set.add(mesAtualKey);
+    keys = Array.from(set).sort();
+  } else {
+    // Fallback: current month + 12 future + 24 past
+    const set = new Set<string>();
+    for (let i = -24; i <= 12; i++) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
+      set.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    keys = Array.from(set).sort();
+  }
+
+  return keys.map((value) => {
+    const [ano, mes] = value.split("-");
+    const date = new Date(Number(ano), Number(mes) - 1, 1);
     const label = new Intl.DateTimeFormat("pt-BR", {
       month: "long",
       year: "numeric",
-    }).format(data);
-
-    options.push({ value, label, date: data });
-  }
-
-  // Depois, 24 meses anteriores (do mais recente ao mais antigo)
-  for (let i = 1; i <= 24; i++) {
-    const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-    const value = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
-    const label = new Intl.DateTimeFormat("pt-BR", {
-      month: "long",
-      year: "numeric",
-    }).format(data);
-
-    options.push({ value, label, date: data });
-  }
-
-  return options;
+    }).format(date);
+    return { value, label, date };
+  });
 }
 
-export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onResetToCurrentMonth }: Props) {
-  const mesOptions = getMesOptions();
+export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onResetToCurrentMonth, mesesDisponiveis }: Props) {
+  const mesOptions = useMemo(() => buildOptions(mesesDisponiveis), [mesesDisponiveis]);
   
   const mesValue = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, "0")}`;
   
-  // Verificar se está no mês atual
   const hoje = new Date();
   const isMesAtual = mesAtual.getFullYear() === hoje.getFullYear() && mesAtual.getMonth() === hoje.getMonth();
 
@@ -64,16 +66,19 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
     }
   }
 
+  const currentIndex = mesOptions.findIndex((o) => o.value === mesValue);
+
   function handleMesAnterior() {
-    const novoMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1);
-    onMesChange(novoMes);
+    if (currentIndex > 0) {
+      const prev = mesOptions[currentIndex - 1];
+      onMesChange(prev.date);
+    }
   }
 
   function handleProximoMes() {
-    const novoMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
-    const limiteMaximo = new Date(hoje.getFullYear(), hoje.getMonth() + 12, 1);
-    if (novoMes <= limiteMaximo) {
-      onMesChange(novoMes);
+    if (currentIndex < mesOptions.length - 1) {
+      const next = mesOptions[currentIndex + 1];
+      onMesChange(next.date);
     }
   }
 
@@ -82,7 +87,8 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
     onMesChange(new Date(Number(ano), Number(mes) - 1, 1));
   }
 
-  const podeAvancar = mesAtual < new Date(hoje.getFullYear(), hoje.getMonth() + 12, 1);
+  const podeVoltar = currentIndex > 0;
+  const podeAvancar = currentIndex < mesOptions.length - 1;
 
   return (
     <div className="flex items-center gap-2">
@@ -90,6 +96,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
         variant="outline"
         size="icon"
         onClick={handleMesAnterior}
+        disabled={!podeVoltar}
         className="h-9 w-9"
       >
         <ChevronLeft className="h-4 w-4" />
