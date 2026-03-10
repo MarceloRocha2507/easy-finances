@@ -949,6 +949,7 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
         paid_date: new Date().toISOString().split("T")[0],
         category_id: categoryId,
         tipo_lancamento: "unica",
+        banco_id: input.bancoId || null,
       });
 
     if (transactionError) throw transactionError;

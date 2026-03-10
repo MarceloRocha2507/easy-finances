@@ -17,7 +17,8 @@ import { Cartao } from "@/services/cartoes";
 import { ParcelaFatura } from "@/services/compras-cartao";
 import { calcularResumoPorResponsavel } from "@/services/compras-cartao";
 import { pagarFaturaComTransacao } from "@/services/compras-cartao";
-import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHorizontal } from "lucide-react";
+import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHorizontal, Building2 } from "lucide-react";
+import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
