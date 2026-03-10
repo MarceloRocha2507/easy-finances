@@ -193,6 +193,7 @@ export function PagarFaturaDialog({
         nomeCartao: cartao.nome,
         mesReferencia,
         valorTotal: parseFloat(valorQueEuPago.toFixed(2)),
+        bancoId: bancoIdSelecionado,
         acertosRecebidos,
       });
 
