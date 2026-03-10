@@ -357,16 +357,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/changelog"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <ChangelogPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/admin"

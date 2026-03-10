@@ -155,19 +155,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         onItemClick={onItemClick}
       />
 
-      <Link
-        to="/changelog"
-        onClick={onItemClick}
-        className={cn(
-          "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-2",
-          isActive("/changelog")
-            ? "menu-item-active"
-            : "text-muted-foreground menu-item-hover"
-        )}
-      >
-        <Sparkles className={cn("h-4 w-4 transition-opacity duration-150", isActive("/changelog") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
-        Novidades
-      </Link>
 
       {isAdmin && (
         <>
