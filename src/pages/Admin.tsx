@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key,
   UserCheck, UserX, Clock, RefreshCw, AlertTriangle, Search, Eye, Trash2,
-  CreditCard, Building2, ArrowRightLeft,
+  ArrowRightLeft,
 } from "lucide-react";
 import { format, parseISO, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -303,7 +303,7 @@ export default function Admin() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
             { label: "Total", value: users.length, icon: Users, bg: "bg-primary/20", iconColor: "text-primary" },
             { label: "Admins", value: users.filter(u => u.role === 'admin').length, icon: Shield, bg: "bg-amber-500/20", iconColor: "text-amber-600" },
@@ -311,8 +311,6 @@ export default function Admin() {
             { label: "Inativos", value: usuariosInativos, icon: UserX, bg: "bg-rose-500/20", iconColor: "text-rose-600" },
             { label: "Expirando", value: expirandoEmBreve, icon: Clock, bg: "bg-amber-500/20", iconColor: "text-amber-600" },
             { label: "Transações", value: stats?.total_transacoes ?? "-", icon: ArrowRightLeft, bg: "bg-blue-500/20", iconColor: "text-blue-600" },
-            { label: "Cartões", value: stats?.total_cartoes ?? "-", icon: CreditCard, bg: "bg-violet-500/20", iconColor: "text-violet-600" },
-            { label: "Bancos", value: stats?.total_bancos ?? "-", icon: Building2, bg: "bg-teal-500/20", iconColor: "text-teal-600" },
           ].map(({ label, value, icon: Icon, bg, iconColor }, i) => (
             <Card key={label} className="shadow-sm rounded-xl animate-fade-in-up" style={{ animationDelay: `${i * 0.03}s` }}>
               <CardContent className="p-4">

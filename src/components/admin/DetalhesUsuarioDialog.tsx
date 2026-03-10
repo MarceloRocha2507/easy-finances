@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, CreditCard, Building2, ArrowRightLeft, Clock } from "lucide-react";
+import { Loader2, ArrowRightLeft, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { AdminUser } from "@/hooks/useAdmin";
@@ -29,8 +29,6 @@ export function DetalhesUsuarioDialog({ user, open, onOpenChange, onFetchDetails
 
   const items = [
     { icon: ArrowRightLeft, label: "Transações", value: details?.total_transacoes ?? "-" },
-    { icon: CreditCard, label: "Cartões", value: details?.total_cartoes ?? "-" },
-    { icon: Building2, label: "Bancos", value: details?.total_bancos ?? "-" },
   ];
 
   return (
