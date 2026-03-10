@@ -277,7 +277,7 @@ export default function Dashboard() {
           </div>
         );
       })()}
-  const { data: mesesDisponiveis } = useMesesComMovimentacao();
+  
 
 
 
