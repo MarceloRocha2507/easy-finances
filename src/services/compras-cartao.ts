@@ -871,6 +871,7 @@ export type PagarFaturaInput = {
   nomeCartao: string;
   mesReferencia: Date;
   valorTotal: number;
+  bancoId?: string | null;
   acertosRecebidos: Array<{
     responsavel_id: string;
     valor: number;
