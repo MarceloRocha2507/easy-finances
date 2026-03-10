@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Plus, Users, Shield, MoreHorizontal, Pencil, Power, Key,
   UserCheck, UserX, Clock, RefreshCw, AlertTriangle, Search, Eye, Trash2,
-  CreditCard, Building2, ArrowRightLeft,
+  ArrowRightLeft,
 } from "lucide-react";
 import { format, parseISO, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";

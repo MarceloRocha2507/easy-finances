@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, CreditCard, Building2, ArrowRightLeft, Clock } from "lucide-react";
+import { Loader2, ArrowRightLeft, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { AdminUser } from "@/hooks/useAdmin";
