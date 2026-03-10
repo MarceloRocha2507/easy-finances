@@ -170,19 +170,22 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       </Link>
 
       {isAdmin && (
-        <Link
-          to="/admin"
-          onClick={onItemClick}
-          className={cn(
-            "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-1",
-            isActive("/admin")
-              ? "menu-item-active"
-              : "text-muted-foreground menu-item-hover"
-          )}
-        >
-          <Shield className={cn("h-4 w-4 transition-opacity duration-150", isActive("/admin") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
-          Admin
-        </Link>
+        <>
+          <div className="mx-3 my-2 border-t border-border/40" />
+          <Link
+            to="/admin"
+            onClick={onItemClick}
+            className={cn(
+              "group flex items-center gap-3 mx-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
+              isActive("/admin")
+                ? "bg-destructive/10 text-destructive border border-destructive/20"
+                : "text-destructive/70 hover:bg-destructive/5 hover:text-destructive"
+            )}
+          >
+            <Shield className={cn("h-4 w-4 transition-opacity duration-150", isActive("/admin") ? "opacity-100" : "opacity-70 group-hover:opacity-100")} />
+            Admin
+          </Link>
+        </>
       )}
 
       <Link
