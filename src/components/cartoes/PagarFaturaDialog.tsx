@@ -302,6 +302,17 @@ export function PagarFaturaDialog({
               </div>
             </div>
 
+            {/* Banco de débito */}
+            {!cartao.banco_id && (
+              <BancoSelector
+                value={bancoIdSelecionado}
+                onChange={setBancoIdSelecionado}
+                label="Debitar do banco"
+                placeholder="Selecione o banco"
+                showAddButton={false}
+              />
+            )}
+
             {/* Responsáveis com débito */}
             {outrosResponsaveis.length > 0 && modo !== "dividir_valores" && (
               <div className="space-y-2">
