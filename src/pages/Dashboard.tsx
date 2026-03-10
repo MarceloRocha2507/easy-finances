@@ -113,6 +113,8 @@ export default function Dashboard() {
     refetch,
   } = useDashboardCompleto(mesReferencia);
 
+  const { data: mesesDisponiveis } = useMesesComMovimentacao();
+
   const pieData =
     expensesByCategory?.map((cat) => ({
       name: cat.name,
