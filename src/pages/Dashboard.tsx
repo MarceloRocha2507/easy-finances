@@ -154,6 +154,7 @@ export default function Dashboard() {
         <FiltroPeriodo
           mesAtual={mesReferencia}
           onMesChange={setMesReferencia}
+          mesesDisponiveis={mesesDisponiveis}
         />
       </div>
 
