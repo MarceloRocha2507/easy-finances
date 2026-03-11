@@ -7,6 +7,7 @@ import {
 } from "@/services/compras-cartao";
 import { useAcertosMes } from "@/services/acertos";
 import { useResponsaveis } from "@/services/responsaveis";
+import { ResumoPorResponsavel } from "./ResumoPorResponsavel";
 import { toast } from "sonner";
 
 import {
@@ -419,6 +420,11 @@ export function DetalhesCartaoDialog({
                   <p className="text-sm font-semibold text-income">{formatCurrency(totalPago)}</p>
                 </div>
               </div>
+            )}
+
+            {/* Resumo por responsável */}
+            {parcelas.length > 0 && (
+              <ResumoPorResponsavel parcelas={parcelas} acertos={acertos} />
             )}
 
             {/* Pagar fatura */}
