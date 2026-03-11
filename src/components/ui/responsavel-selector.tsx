@@ -95,11 +95,7 @@ export function ResponsavelSelector({
                     }}
                   >
                     <div className="flex items-center gap-2 flex-1">
-                      {responsavel.is_titular ? (
-                        <Crown className="h-4 w-4 text-primary" />
-                      ) : (
-                        <User className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      <User style={{ width: 14, height: 14, color: "#9CA3AF" }} />
                       <span>{responsavel.apelido || responsavel.nome}</span>
                       {responsavel.apelido && responsavel.apelido !== responsavel.nome && (
                         <span className="text-xs text-muted-foreground">
