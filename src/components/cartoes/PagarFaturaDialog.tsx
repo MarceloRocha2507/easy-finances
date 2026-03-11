@@ -21,6 +21,7 @@ import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHoriz
 import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   cartao: Cartao;
