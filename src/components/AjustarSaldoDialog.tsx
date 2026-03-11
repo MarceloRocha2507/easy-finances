@@ -43,6 +43,17 @@ interface HistoricoAjuste {
   created_at: string;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim();
+  if (!normalized) return 0;
+
+  if (normalized.includes(',')) {
+    return parseFloat(normalized.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  return parseFloat(normalized) || 0;
+}
+
 export function AjustarSaldoDialog({ 
   open, 
   onOpenChange, 
@@ -95,15 +106,14 @@ export function AjustarSaldoDialog({
   // Reset quando abre o dialog
   useEffect(() => {
     if (open) {
-      setSaldoInformado(saldoRealCalculado.toFixed(2));
+      setSaldoInformado(saldoRealCalculado.toFixed(2).replace('.', ','));
       setObservacao('');
       setActiveTab('ajustar');
     }
   }, [open, saldoRealCalculado]);
 
   const valorInformado = useMemo(() => {
-    const parsed = parseFloat(saldoInformado.replace(',', '.'));
-    return isNaN(parsed) ? 0 : parsed;
+    return parseCurrencyInput(saldoInformado);
   }, [saldoInformado]);
 
   const diferenca = useMemo(() => {
@@ -196,8 +206,8 @@ export function AjustarSaldoDialog({
                 </span>
                 <Input
                   id="saldo-real"
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0,00"
                   value={saldoInformado}
                   onChange={(e) => setSaldoInformado(e.target.value)}

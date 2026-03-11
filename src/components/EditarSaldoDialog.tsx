@@ -19,18 +19,31 @@ interface EditarSaldoDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim();
+  if (!normalized) return 0;
+
+  // Formato BR: 1.234,56
+  if (normalized.includes(',')) {
+    return parseFloat(normalized.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  // Formato padrão: 1234.56
+  return parseFloat(normalized) || 0;
+}
+
 export function EditarSaldoDialog({ open, onOpenChange }: EditarSaldoDialogProps) {
   const { saldoInicial, atualizarSaldo, isUpdating } = useSaldoInicial();
   const [valor, setValor] = useState('');
 
   useEffect(() => {
     if (open) {
-      setValor(saldoInicial.toString());
+      setValor(saldoInicial.toFixed(2).replace('.', ','));
     }
   }, [open, saldoInicial]);
 
   const handleSave = async () => {
-    const novoSaldo = parseFloat(valor.replace(',', '.')) || 0;
+    const novoSaldo = parseCurrencyInput(valor);
     await atualizarSaldo(novoSaldo);
     onOpenChange(false);
   };
@@ -57,8 +70,8 @@ export function EditarSaldoDialog({ open, onOpenChange }: EditarSaldoDialogProps
               </span>
               <Input
                 id="saldo"
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
                 placeholder="0,00"
