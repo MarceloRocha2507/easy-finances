@@ -1029,7 +1029,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Buscar soma de saldo_inicial de todos os bancos ativos
       const { data: bancos } = await supabase
         .from('bancos')
-        .select('saldo_inicial')
+        .select('id, saldo_inicial, created_at')
         .eq('user_id', user!.id)
         .eq('ativo', true);
 
@@ -1049,6 +1049,14 @@ export function useCompleteStats(mesReferencia?: Date) {
       if (saldoInicialBancos === 0) {
         saldoInicial = Number(profile?.saldo_inicial) || 0;
       }
+
+      // Data mais antiga de cadastro de banco (para filtrar transações)
+      const bancosCreatedAt = new Map<string, string>();
+      (bancos || []).forEach(b => bancosCreatedAt.set(b.id, b.created_at));
+      // Usar a data mais antiga de banco cadastrado como marco zero
+      const oldestBancoDate = (bancos || []).length > 0
+        ? (bancos || []).reduce((oldest, b) => b.created_at < oldest ? b.created_at : oldest, bancos![0].created_at)
+        : null;
 
       // Buscar total de investimentos ativos
       const { data: investimentos } = await supabase
