@@ -206,8 +206,8 @@ export function AjustarSaldoDialog({
                 </span>
                 <Input
                   id="saldo-real"
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0,00"
                   value={saldoInformado}
                   onChange={(e) => setSaldoInformado(e.target.value)}
