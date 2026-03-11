@@ -1,11 +1,7 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/formatters";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { ParcelaFatura } from "@/services/compras-cartao";
 import {
   Calendar,
@@ -19,7 +15,7 @@ import {
   User,
   CreditCard,
   DollarSign,
-  Package,
+  X,
 } from "lucide-react";
 
 interface DetalhesCompraCartaoDialogProps {
@@ -30,12 +26,54 @@ interface DetalhesCompraCartaoDialogProps {
   corCartao?: string;
 }
 
+function InfoRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: React.ElementType;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between py-2.5"
+      style={{ borderBottom: "1px solid #F9FAFB" }}
+    >
+      <div className="flex items-center gap-2">
+        <Icon style={{ width: 16, height: 16, color: "#9CA3AF" }} />
+        <span style={{ color: "#6B7280", fontSize: 13 }}>{label}</span>
+      </div>
+      <div style={{ color: "#111827", fontSize: 13, fontWeight: 600 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        letterSpacing: "0.05em",
+        color: "#9CA3AF",
+        textTransform: "uppercase" as const,
+        paddingBottom: 8,
+        marginBottom: 4,
+        borderBottom: "1px solid #F3F4F6",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function DetalhesCompraCartaoDialog({
   parcela,
   open,
   onOpenChange,
   onEdit,
-  corCartao,
 }: DetalhesCompraCartaoDialogProps) {
   if (!parcela) return null;
 
@@ -51,15 +89,11 @@ export function DetalhesCompraCartaoDialog({
 
   const valorTotal = Math.abs(parcela.valor) * parcela.total_parcelas;
 
-  const formatDateOnly = (dateStr: string) => {
-    const date = parseISO(dateStr);
-    return format(date, "dd/MM/yyyy", { locale: ptBR });
-  };
+  const formatDateOnly = (dateStr: string) =>
+    format(parseISO(dateStr), "dd/MM/yyyy", { locale: ptBR });
 
-  const formatMesRef = (mesRef: string) => {
-    const date = parseISO(mesRef);
-    return format(date, "MMMM/yyyy", { locale: ptBR });
-  };
+  const formatMesRef = (mesRef: string) =>
+    format(parseISO(mesRef), "MMMM/yyyy", { locale: ptBR });
 
   const handleEdit = () => {
     onOpenChange(false);
@@ -68,284 +102,268 @@ export function DetalhesCompraCartaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Compra</DialogTitle>
-          </DialogHeader>
-        </div>
+      <DialogContent
+        className="p-0 gap-0 border-0 [&>button]:hidden"
+        style={{
+          borderRadius: 16,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          maxWidth: 440,
+        }}
+      >
+        <div className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[85dvh]">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
+              Detalhes da Compra
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="transition-colors"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4,
+                borderRadius: 6,
+                color: "#9CA3AF",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              <X style={{ width: 18, height: 18 }} />
+            </button>
+          </div>
 
-        <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4 overflow-y-auto">
-          {/* Cabeçalho com ícone e descrição */}
-          <div className="flex items-start gap-3">
-            <div
-              className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                isCredito
-                  ? "bg-emerald-100 dark:bg-emerald-900/30"
-                  : "bg-red-100 dark:bg-red-900/30"
-              )}
+          {/* Transaction header */}
+          <div className="flex items-center gap-3">
+            <span
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 8,
+                background: "#F3F4F6",
+              }}
             >
               {parcela.categoria_cor ? (
-                <Tag
-                  className="w-6 h-6"
-                  style={{ color: parcela.categoria_cor }}
-                />
+                <Tag style={{ width: 20, height: 20, color: "#6B7280" }} />
               ) : (
-                <CreditCard
-                  className={cn(
-                    "w-6 h-6",
-                    isCredito ? "text-emerald-600" : "text-red-600"
-                  )}
-                />
+                <CreditCard style={{ width: 20, height: 20, color: "#6B7280" }} />
               )}
-            </div>
+            </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-foreground text-lg">
+                <p style={{ color: "#111827", fontWeight: 600, fontSize: 16 }}>
                   {parcela.descricao}
                 </p>
                 {isEstorno && (
-                  <Badge
-                    variant="secondary"
-                    className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: "#065F46",
+                      background: "#D1FAE5",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                    }}
                   >
                     Estorno
-                  </Badge>
+                  </span>
                 )}
                 {isAjuste && (
-                  <Badge
-                    variant="secondary"
-                    className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: "#1E40AF",
+                      background: "#DBEAFE",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                    }}
                   >
                     Ajuste
-                  </Badge>
+                  </span>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p style={{ color: "#9CA3AF", fontSize: 12 }}>
                 {parcela.categoria_nome || "Sem categoria"}
               </p>
             </div>
           </div>
 
-          {/* Valor em destaque */}
-          <div
-            className={cn(
-              "text-center py-4 rounded-xl",
-              isCredito
-                ? "bg-emerald-50 dark:bg-emerald-950/30"
-                : "bg-red-50 dark:bg-red-950/30"
-            )}
-          >
-            <span
-              className={cn(
-                "text-3xl font-bold",
-                isCredito ? "text-emerald-600" : "text-red-600"
-              )}
-            >
+          {/* Value hero */}
+          <div>
+            <p style={{ color: "#111827", fontWeight: 700, fontSize: 28, lineHeight: "32px" }}>
               {isCredito ? "- " : ""}
               {formatCurrency(Math.abs(parcela.valor))}
-            </span>
+            </p>
             {parcela.total_parcelas > 1 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {parcela.numero_parcela}x de {formatCurrency(Math.abs(parcela.valor))}
+              <p style={{ color: "#6B7280", fontSize: 13, marginTop: 4 }}>
+                {parcela.total_parcelas}x de {formatCurrency(Math.abs(parcela.valor))}
               </p>
+            )}
+            <div style={{ height: 1, background: "#F3F4F6", marginTop: 16 }} />
+          </div>
+
+          {/* Informações da Parcela */}
+          <div className="flex flex-col gap-1">
+            <SectionLabel>Informações da Parcela</SectionLabel>
+
+            <InfoRow icon={parcela.paga ? Check : Clock} label="Status">
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  borderRadius: 6,
+                  padding: "2px 8px",
+                  ...(parcela.paga
+                    ? { color: "#065F46", background: "#D1FAE5" }
+                    : { color: "#92400E", background: "#FEF3C7" }),
+                }}
+              >
+                {parcela.paga ? "Paga" : "Pendente"}
+              </span>
+            </InfoRow>
+
+            <InfoRow icon={Hash} label="Parcela">
+              <span style={{ color: "#374151", fontWeight: 500 }}>
+                {parcela.numero_parcela} de {parcela.total_parcelas}
+              </span>
+            </InfoRow>
+
+            <InfoRow icon={DollarSign} label="Valor da parcela">
+              {formatCurrency(Math.abs(parcela.valor))}
+            </InfoRow>
+
+            <InfoRow icon={Calendar} label="Mês referência">
+              <span className="capitalize">{formatMesRef(parcela.mes_referencia)}</span>
+            </InfoRow>
+          </div>
+
+          {/* Informações da Compra */}
+          <div className="flex flex-col gap-1">
+            <SectionLabel>Informações da Compra</SectionLabel>
+
+            {parcela.data_compra && (
+              <InfoRow icon={Calendar} label="Data da compra">
+                {formatDateOnly(parcela.data_compra)}
+              </InfoRow>
+            )}
+
+            {parcela.total_parcelas > 1 && (
+              <InfoRow icon={DollarSign} label="Valor total">
+                {formatCurrency(valorTotal)}
+              </InfoRow>
+            )}
+
+            <InfoRow
+              icon={parcela.total_parcelas > 1 ? Layers : RefreshCw}
+              label="Tipo"
+            >
+              {getTipoLabel()}
+            </InfoRow>
+
+            {parcela.categoria_nome && (
+              <InfoRow icon={Tag} label="Categoria">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 3,
+                      background: parcela.categoria_cor || "#9CA3AF",
+                      display: "inline-block",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ color: "#374151", fontWeight: 500 }}>
+                    {parcela.categoria_nome}
+                  </span>
+                </div>
+              </InfoRow>
+            )}
+
+            {(parcela.responsavel_nome || parcela.responsavel_apelido) && (
+              <InfoRow icon={User} label="Responsável">
+                {parcela.responsavel_apelido || parcela.responsavel_nome}
+              </InfoRow>
             )}
           </div>
 
-          <Separator />
-
-          {/* Informações da Parcela */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              Informações da Parcela
-            </h4>
-            <div className="grid gap-2">
-              {/* Status */}
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {parcela.paga ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Clock className="w-4 h-4" />
-                  )}
-                  <span>Status</span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "text-xs",
-                    parcela.paga
-                      ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30"
-                      : "text-amber-600 bg-amber-100 dark:bg-amber-900/30"
-                  )}
-                >
-                  {parcela.paga ? "Paga" : "Pendente"}
-                </Badge>
-              </div>
-
-              {/* Parcela */}
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Hash className="w-4 h-4" />
-                  <span>Parcela</span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-xs bg-primary/10 text-primary"
-                >
-                  {parcela.numero_parcela} de {parcela.total_parcelas}
-                </Badge>
-              </div>
-
-              {/* Valor unitário */}
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <DollarSign className="w-4 h-4" />
-                  <span>Valor da parcela</span>
-                </div>
-                <span className="text-sm font-medium">
-                  {formatCurrency(Math.abs(parcela.valor))}
-                </span>
-              </div>
-
-              {/* Mês de referência */}
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>Mês referência</span>
-                </div>
-                <span className="text-sm font-medium capitalize">
-                  {formatMesRef(parcela.mes_referencia)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Informações da Compra */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              Informações da Compra
-            </h4>
-            <div className="grid gap-2">
-              {/* Data da compra */}
-              {parcela.data_compra && (
-                <div className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>Data da compra</span>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {formatDateOnly(parcela.data_compra)}
-                  </span>
-                </div>
-              )}
-
-              {/* Valor total */}
-              {parcela.total_parcelas > 1 && (
-                <div className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <DollarSign className="w-4 h-4" />
-                    <span>Valor total</span>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {formatCurrency(valorTotal)}
-                  </span>
-                </div>
-              )}
-
-              {/* Tipo de lançamento */}
-              <div className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {parcela.total_parcelas > 1 ? (
-                    <Layers className="w-4 h-4" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  <span>Tipo</span>
-                </div>
-                <span className="text-sm font-medium">{getTipoLabel()}</span>
-              </div>
-
-              {/* Categoria */}
-              {parcela.categoria_nome && (
-                <div className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Tag className="w-4 h-4" />
-                    <span>Categoria</span>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className="gap-1 text-xs"
-                    style={{
-                      backgroundColor: `${parcela.categoria_cor}15`,
-                      color: parcela.categoria_cor,
-                    }}
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: parcela.categoria_cor }}
-                    />
-                    {parcela.categoria_nome}
-                  </Badge>
-                </div>
-              )}
-
-              {/* Responsável */}
-              {(parcela.responsavel_nome || parcela.responsavel_apelido) && (
-                <div className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="w-4 h-4" />
-                    <span>Responsável</span>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {parcela.responsavel_apelido || parcela.responsavel_nome}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
           {/* Registro */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              Registro
-            </h4>
-            <div className="grid gap-2 text-xs">
-              {parcela.updated_at && (
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-muted-foreground">Última alteração</span>
-                  <span className="font-mono">
-                    {formatDistanceToNow(parseISO(parcela.updated_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center justify-between py-1">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-mono text-muted-foreground/70 truncate max-w-[180px]">
-                  {parcela.id}
+          <div className="flex flex-col gap-1">
+            <SectionLabel>Registro</SectionLabel>
+            {parcela.updated_at && (
+              <div
+                className="flex items-center justify-between py-2"
+                style={{ borderBottom: "1px solid #F9FAFB" }}
+              >
+                <span style={{ color: "#9CA3AF", fontSize: 12 }}>Última alteração</span>
+                <span style={{ color: "#6B7280", fontSize: 12, fontFamily: "monospace" }}>
+                  {formatDistanceToNow(parseISO(parcela.updated_at), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
                 </span>
               </div>
+            )}
+            <div className="flex items-center justify-between py-2">
+              <span style={{ color: "#9CA3AF", fontSize: 12 }}>ID</span>
+              <span
+                className="truncate max-w-[180px]"
+                style={{ color: "#D1D5DB", fontSize: 12, fontFamily: "monospace" }}
+              >
+                {parcela.id}
+              </span>
             </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="transition-colors"
+              style={{
+                height: 40,
+                padding: "0 16px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: "#6B7280",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              Fechar
+            </button>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="flex items-center gap-2 transition-colors"
+              style={{
+                height: 40,
+                padding: "0 20px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#fff",
+                background: "#111827",
+                border: "none",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#1F2937")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#111827")}
+            >
+              <Pencil style={{ width: 14, height: 14 }} />
+              Editar
+            </button>
           </div>
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0 px-4 sm:px-5 pb-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fechar
-          </Button>
-          <Button onClick={handleEdit} className="gap-2">
-            <Pencil className="w-4 h-4" />
-            Editar
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
