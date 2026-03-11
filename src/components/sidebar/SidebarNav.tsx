@@ -100,7 +100,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   }, [pathname]);
 
   const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
-    setOpenMenus(prev => ({ ...prev, [menu]: open }));
+    setOpenMenus(prev => {
+      // Accordion: close others when opening one
+      if (open) {
+        return {
+          transacoes: menu === "transacoes",
+          cartoes: menu === "cartoes",
+          relatorios: menu === "relatorios",
+        };
+      }
+      return { ...prev, [menu]: false };
+    });
   }, []);
 
   const isActive = useCallback((href: string) => pathname === href, [pathname]);
