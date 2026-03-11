@@ -1281,13 +1281,13 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              const isFaturasGroup = grupo.key === 'faturas';
+              const isFaturasGroup = grupo.key === 'faturas_pagas' || grupo.key === 'faturas_pendentes';
               // Filter paid invoices if toggle is on
-              const displayItems = isFaturasGroup && ocultarPagas
+              const displayItems = grupo.key === 'faturas_pendentes' && ocultarPagas
                 ? grupo.items.filter(item => !('isFaturaCartao' in item) || (item as FaturaVirtual).statusFatura !== 'paga')
                 : grupo.items;
               
-              if (isFaturasGroup && displayItems.length === 0 && ocultarPagas) {
+              if (grupo.key === 'faturas_pendentes' && displayItems.length === 0 && ocultarPagas) {
                 return null;
               }
 
@@ -1297,7 +1297,7 @@ export default function Transactions() {
                     <div className="flex-1">
                       <GroupHeader grupo={{...grupo, items: displayItems}} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
                     </div>
-                    {isFaturasGroup && (
+                    {grupo.key === 'faturas_pendentes' && (
                       <div className="flex items-center gap-1.5 shrink-0 pb-1">
                         <Label htmlFor="ocultar-pagas" className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">
                           Ocultar pagas
