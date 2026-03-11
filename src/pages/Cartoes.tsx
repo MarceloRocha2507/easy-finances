@@ -359,9 +359,11 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
             "text-[11px] font-medium px-2.5 py-0.5 rounded-full",
             cartao.faturaAtualPaga
               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : new Date().getDate() >= cartao.dia_fechamento
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
               : "bg-muted text-muted-foreground"
           )}>
-            {cartao.faturaAtualPaga ? "Paga" : "Aberta"}
+            {cartao.faturaAtualPaga ? "Paga" : new Date().getDate() >= cartao.dia_fechamento ? "Fechada" : "Aberta"}
           </span>
         </div>
 
