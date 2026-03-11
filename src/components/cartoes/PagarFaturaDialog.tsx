@@ -21,6 +21,7 @@ import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHoriz
 import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   cartao: Cartao;
@@ -52,6 +53,7 @@ export function PagarFaturaDialog({
   onOpenChange,
   onPaid,
 }: Props) {
+  const queryClient = useQueryClient();
   const [modo, setModo] = useState<ModoPagamento>("eu_pago_tudo");
   const [responsaveis, setResponsaveis] = useState<ResponsavelPagamento[]>([]);
   const [loading, setLoading] = useState(false);
@@ -202,6 +204,12 @@ export function PagarFaturaDialog({
           ? "Fatura paga! Você pagou tudo ao banco."
           : `Fatura paga! Você pagou ${formatCurrency(valorQueEuPago)} ao banco.`
       );
+
+      // Invalidar caches para atualizar saldo real imediatamente
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["bancos"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
 
       onPaid();
       onOpenChange(false);
