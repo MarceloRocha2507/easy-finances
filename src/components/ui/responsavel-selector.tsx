@@ -43,11 +43,11 @@ export function ResponsavelSelector({
   const selected = responsaveis.find((r) => r.id === value);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {label && (
-        <label className="text-sm font-medium text-foreground">
+        <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span style={{ color: "#DC2626", marginLeft: 2 }}>*</span>}
         </label>
       )}
       <Popover open={open} onOpenChange={setOpen}>
