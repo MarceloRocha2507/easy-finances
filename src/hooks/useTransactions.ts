@@ -1078,7 +1078,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 1. Buscar TODAS transações completed para saldo disponível (acumulado histórico)
       const { data: allCompleted, error: allCompletedError } = await supabase
         .from('transactions')
-        .select('type, amount, category_id')
+        .select('type, amount, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
