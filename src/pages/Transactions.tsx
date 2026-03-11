@@ -581,7 +581,7 @@ export default function Transactions() {
       value: 'all', 
       label: 'Todos', 
       icon: <LayoutList className="w-4 h-4" />, 
-      count: searchedTransactions.length,
+      count: searchedTransactionsSemFatura.length + faturasFiltradas.length,
       activeClass: 'border-primary text-foreground'
     },
     { 
