@@ -1083,32 +1083,39 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Total guardado = Investimentos + Metas
       const totalGuardado = totalInvestido + totalMetas;
 
-      // 1. Buscar TODAS transações completed para saldo disponível (acumulado histórico)
-      const { data: allCompleted, error: allCompletedError } = await supabase
+      // 1. Buscar transações completed para saldo disponível
+      // Se tem bancos cadastrados, só buscar transações criadas APÓS o banco mais antigo
+      let allCompletedQuery = supabase
         .from('transactions')
-        .select('type, amount, category_id')
+        .select('type, amount, category_id, created_at')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
         .limit(10000);
 
+      if (oldestBancoDate) {
+        allCompletedQuery = allCompletedQuery.gt('created_at', oldestBancoDate);
+      }
+
+      const { data: allCompleted, error: allCompletedError } = await allCompletedQuery;
+
       if (allCompletedError) throw allCompletedError;
 
-      // 2. Buscar IDs das categorias de meta para filtrar dos totais exibidos
+      // 2. Buscar IDs das categorias de meta e fatura para filtrar dos totais exibidos
       const { data: metaCategories } = await supabase
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão', 'Fatura de Cartão']);
 
       const metaCategoryIds = new Set(
         (metaCategories || [])
-          .filter(c => c.name !== 'Fatura do Cartão')
+          .filter(c => c.name !== 'Fatura do Cartão' && c.name !== 'Fatura de Cartão')
           .map(c => c.id)
       );
       const faturaCategoryIds = new Set(
         (metaCategories || [])
-          .filter(c => c.name === 'Fatura do Cartão')
+          .filter(c => c.name === 'Fatura do Cartão' || c.name === 'Fatura de Cartão')
           .map(c => c.id)
       );
 
