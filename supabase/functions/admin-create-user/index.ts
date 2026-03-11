@@ -127,6 +127,49 @@ Deno.serve(async (req) => {
       if (!target_id) return jsonResponse({ error: 'user_id obrigatório' }, 400)
       if (target_id === user.id) return jsonResponse({ error: 'Você não pode excluir a si mesmo' }, 400)
 
+      // Delete all user data from related tables before deleting auth user
+      const tablesToClean = [
+        'notificacoes_lidas',
+        'preferencias_notificacao',
+        'preferencias_telegram',
+        'preferencias_usuario',
+        'historico_ajustes_saldo',
+        'movimentacoes_meta',
+        'metas',
+        'movimentacoes_investimento',
+        'investimentos',
+        'acertos_fatura',
+        'parcelas_cartao',
+        'compras_cartao',
+        'cartoes',
+        'simulacoes_compra',
+        'assinaturas',
+        'category_rules',
+        'categories',
+        'transactions',
+        'bancos',
+        'radar_ignorados',
+        'telegram_config',
+        'device_sessions',
+        'auditoria_cartao',
+        'orcamentos',
+        'user_roles',
+        'profiles',
+      ]
+
+      for (const table of tablesToClean) {
+        // parcelas_cartao doesn't have user_id directly, handled via compras_cartao cascade
+        if (table === 'parcelas_cartao') {
+          const { data: compras } = await supabaseAdmin.from('compras_cartao').select('id').eq('user_id', target_id)
+          if (compras?.length) {
+            const compraIds = compras.map(c => c.id)
+            await supabaseAdmin.from('parcelas_cartao').delete().in('compra_id', compraIds)
+          }
+          continue
+        }
+        await supabaseAdmin.from(table).delete().eq('user_id', target_id)
+      }
+
       const { error: delError } = await supabaseAdmin.auth.admin.deleteUser(target_id)
       if (delError) return jsonResponse({ error: delError.message }, 400)
 
