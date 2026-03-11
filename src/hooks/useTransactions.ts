@@ -1157,8 +1157,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       let allCompletedExpense = 0;
       (allCompleted || []).forEach((t) => {
         const amount = Number(t.amount);
-        const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
-        if (isFaturaCartao) return; // já rastreado pelo sistema de cartões
+        // Para saldo real, toda transação completed impacta o caixa
+        // (inclusive pagamentos de fatura, que saem da conta bancária)
         if (t.type === 'income') allCompletedIncome += amount;
         else allCompletedExpense += amount;
       });
