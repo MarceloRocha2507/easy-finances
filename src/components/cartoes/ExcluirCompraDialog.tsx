@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ParcelaFatura, excluirParcelas, EscopoExclusao } from "@/services/compras-cartao";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, AlertTriangle } from "lucide-react";
@@ -23,19 +16,78 @@ interface Props {
   corCartao?: string;
 }
 
+function RadioOption({
+  selected,
+  onClick,
+  label,
+  sublabel,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+  sublabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-3 rounded-[10px] px-4 py-3.5 text-left transition-all"
+      style={{
+        border: selected ? "1.5px solid #111827" : "1px solid #E5E7EB",
+        background: "#fff",
+      }}
+      onMouseEnter={(e) => {
+        if (!selected) {
+          e.currentTarget.style.borderColor = "#D1D5DB";
+          e.currentTarget.style.background = "#F9FAFB";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) {
+          e.currentTarget.style.borderColor = "#E5E7EB";
+          e.currentTarget.style.background = "#fff";
+        }
+      }}
+    >
+      {/* Custom radio dot */}
+      <span
+        className="flex-shrink-0 flex items-center justify-center rounded-full"
+        style={{
+          width: 18,
+          height: 18,
+          border: selected ? "1.5px solid #111827" : "1.5px solid #D1D5DB",
+        }}
+      >
+        {selected && (
+          <span
+            className="rounded-full"
+            style={{ width: 8, height: 8, background: "#111827" }}
+          />
+        )}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p style={{ color: "#111827", fontWeight: 600, fontSize: 14, lineHeight: "20px" }}>
+          {label}
+        </p>
+        <p style={{ color: "#9CA3AF", fontSize: 12, lineHeight: "16px", marginTop: 2 }}>
+          {sublabel}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 export function ExcluirCompraDialog({
   parcela,
   open,
   onOpenChange,
   onDeleted,
-  corCartao,
 }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [escopo, setEscopo] = useState<EscopoExclusao>("todas");
   const [etapaConfirmacao, setEtapaConfirmacao] = useState(false);
 
-  // Reset estados quando abrir dialog
   useEffect(() => {
     if (open) {
       setEscopo("todas");
@@ -60,7 +112,6 @@ export function ExcluirCompraDialog({
 
   async function handleExcluir() {
     if (!parcela) return;
-
     setLoading(true);
     try {
       const qtdExcluidas = await excluirParcelas({
@@ -69,13 +120,11 @@ export function ExcluirCompraDialog({
         numeroParcela: parcela.numero_parcela,
         escopo,
       });
-
       const mensagens: Record<EscopoExclusao, string> = {
         parcela: "Parcela excluída!",
         restantes: `${qtdExcluidas} parcela(s) excluída(s)!`,
         todas: "Compra excluída!",
       };
-
       toast({ title: mensagens[escopo] });
       onDeleted();
     } catch (error) {
@@ -92,151 +141,221 @@ export function ExcluirCompraDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="p-0 gap-0 overflow-hidden">
-        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-muted-foreground" />
-            Excluir compra?
-          </AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-muted/50 border">
-                <p className="font-medium text-foreground">{parcela.descricao}</p>
-                <p className="text-sm text-muted-foreground">
-                  {temMultiplasParcelas 
-                    ? `Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} • ${formatCurrency(parcela.valor)}`
-                    : formatCurrency(parcela.valor)
-                  }
-                </p>
-              </div>
+      <AlertDialogContent
+        className="p-0 gap-0 border-0"
+        style={{
+          borderRadius: 16,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          maxWidth: 440,
+        }}
+      >
+        <div className="p-6 flex flex-col gap-5">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <span
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                background: "#F3F4F6",
+              }}
+            >
+              <Trash2 style={{ width: 20, height: 20, color: "#6B7280" }} />
+            </span>
+            <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 18, lineHeight: "24px" }}>
+              Excluir compra?
+            </h2>
+          </div>
 
-              {temMultiplasParcelas && (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-foreground">O que deseja excluir?</p>
-                  
-                  <RadioGroup 
-                    value={escopo} 
-                    onValueChange={(v) => setEscopo(v as EscopoExclusao)}
-                    className="space-y-2"
-                  >
-                    {/* Opção 1: Apenas esta parcela */}
-                    <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
-                      escopo === "parcela" ? "border-primary bg-primary/5" : "border-border"
-                    }`}>
-                      <RadioGroupItem value="parcela" id="excluir-parcela" className="mt-0.5" />
-                      <Label htmlFor="excluir-parcela" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Apenas esta parcela</span>
-                        <p className="text-sm text-muted-foreground">
-                          Parcela {parcela.numero_parcela} • {formatCurrency(parcela.valor)}
-                        </p>
-                      </Label>
-                    </div>
-                    
-                    {/* Opção 2: Parcelas restantes (só se não for última) */}
-                    {naoEUltimaParcela && (
-                      <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
-                        escopo === "restantes" ? "border-primary bg-primary/5" : "border-border"
-                      }`}>
-                        <RadioGroupItem value="restantes" id="excluir-restantes" className="mt-0.5" />
-                        <Label htmlFor="excluir-restantes" className="flex-1 cursor-pointer">
-                          <span className="font-medium">Esta e todas as futuras</span>
-                          <p className="text-sm text-muted-foreground">
-                            {parcelasRestantes} parcelas restantes • {formatCurrency(parcela.valor * parcelasRestantes)}
-                          </p>
-                        </Label>
-                      </div>
-                    )}
-                    
-                    {/* Opção 3: Todas */}
-                    <div className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
-                      escopo === "todas" ? "border-destructive bg-destructive/5" : "border-border"
-                    }`}>
-                      <RadioGroupItem value="todas" id="excluir-todas" className="mt-0.5" />
-                      <Label htmlFor="excluir-todas" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Excluir compra inteira</span>
-                        <p className="text-sm text-muted-foreground">
-                          Todas as {parcela.total_parcelas} parcelas • {formatCurrency(parcela.valor * parcela.total_parcelas)}
-                        </p>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+          {/* Transaction info */}
+          <div
+            className="flex flex-col gap-0.5"
+            style={{
+              background: "#F9FAFB",
+              borderRadius: 8,
+              border: "1px solid #E5E7EB",
+              padding: "12px 14px",
+            }}
+          >
+            <p style={{ color: "#111827", fontWeight: 600, fontSize: 14 }}>
+              {parcela.descricao}
+            </p>
+            <p style={{ color: "#6B7280", fontSize: 13 }}>
+              {temMultiplasParcelas
+                ? `Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} • ${formatCurrency(parcela.valor)}`
+                : formatCurrency(parcela.valor)}
+            </p>
+          </div>
+
+          {/* Radio options */}
+          {temMultiplasParcelas && !etapaConfirmacao && (
+            <div className="flex flex-col gap-2">
+              <p style={{ color: "#374151", fontWeight: 600, fontSize: 13, marginBottom: 2 }}>
+                O que deseja excluir?
+              </p>
+
+              <RadioOption
+                selected={escopo === "parcela"}
+                onClick={() => setEscopo("parcela")}
+                label="Apenas esta parcela"
+                sublabel={`Parcela ${parcela.numero_parcela} • ${formatCurrency(parcela.valor)}`}
+              />
+
+              {naoEUltimaParcela && (
+                <RadioOption
+                  selected={escopo === "restantes"}
+                  onClick={() => setEscopo("restantes")}
+                  label="Esta e todas as futuras"
+                  sublabel={`${parcelasRestantes} parcelas restantes • ${formatCurrency(parcela.valor * parcelasRestantes)}`}
+                />
               )}
 
-              {!temMultiplasParcelas && (
-                <p className="text-sm text-muted-foreground">
-                  Esta compra será excluída permanentemente.
-                </p>
-              )}
-
-              {/* Confirmação extra para compras com muitas parcelas */}
-              {etapaConfirmacao && (
-                <div className="space-y-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-                  <div className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span className="font-semibold">Atenção!</span>
-                  </div>
-                  <p className="text-sm">
-                    Você está prestes a excluir <strong>"{parcela.descricao}"</strong> com{" "}
-                    <strong>{parcela.total_parcelas} parcelas</strong> no total de{" "}
-                    <strong>{formatCurrency(parcela.valor * parcela.total_parcelas)}</strong>.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Tem certeza que deseja continuar? Esta ação é irreversível.
-                  </p>
-                </div>
-              )}
-
-              {!etapaConfirmacao && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Esta ação não pode ser desfeita.
-                  </p>
-                </div>
-              )}
+              <RadioOption
+                selected={escopo === "todas"}
+                onClick={() => setEscopo("todas")}
+                label="Excluir compra inteira"
+                sublabel={`Todas as ${parcela.total_parcelas} parcelas • ${formatCurrency(parcela.valor * parcela.total_parcelas)}`}
+              />
             </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        </div>
-        <AlertDialogFooter className="px-4 sm:px-5 pb-4">
-          {etapaConfirmacao ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setEtapaConfirmacao(false)}
-                disabled={loading}
-              >
-                Voltar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleExcluir}
-                disabled={loading}
-              >
-                {loading ? "Excluindo..." : "Confirmar Exclusão"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleClickExcluir}
-                disabled={loading}
-              >
-                {loading ? "Excluindo..." : "Excluir"}
-              </Button>
-            </>
           )}
-        </AlertDialogFooter>
+
+          {!temMultiplasParcelas && !etapaConfirmacao && (
+            <p style={{ color: "#6B7280", fontSize: 13 }}>
+              Esta compra será excluída permanentemente.
+            </p>
+          )}
+
+          {/* Extra confirmation step */}
+          {etapaConfirmacao && (
+            <div
+              className="flex flex-col gap-2"
+              style={{
+                background: "#F9FAFB",
+                borderRadius: 8,
+                border: "1px solid #E5E7EB",
+                padding: "14px 16px",
+              }}
+            >
+              <p style={{ color: "#111827", fontWeight: 600, fontSize: 14 }}>
+                Atenção
+              </p>
+              <p style={{ color: "#374151", fontSize: 13, lineHeight: "18px" }}>
+                Você está prestes a excluir <strong>"{parcela.descricao}"</strong> com{" "}
+                <strong>{parcela.total_parcelas} parcelas</strong> no total de{" "}
+                <strong>{formatCurrency(parcela.valor * parcela.total_parcelas)}</strong>.
+              </p>
+              <p style={{ color: "#6B7280", fontSize: 13 }}>
+                Tem certeza que deseja continuar? Esta ação é irreversível.
+              </p>
+            </div>
+          )}
+
+          {/* Warning line */}
+          {!etapaConfirmacao && (
+            <div className="flex items-center gap-2 mt-1">
+              <AlertTriangle style={{ width: 16, height: 16, color: "#D97706", flexShrink: 0 }} />
+              <p style={{ color: "#6B7280", fontSize: 13 }}>
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 mt-1">
+            {etapaConfirmacao ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEtapaConfirmacao(false)}
+                  disabled={loading}
+                  className="transition-colors disabled:opacity-50"
+                  style={{
+                    height: 40,
+                    padding: "0 16px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "#6B7280",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExcluir}
+                  disabled={loading}
+                  className="transition-colors disabled:opacity-50"
+                  style={{
+                    height: 40,
+                    padding: "0 20px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#fff",
+                    background: "#DC2626",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#B91C1C")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#DC2626")}
+                >
+                  {loading ? "Excluindo..." : "Confirmar Exclusão"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  disabled={loading}
+                  className="transition-colors disabled:opacity-50"
+                  style={{
+                    height: 40,
+                    padding: "0 16px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "#6B7280",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClickExcluir}
+                  disabled={loading}
+                  className="transition-colors disabled:opacity-50"
+                  style={{
+                    height: 40,
+                    padding: "0 20px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#fff",
+                    background: "#DC2626",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#B91C1C")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#DC2626")}
+                >
+                  {loading ? "Excluindo..." : "Excluir"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
