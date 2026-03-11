@@ -58,11 +58,13 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
   const mesRefStr = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
   const faturasMes = (todasFaturas || []).filter(f => f.mesReferencia.startsWith(mesRefStr) && f.statusFatura !== 'paga');
 
-  const contasPendentes = (transactions || []).sort((a, b) => {
-    const dateA = new Date(a.due_date || a.date);
-    const dateB = new Date(b.due_date || b.date);
-    return dateA.getTime() - dateB.getTime();
-  });
+  const contasPendentes = (transactions || [])
+    .filter(t => !t.desconsiderada)
+    .sort((a, b) => {
+      const dateA = new Date(a.due_date || a.date);
+      const dateB = new Date(b.due_date || b.date);
+      return dateA.getTime() - dateB.getTime();
+    });
 
   const totalCartoes = faturasMes.reduce((s, f) => s + f.amount, 0);
   const totalContas = contasPendentes.reduce((s, t) => s + t.amount, 0);
