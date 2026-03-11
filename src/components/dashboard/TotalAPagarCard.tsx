@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CreditCard, Receipt, Eye, CircleDot, CheckCircle2 } from "lucide-react";
+import { CreditCard, Receipt, Eye, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useFaturasNaListagem } from "@/hooks/useFaturasNaListagem";
@@ -100,167 +99,191 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-          {/* Header */}
-          <div className="bg-muted/50 px-5 py-4 border-b border-border">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-              Total a Pagar
-            </p>
-            <p className="text-2xl font-bold text-destructive tabular-nums">
-              -{formatCurrency(totalGeral)}
-            </p>
-            <div className="flex items-center gap-2 mt-2">
+        <DialogContent className="max-w-md !p-0 !gap-0 overflow-hidden">
+          <div className="flex flex-col">
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4">
+              <p style={{ color: "#9CA3AF", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
+                Total a Pagar
+              </p>
+              <p style={{ color: "#111827", fontSize: 26, fontWeight: 700, lineHeight: 1.1 }} className="tabular-nums">
+                -{formatCurrency(totalGeral)}
+              </p>
+              <div className="flex items-center gap-2 mt-3">
+                {contasPendentes.length > 0 && (
+                  <span style={{ background: "#F3F4F6", color: "#374151", fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "2px 8px" }}>
+                    {contasPendentes.length} {contasPendentes.length === 1 ? "conta" : "contas"}
+                  </span>
+                )}
+                {faturasMes.length > 0 && (
+                  <span style={{ background: "#F3F4F6", color: "#374151", fontSize: 11, fontWeight: 500, borderRadius: 6, padding: "2px 8px" }}>
+                    {faturasMes.length} {faturasMes.length === 1 ? "fatura" : "faturas"}
+                  </span>
+                )}
+                {contasPendentes.length === 0 && faturasMes.length === 0 && (
+                  <span className="flex items-center gap-1" style={{ fontSize: 11, color: "#9CA3AF" }}>
+                    <CheckCircle2 className="w-3 h-3" style={{ color: "#16A34A" }} />
+                    Nada pendente
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "#F3F4F6" }} />
+
+            {/* Content */}
+            <div className="overflow-y-auto max-h-[55vh]">
+              {/* Contas Pendentes */}
               {contasPendentes.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 rounded-md">
-                  {contasPendentes.length} {contasPendentes.length === 1 ? "conta" : "contas"}
-                </Badge>
+                <div className="px-6 pt-4 pb-2">
+                  <div className="flex items-center justify-between pb-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                    <div className="flex items-center gap-2">
+                      <Receipt style={{ width: 16, height: 16, color: "#9CA3AF" }} />
+                      <span style={{ color: "#374151", fontSize: 12, fontWeight: 700 }}>
+                        Contas pendentes
+                      </span>
+                    </div>
+                    <span style={{ color: "#111827", fontSize: 13, fontWeight: 700 }} className="tabular-nums">
+                      -{formatCurrency(totalContas)}
+                    </span>
+                  </div>
+                  <div>
+                    {contasPendentes.map((t) => {
+                      const dueDate = t.due_date || t.date;
+                      const status = getDueDateStatus(dueDate);
+                      const dueDateLabel = getDueDateShort(dueDate);
+                      return (
+                        <div
+                          key={t.id}
+                          className="flex items-center gap-3 py-3"
+                          style={{ borderBottom: "1px solid #F9FAFB" }}
+                        >
+                          {/* Status dot */}
+                          <span
+                            className="shrink-0 rounded-full"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              background: status === "overdue" ? "#D97706" : "#D1D5DB",
+                            }}
+                          />
+                          {/* Name + overdue label */}
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className="truncate" style={{ color: "#111827", fontSize: 14 }}>
+                              {t.description || "Sem descrição"}
+                            </span>
+                            {status === "overdue" && (
+                              <span style={{ color: "#D97706", fontSize: 11, fontStyle: "italic", whiteSpace: "nowrap" }}>
+                                {dueDateLabel}
+                              </span>
+                            )}
+                          </div>
+                          {/* Countdown for non-overdue */}
+                          {status !== "overdue" && (
+                            <span style={{ color: "#9CA3AF", fontSize: 12, whiteSpace: "nowrap" }}>
+                              {dueDateLabel}
+                            </span>
+                          )}
+                          {/* Value */}
+                          <span className="tabular-nums" style={{ color: "#DC2626", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            -{formatCurrency(t.amount)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
+
+              {/* Separator between sections */}
+              {contasPendentes.length > 0 && faturasMes.length > 0 && (
+                <div style={{ height: 1, background: "#F3F4F6", margin: "0 24px" }} />
+              )}
+
+              {/* Fatura Cartão */}
               {faturasMes.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 rounded-md">
-                  {faturasMes.length} {faturasMes.length === 1 ? "fatura" : "faturas"}
-                </Badge>
+                <div className="px-6 pt-4 pb-2">
+                  <div className="flex items-center justify-between pb-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                    <div className="flex items-center gap-2">
+                      <CreditCard style={{ width: 16, height: 16, color: "#9CA3AF" }} />
+                      <span style={{ color: "#374151", fontSize: 12, fontWeight: 700 }}>
+                        Fatura cartão
+                      </span>
+                    </div>
+                    <span style={{ color: "#111827", fontSize: 13, fontWeight: 700 }} className="tabular-nums">
+                      -{formatCurrency(totalCartoes)}
+                    </span>
+                  </div>
+                  <div>
+                    {faturasMes.map((f) => {
+                      const status = getDueDateStatus(f.due_date);
+                      const dueDateLabel = getDueDateShort(f.due_date);
+                      return (
+                        <div
+                          key={f.id}
+                          className="flex items-center gap-3 py-3"
+                          style={{ borderBottom: "1px solid #F9FAFB" }}
+                        >
+                          <span
+                            className="shrink-0 rounded-full"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              background: status === "overdue" ? "#D97706" : "#D1D5DB",
+                            }}
+                          />
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className="truncate" style={{ color: "#111827", fontSize: 14 }}>
+                              {f.cartaoNome}
+                            </span>
+                            {status === "overdue" && (
+                              <span style={{ color: "#D97706", fontSize: 11, fontStyle: "italic", whiteSpace: "nowrap" }}>
+                                {dueDateLabel}
+                              </span>
+                            )}
+                          </div>
+                          {status !== "overdue" && (
+                            <span style={{ color: "#9CA3AF", fontSize: 12, whiteSpace: "nowrap" }}>
+                              {dueDateLabel}
+                            </span>
+                          )}
+                          <span className="tabular-nums" style={{ color: "#DC2626", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            -{formatCurrency(f.amount)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
+
+              {/* Empty state */}
               {contasPendentes.length === 0 && faturasMes.length === 0 && (
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-[#16A34A]" />
-                  Nada pendente
-                </span>
+                <div className="flex flex-col items-center justify-center py-10 text-center px-6">
+                  <CheckCircle2 className="h-10 w-10 mb-3" style={{ color: "#16A34A", opacity: 0.5 }} strokeWidth={1.5} />
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 4 }}>Tudo em dia!</p>
+                  <p style={{ fontSize: 12, color: "#9CA3AF" }}>Nenhuma conta ou fatura pendente neste mês.</p>
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Content */}
-          <div className="overflow-y-auto max-h-[60vh]">
-            {/* Contas Pendentes */}
-            {contasPendentes.length > 0 && (
-              <div className="px-5 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-[#F3F4F6] dark:bg-muted flex items-center justify-center">
-                      <Receipt className="w-3.5 h-3.5 text-[#6B7280]" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Contas Pendentes
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-foreground tabular-nums">
-                    -{formatCurrency(totalContas)}
-                  </span>
-                </div>
-                <div className="space-y-0">
-                  {contasPendentes.map((t) => {
-                    const dueDate = t.due_date || t.date;
-                    const status = getDueDateStatus(dueDate);
-                    return (
-                      <div
-                        key={t.id}
-                        className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 transition-colors border-b border-border/50 last:border-0"
-                      >
-                        <CircleDot className={cn(
-                          "w-3 h-3 shrink-0",
-                          status === "overdue" ? "text-destructive" : status === "today" ? "text-[#D97706]" : "text-muted-foreground/40"
-                        )} />
-                        <span className="text-sm text-foreground truncate flex-1">
-                          {t.description || "Sem descrição"}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] font-medium px-1.5 py-0 h-5 rounded-md border",
-                            status === "overdue" && "border-destructive/30 text-destructive bg-destructive/5",
-                            status === "today" && "border-[#D97706]/30 text-[#D97706] bg-[#D97706]/5",
-                            status === "upcoming" && "border-border text-muted-foreground"
-                          )}
-                        >
-                          {getDueDateShort(dueDate)}
-                        </Badge>
-                        <span className="text-sm font-semibold text-destructive whitespace-nowrap tabular-nums">
-                          -{formatCurrency(t.amount)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-3" style={{ borderTop: "1px solid #E5E7EB" }}>
+              <Link
+                to="/transactions"
+                onClick={() => setOpen(false)}
+                style={{ color: "#6B7280", fontSize: 13, fontWeight: 400, textDecoration: "none" }}
+                className="hover:underline"
+              >
+                Ver todas →
+              </Link>
+              <div className="flex items-center gap-1.5">
+                <span style={{ color: "#6B7280", fontSize: 12 }}>Total:</span>
+                <span className="tabular-nums" style={{ color: "#DC2626", fontSize: 14, fontWeight: 700 }}>
+                  -{formatCurrency(totalGeral)}
+                </span>
               </div>
-            )}
-
-            {/* Separator */}
-            {contasPendentes.length > 0 && faturasMes.length > 0 && (
-              <div className="border-t border-border mx-5" />
-            )}
-
-            {/* Fatura Cartão */}
-            {faturasMes.length > 0 && (
-              <div className="px-5 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-[#F3F4F6] dark:bg-muted flex items-center justify-center">
-                      <CreditCard className="w-3.5 h-3.5 text-[#6B7280]" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Fatura Cartão
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-foreground tabular-nums">
-                    -{formatCurrency(totalCartoes)}
-                  </span>
-                </div>
-                <div className="space-y-0">
-                  {faturasMes.map((f) => {
-                    const status = getDueDateStatus(f.due_date);
-                    return (
-                      <div
-                        key={f.id}
-                        className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-muted/40 transition-colors border-b border-border/50 last:border-0"
-                      >
-                        <CircleDot className={cn(
-                          "w-3 h-3 shrink-0",
-                          status === "overdue" ? "text-destructive" : status === "today" ? "text-[#D97706]" : "text-muted-foreground/40"
-                        )} />
-                        <span className="text-sm text-foreground truncate flex-1">{f.cartaoNome}</span>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] font-medium px-1.5 py-0 h-5 rounded-md border",
-                            status === "overdue" && "border-destructive/30 text-destructive bg-destructive/5",
-                            status === "today" && "border-[#D97706]/30 text-[#D97706] bg-[#D97706]/5",
-                            status === "upcoming" && "border-border text-muted-foreground"
-                          )}
-                        >
-                          {getDueDateShort(f.due_date)}
-                        </Badge>
-                        <span className="text-sm font-semibold text-destructive whitespace-nowrap tabular-nums">
-                          -{formatCurrency(f.amount)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Empty state */}
-            {contasPendentes.length === 0 && faturasMes.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-10 text-center px-5">
-                <CheckCircle2 className="h-10 w-10 text-[#16A34A]/60 mb-3" strokeWidth={1.5} />
-                <p className="text-sm font-medium text-foreground mb-1">Tudo em dia!</p>
-                <p className="text-xs text-muted-foreground">Nenhuma conta ou fatura pendente neste mês.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-border bg-muted/30 px-5 py-3 flex items-center justify-between">
-            <Link
-              to="/transactions"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setOpen(false)}
-            >
-              Ver todas →
-            </Link>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Total:</span>
-              <span className="text-sm font-bold text-destructive tabular-nums">-{formatCurrency(totalGeral)}</span>
             </div>
           </div>
         </DialogContent>
