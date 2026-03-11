@@ -205,6 +205,12 @@ export function PagarFaturaDialog({
           : `Fatura paga! Você pagou ${formatCurrency(valorQueEuPago)} ao banco.`
       );
 
+      // Invalidar caches para atualizar saldo real imediatamente
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
+      queryClient.invalidateQueries({ queryKey: ["bancos"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+
       onPaid();
       onOpenChange(false);
     } catch (error) {
