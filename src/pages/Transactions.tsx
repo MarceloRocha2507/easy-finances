@@ -1716,9 +1716,11 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
           </Badge>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-          <span>{isPaga ? 'Paga em' : 'Vence'} {format(parseISO(fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}</span>
-          <span className="hidden sm:inline text-muted-foreground/50">•</span>
-          <span className="hidden sm:inline" style={{ color: fatura.cartaoCor }}>
+          <span>
+            {isPaga ? 'Paga em' : 'Vence'} {format(parseISO(isPaga ? (fatura.dataPagamento || fatura.due_date) : fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}
+          </span>
+          <span className="text-muted-foreground/50">•</span>
+          <span style={{ color: fatura.cartaoCor }}>
             {fatura.cartaoNome}
           </span>
         </div>
