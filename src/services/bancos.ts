@@ -121,33 +121,23 @@ export async function listarBancosComResumo(): Promise<BancoComResumo[]> {
 
   if (erParcelas) throw erParcelas;
 
-  // Buscar transações completed vinculadas a bancos (com created_at para filtrar por data do banco)
+  // Buscar transações completed vinculadas a bancos
   const { data: transacoes, error: erTrans } = await supabase
     .from("transactions")
-    .select("banco_id, type, amount, created_at")
+    .select("banco_id, type, amount")
     .eq("user_id", user.id)
     .eq("status", "completed")
     .not("banco_id", "is", null);
 
   if (erTrans) throw erTrans;
 
-  // Criar mapa de created_at por banco para filtrar transações
-  const bancoCreatedAt = new Map<string, string>();
-  (bancos || []).forEach((b) => {
-    bancoCreatedAt.set(b.id, b.created_at);
-  });
-
-  // Calcular saldo por banco (apenas transações criadas APÓS o cadastro do banco)
+  // Calcular saldo por banco (transações)
   const saldoPorBanco = new Map<string, number>();
   (transacoes || []).forEach((t) => {
     if (t.banco_id) {
-      const bancoCriado = bancoCreatedAt.get(t.banco_id);
-      // Só considerar transações criadas depois que o banco foi cadastrado
-      if (bancoCriado && t.created_at > bancoCriado) {
-        const atual = saldoPorBanco.get(t.banco_id) || 0;
-        const valor = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
-        saldoPorBanco.set(t.banco_id, atual + valor);
-      }
+      const atual = saldoPorBanco.get(t.banco_id) || 0;
+      const valor = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+      saldoPorBanco.set(t.banco_id, atual + valor);
     }
   });
 
