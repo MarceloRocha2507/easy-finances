@@ -77,11 +77,17 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const key = `${cartaoId}-${mesRef}`;
         
         if (!grupos.has(key)) {
-          grupos.set(key, { cartaoId, mesRef, total: 0, temPendente: false });
+          grupos.set(key, { cartaoId, mesRef, total: 0, temPendente: false, ultimaDataPagamento: null });
         }
         const grupo = grupos.get(key)!;
         grupo.total += Number(p.valor);
-        if (!p.paga) {
+
+        if (p.paga) {
+          const dataPagamento = p.updated_at ?? null;
+          if (dataPagamento && (!grupo.ultimaDataPagamento || new Date(dataPagamento) > new Date(grupo.ultimaDataPagamento))) {
+            grupo.ultimaDataPagamento = dataPagamento;
+          }
+        } else {
           grupo.temPendente = true;
         }
       }
