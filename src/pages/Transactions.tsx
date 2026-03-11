@@ -129,9 +129,13 @@ type GrupoTransacao = {
 };
 
 const GRUPO_CONFIG = {
-  faturas: {
-    key: 'faturas',
-    label: 'Faturas de Cartão',
+  faturas_pagas: {
+    key: 'faturas_pagas',
+    label: 'Faturas Pagas',
+  },
+  faturas_pendentes: {
+    key: 'faturas_pendentes',
+    label: 'Faturas Pendentes',
   },
   fixas: {
     key: 'fixas',
@@ -140,6 +144,10 @@ const GRUPO_CONFIG = {
   despesas: {
     key: 'despesas',
     label: 'Despesas',
+  },
+  despesas_cartao: {
+    key: 'despesas_cartao',
+    label: 'Despesas no Cartão',
   },
   receitas: {
     key: 'receitas',
@@ -164,13 +172,25 @@ const GRUPO_CONFIG = {
 } as const;
 
 function classificarItem(item: Transaction | FaturaVirtual): string {
-  if ('isFaturaCartao' in item) return 'faturas';
+  // Faturas virtuais (abertas/futuras) → pendentes
+  if ('isFaturaCartao' in item) return 'faturas_pendentes';
+  
   const t = item as Transaction;
-  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') return 'faturas';
+  
+  // Transações com categoria "Fatura de Cartão" → pagas ou pendentes
+  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') {
+    return t.status === 'completed' ? 'faturas_pagas' : 'faturas_pendentes';
+  }
+  
+  // Fixas / recorrentes
   if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
     return t.type === 'income' ? 'receitas_fixas' : 'fixas';
   }
+  
+  // Receitas
   if (t.type === 'income') return 'receitas_avulsas';
+  
+  // Despesas normais
   return 'despesas';
 }
 
@@ -200,8 +220,19 @@ function agruparTransacoes(items: (Transaction | FaturaVirtual)[], activeTab: Ta
     gruposMap.get(grupoKey)!.push(item);
   }
 
-  // Ordem dos grupos
-  const ordemGrupos = ['faturas', 'fixas', 'despesas', 'receitas_fixas', 'receitas_avulsas', 'receitas', 'despesas_pendentes', 'receitas_pendentes'];
+  // Ordem dos grupos: pagas primeiro, depois pendentes, depois o resto
+  const ordemGrupos = [
+    'faturas_pagas',
+    'faturas_pendentes',
+    'fixas',
+    'despesas',
+    'despesas_cartao',
+    'receitas_fixas',
+    'receitas_avulsas',
+    'receitas',
+    'despesas_pendentes',
+    'receitas_pendentes',
+  ];
 
   return ordemGrupos
     .filter(key => gruposMap.has(key))
