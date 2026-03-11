@@ -38,7 +38,7 @@ export function AtividadeRecente({ onFetch }: AtividadeRecenteProps) {
   return (
     <Card className="shadow-sm rounded-xl">
       <CardHeader>
-        <CardTitle>Últimas 50 Atividades</CardTitle>
+        <CardTitle>Últimas 50 Atividades Administrativas</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
