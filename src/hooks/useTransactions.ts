@@ -901,7 +901,7 @@ export function useToggleDesconsiderada() {
   });
 }
 
-
+export function usePendingStats() {
   const { user } = useAuth();
 
   return useQuery({
