@@ -706,9 +706,9 @@ export function NovaCompraCartaoDialog({
             disabled={loading}
             className="w-full flex items-center justify-center transition-colors disabled:opacity-50"
             style={{
-              height: 44,
+              height: 48,
               borderRadius: 8,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 600,
               color: "#fff",
               background: "#111827",
