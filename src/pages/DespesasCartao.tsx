@@ -898,13 +898,15 @@ export default function DespesasCartao() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
                               setParcelaSelecionada(p);
                               setEditarCompraOpen(true);
                             }}>
                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
                               setParcelaSelecionada(p);
                               setEstornarCompraOpen(true);
                             }}>
@@ -912,7 +914,8 @@ export default function DespesasCartao() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDetalhesCompraOpen(false);
                                 setParcelaSelecionada(p);
                                 setExcluirCompraOpen(true);
