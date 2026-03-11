@@ -171,6 +171,11 @@ const GRUPO_CONFIG = {
   },
 } as const;
 
+function isTransacaoFaturaCartao(transaction: Transaction): boolean {
+  const nomeCategoria = transaction.category?.name?.trim().toLowerCase();
+  return nomeCategoria === 'fatura de cartão' || nomeCategoria === 'fatura do cartão' || nomeCategoria === 'fatura de cartao' || nomeCategoria === 'fatura do cartao';
+}
+
 function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
   if ('isFaturaCartao' in item) {
     const fatura = item as FaturaVirtual;
@@ -178,8 +183,7 @@ function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
   }
 
   const t = item as Transaction;
-  const isFaturaCategoria = t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão';
-  return isFaturaCategoria && t.status === 'completed';
+  return isTransacaoFaturaCartao(t) && t.status === 'completed';
 }
 
 function classificarItem(item: Transaction | FaturaVirtual): string {
@@ -187,22 +191,22 @@ function classificarItem(item: Transaction | FaturaVirtual): string {
   if ('isFaturaCartao' in item) {
     return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
-  
+
   const t = item as Transaction;
-  
+
   // Transações com categoria "Fatura de Cartão" → pagas ou pendentes
-  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') {
+  if (isTransacaoFaturaCartao(t)) {
     return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
-  
+
   // Fixas / recorrentes
   if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
     return t.type === 'income' ? 'receitas_fixas' : 'fixas';
   }
-  
+
   // Receitas
   if (t.type === 'income') return 'receitas_avulsas';
-  
+
   // Despesas normais
   return 'despesas';
 }
