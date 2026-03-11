@@ -170,9 +170,22 @@ const GRUPO_CONFIG = {
   },
 } as const;
 
+function normalizeText(value?: string | null): string {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
 function isTransacaoFaturaCartao(transaction: Transaction): boolean {
-  const nomeCategoria = transaction.category?.name?.trim().toLowerCase();
-  return nomeCategoria === 'fatura de cartão' || nomeCategoria === 'fatura do cartão' || nomeCategoria === 'fatura de cartao' || nomeCategoria === 'fatura do cartao';
+  const nomeCategoria = normalizeText(transaction.category?.name);
+  const descricao = normalizeText(transaction.description);
+
+  const categoriaEhFaturaCartao = nomeCategoria.includes('fatura') && nomeCategoria.includes('cart');
+  const descricaoEhFatura = descricao.startsWith('fatura ');
+
+  return categoriaEhFaturaCartao || descricaoEhFatura;
 }
 
 function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
