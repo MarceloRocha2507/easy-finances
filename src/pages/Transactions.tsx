@@ -372,10 +372,17 @@ export default function Transactions() {
     );
   }, [transactions, searchQuery]);
 
-  // Separar por tipo
-  const incomeTransactions = useMemo(() => 
-    searchedTransactions.filter(t => t.type === 'income'), 
+  // Remover lançamentos de pagamento de fatura da lista principal
+  // (as faturas passam a ser exibidas somente via useFaturasNaListagem)
+  const searchedTransactionsSemFatura = useMemo(
+    () => searchedTransactions.filter((t) => !isTransacaoFaturaCartao(t)),
     [searchedTransactions]
+  );
+
+  // Separar por tipo
+  const incomeTransactions = useMemo(() =>
+    searchedTransactionsSemFatura.filter(t => t.type === 'income'),
+    [searchedTransactionsSemFatura]
   );
   
   // Filtrar faturas virtuais pelo período selecionado
@@ -388,21 +395,21 @@ export default function Transactions() {
   }, [faturasVirtuais, startDate, endDate]);
 
   const expenseTransactions = useMemo(() => {
-    const expenses = searchedTransactions.filter(t => t.type === 'expense');
+    const expenses = searchedTransactionsSemFatura.filter(t => t.type === 'expense');
     const combinadas = [...expenses, ...faturasFiltradas] as (Transaction | FaturaVirtual)[];
     return combinadas;
-  }, [searchedTransactions, faturasFiltradas]);
+  }, [searchedTransactionsSemFatura, faturasFiltradas]);
   
-  const fixedExpenseTransactions = useMemo(() => 
-    expenseTransactions.filter(t => 
+  const fixedExpenseTransactions = useMemo(() =>
+    expenseTransactions.filter(t =>
       !('isFaturaCartao' in t) && FIXED_EXPENSE_CATEGORIES.includes((t as Transaction).category?.name || '')
-    ) as Transaction[], 
+    ) as Transaction[],
     [expenseTransactions]
   );
 
-  const pendingTransactions = useMemo(() => 
-    searchedTransactions.filter(t => t.status === 'pending'), 
-    [searchedTransactions]
+  const pendingTransactions = useMemo(() =>
+    searchedTransactionsSemFatura.filter(t => t.status === 'pending'),
+    [searchedTransactionsSemFatura]
   );
 
   // Transações ativas baseado na tab
@@ -412,9 +419,9 @@ export default function Transactions() {
       case 'expense': return expenseTransactions;
       case 'pending': return pendingTransactions;
       case 'fixed': return fixedExpenseTransactions;
-      default: return [...searchedTransactions, ...faturasFiltradas];
+      default: return [...searchedTransactionsSemFatura, ...faturasFiltradas];
     }
-  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasFiltradas]);
+  }, [activeTab, searchedTransactionsSemFatura, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasFiltradas]);
 
   // Ordenar transações por data (mais recente primeiro), faturas futuras ao final
   const sortedTransactions = useMemo(() => {
