@@ -1295,12 +1295,12 @@ export default function Transactions() {
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
               const isFaturasGroup = grupo.key === 'faturas_pagas' || grupo.key === 'faturas_pendentes';
-              // Filter paid invoices if toggle is on
-              const displayItems = grupo.key === 'faturas_pendentes' && ocultarPagas
-                ? grupo.items.filter(item => !('isFaturaCartao' in item) || (item as FaturaVirtual).statusFatura !== 'paga')
+              // Em faturas pendentes, nunca exibir itens já pagos
+              const displayItems = grupo.key === 'faturas_pendentes'
+                ? grupo.items.filter(item => !isFaturaPaga(item))
                 : grupo.items;
               
-              if (grupo.key === 'faturas_pendentes' && displayItems.length === 0 && ocultarPagas) {
+              if (grupo.key === 'faturas_pendentes' && displayItems.length === 0) {
                 return null;
               }
 
