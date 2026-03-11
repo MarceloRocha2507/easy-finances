@@ -84,20 +84,32 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     ),
   }), [totalDetectados]);
 
-  const [openMenus, setOpenMenus] = useState(() => ({
-    transacoes: pathname.startsWith("/transactions") || pathname === "/assinaturas",
-    cartoes: pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria",
-    relatorios: pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
-  }));
+  const getActiveMenu = useCallback((path: string): keyof typeof openMenus | null => {
+    if (path.startsWith("/transactions") || path === "/assinaturas") return "transacoes";
+    if ((path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/auditoria")) return "cartoes";
+    if (path.startsWith("/reports") || path === "/cartoes/auditoria") return "relatorios";
+    return null;
+  }, []);
+
+  const [openMenus, setOpenMenus] = useState(() => {
+    const active = getActiveMenu(pathname);
+    return {
+      transacoes: active === "transacoes",
+      cartoes: active === "cartoes",
+      relatorios: active === "relatorios",
+    };
+  });
 
   useEffect(() => {
-    setOpenMenus(prev => ({
-      ...prev,
-      transacoes: prev.transacoes || pathname.startsWith("/transactions") || pathname === "/assinaturas",
-      cartoes: prev.cartoes || (pathname.startsWith("/cartoes") && pathname !== "/cartoes/bancos" && pathname !== "/cartoes/auditoria"),
-      relatorios: prev.relatorios || pathname.startsWith("/reports") || pathname === "/cartoes/auditoria",
-    }));
-  }, [pathname]);
+    const active = getActiveMenu(pathname);
+    if (active) {
+      setOpenMenus({
+        transacoes: active === "transacoes",
+        cartoes: active === "cartoes",
+        relatorios: active === "relatorios",
+      });
+    }
+  }, [pathname, getActiveMenu]);
 
   const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
     setOpenMenus(prev => {
