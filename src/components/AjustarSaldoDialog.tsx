@@ -106,15 +106,14 @@ export function AjustarSaldoDialog({
   // Reset quando abre o dialog
   useEffect(() => {
     if (open) {
-      setSaldoInformado(saldoRealCalculado.toFixed(2));
+      setSaldoInformado(saldoRealCalculado.toFixed(2).replace('.', ','));
       setObservacao('');
       setActiveTab('ajustar');
     }
   }, [open, saldoRealCalculado]);
 
   const valorInformado = useMemo(() => {
-    const parsed = parseFloat(saldoInformado.replace(',', '.'));
-    return isNaN(parsed) ? 0 : parsed;
+    return parseCurrencyInput(saldoInformado);
   }, [saldoInformado]);
 
   const diferenca = useMemo(() => {
