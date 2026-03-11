@@ -171,6 +171,7 @@ export default function DespesasCartao() {
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
+  const actionClickedRef = useRef(false);
 
   // Hooks
   const { data: responsaveis = [] } = useResponsaveis();
