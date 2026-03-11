@@ -65,7 +65,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 500,
   color: "#374151",
   display: "block",
-  marginBottom: 6,
+  marginBottom: 4,
 };
 
 function PremiumLabel({
