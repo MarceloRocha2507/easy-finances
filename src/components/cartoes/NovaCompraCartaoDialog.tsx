@@ -65,7 +65,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 500,
   color: "#374151",
   display: "block",
-  marginBottom: 6,
+  marginBottom: 4,
 };
 
 function PremiumLabel({
@@ -405,7 +405,7 @@ export function NovaCompraCartaoDialog({
         </div>
 
         {/* Form body */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pt-5 pb-6 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pt-5 pb-5 flex flex-col gap-3">
           {/* Descrição */}
           <div>
             <PremiumLabel required htmlFor="descricao">Descrição</PremiumLabel>
@@ -706,9 +706,9 @@ export function NovaCompraCartaoDialog({
             disabled={loading}
             className="w-full flex items-center justify-center transition-colors disabled:opacity-50"
             style={{
-              height: 44,
+              height: 48,
               borderRadius: 8,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 600,
               color: "#fff",
               background: "#111827",

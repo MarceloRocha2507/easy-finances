@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, User, Crown, UserPlus } from "lucide-react";
+import { Check, ChevronsUpDown, User, UserPlus } from "lucide-react";
 import { useResponsaveis, Responsavel } from "@/services/responsaveis";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -43,11 +43,11 @@ export function ResponsavelSelector({
   const selected = responsaveis.find((r) => r.id === value);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {label && (
-        <label className="text-sm font-medium text-foreground">
+        <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span style={{ color: "#DC2626", marginLeft: 2 }}>*</span>}
         </label>
       )}
       <Popover open={open} onOpenChange={setOpen}>
@@ -56,25 +56,23 @@ export function ResponsavelSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal"
+            className="w-full justify-between font-normal border-[#E5E7EB] rounded-[20px] h-auto"
+            style={{ padding: "6px 16px", fontSize: 13 }}
             disabled={isLoading}
           >
             {selected ? (
               <div className="flex items-center gap-2">
-                {selected.is_titular ? (
-                  <Crown className="h-4 w-4 text-primary" />
-                ) : (
-                  <User className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span>{selected.apelido || selected.nome}</span>
-                {selected.is_titular && (
-                  <Badge variant="secondary" className="text-xs ml-1">
-                    Eu
-                  </Badge>
-                )}
+                <User style={{ width: 14, height: 14, color: "#9CA3AF" }} />
+                <span style={{
+                  fontWeight: value === selected.id ? 600 : 400,
+                  color: "#111827",
+                }}>
+                  {selected.apelido || selected.nome}
+                  {selected.is_titular && " (Eu)"}
+                </span>
               </div>
             ) : (
-              <span className="text-muted-foreground">
+              <span style={{ color: "#9CA3AF" }}>
                 {isLoading ? "Carregando..." : placeholder}
               </span>
             )}
@@ -97,11 +95,7 @@ export function ResponsavelSelector({
                     }}
                   >
                     <div className="flex items-center gap-2 flex-1">
-                      {responsavel.is_titular ? (
-                        <Crown className="h-4 w-4 text-primary" />
-                      ) : (
-                        <User className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      <User style={{ width: 14, height: 14, color: "#9CA3AF" }} />
                       <span>{responsavel.apelido || responsavel.nome}</span>
                       {responsavel.apelido && responsavel.apelido !== responsavel.nome && (
                         <span className="text-xs text-muted-foreground">
