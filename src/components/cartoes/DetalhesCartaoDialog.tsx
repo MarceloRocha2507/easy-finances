@@ -422,6 +422,11 @@ export function DetalhesCartaoDialog({
               </div>
             )}
 
+            {/* Resumo por responsável */}
+            {parcelas.length > 0 && (
+              <ResumoPorResponsavel parcelas={parcelas} acertos={acertos} />
+            )}
+
             {/* Pagar fatura */}
             {podePagarFatura && (
               <Button
