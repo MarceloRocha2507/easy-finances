@@ -1320,19 +1320,6 @@ export default function Transactions() {
                     <div className="flex-1">
                       <GroupHeader grupo={{...grupo, items: displayItems}} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
                     </div>
-                    {grupo.key === 'faturas_pendentes' && (
-                      <div className="flex items-center gap-1.5 shrink-0 pb-1">
-                        <Label htmlFor="ocultar-pagas" className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">
-                          Ocultar pagas
-                        </Label>
-                        <Switch
-                          id="ocultar-pagas"
-                          checked={ocultarPagas}
-                          onCheckedChange={setOcultarPagas}
-                          className="scale-75"
-                        />
-                      </div>
-                    )}
                   </div>
                   {!isCollapsed && (
                     <div className="divide-y divide-border/30">
