@@ -149,6 +149,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
           statusFatura,
           mesReferencia: grupo.mesRef,
           paga,
+          dataPagamento: paga ? grupo.ultimaDataPagamento : null,
         });
       }
 
