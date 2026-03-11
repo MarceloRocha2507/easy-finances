@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, User, Crown, UserPlus } from "lucide-react";
+import { Check, ChevronsUpDown, User, UserPlus } from "lucide-react";
 import { useResponsaveis, Responsavel } from "@/services/responsaveis";
 import { useIsMobile } from "@/hooks/use-mobile";
 
