@@ -583,86 +583,150 @@ export default function Transactions() {
                   <span className="hidden sm:inline">Nova</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{editingId ? 'Editar Registro' : 'Novo Registro'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  {/* Type Toggle */}
-                  <div className="flex gap-2">
-                    <Button
+              <DialogContent
+                className="p-0 gap-0 border-0 [&>button]:hidden flex flex-col"
+                style={{
+                  borderRadius: 16,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                  maxWidth: 460,
+                  maxHeight: "90dvh",
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 pt-6 pb-0">
+                  <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
+                    {editingId ? 'Editar Registro' : 'Novo Registro'}
+                  </h2>
+                  <DialogClose asChild>
+                    <button
                       type="button"
-                      variant={formData.type === 'income' ? 'default' : 'outline'}
-                      className={cn(
-                        "flex-1 gap-2",
-                        formData.type === 'income' && 'gradient-income text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                      )}
-                      onClick={() => setFormData({ ...formData, type: 'income', category_id: '' })}
+                      className="transition-colors"
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, color: "#9CA3AF" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                     >
-                      <TrendingUp className="w-4 h-4" />
-                      Receita
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={formData.type === 'expense' ? 'default' : 'outline'}
-                      className={cn(
-                        "flex-1 gap-2",
-                        formData.type === 'expense' && 'gradient-expense text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                      )}
-                      onClick={() => setFormData({ ...formData, type: 'expense', category_id: '' })}
-                    >
-                      <TrendingDown className="w-4 h-4" />
-                      Despesa
-                    </Button>
+                      <X style={{ width: 18, height: 18 }} />
+                    </button>
+                  </DialogClose>
+                </div>
+
+                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pt-4 pb-5 flex flex-col gap-3">
+                  {/* Receita / Despesa underline tabs */}
+                  <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                    {[
+                      { value: 'income' as const, label: 'Receita' },
+                      { value: 'expense' as const, label: 'Despesa' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, type: tab.value, category_id: '' })}
+                        className="flex-1 transition-all"
+                        style={{
+                          padding: "8px 0",
+                          fontSize: 13,
+                          fontWeight: formData.type === tab.value ? 600 : 400,
+                          color: formData.type === tab.value ? "#111827" : "#6B7280",
+                          background: "none",
+                          border: "none",
+                          borderBottom: formData.type === tab.value ? "2px solid #111827" : "2px solid transparent",
+                          cursor: "pointer",
+                          transition: "all 150ms",
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Botão de despesa no cartão dentro do formulário */}
+                  {/* Botão cartão de crédito */}
                   {formData.type === 'expense' && (
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
-                      className="w-full gap-2 border-dashed"
                       onClick={() => {
                         setDialogOpen(false);
                         setCartaoDialogOpen(true);
                       }}
+                      className="w-full flex items-center gap-2 transition-colors"
+                      style={{
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        background: "#fff",
+                        padding: "10px 12px",
+                        fontSize: 13,
+                        color: "#6B7280",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#F9FAFB")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
                     >
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard style={{ width: 16, height: 16, color: "#9CA3AF" }} />
                       Ou registrar no cartão de crédito
-                    </Button>
+                    </button>
                   )}
 
-                  {/* Amount */}
-                  <div className="space-y-2">
-                    <Label>Valor (R$)</Label>
-                    <Input
+                  {/* Valor */}
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                      Valor (R$) <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <input
                       type="number"
                       step="0.01"
                       placeholder="0,00"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      className="w-full"
+                      style={{
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        padding: "10px 12px",
+                        fontSize: 14,
+                        color: "#111827",
+                        background: "#fff",
+                        outline: "none",
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
+                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
                     />
                   </div>
 
-                  {/* Description - antes da categoria para acionar auto-sugestão */}
-                  <div className="space-y-2">
-                    <Label>Descrição</Label>
-                    <Textarea
+                  {/* Descrição */}
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                      Descrição
+                    </label>
+                    <textarea
                       placeholder="Ex: Almoço no restaurante, Uber para o trabalho..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full"
+                      style={{
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        padding: "10px 12px",
+                        fontSize: 14,
+                        color: "#111827",
+                        background: "#fff",
+                        outline: "none",
+                        minHeight: 80,
+                        resize: "vertical",
+                        fontFamily: "inherit",
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
+                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
                     />
                   </div>
 
-                  {/* Category */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>Categoria</Label>
+                  {/* Categoria */}
+                  <div>
+                    <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
+                      <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>Categoria</label>
                       {isSuggested && formData.category_id && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1 bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border-0">
-                          <Sparkles className="w-3 h-3" />
-                          Sugestão automática
-                        </Badge>
+                        <span style={{ fontSize: 10, color: "#3B82F6", background: "#EFF6FF", padding: "1px 6px", borderRadius: 4, fontWeight: 500 }}>
+                          ✦ Sugestão automática
+                        </span>
                       )}
                     </div>
                     <Select 
@@ -672,7 +736,7 @@ export default function Transactions() {
                         setIsSuggested(false);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
@@ -698,7 +762,7 @@ export default function Transactions() {
                       </SelectContent>
                     </Select>
                     {filteredCategories.length === 0 && !categoriesLoading && (
-                      <p className="text-xs text-muted-foreground">
+                      <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                         Vá em Categorias para criar categorias de {formData.type === 'income' ? 'receita' : 'despesa'}
                       </p>
                     )}
@@ -713,14 +777,28 @@ export default function Transactions() {
                   />
 
                   {/* Data */}
-                  <div className="space-y-2">
-                    <Label>Data</Label>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Data</label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start font-normal">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {format(formData.date, "dd/MM/yyyy", { locale: ptBR })}
-                        </Button>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between transition-all"
+                          style={{
+                            border: "1px solid #E5E7EB",
+                            borderRadius: 8,
+                            padding: "10px 12px",
+                            fontSize: 14,
+                            color: "#111827",
+                            background: "#fff",
+                            cursor: "pointer",
+                          }}
+                          onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
+                          onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
+                        >
+                          <span>{format(formData.date, "dd/MM/yyyy", { locale: ptBR })}</span>
+                          <Calendar style={{ width: 16, height: 16, color: "#9CA3AF" }} />
+                        </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <CalendarComponent
@@ -734,58 +812,53 @@ export default function Transactions() {
                     </Popover>
                   </div>
 
-                  {/* Tipo de Lançamento - Somente para despesas e nova transação */}
+                  {/* Tipo de Lançamento - underline tabs */}
                   {formData.type === 'expense' && !editingId && (
-                    <div className="space-y-3">
-                      <Label>Tipo de lançamento</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          type="button"
-                          variant={formData.tipoLancamento === 'unica' ? 'default' : 'outline'}
-                          size="sm"
-                          className={cn(
-                            "flex-1",
-                            formData.tipoLancamento === 'unica' && 'bg-primary'
-                          )}
-                          onClick={() => setFormData({ ...formData, tipoLancamento: 'unica', is_recurring: false })}
-                        >
-                          Única
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={formData.tipoLancamento === 'parcelada' ? 'default' : 'outline'}
-                          size="sm"
-                          className={cn(
-                            "flex-1",
-                            formData.tipoLancamento === 'parcelada' && 'bg-primary'
-                          )}
-                          onClick={() => setFormData({ ...formData, tipoLancamento: 'parcelada', is_recurring: false })}
-                        >
-                          Parcelada
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={formData.tipoLancamento === 'fixa' ? 'default' : 'outline'}
-                          size="sm"
-                          className={cn(
-                            "flex-1",
-                            formData.tipoLancamento === 'fixa' && 'bg-primary'
-                          )}
-                          onClick={() => setFormData({ ...formData, tipoLancamento: 'fixa', is_recurring: true })}
-                        >
-                          Fixa
-                        </Button>
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Tipo de lançamento</label>
+                        <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                          {[
+                            { value: 'unica' as const, label: 'Única' },
+                            { value: 'parcelada' as const, label: 'Parcelada' },
+                            { value: 'fixa' as const, label: 'Fixa' },
+                          ].map((tab) => (
+                            <button
+                              key={tab.value}
+                              type="button"
+                              onClick={() => setFormData({
+                                ...formData,
+                                tipoLancamento: tab.value,
+                                is_recurring: tab.value === 'fixa',
+                              })}
+                              className="flex-1 transition-all"
+                              style={{
+                                padding: "8px 0",
+                                fontSize: 13,
+                                fontWeight: formData.tipoLancamento === tab.value ? 600 : 400,
+                                color: formData.tipoLancamento === tab.value ? "#111827" : "#6B7280",
+                                background: "none",
+                                border: "none",
+                                borderBottom: formData.tipoLancamento === tab.value ? "2px solid #111827" : "2px solid transparent",
+                                cursor: "pointer",
+                                transition: "all 150ms",
+                              }}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      {/* Seletor de Parcelas */}
+                      {/* Parcelas */}
                       {formData.tipoLancamento === 'parcelada' && (
-                        <div className="space-y-2">
-                          <Label>Número de parcelas</Label>
+                        <div>
+                          <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Número de parcelas</label>
                           <Select 
                             value={formData.totalParcelas.toString()} 
                             onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -799,15 +872,15 @@ export default function Transactions() {
                         </div>
                       )}
 
-                      {/* Seletor de Meses - Fixa */}
+                      {/* Meses - Fixa */}
                       {formData.tipoLancamento === 'fixa' && (
-                        <div className="space-y-2">
-                          <Label>Quantos meses?</Label>
+                        <div>
+                          <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Quantos meses?</label>
                           <Select 
                             value={formData.totalParcelas.toString()} 
                             onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -821,25 +894,22 @@ export default function Transactions() {
                         </div>
                       )}
 
-                      {/* Resumo Visual */}
+                      {/* Resumo */}
                       {formData.tipoLancamento !== 'unica' && formData.amount && (
-                        <div className="p-3 bg-muted/50 rounded-lg space-y-1">
-                          <div className="flex items-center gap-2 text-sm font-medium">
+                        <div style={{ background: "#F9FAFB", borderRadius: 8, border: "1px solid #F3F4F6", padding: "10px 14px" }}>
+                          <p style={{ fontSize: 13, color: "#6B7280" }}>
                             {formData.tipoLancamento === 'parcelada' ? (
                               <>
-                                <Calendar className="w-4 h-4 text-primary" />
-                                <span>
-                                  {formData.totalParcelas}x de {formatCurrency(parseFloat(formData.amount) / formData.totalParcelas)}
-                                </span>
+                                {formData.totalParcelas}x de{' '}
+                                <strong style={{ color: "#111827" }}>{formatCurrency(parseFloat(formData.amount) / formData.totalParcelas)}</strong>
                               </>
                             ) : (
                               <>
-                                <RefreshCw className="w-4 h-4 text-primary" />
-                                <span>{formatCurrency(parseFloat(formData.amount))}/mês</span>
+                                <strong style={{ color: "#111827" }}>{formatCurrency(parseFloat(formData.amount))}</strong>/mês
                               </>
                             )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
+                          </p>
+                          <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                             {formData.tipoLancamento === 'parcelada' 
                               ? `Serão criadas ${formData.totalParcelas} transações pendentes`
                               : `Serão criadas ${formData.totalParcelas} transações mensais pendentes`
@@ -850,30 +920,28 @@ export default function Transactions() {
                     </div>
                   )}
 
-                  {/* Feedback Visual de Status Automático */}
+                  {/* Status feedback */}
                   {(() => {
                     const today = startOfDay(new Date());
                     const transactionDate = startOfDay(formData.date);
                     const isFutureDate = transactionDate > today;
                     
-                    if (formData.tipoLancamento !== 'unica' && formData.type === 'expense') {
-                      return null; // O resumo já mostra a informação
-                    }
+                    if (formData.tipoLancamento !== 'unica' && formData.type === 'expense') return null;
                     
                     if (isFutureDate) {
                       return (
-                        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg">
-                          <Clock className="w-4 h-4" />
-                          <span>Será registrada como <strong>pendente</strong> (data futura)</span>
+                        <div className="flex items-center gap-2" style={{ background: "#F9FAFB", borderRadius: 8, border: "1px solid #F3F4F6", padding: "10px 14px" }}>
+                          <Clock style={{ width: 16, height: 16, color: "#D97706" }} />
+                          <span style={{ fontSize: 13, color: "#6B7280" }}>Será registrada como <strong style={{ color: "#111827" }}>pendente</strong> (data futura)</span>
                         </div>
                       );
                     }
                     
                     if (formData.is_recurring && formData.tipoLancamento === 'unica') {
                       return (
-                        <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
-                          <RefreshCw className="w-4 h-4" />
-                          <span>Transação recorrente - sempre inicia como <strong>pendente</strong></span>
+                        <div className="flex items-center gap-2" style={{ background: "#F9FAFB", borderRadius: 8, border: "1px solid #F3F4F6", padding: "10px 14px" }}>
+                          <RefreshCw style={{ width: 16, height: 16, color: "#6B7280" }} />
+                          <span style={{ fontSize: 13, color: "#6B7280" }}>Transação recorrente - sempre inicia como <strong style={{ color: "#111827" }}>pendente</strong></span>
                         </div>
                       );
                     }
@@ -881,14 +949,17 @@ export default function Transactions() {
                     return null;
                   })()}
 
-                  {/* Recurring Toggle - Somente para receitas ou transações únicas */}
+                  {/* Recurring toggle */}
                   {(formData.type === 'income' || formData.tipoLancamento === 'unica') && (
-                    <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                    <div
+                      className="flex items-center justify-between"
+                      style={{ padding: "10px 0" }}
+                    >
                       <div className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                        <Label htmlFor="recurring-toggle" className="font-normal cursor-pointer">
+                        <RefreshCw style={{ width: 16, height: 16, color: "#9CA3AF" }} />
+                        <label htmlFor="recurring-toggle" style={{ fontSize: 13, fontWeight: 400, color: "#374151", cursor: "pointer" }}>
                           É uma transação recorrente?
-                        </Label>
+                        </label>
                       </div>
                       <Switch
                         id="recurring-toggle"
@@ -901,15 +972,15 @@ export default function Transactions() {
                     </div>
                   )}
 
-                  {/* Recurrence Day (only if recurring and not fixed) */}
+                  {/* Recurrence Day */}
                   {formData.is_recurring && formData.tipoLancamento !== 'fixa' && (
-                    <div className="space-y-2">
-                      <Label>Dia do mês</Label>
+                    <div>
+                      <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Dia do mês</label>
                       <Select 
                         value={formData.recurrence_day.toString()} 
                         onValueChange={(v) => setFormData({ ...formData, recurrence_day: parseInt(v) })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
                           <SelectValue placeholder="Selecione o dia" />
                         </SelectTrigger>
                         <SelectContent>
@@ -923,15 +994,15 @@ export default function Transactions() {
                     </div>
                   )}
 
-                  {/* Seletor de repetições para recorrentes */}
+                  {/* Meses recorrentes */}
                   {formData.is_recurring && formData.tipoLancamento === 'unica' && (
-                    <div className="space-y-2">
-                      <Label>Quantos meses?</Label>
+                    <div>
+                      <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>Quantos meses?</label>
                       <Select 
                         value={formData.totalParcelas.toString()} 
                         onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
@@ -944,19 +1015,30 @@ export default function Transactions() {
                       </Select>
                     </div>
                   )}
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancelar</Button>
-                  </DialogClose>
-                  <Button 
-                    onClick={handleSubmit} 
+
+                  {/* Submit */}
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
                     disabled={!formData.amount || createMutation.isPending || updateMutation.isPending}
-                    className="gradient-primary"
+                    className="w-full flex items-center justify-center transition-colors disabled:opacity-50"
+                    style={{
+                      height: 48,
+                      borderRadius: 8,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: "#fff",
+                      background: "#111827",
+                      border: "none",
+                      cursor: !formData.amount ? "not-allowed" : "pointer",
+                      marginTop: 4,
+                    }}
+                    onMouseEnter={(e) => { if (formData.amount) e.currentTarget.style.background = "#1F2937"; }}
+                    onMouseLeave={(e) => { if (formData.amount) e.currentTarget.style.background = "#111827"; }}
                   >
                     {editingId ? 'Salvar' : 'Criar'}
-                  </Button>
-                </DialogFooter>
+                  </button>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
