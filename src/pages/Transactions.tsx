@@ -15,7 +15,6 @@ import { FiltroDataRange } from '@/components/FiltroDataRange';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -171,6 +170,11 @@ const GRUPO_CONFIG = {
   },
 } as const;
 
+function isTransacaoFaturaCartao(transaction: Transaction): boolean {
+  const nomeCategoria = transaction.category?.name?.trim().toLowerCase();
+  return nomeCategoria === 'fatura de cartão' || nomeCategoria === 'fatura do cartão' || nomeCategoria === 'fatura de cartao' || nomeCategoria === 'fatura do cartao';
+}
+
 function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
   if ('isFaturaCartao' in item) {
     const fatura = item as FaturaVirtual;
@@ -178,8 +182,7 @@ function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
   }
 
   const t = item as Transaction;
-  const isFaturaCategoria = t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão';
-  return isFaturaCategoria && t.status === 'completed';
+  return isTransacaoFaturaCartao(t) && t.status === 'completed';
 }
 
 function classificarItem(item: Transaction | FaturaVirtual): string {
@@ -187,22 +190,22 @@ function classificarItem(item: Transaction | FaturaVirtual): string {
   if ('isFaturaCartao' in item) {
     return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
-  
+
   const t = item as Transaction;
-  
+
   // Transações com categoria "Fatura de Cartão" → pagas ou pendentes
-  if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') {
+  if (isTransacaoFaturaCartao(t)) {
     return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
-  
+
   // Fixas / recorrentes
   if (t.tipo_lancamento === 'fixa' || t.is_recurring) {
     return t.type === 'income' ? 'receitas_fixas' : 'fixas';
   }
-  
+
   // Receitas
   if (t.type === 'income') return 'receitas_avulsas';
-  
+
   // Despesas normais
   return 'despesas';
 }
@@ -301,7 +304,6 @@ export default function Transactions() {
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [ocultarPagas, setOcultarPagas] = useState(false);
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
   // Formatar datas para o hook
@@ -368,10 +370,17 @@ export default function Transactions() {
     );
   }, [transactions, searchQuery]);
 
-  // Separar por tipo
-  const incomeTransactions = useMemo(() => 
-    searchedTransactions.filter(t => t.type === 'income'), 
+  // Remover lançamentos de pagamento de fatura da lista principal
+  // (as faturas passam a ser exibidas somente via useFaturasNaListagem)
+  const searchedTransactionsSemFatura = useMemo(
+    () => searchedTransactions.filter((t) => !isTransacaoFaturaCartao(t)),
     [searchedTransactions]
+  );
+
+  // Separar por tipo
+  const incomeTransactions = useMemo(() =>
+    searchedTransactionsSemFatura.filter(t => t.type === 'income'),
+    [searchedTransactionsSemFatura]
   );
   
   // Filtrar faturas virtuais pelo período selecionado
@@ -384,21 +393,21 @@ export default function Transactions() {
   }, [faturasVirtuais, startDate, endDate]);
 
   const expenseTransactions = useMemo(() => {
-    const expenses = searchedTransactions.filter(t => t.type === 'expense');
+    const expenses = searchedTransactionsSemFatura.filter(t => t.type === 'expense');
     const combinadas = [...expenses, ...faturasFiltradas] as (Transaction | FaturaVirtual)[];
     return combinadas;
-  }, [searchedTransactions, faturasFiltradas]);
+  }, [searchedTransactionsSemFatura, faturasFiltradas]);
   
-  const fixedExpenseTransactions = useMemo(() => 
-    expenseTransactions.filter(t => 
+  const fixedExpenseTransactions = useMemo(() =>
+    expenseTransactions.filter(t =>
       !('isFaturaCartao' in t) && FIXED_EXPENSE_CATEGORIES.includes((t as Transaction).category?.name || '')
-    ) as Transaction[], 
+    ) as Transaction[],
     [expenseTransactions]
   );
 
-  const pendingTransactions = useMemo(() => 
-    searchedTransactions.filter(t => t.status === 'pending'), 
-    [searchedTransactions]
+  const pendingTransactions = useMemo(() =>
+    searchedTransactionsSemFatura.filter(t => t.status === 'pending'),
+    [searchedTransactionsSemFatura]
   );
 
   // Transações ativas baseado na tab
@@ -408,9 +417,9 @@ export default function Transactions() {
       case 'expense': return expenseTransactions;
       case 'pending': return pendingTransactions;
       case 'fixed': return fixedExpenseTransactions;
-      default: return [...searchedTransactions, ...faturasFiltradas];
+      default: return [...searchedTransactionsSemFatura, ...faturasFiltradas];
     }
-  }, [activeTab, searchedTransactions, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasFiltradas]);
+  }, [activeTab, searchedTransactionsSemFatura, incomeTransactions, expenseTransactions, pendingTransactions, fixedExpenseTransactions, faturasFiltradas]);
 
   // Ordenar transações por data (mais recente primeiro), faturas futuras ao final
   const sortedTransactions = useMemo(() => {
@@ -570,7 +579,7 @@ export default function Transactions() {
       value: 'all', 
       label: 'Todos', 
       icon: <LayoutList className="w-4 h-4" />, 
-      count: searchedTransactions.length,
+      count: searchedTransactionsSemFatura.length + faturasFiltradas.length,
       activeClass: 'border-primary text-foreground'
     },
     { 
@@ -1294,7 +1303,6 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              const isFaturasGroup = grupo.key === 'faturas_pagas' || grupo.key === 'faturas_pendentes';
               // Em faturas pendentes, nunca exibir itens já pagos
               const displayItems = grupo.key === 'faturas_pendentes'
                 ? grupo.items.filter(item => !isFaturaPaga(item))
@@ -1310,19 +1318,6 @@ export default function Transactions() {
                     <div className="flex-1">
                       <GroupHeader grupo={{...grupo, items: displayItems}} collapsed={isCollapsed} onToggle={() => toggleGroup(grupo.key)} />
                     </div>
-                    {grupo.key === 'faturas_pendentes' && (
-                      <div className="flex items-center gap-1.5 shrink-0 pb-1">
-                        <Label htmlFor="ocultar-pagas" className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">
-                          Ocultar pagas
-                        </Label>
-                        <Switch
-                          id="ocultar-pagas"
-                          checked={ocultarPagas}
-                          onCheckedChange={setOcultarPagas}
-                          className="scale-75"
-                        />
-                      </div>
-                    )}
                   </div>
                   {!isCollapsed && (
                     <div className="divide-y divide-border/30">
@@ -1720,9 +1715,11 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
           </Badge>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-          <span>{isPaga ? 'Paga em' : 'Vence'} {format(parseISO(fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}</span>
-          <span className="hidden sm:inline text-muted-foreground/50">•</span>
-          <span className="hidden sm:inline" style={{ color: fatura.cartaoCor }}>
+          <span>
+            {isPaga ? 'Paga em' : 'Vence'} {format(parseISO(isPaga ? (fatura.dataPagamento || fatura.due_date) : fatura.due_date), "dd/MM/yyyy", { locale: ptBR })}
+          </span>
+          <span className="text-muted-foreground/50">•</span>
+          <span style={{ color: fatura.cartaoCor }}>
             {fatura.cartaoNome}
           </span>
         </div>

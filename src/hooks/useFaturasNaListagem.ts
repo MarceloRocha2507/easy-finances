@@ -20,6 +20,7 @@ export interface FaturaVirtual {
   statusFatura: 'aberta' | 'fechada' | 'pendente' | 'paga';
   mesReferencia: string;
   paga: boolean;
+  dataPagamento?: string | null;
 }
 
 export function useFaturasNaListagem(mesReferencia?: Date) {
@@ -52,7 +53,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       // 3. Buscar parcelas (pagas e não pagas)
       const { data: parcelas, error: parcelasError } = await supabase
         .from('parcelas_cartao')
-        .select('valor, mes_referencia, compra_id, paga, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
+        .select('valor, mes_referencia, compra_id, paga, updated_at, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
         .eq('ativo', true)
         .gte('mes_referencia', mesInicioStr)
         .lte('mes_referencia', mesFimStr);
@@ -60,7 +61,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       if (parcelasError || !parcelas?.length) return [];
 
       // 4. Agrupar por cartao_id + mes_referencia
-      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number; temPendente: boolean }>();
+      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number; temPendente: boolean; ultimaDataPagamento: string | null }>();
 
       for (const p of parcelas) {
         const compra = p.compras_cartao as any;
@@ -76,11 +77,17 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
         const key = `${cartaoId}-${mesRef}`;
         
         if (!grupos.has(key)) {
-          grupos.set(key, { cartaoId, mesRef, total: 0, temPendente: false });
+          grupos.set(key, { cartaoId, mesRef, total: 0, temPendente: false, ultimaDataPagamento: null });
         }
         const grupo = grupos.get(key)!;
         grupo.total += Number(p.valor);
-        if (!p.paga) {
+
+        if (p.paga) {
+          const dataPagamento = p.updated_at ?? null;
+          if (dataPagamento && (!grupo.ultimaDataPagamento || new Date(dataPagamento) > new Date(grupo.ultimaDataPagamento))) {
+            grupo.ultimaDataPagamento = dataPagamento;
+          }
+        } else {
           grupo.temPendente = true;
         }
       }
@@ -142,6 +149,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
           statusFatura,
           mesReferencia: grupo.mesRef,
           paga,
+          dataPagamento: paga ? grupo.ultimaDataPagamento : null,
         });
       }
 
