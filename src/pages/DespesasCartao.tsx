@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -171,6 +171,7 @@ export default function DespesasCartao() {
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
+  const actionClickedRef = useRef(false);
 
   // Hooks
   const { data: responsaveis = [] } = useResponsaveis();
@@ -795,6 +796,11 @@ export default function DespesasCartao() {
                         p.paga && "opacity-50 bg-emerald-500/5"
                       )}
                       onClick={(e) => {
+                        // Não abrir detalhes se uma ação do dropdown foi clicada
+                        if (actionClickedRef.current) {
+                          actionClickedRef.current = false;
+                          return;
+                        }
                         // Não abrir detalhes se clicou no checkbox ou nas ações
                         const target = e.target as HTMLElement;
                         if (target.closest('button, [role="checkbox"], [data-action-cell]')) return;
@@ -900,6 +906,7 @@ export default function DespesasCartao() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
+                              actionClickedRef.current = true;
                               setParcelaSelecionada(p);
                               setEditarCompraOpen(true);
                             }}>
@@ -907,6 +914,7 @@ export default function DespesasCartao() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
+                              actionClickedRef.current = true;
                               setParcelaSelecionada(p);
                               setEstornarCompraOpen(true);
                             }}>
@@ -916,7 +924,7 @@ export default function DespesasCartao() {
                               className="text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setDetalhesCompraOpen(false);
+                                actionClickedRef.current = true;
                                 setParcelaSelecionada(p);
                                 setExcluirCompraOpen(true);
                               }}
