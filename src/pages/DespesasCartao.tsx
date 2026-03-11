@@ -796,9 +796,8 @@ export default function DespesasCartao() {
                         p.paga && "opacity-50 bg-emerald-500/5"
                       )}
                       onClick={(e) => {
-                        // Não abrir detalhes se uma ação do dropdown foi clicada recentemente
-                        if (actionClickedRef.current) {
-                          actionClickedRef.current = false;
+                        // Não abrir detalhes se uma ação do dropdown foi clicada recentemente (últimos 500ms)
+                        if (Date.now() - actionClickedRef.current < 500) {
                           return;
                         }
                         // Não abrir detalhes se clicou no checkbox ou nas ações
