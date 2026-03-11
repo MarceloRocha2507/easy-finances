@@ -1384,6 +1384,7 @@ export default function Transactions() {
                     onMarkAsPaid={handleMarkAsPaid}
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
+                    onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
                     saldoApos={saldoMap?.get(item.id)}
                     isUltimaTransacao={item.id === ultimaTransacaoId}
                     totalGuardado={totalGuardado}
