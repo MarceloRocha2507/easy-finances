@@ -1023,15 +1023,18 @@ export default function Transactions() {
                     disabled={!formData.amount || createMutation.isPending || updateMutation.isPending}
                     className="w-full flex items-center justify-center transition-colors disabled:opacity-50"
                     style={{
-                      height: 48,
-                      borderRadius: 8,
-                      fontSize: 15,
+                      height: "48px",
+                      minHeight: "48px",
+                      borderRadius: "8px",
+                      fontSize: "15px",
                       fontWeight: 600,
                       color: "#fff",
                       background: "#111827",
                       border: "none",
                       cursor: !formData.amount ? "not-allowed" : "pointer",
-                      marginTop: 4,
+                      marginTop: "8px",
+                      lineHeight: "1",
+                      padding: "0 16px",
                     }}
                     onMouseEnter={(e) => { if (formData.amount) e.currentTarget.style.background = "#1F2937"; }}
                     onMouseLeave={(e) => { if (formData.amount) e.currentTarget.style.background = "#111827"; }}
