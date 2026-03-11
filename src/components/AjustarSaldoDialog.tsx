@@ -43,6 +43,17 @@ interface HistoricoAjuste {
   created_at: string;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim();
+  if (!normalized) return 0;
+
+  if (normalized.includes(',')) {
+    return parseFloat(normalized.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  return parseFloat(normalized) || 0;
+}
+
 export function AjustarSaldoDialog({ 
   open, 
   onOpenChange, 
