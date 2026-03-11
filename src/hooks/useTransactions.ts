@@ -1194,12 +1194,14 @@ export function useCompleteStats(mesReferencia?: Date) {
       (pendingDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
+        const isDesconsiderada = (t as any).desconsiderada === true;
         stats.pendingCount++;
         if (t.type === 'income') {
-          stats.pendingIncome += amount;
+          if (!isDesconsiderada) stats.pendingIncome += amount;
         } else {
           // Despesas com categoria "Fatura do Cartão" já estão em faturaCartaoTitular
-          if (!isFaturaCartao) {
+          // Despesas desconsideradas não entram no cálculo estimado
+          if (!isFaturaCartao && !isDesconsiderada) {
             stats.pendingExpense += amount;
           }
         }
