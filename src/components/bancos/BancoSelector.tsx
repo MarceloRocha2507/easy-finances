@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -18,6 +18,7 @@ interface BancoSelectorProps {
   label?: string;
   placeholder?: string;
   showAddButton?: boolean;
+  autoSelectDefault?: boolean;
 }
 
 export function BancoSelector({
@@ -26,9 +27,22 @@ export function BancoSelector({
   label = "Banco",
   placeholder = "Selecione o banco",
   showAddButton = true,
+  autoSelectDefault = false,
 }: BancoSelectorProps) {
   const { data: bancos = [], refetch } = useBancos();
   const [novoOpen, setNovoOpen] = useState(false);
+  const defaultApplied = useRef(false);
+
+  // Auto-select Nubank as default when no value is set
+  useEffect(() => {
+    if (autoSelectDefault && !value && bancos.length > 0 && !defaultApplied.current) {
+      const nubank = bancos.find((b) => b.nome.toLowerCase().includes("nubank"));
+      if (nubank) {
+        defaultApplied.current = true;
+        onChange(nubank.id);
+      }
+    }
+  }, [autoSelectDefault, value, bancos, onChange]);
 
   const handleChange = (val: string) => {
     if (val === "none") {
