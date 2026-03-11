@@ -866,7 +866,42 @@ export function useMarkAsPaid() {
   });
 }
 
-export function usePendingStats() {
+export function useToggleDesconsiderada() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, desconsiderada }: { id: string; desconsiderada: boolean }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ desconsiderada } as any)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      invalidateTransactionCaches(queryClient);
+      toast({
+        title: variables.desconsiderada ? 'Despesa desconsiderada' : 'Despesa reconsiderada',
+        description: variables.desconsiderada 
+          ? 'Esta despesa não será contabilizada no saldo estimado.'
+          : 'Esta despesa voltou a ser contabilizada no saldo estimado.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a transação.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+
   const { user } = useAuth();
 
   return useQuery({
