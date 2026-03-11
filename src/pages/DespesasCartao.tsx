@@ -911,7 +911,7 @@ export default function DespesasCartao() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              actionClickedRef.current = true;
+                              actionClickedRef.current = Date.now();
                               setParcelaSelecionada(p);
                               setEditarCompraOpen(true);
                             }}>
@@ -919,7 +919,7 @@ export default function DespesasCartao() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              actionClickedRef.current = true;
+                              actionClickedRef.current = Date.now();
                               setParcelaSelecionada(p);
                               setEstornarCompraOpen(true);
                             }}>
@@ -929,7 +929,7 @@ export default function DespesasCartao() {
                               className="text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                actionClickedRef.current = true;
+                                actionClickedRef.current = Date.now();
                                 setParcelaSelecionada(p);
                                 setExcluirCompraOpen(true);
                               }}
