@@ -1,0 +1,1 @@
+UPDATE public.transactions SET banco_id = '604b204a-4035-4b5d-a5aa-d549038267ec' WHERE type = 'income' AND deleted_at IS NULL AND (banco_id IS NULL OR banco_id != '604b204a-4035-4b5d-a5aa-d549038267ec');
