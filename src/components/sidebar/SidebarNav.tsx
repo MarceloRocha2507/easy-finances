@@ -112,18 +112,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     }
   }, [pathname, getActiveMenu]);
 
-  const handleMenuChange = useCallback((menu: keyof typeof openMenus) => (open: boolean) => {
-    setOpenMenus(prev => {
-      // Accordion: close others when opening one
-      if (open) {
-        return {
-          transacoes: menu === "transacoes",
-          cartoes: menu === "cartoes",
-          relatorios: menu === "relatorios",
-        };
-      }
-      return { ...prev, [menu]: false };
-    });
+  const handleMenuChange = useCallback((menu: MenuKey) => (open: boolean) => {
+    if (open) {
+      // Accordion: close all others, open only this one
+      setOpenMenus({
+        transacoes: menu === "transacoes",
+        cartoes: menu === "cartoes",
+        relatorios: menu === "relatorios",
+      });
+    } else {
+      setOpenMenus(prev => ({ ...prev, [menu]: false }));
+    }
   }, []);
 
   const isActive = useCallback((href: string) => pathname === href, [pathname]);
