@@ -26,7 +26,6 @@ type ResumoItem = {
 
 export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
   const resumo = useMemo(() => {
-    // Agrupar por responsável
     const porResponsavel: Record<string, ResumoItem> = {};
     let totalGeral = 0;
 
@@ -34,14 +33,15 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
       const valor = Math.abs(p.valor);
       totalGeral += valor;
 
-      const respId = p.responsavel_id || "sem-responsavel";
+      const isTitular = p.is_titular === true || !p.responsavel_id;
+      const respId = p.responsavel_id || "titular";
 
       if (!porResponsavel[respId]) {
         porResponsavel[respId] = {
           responsavelId: respId,
-          nome: p.responsavel_nome || "Sem responsável",
-          apelido: p.responsavel_apelido || null,
-          isTitular: false, // TODO: verificar
+          nome: isTitular ? "EU (Titular)" : (p.responsavel_nome || "Sem responsável"),
+          apelido: isTitular ? null : (p.responsavel_apelido || null),
+          isTitular,
           total: 0,
           percentual: 0,
           valorPago: 0,
@@ -56,16 +56,21 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
     Object.values(porResponsavel).forEach((item) => {
       item.percentual = totalGeral > 0 ? (item.total / totalGeral) * 100 : 0;
 
-      // Buscar acerto existente
-      const acerto = acertos.find((a) => a.responsavel_id === item.responsavelId);
-      if (acerto) {
-        item.valorPago = acerto.valor_pago;
-        item.status = acerto.status as "pendente" | "parcial" | "quitado";
+      // Buscar acerto existente para não-titulares
+      if (!item.isTitular) {
+        const acerto = acertos.find((a) => a.responsavel_id === item.responsavelId);
+        if (acerto) {
+          item.valorPago = acerto.valor_pago;
+          item.status = acerto.status as "pendente" | "parcial" | "quitado";
+        }
       }
     });
 
-    // Ordenar por valor (maior primeiro)
-    return Object.values(porResponsavel).sort((a, b) => b.total - a.total);
+    // Ordenar: titular primeiro, depois por valor
+    return Object.values(porResponsavel).sort((a, b) => {
+      if (a.isTitular !== b.isTitular) return a.isTitular ? -1 : 1;
+      return b.total - a.total;
+    });
   }, [parcelas, acertos]);
 
   if (resumo.length === 0) {
@@ -103,27 +108,39 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium truncate">
+                <span className="font-medium truncate text-sm">
                   {item.apelido || item.nome}
                 </span>
                 {/* Status de acerto */}
                 {item.status === "quitado" ? (
-                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-0">
+                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px]">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Quitado
                   </Badge>
                 ) : item.status === "parcial" ? (
-                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-0">
+                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-0 text-[10px]">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     Parcial
                   </Badge>
                 ) : !item.isTitular && item.total > 0 ? (
-                  <Badge variant="secondary" className="bg-red-500/10 text-red-600 border-0">
+                  <Badge variant="secondary" className="bg-red-500/10 text-red-600 border-0 text-[10px]">
                     <Clock className="h-3 w-3 mr-1" />
                     Pendente
                   </Badge>
                 ) : null}
               </div>
+
+              {/* Valor pago por não-titulares */}
+              {!item.isTitular && item.valorPago > 0 && (
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  Pagou {formatCurrency(item.valorPago)} de {formatCurrency(item.total)}
+                </p>
+              )}
+              {!item.isTitular && item.valorPago === 0 && item.total > 0 && (
+                <p className="text-[11px] text-destructive mt-0.5">
+                  Nenhum pagamento registrado
+                </p>
+              )}
 
               {/* Barra de progresso */}
               <div className="mt-1.5">
@@ -136,10 +153,10 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
 
             {/* Valor */}
             <div className="text-right flex-shrink-0">
-              <p className="font-semibold value-display">
+              <p className="font-semibold text-sm value-display">
                 {formatCurrency(item.total)}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground">
                 {item.percentual.toFixed(0)}%
               </p>
             </div>
