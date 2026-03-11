@@ -102,9 +102,19 @@ Deno.serve(async (req) => {
 
     // ============ ACTIVITY ============
     if (action === 'activity') {
+      // Get admin user IDs first
+      const { data: adminRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+
+      const adminUserIds = (adminRoles || []).map(r => r.user_id)
+      if (!adminUserIds.length) return jsonResponse({ logs: [] })
+
       const { data: logs } = await supabaseAdmin
         .from('auditoria_cartao')
         .select('id, user_id, tabela, acao, created_at')
+        .in('user_id', adminUserIds)
         .order('created_at', { ascending: false })
         .limit(50)
 
