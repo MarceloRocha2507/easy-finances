@@ -171,7 +171,7 @@ export default function DespesasCartao() {
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
-  const actionClickedRef = useRef(false);
+  const actionClickedRef = useRef(0);
 
   // Hooks
   const { data: responsaveis = [] } = useResponsaveis();
@@ -796,16 +796,21 @@ export default function DespesasCartao() {
                         p.paga && "opacity-50 bg-emerald-500/5"
                       )}
                       onClick={(e) => {
-                        // Não abrir detalhes se uma ação do dropdown foi clicada
-                        if (actionClickedRef.current) {
-                          actionClickedRef.current = false;
+                        // Não abrir detalhes se uma ação do dropdown foi clicada recentemente (últimos 500ms)
+                        if (Date.now() - actionClickedRef.current < 500) {
                           return;
                         }
                         // Não abrir detalhes se clicou no checkbox ou nas ações
                         const target = e.target as HTMLElement;
-                        if (target.closest('button, [role="checkbox"], [data-action-cell]')) return;
+                        if (target.closest('button, [role="checkbox"], [data-action-cell], [role="menu"], [role="menuitem"]')) return;
                         setParcelaSelecionada(p);
                         setDetalhesCompraOpen(true);
+                      }}
+                      onPointerDown={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (target.closest('[data-action-cell]')) {
+                          e.stopPropagation();
+                        }
                       }}
                     >
                       <TableCell>
@@ -906,7 +911,7 @@ export default function DespesasCartao() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              actionClickedRef.current = true;
+                              actionClickedRef.current = Date.now();
                               setParcelaSelecionada(p);
                               setEditarCompraOpen(true);
                             }}>
@@ -914,7 +919,7 @@ export default function DespesasCartao() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              actionClickedRef.current = true;
+                              actionClickedRef.current = Date.now();
                               setParcelaSelecionada(p);
                               setEstornarCompraOpen(true);
                             }}>
@@ -924,7 +929,7 @@ export default function DespesasCartao() {
                               className="text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                actionClickedRef.current = true;
+                                actionClickedRef.current = Date.now();
                                 setParcelaSelecionada(p);
                                 setExcluirCompraOpen(true);
                               }}
