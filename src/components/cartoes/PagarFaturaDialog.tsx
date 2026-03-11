@@ -53,6 +53,7 @@ export function PagarFaturaDialog({
   onOpenChange,
   onPaid,
 }: Props) {
+  const queryClient = useQueryClient();
   const [modo, setModo] = useState<ModoPagamento>("eu_pago_tudo");
   const [responsaveis, setResponsaveis] = useState<ResponsavelPagamento[]>([]);
   const [loading, setLoading] = useState(false);
