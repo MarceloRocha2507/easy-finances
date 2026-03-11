@@ -84,7 +84,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     ),
   }), [totalDetectados]);
 
-  const getActiveMenu = useCallback((path: string): keyof typeof openMenus | null => {
+  type MenuKey = "transacoes" | "cartoes" | "relatorios";
+  const getActiveMenu = useCallback((path: string): MenuKey | null => {
     if (path.startsWith("/transactions") || path === "/assinaturas") return "transacoes";
     if ((path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/auditoria")) return "cartoes";
     if (path.startsWith("/reports") || path === "/cartoes/auditoria") return "relatorios";
