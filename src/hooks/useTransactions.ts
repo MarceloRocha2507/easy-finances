@@ -82,6 +82,7 @@ export interface Transaction {
   total_parcelas: number | null;
   numero_parcela: number | null;
   parent_id: string | null;
+  desconsiderada: boolean;
   created_at: string;
   updated_at: string;
   category?: Category;
