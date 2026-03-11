@@ -1303,7 +1303,6 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              const isFaturasGroup = grupo.key === 'faturas_pagas' || grupo.key === 'faturas_pendentes';
               // Em faturas pendentes, nunca exibir itens já pagos
               const displayItems = grupo.key === 'faturas_pendentes'
                 ? grupo.items.filter(item => !isFaturaPaga(item))
