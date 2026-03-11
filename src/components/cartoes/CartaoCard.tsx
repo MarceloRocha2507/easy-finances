@@ -197,18 +197,22 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
         </div>
 
         {/* Valores */}
-        <div className="grid grid-cols-3 gap-4 text-center text-sm">
+        <div className="grid grid-cols-2 gap-3 text-center text-sm">
           <div>
             <p className="text-[11px] text-muted-foreground">Limite</p>
             <p className="font-semibold text-foreground">R$ {limite.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground">Usado</p>
+            <p className="text-[11px] text-muted-foreground">Disponível</p>
+            <p className={`font-semibold ${disponivelColor}`}>R$ {disponivel.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Total Fatura</p>
             <p className={`font-semibold ${usadoColor}`}>R$ {usado.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground">Disponível</p>
-            <p className={`font-semibold ${disponivelColor}`}>R$ {disponivel.toFixed(2)}</p>
+            <p className="text-[11px] text-muted-foreground">Meu (EU)</p>
+            <p className="font-semibold text-blue-600 dark:text-blue-400">R$ {usadoTitular.toFixed(2)}</p>
           </div>
         </div>
       </div>
