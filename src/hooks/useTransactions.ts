@@ -82,6 +82,7 @@ export interface Transaction {
   total_parcelas: number | null;
   numero_parcela: number | null;
   parent_id: string | null;
+  desconsiderada: boolean;
   created_at: string;
   updated_at: string;
   category?: Category;
@@ -865,6 +866,41 @@ export function useMarkAsPaid() {
   });
 }
 
+export function useToggleDesconsiderada() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, desconsiderada }: { id: string; desconsiderada: boolean }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ desconsiderada } as any)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      invalidateTransactionCaches(queryClient);
+      toast({
+        title: variables.desconsiderada ? 'Despesa desconsiderada' : 'Despesa reconsiderada',
+        description: variables.desconsiderada 
+          ? 'Esta despesa não será contabilizada no saldo estimado.'
+          : 'Esta despesa voltou a ser contabilizada no saldo estimado.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a transação.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 export function usePendingStats() {
   const { user } = useAuth();
 
@@ -1078,7 +1114,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 1. Buscar TODAS transações completed para saldo disponível (acumulado histórico)
       const { data: allCompleted, error: allCompletedError } = await supabase
         .from('transactions')
-        .select('type, amount, category_id')
+        .select('type, amount, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
@@ -1107,7 +1143,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 3. Buscar transações completed DO MÊS para receitas/despesas exibidas
       const { data: completedDoMes, error: completedDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount, category_id')
+        .select('type, amount, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
@@ -1119,7 +1155,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 3. Buscar pending DO MÊS para A Receber/A Pagar
       const { data: pendingDoMes, error: pendingDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount, due_date, category_id')
+        .select('type, amount, due_date, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'pending')
         .is('deleted_at', null)
@@ -1194,12 +1230,14 @@ export function useCompleteStats(mesReferencia?: Date) {
       (pendingDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
+        const isDesconsiderada = (t as any).desconsiderada === true;
         stats.pendingCount++;
         if (t.type === 'income') {
-          stats.pendingIncome += amount;
+          if (!isDesconsiderada) stats.pendingIncome += amount;
         } else {
           // Despesas com categoria "Fatura do Cartão" já estão em faturaCartaoTitular
-          if (!isFaturaCartao) {
+          // Despesas desconsideradas não entram no cálculo estimado
+          if (!isFaturaCartao && !isDesconsiderada) {
             stats.pendingExpense += amount;
           }
         }

@@ -1124,6 +1124,7 @@ export type Database = {
           created_at: string
           date: string
           deleted_at: string | null
+          desconsiderada: boolean
           description: string | null
           due_date: string | null
           id: string
@@ -1146,6 +1147,7 @@ export type Database = {
           created_at?: string
           date?: string
           deleted_at?: string | null
+          desconsiderada?: boolean
           description?: string | null
           due_date?: string | null
           id?: string
@@ -1168,6 +1170,7 @@ export type Database = {
           created_at?: string
           date?: string
           deleted_at?: string | null
+          desconsiderada?: boolean
           description?: string | null
           due_date?: string | null
           id?: string

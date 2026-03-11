@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
 import { LixeiraDialog } from '@/components/transactions/LixeiraDialog';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, ChevronDown, ChevronRight, Repeat, Sparkles, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, EyeOff, ChevronDown, ChevronRight, Repeat, Sparkles, X } from 'lucide-react';
 import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -371,6 +371,7 @@ export default function Transactions() {
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
+  const toggleDesconsideradaMutation = useToggleDesconsiderada();
 
   // Filtrar transações por busca
   const searchedTransactions = useMemo(() => {
@@ -1354,6 +1355,7 @@ export default function Transactions() {
                               onMarkAsPaid={handleMarkAsPaid}
                               onDuplicate={handleDuplicate}
                               onView={setViewingTransaction}
+                              onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
                               saldoApos={saldoMap?.get(item.id)}
                               isUltimaTransacao={item.id === ultimaTransacaoId}
                               totalGuardado={totalGuardado}
@@ -1382,6 +1384,7 @@ export default function Transactions() {
                     onMarkAsPaid={handleMarkAsPaid}
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
+                    onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
                     saldoApos={saldoMap?.get(item.id)}
                     isUltimaTransacao={item.id === ultimaTransacaoId}
                     totalGuardado={totalGuardado}
@@ -1452,12 +1455,13 @@ interface TransactionRowProps {
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
+  onToggleDesconsiderada: (id: string, desconsiderada: boolean) => void;
   saldoApos?: number;
   isUltimaTransacao?: boolean;
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
@@ -1465,7 +1469,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
-    <div className="group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors">
+    <div className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors", transaction.desconsiderada && "opacity-50")}>
       {/* Ícone da categoria */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
@@ -1525,6 +1529,13 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             )}>
               {isOverdue ? 'Vencido' : 'Pendente'}
+            </span>
+           )}
+          {/* Badge de Desconsiderada */}
+          {transaction.desconsiderada && (
+            <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground flex items-center gap-0.5">
+              <EyeOff className="w-3 h-3" />
+              <span className="hidden sm:inline">Desconsiderada</span>
             </span>
           )}
         </div>
@@ -1624,6 +1635,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
+              {transaction.type === 'expense' && (
+                <DropdownMenuItem onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
@@ -1666,6 +1683,17 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(transaction)} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
+          {transaction.type === 'expense' && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}
+              title={transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
