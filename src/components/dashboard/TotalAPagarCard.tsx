@@ -99,7 +99,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
 
       {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md !p-0 !gap-0 overflow-hidden">
+        <DialogContent className="max-w-md overflow-hidden" noPadding>
           <div className="flex flex-col">
             {/* Header */}
             <div className="px-6 pt-6 pb-4">

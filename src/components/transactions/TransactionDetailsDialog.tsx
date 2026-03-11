@@ -172,7 +172,7 @@ export function TransactionDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md !p-0 !gap-0">
+      <DialogContent className="sm:max-w-md" noPadding>
         <div className="flex flex-col p-6 gap-0">
           {/* Header title */}
           <p style={{ color: "#111827", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
