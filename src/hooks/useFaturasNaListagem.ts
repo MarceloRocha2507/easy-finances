@@ -53,7 +53,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       // 3. Buscar parcelas (pagas e não pagas)
       const { data: parcelas, error: parcelasError } = await supabase
         .from('parcelas_cartao')
-        .select('valor, mes_referencia, compra_id, paga, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
+        .select('valor, mes_referencia, compra_id, paga, updated_at, compras_cartao!inner(cartao_id, responsavel:responsaveis(is_titular))')
         .eq('ativo', true)
         .gte('mes_referencia', mesInicioStr)
         .lte('mes_referencia', mesFimStr);
