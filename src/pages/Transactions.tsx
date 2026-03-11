@@ -1453,12 +1453,13 @@ interface TransactionRowProps {
   onMarkAsPaid: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
+  onToggleDesconsiderada: (id: string, desconsiderada: boolean) => void;
   saldoApos?: number;
   isUltimaTransacao?: boolean;
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
