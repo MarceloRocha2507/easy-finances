@@ -1107,7 +1107,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 3. Buscar transações completed DO MÊS para receitas/despesas exibidas
       const { data: completedDoMes, error: completedDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount, category_id')
+        .select('type, amount, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
