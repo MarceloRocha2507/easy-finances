@@ -56,7 +56,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
   const isLoading = isLoadingTx || isLoadingFaturas;
 
   const mesRefStr = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
-  const faturasMes = (todasFaturas || []).filter(f => f.mesReferencia.startsWith(mesRefStr));
+  const faturasMes = (todasFaturas || []).filter(f => f.mesReferencia.startsWith(mesRefStr) && f.statusFatura !== 'paga');
 
   const contasPendentes = (transactions || []).sort((a, b) => {
     const dateA = new Date(a.due_date || a.date);
