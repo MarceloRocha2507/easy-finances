@@ -310,6 +310,7 @@ export function PagarFaturaDialog({
                 label="Debitar do banco"
                 placeholder="Selecione o banco"
                 showAddButton={false}
+                autoSelectDefault
               />
             )}
 

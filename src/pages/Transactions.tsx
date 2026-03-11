@@ -840,6 +840,7 @@ export default function Transactions() {
                     onChange={(bancoId) => setFormData({ ...formData, banco_id: bancoId })}
                     label="Conta Bancária"
                     placeholder="Selecione a conta"
+                    autoSelectDefault
                   />
 
                   {/* Data */}
