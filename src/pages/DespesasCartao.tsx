@@ -913,6 +913,7 @@ export default function DespesasCartao() {
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => {
+                                setDetalhesCompraOpen(false);
                                 setParcelaSelecionada(p);
                                 setExcluirCompraOpen(true);
                               }}
