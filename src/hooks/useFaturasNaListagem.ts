@@ -20,6 +20,7 @@ export interface FaturaVirtual {
   statusFatura: 'aberta' | 'fechada' | 'pendente' | 'paga';
   mesReferencia: string;
   paga: boolean;
+  dataPagamento?: string | null;
 }
 
 export function useFaturasNaListagem(mesReferencia?: Date) {
