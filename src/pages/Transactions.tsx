@@ -1628,6 +1628,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
+              {transaction.type === 'expense' && (
+                <DropdownMenuItem onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
