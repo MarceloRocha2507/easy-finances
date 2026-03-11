@@ -305,7 +305,6 @@ export default function Transactions() {
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [ocultarPagas, setOcultarPagas] = useState(false);
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
   // Formatar datas para o hook
