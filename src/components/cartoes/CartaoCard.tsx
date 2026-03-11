@@ -43,6 +43,7 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
   );
 
   const [usado, setUsado] = useState(0);
+  const [usadoTitular, setUsadoTitular] = useState(0);
 
   const limite = cartao.limite;
   const disponivel = Math.max(limite - usado, 0);
@@ -51,13 +52,17 @@ export function CartaoCard({ cartao, statusFatura, onClick }: CartaoCardProps) {
     async function carregarUso() {
       try {
         const parcelas = await listarParcelasDaFatura(cartao.id, mesRef);
-        const total = parcelas
-          .filter((p) => !p.paga)
+        const naoPagas = parcelas.filter((p) => !p.paga);
+        const total = naoPagas.reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
+        const titular = naoPagas
+          .filter((p) => p.is_titular === true || !p.responsavel_id)
           .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
         setUsado(total);
+        setUsadoTitular(titular);
       } catch (e) {
         console.error("Erro ao calcular uso do cartão:", e);
         setUsado(0);
+        setUsadoTitular(0);
       }
     }
     carregarUso();
