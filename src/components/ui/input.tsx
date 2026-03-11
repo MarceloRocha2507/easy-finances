@@ -8,9 +8,27 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary focus-visible:shadow-[0_0_0_2px_rgba(0,0,0,0.1)] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "flex w-full bg-white text-foreground placeholder:text-[#9CA3AF] disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
           className,
         )}
+        style={{
+          height: 40,
+          borderRadius: 8,
+          border: "1px solid #E5E7EB",
+          padding: "10px 12px",
+          fontSize: 14,
+          color: "#111827",
+          outline: "none",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.border = "1.5px solid #111827";
+          e.currentTarget.style.boxShadow = "none";
+          props.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.border = "1px solid #E5E7EB";
+          props.onBlur?.(e);
+        }}
         ref={ref}
         {...props}
       />
