@@ -61,7 +61,7 @@ export function useFaturasNaListagem(mesReferencia?: Date) {
       if (parcelasError || !parcelas?.length) return [];
 
       // 4. Agrupar por cartao_id + mes_referencia
-      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number; temPendente: boolean }>();
+      const grupos = new Map<string, { cartaoId: string; mesRef: string; total: number; temPendente: boolean; ultimaDataPagamento: string | null }>();
 
       for (const p of parcelas) {
         const compra = p.compras_cartao as any;
