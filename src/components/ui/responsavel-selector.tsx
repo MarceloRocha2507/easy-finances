@@ -56,25 +56,23 @@ export function ResponsavelSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal"
+            className="w-full justify-between font-normal border-[#E5E7EB] rounded-[20px] h-auto"
+            style={{ padding: "6px 16px", fontSize: 13 }}
             disabled={isLoading}
           >
             {selected ? (
               <div className="flex items-center gap-2">
-                {selected.is_titular ? (
-                  <Crown className="h-4 w-4 text-primary" />
-                ) : (
-                  <User className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span>{selected.apelido || selected.nome}</span>
-                {selected.is_titular && (
-                  <Badge variant="secondary" className="text-xs ml-1">
-                    Eu
-                  </Badge>
-                )}
+                <User style={{ width: 14, height: 14, color: "#9CA3AF" }} />
+                <span style={{
+                  fontWeight: value === selected.id ? 600 : 400,
+                  color: "#111827",
+                }}>
+                  {selected.apelido || selected.nome}
+                  {selected.is_titular && " (Eu)"}
+                </span>
               </div>
             ) : (
-              <span className="text-muted-foreground">
+              <span style={{ color: "#9CA3AF" }}>
                 {isLoading ? "Carregando..." : placeholder}
               </span>
             )}
