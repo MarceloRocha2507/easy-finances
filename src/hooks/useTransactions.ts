@@ -128,6 +128,7 @@ export function useTransactions(filters?: TransactionFilters) {
         `)
         .eq('user_id', user!.id)
         .is('deleted_at', null)
+        .eq('desconsiderada', false)
         .order('date', { ascending: false });
 
       if (filters?.startDate) {
