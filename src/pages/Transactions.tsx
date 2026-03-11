@@ -172,8 +172,11 @@ const GRUPO_CONFIG = {
 } as const;
 
 function classificarItem(item: Transaction | FaturaVirtual): string {
-  // Faturas virtuais (abertas/futuras) → pendentes
-  if ('isFaturaCartao' in item) return 'faturas_pendentes';
+  // Faturas virtuais → pagas ou pendentes baseado no status
+  if ('isFaturaCartao' in item) {
+    const fatura = item as FaturaVirtual;
+    return fatura.paga || fatura.statusFatura === 'paga' ? 'faturas_pagas' : 'faturas_pendentes';
+  }
   
   const t = item as Transaction;
   
