@@ -171,18 +171,28 @@ const GRUPO_CONFIG = {
   },
 } as const;
 
-function classificarItem(item: Transaction | FaturaVirtual): string {
-  // Faturas virtuais → pagas ou pendentes baseado no status
+function isFaturaPaga(item: Transaction | FaturaVirtual): boolean {
   if ('isFaturaCartao' in item) {
     const fatura = item as FaturaVirtual;
-    return fatura.paga || fatura.statusFatura === 'paga' ? 'faturas_pagas' : 'faturas_pendentes';
+    return fatura.paga === true || fatura.statusFatura === 'paga';
+  }
+
+  const t = item as Transaction;
+  const isFaturaCategoria = t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão';
+  return isFaturaCategoria && t.status === 'completed';
+}
+
+function classificarItem(item: Transaction | FaturaVirtual): string {
+  // Faturas (virtuais e lançadas) sempre respeitam status pago x pendente
+  if ('isFaturaCartao' in item) {
+    return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
   
   const t = item as Transaction;
   
   // Transações com categoria "Fatura de Cartão" → pagas ou pendentes
   if (t.category?.name === 'Fatura de Cartão' || t.category?.name === 'Fatura do Cartão') {
-    return t.status === 'completed' ? 'faturas_pagas' : 'faturas_pendentes';
+    return isFaturaPaga(item) ? 'faturas_pagas' : 'faturas_pendentes';
   }
   
   // Fixas / recorrentes
@@ -1285,12 +1295,12 @@ export default function Transactions() {
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
               const isFaturasGroup = grupo.key === 'faturas_pagas' || grupo.key === 'faturas_pendentes';
-              // Filter paid invoices if toggle is on
-              const displayItems = grupo.key === 'faturas_pendentes' && ocultarPagas
-                ? grupo.items.filter(item => !('isFaturaCartao' in item) || (item as FaturaVirtual).statusFatura !== 'paga')
+              // Em faturas pendentes, nunca exibir itens já pagos
+              const displayItems = grupo.key === 'faturas_pendentes'
+                ? grupo.items.filter(item => !isFaturaPaga(item))
                 : grupo.items;
               
-              if (grupo.key === 'faturas_pendentes' && displayItems.length === 0 && ocultarPagas) {
+              if (grupo.key === 'faturas_pendentes' && displayItems.length === 0) {
                 return null;
               }
 
