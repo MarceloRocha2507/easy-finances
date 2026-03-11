@@ -1,0 +1,1 @@
+ALTER TABLE public.transactions ADD COLUMN desconsiderada boolean NOT NULL DEFAULT false;
