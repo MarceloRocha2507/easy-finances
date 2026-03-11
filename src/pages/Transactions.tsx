@@ -371,6 +371,7 @@ export default function Transactions() {
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
+  const toggleDesconsideradaMutation = useToggleDesconsiderada();
 
   // Filtrar transações por busca
   const searchedTransactions = useMemo(() => {
