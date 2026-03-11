@@ -796,16 +796,22 @@ export default function DespesasCartao() {
                         p.paga && "opacity-50 bg-emerald-500/5"
                       )}
                       onClick={(e) => {
-                        // Não abrir detalhes se uma ação do dropdown foi clicada
+                        // Não abrir detalhes se uma ação do dropdown foi clicada recentemente
                         if (actionClickedRef.current) {
                           actionClickedRef.current = false;
                           return;
                         }
                         // Não abrir detalhes se clicou no checkbox ou nas ações
                         const target = e.target as HTMLElement;
-                        if (target.closest('button, [role="checkbox"], [data-action-cell]')) return;
+                        if (target.closest('button, [role="checkbox"], [data-action-cell], [role="menu"], [role="menuitem"]')) return;
                         setParcelaSelecionada(p);
                         setDetalhesCompraOpen(true);
+                      }}
+                      onPointerDown={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (target.closest('[data-action-cell]')) {
+                          e.stopPropagation();
+                        }
                       }}
                     >
                       <TableCell>
