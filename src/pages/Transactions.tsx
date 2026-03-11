@@ -1530,6 +1530,13 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             )}>
               {isOverdue ? 'Vencido' : 'Pendente'}
             </span>
+           )}
+          {/* Badge de Desconsiderada */}
+          {transaction.desconsiderada && (
+            <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full shrink-0 bg-muted text-muted-foreground flex items-center gap-0.5">
+              <EyeOff className="w-3 h-3" />
+              <span className="hidden sm:inline">Desconsiderada</span>
+            </span>
           )}
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
