@@ -1119,7 +1119,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // 3. Buscar pending DO MÊS para A Receber/A Pagar
       const { data: pendingDoMes, error: pendingDoMesError } = await supabase
         .from('transactions')
-        .select('type, amount, due_date, category_id')
+        .select('type, amount, due_date, category_id, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'pending')
         .is('deleted_at', null)
