@@ -306,6 +306,35 @@ export function EditarCompraDialog({
                 />
               </div>
 
+              {/* Nome na Fatura */}
+              <div className="space-y-2">
+                <Label htmlFor="nomeFatura">Nome na Fatura</Label>
+                <Input
+                  id="nomeFatura"
+                  placeholder="Ex: MARCELO*NETFLIX, UBER TRIP..."
+                  value={nomeFatura}
+                  onChange={(e) => setNomeFatura(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Como aparece na fatura do cartão
+                </p>
+              </div>
+
+              {/* Observação */}
+              <div className="space-y-2">
+                <Label htmlFor="observacao">Observação</Label>
+                <Textarea
+                  id="observacao"
+                  rows={3}
+                  placeholder="Adicione detalhes extras sobre esta compra..."
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Anotações internas para seu controle
+                </p>
+              </div>
+
               {/* Toggle: editar só este mês */}
               {totalParcelas > 1 && (
                 <div className="flex items-center justify-between rounded-lg border border-border p-3">
