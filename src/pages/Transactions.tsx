@@ -838,7 +838,7 @@ export default function Transactions() {
                     >
                       <SelectTrigger className={cn(
                         "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                        isMobile ? "h-12 px-4" : "h-[42px]"
+                        isMobile ? "h-12 px-3" : "h-[42px]"
                       )}>
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
