@@ -561,6 +561,8 @@ export async function editarCompra(
   if (dados.descricao !== undefined) updateData.descricao = dados.descricao;
   if (dados.categoriaId !== undefined) updateData.subcategoria_id = dados.categoriaId || null;
   if (dados.responsavelId !== undefined) updateData.responsavel_id = dados.responsavelId;
+  if (dados.nomeFatura !== undefined) updateData.nome_fatura = dados.nomeFatura || null;
+  if (dados.observacao !== undefined) updateData.observacao = dados.observacao || null;
 
   // Atualizar compra principal
   if (Object.keys(updateData).length > 0) {
