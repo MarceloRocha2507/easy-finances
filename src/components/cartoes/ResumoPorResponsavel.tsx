@@ -53,6 +53,7 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
     });
 
     // Calcular percentuais e status de acerto
+    let totalPagoOutros = 0;
     Object.values(porResponsavel).forEach((item) => {
       item.percentual = totalGeral > 0 ? (item.total / totalGeral) * 100 : 0;
 
@@ -62,9 +63,17 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
         if (acerto) {
           item.valorPago = acerto.valor_pago;
           item.status = acerto.status as "pendente" | "parcial" | "quitado";
+          totalPagoOutros += acerto.valor_pago;
         }
       }
     });
+
+    // Calcular quanto o titular pagou ao banco (total fatura - o que terceiros reembolsaram)
+    const faturaFoiPaga = parcelas.some((p) => p.paga);
+    const titularItem = Object.values(porResponsavel).find((item) => item.isTitular);
+    if (titularItem && faturaFoiPaga) {
+      titularItem.valorPago = totalGeral - totalPagoOutros;
+    }
 
     // Ordenar: titular primeiro, depois por valor
     return Object.values(porResponsavel).sort((a, b) => {
