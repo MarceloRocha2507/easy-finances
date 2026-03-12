@@ -706,7 +706,7 @@ export default function Transactions() {
                 {/* Scrollable form content */}
                 <div className={cn(
                   "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col",
-                  isMobile ? "px-3 pt-2 pb-2 gap-3" : "px-6 pt-4 pb-5 gap-3"
+                  isMobile ? "px-5 pt-2 pb-2 gap-3" : "px-6 pt-4 pb-5 gap-3"
                 )}>
                   {/* Receita / Despesa underline tabs */}
                   <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
