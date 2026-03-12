@@ -22,7 +22,7 @@ export function CartaoActions({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" sideOffset={8}>
         <DropdownMenuItem onClick={onEdit}>
           <Pencil className="w-4 h-4 mr-2" /> Editar
         </DropdownMenuItem>
