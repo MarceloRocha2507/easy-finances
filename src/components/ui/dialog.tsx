@@ -49,7 +49,7 @@ const DialogContent = React.forwardRef<
       <div
         className={cn(
           "overflow-y-auto overflow-x-hidden flex flex-col",
-          noPadding ? "p-0 gap-0" : "gap-3 p-6",
+          noPadding ? "p-0 gap-0" : "gap-3 p-4 sm:p-6",
         )}
       >
         {children}
