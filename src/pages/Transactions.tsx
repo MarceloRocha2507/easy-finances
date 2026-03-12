@@ -674,7 +674,7 @@ export default function Transactions() {
                 }
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-0">
+                <div className="flex items-center justify-between px-3 sm:px-6 pt-4 sm:pt-6 pb-0">
                   <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
                     {editingId ? 'Editar Registro' : 'Novo Registro'}
                   </h2>
