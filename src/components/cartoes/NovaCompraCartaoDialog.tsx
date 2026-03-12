@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
   DialogContent,
@@ -368,19 +369,47 @@ export function NovaCompraCartaoDialog({
     ? new Date(form.dataCompra + "T12:00:00")
     : undefined;
 
+  const isMobile = useIsMobile();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="p-0 gap-0 border-0 [&>button]:hidden flex flex-col"
-        style={{
-          borderRadius: 16,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          maxWidth: 460,
-          maxHeight: "90dvh",
-        }}
+        noPadding
+        className={cn(
+          "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl",
+          isMobile
+            ? "!w-auto max-w-none fixed !translate-x-0 !translate-y-0 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
+            : "w-[calc(100%-2rem)] max-w-[460px]"
+        )}
+        style={isMobile
+          ? {
+              borderRadius: 16,
+              left: "max(1.25rem, env(safe-area-inset-left))",
+              right: "max(1.25rem, env(safe-area-inset-right))",
+              top: "1rem",
+              bottom: "1rem",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            }
+          : {
+              borderRadius: 16,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              maxWidth: 460,
+              maxHeight: "90dvh",
+            }
+        }
       >
-        {/* Header */}
-        <div className="flex items-start justify-between p-6 pb-0">
+        {/* Drag handle - mobile only */}
+        {isMobile && (
+          <div className="flex justify-center pt-2 pb-1 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
+
+        {/* Sticky Header */}
+        <div className={cn(
+          "flex items-start justify-between shrink-0 bg-white z-10",
+          isMobile ? "sticky top-0 px-5 pt-2 pb-2 rounded-t-2xl" : "px-6 pt-6 pb-0"
+        )}>
           <div className="flex items-center gap-2.5">
             <CreditCard style={{ width: 18, height: 18, color: "#6B7280" }} />
             <div>
@@ -405,7 +434,10 @@ export function NovaCompraCartaoDialog({
         </div>
 
         {/* Form body */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pt-5 pb-5 flex flex-col gap-3">
+        <div className={cn(
+          "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col gap-3",
+          isMobile ? "px-5 pt-2 pb-2" : "px-6 pt-5 pb-5"
+        )}>
           {/* Descrição */}
           <div>
             <PremiumLabel required htmlFor="descricao">Descrição</PremiumLabel>
@@ -702,9 +734,11 @@ export function NovaCompraCartaoDialog({
         </div>
 
         {/* Sticky Footer - Submit button */}
-        <div
-          className="shrink-0 bg-white border-t border-border/50 px-6 pt-3"
-          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        <div className={cn(
+          "shrink-0 bg-white border-t border-border/50",
+          isMobile ? "sticky bottom-0 px-5 pt-2 z-10 rounded-b-2xl" : "px-6 pt-3 pb-5"
+        )}
+          style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
         >
           <button
             type="button"
