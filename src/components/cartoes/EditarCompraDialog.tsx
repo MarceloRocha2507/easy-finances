@@ -272,8 +272,8 @@ export function EditarCompraDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
-          <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b shrink-0">
+        <DialogContent className="max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl">
+          <div className="px-5 pt-5 pb-4 bg-muted border-b shrink-0">
             <DialogHeader>
               <DialogTitle>Editar compra</DialogTitle>
               <DialogDescription>
@@ -287,7 +287,7 @@ export function EditarCompraDialog({
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : (
-            <div className="space-y-4 px-4 sm:px-5 pb-4 pt-4 overflow-y-auto overflow-x-hidden min-h-0">
+            <div className="space-y-4 px-5 pb-5 pt-4 overflow-y-auto overflow-x-hidden min-h-0">
               {/* Descrição */}
               <div className="space-y-2">
                 <Label htmlFor="descricao">Descrição</Label>
