@@ -1617,39 +1617,16 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               • Vence {format(parseISO(transaction.due_date), "dd/MM", { locale: ptBR })}
             </span>
           )}
-          {/* Saldo após a transação - esconder em mobile */}
+          {/* Saldo da conta antes da transação - esconder em mobile */}
           {saldoApos !== undefined && transaction.status === 'completed' && (
             <span className="hidden sm:contents">
               <span className="text-muted-foreground/50">•</span>
-              {isUltimaTransacao && totalGuardado > 0 ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className={cn(
-                        "text-xs font-medium flex items-center gap-1 cursor-help",
-                        saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
-                      )}>
-                        Saldo: {formatCurrency(saldoApos)}
-                        <Info className="w-3 h-3" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="p-3">
-                      <div className="space-y-1 text-xs">
-                        <p className="font-medium">Patrimônio: {formatCurrency(saldoApos + totalGuardado)}</p>
-                        <p className="text-muted-foreground">Guardado: {formatCurrency(totalGuardado)}</p>
-                        <p className="font-semibold">Disponível: {formatCurrency(saldoApos)}</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <span className={cn(
-                  "text-xs font-medium",
-                  saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
-                )}>
-                  Saldo: {formatCurrency(saldoApos)}
-                </span>
-              )}
+              <span className={cn(
+                "text-xs font-medium",
+                saldoApos >= 0 ? "text-emerald-600" : "text-red-600"
+              )}>
+                Saldo: {formatCurrency(saldoApos)}
+              </span>
             </span>
           )}
         </div>
