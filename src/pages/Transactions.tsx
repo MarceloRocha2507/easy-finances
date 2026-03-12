@@ -805,7 +805,7 @@ export default function Transactions() {
                       style={{
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
-                        padding: isMobile ? "12px 16px" : "10px 12px",
+                        padding: isMobile ? "8px 12px" : "10px 12px",
                         fontSize: 14,
                         color: "#111827",
                         background: "#fff",
