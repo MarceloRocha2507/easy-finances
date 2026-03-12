@@ -94,6 +94,8 @@ export function EditarCompraDialog({
   const queryClient = useQueryClient();
 
   const [descricao, setDescricao] = useState("");
+  const [nomeFatura, setNomeFatura] = useState("");
+  const [observacao, setObservacao] = useState("");
   const [valorTotal, setValorTotal] = useState(0);
   const [valorParcela, setValorParcela] = useState(0);
   const [editarApenasMes, setEditarApenasMes] = useState(false);
