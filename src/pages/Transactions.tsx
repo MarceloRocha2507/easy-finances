@@ -1136,8 +1136,6 @@ export default function Transactions() {
                     </div>
                   )}
 
-                  {/* Spacer to push away from sticky footer on mobile */}
-                  {isMobile && <div className="h-20 shrink-0" />}
                 </div>
 
                 {/* Sticky Footer - Submit button */}
