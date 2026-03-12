@@ -197,6 +197,13 @@ export function DetalhesCartaoDialog({
       .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
   }, [parcelas]);
 
+  // Total gasto pelo titular (EU) - inclui pagas e pendentes
+  const totalMeu = useMemo(() => {
+    return parcelas
+      .filter((p) => p.is_titular === true || !p.responsavel_id)
+      .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
+  }, [parcelas]);
+
   if (!cartao) return null;
 
   const limite = cartao.limite;
