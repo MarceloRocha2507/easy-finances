@@ -656,14 +656,14 @@ export default function Transactions() {
                 noPadding
                 className={cn(
                   "gap-0 border-0 [&>button]:hidden flex flex-col",
-                  isMobile ? "w-[100dvw] max-w-none h-[100dvh]" : "w-[calc(100%-2rem)] max-w-[460px]"
+                  isMobile ? "w-[calc(100%-1rem)] max-w-none" : "w-[calc(100%-2rem)] max-w-[460px]"
                 )}
                 style={isMobile
                   ? {
-                      borderRadius: 0,
-                      boxShadow: "none",
-                      maxWidth: "100dvw",
-                      maxHeight: "100dvh",
+                      borderRadius: 14,
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                      maxWidth: "calc(100dvw - 1rem)",
+                      maxHeight: "calc(100dvh - 1rem)",
                     }
                   : {
                       borderRadius: 12,
