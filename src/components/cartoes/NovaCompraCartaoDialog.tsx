@@ -455,6 +455,46 @@ export function NovaCompraCartaoDialog({
             />
           </div>
 
+          {/* Nome na Fatura */}
+          <div>
+            <PremiumLabel htmlFor="nomeFatura">Nome na Fatura</PremiumLabel>
+            <PremiumInput
+              id="nomeFatura"
+              placeholder="Ex: MARCELO*NETFLIX, UBER TRIP..."
+              value={form.nomeFatura}
+              onChange={(e) => setForm({ ...form, nomeFatura: e.target.value })}
+            />
+            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 4 }}>
+              Como aparece na fatura do cartão
+            </p>
+          </div>
+
+          {/* Observação */}
+          <div>
+            <PremiumLabel htmlFor="observacao">Observação</PremiumLabel>
+            <textarea
+              id="observacao"
+              placeholder="Adicione detalhes extras sobre esta compra..."
+              value={form.observacao}
+              onChange={(e) => setForm({ ...form, observacao: e.target.value })}
+              rows={3}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                minHeight: 80,
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.border = "1.5px solid #111827";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.border = "1px solid #E5E7EB";
+              }}
+            />
+            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 4 }}>
+              Anotações internas para seu controle
+            </p>
+          </div>
+
           {/* Valor */}
           <div>
             <PremiumLabel required htmlFor="valor">Valor total (R$)</PremiumLabel>
