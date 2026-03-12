@@ -133,14 +133,6 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      {/* FAB */}
-      <div className="fixed z-[80] right-[max(1.5rem,env(safe-area-inset-right))] bottom-[max(5rem,env(safe-area-inset-bottom))] sm:bottom-6">
-        <Link to="/transactions">
-          <Button size="lg" className="rounded-full h-14 w-14 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-110">
-            <Plus className="w-6 h-6" />
-          </Button>
-        </Link>
-      </div>
 
       <div className="page-enter">
       {/* Header */}
@@ -160,11 +152,19 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <FiltroPeriodo
-          mesAtual={mesReferencia}
-          onMesChange={setMesReferencia}
-          mesesDisponiveis={mesesDisponiveis}
-        />
+        <div className="flex items-center gap-2">
+          <FiltroPeriodo
+            mesAtual={mesReferencia}
+            onMesChange={setMesReferencia}
+            mesesDisponiveis={mesesDisponiveis}
+          />
+          <Link to="/transactions">
+            <Button variant="ghost" size="sm" className="text-primary gap-1.5">
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Novo Registro</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Alertas */}
