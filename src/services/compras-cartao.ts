@@ -552,6 +552,8 @@ export async function editarCompra(
     responsavelId?: string;
     mesFatura?: Date;
     parcelaInicial?: number;
+    nomeFatura?: string;
+    observacao?: string;
   }
 ): Promise<void> {
   const updateData: any = {};
