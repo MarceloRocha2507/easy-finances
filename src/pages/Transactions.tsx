@@ -655,20 +655,20 @@ export default function Transactions() {
               <DialogContent
                 noPadding
                 className={cn(
-                  "gap-0 border-0 [&>button]:hidden flex flex-col",
+                  "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl",
                   isMobile
-                    ? "w-full max-w-none h-[100dvh] fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
+                    ? "w-[calc(100%-2rem)] max-w-none h-[calc(100dvh-2rem)] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
                     : "w-[calc(100%-2rem)] max-w-[460px]"
                 )}
                 style={isMobile
                   ? {
-                      borderRadius: 0,
-                      maxWidth: "100dvw",
-                      maxHeight: "100dvh",
-                      boxShadow: "none",
+                      borderRadius: 16,
+                      maxWidth: "calc(100dvw - 2rem)",
+                      maxHeight: "calc(100dvh - 2rem)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                     }
                   : {
-                      borderRadius: 12,
+                      borderRadius: 16,
                       boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                       maxWidth: 460,
                       maxHeight: "90dvh",
