@@ -200,6 +200,8 @@ export function NovaCompraCartaoDialog({
       );
       setForm({
         descricao: "",
+        nomeFatura: "",
+        observacao: "",
         valor: "",
         tipoLancamento: "unica",
         parcelas: "2",
