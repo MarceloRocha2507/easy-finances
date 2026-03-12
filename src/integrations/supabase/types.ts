@@ -390,6 +390,8 @@ export type Database = {
           descricao: string
           id: string
           mes_inicio: string
+          nome_fatura: string | null
+          observacao: string | null
           parcela_inicial: number
           parcelas: number
           responsavel_id: string | null
@@ -409,6 +411,8 @@ export type Database = {
           descricao: string
           id?: string
           mes_inicio?: string
+          nome_fatura?: string | null
+          observacao?: string | null
           parcela_inicial?: number
           parcelas?: number
           responsavel_id?: string | null
@@ -428,6 +432,8 @@ export type Database = {
           descricao?: string
           id?: string
           mes_inicio?: string
+          nome_fatura?: string | null
+          observacao?: string | null
           parcela_inicial?: number
           parcelas?: number
           responsavel_id?: string | null

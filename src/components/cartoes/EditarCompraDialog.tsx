@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -93,6 +94,8 @@ export function EditarCompraDialog({
   const queryClient = useQueryClient();
 
   const [descricao, setDescricao] = useState("");
+  const [nomeFatura, setNomeFatura] = useState("");
+  const [observacao, setObservacao] = useState("");
   const [valorTotal, setValorTotal] = useState(0);
   const [valorParcela, setValorParcela] = useState(0);
   const [editarApenasMes, setEditarApenasMes] = useState(false);
@@ -152,12 +155,14 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura, observacao")
           .eq("id", parcela.compra_id)
           .single();
 
         if (compra) {
           setDescricao(compra.descricao || "");
+          setNomeFatura(compra.nome_fatura || "");
+          setObservacao(compra.observacao || "");
           setValorTotal(compra.valor_total || 0);
           setValorParcela(Math.abs(parcela.valor || 0));
           setCategoriaId(compra.subcategoria_id || null);
@@ -244,6 +249,8 @@ export function EditarCompraDialog({
           responsavelId: responsavelId || undefined,
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
+          nomeFatura: nomeFatura || undefined,
+          observacao: observacao || undefined,
         });
 
         toast({ title: "Compra atualizada!" });
@@ -297,6 +304,35 @@ export function EditarCompraDialog({
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                 />
+              </div>
+
+              {/* Nome na Fatura */}
+              <div className="space-y-2">
+                <Label htmlFor="nomeFatura">Nome na Fatura</Label>
+                <Input
+                  id="nomeFatura"
+                  placeholder="Ex: MARCELO*NETFLIX, UBER TRIP..."
+                  value={nomeFatura}
+                  onChange={(e) => setNomeFatura(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Como aparece na fatura do cartão
+                </p>
+              </div>
+
+              {/* Observação */}
+              <div className="space-y-2">
+                <Label htmlFor="observacao">Observação</Label>
+                <Textarea
+                  id="observacao"
+                  rows={3}
+                  placeholder="Adicione detalhes extras sobre esta compra..."
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Anotações internas para seu controle
+                </p>
               </div>
 
               {/* Toggle: editar só este mês */}
