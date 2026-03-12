@@ -64,6 +64,7 @@ import {
   RotateCcw,
   Upload,
   Clock,
+  Crown,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
@@ -194,6 +195,13 @@ export function DetalhesCartaoDialog({
   const totalPago = useMemo(() => {
     return parcelas
       .filter((p) => p.paga)
+      .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
+  }, [parcelas]);
+
+  // Total gasto pelo titular (EU) - inclui pagas e pendentes
+  const totalMeu = useMemo(() => {
+    return parcelas
+      .filter((p) => p.is_titular === true || !p.responsavel_id)
       .reduce((sum, p) => sum + Math.abs(Number(p.valor) || 0), 0);
   }, [parcelas]);
 
@@ -402,9 +410,9 @@ export function DetalhesCartaoDialog({
               </Button>
             </div>
 
-            {/* Resumo Pendente / Pago - cards lado a lado */}
+            {/* Resumo Pendente / Pago / Meu (EU) - cards lado a lado */}
             {parcelas.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 space-y-1">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" />
@@ -418,6 +426,13 @@ export function DetalhesCartaoDialog({
                     <span className="text-[11px] font-medium">Pago</span>
                   </div>
                   <p className="text-sm font-semibold text-income">{formatCurrency(totalPago)}</p>
+                </div>
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Crown className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium">Meu</span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{formatCurrency(totalMeu)}</p>
                 </div>
               </div>
             )}
