@@ -657,14 +657,16 @@ export default function Transactions() {
                 className={cn(
                   "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl",
                   isMobile
-                    ? "w-[calc(100dvw-2.5rem)] max-w-none h-[calc(100dvh-2rem)] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
+                    ? "max-w-none fixed data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
                     : "w-[calc(100%-2rem)] max-w-[460px]"
                 )}
                 style={isMobile
                   ? {
                       borderRadius: 16,
-                      maxWidth: "calc(100dvw - 2.5rem)",
-                      maxHeight: "calc(100dvh - 2rem)",
+                      left: "max(1.25rem, env(safe-area-inset-left))",
+                      right: "max(1.25rem, env(safe-area-inset-right))",
+                      top: "1rem",
+                      bottom: "1rem",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                     }
                   : {
@@ -1134,6 +1136,8 @@ export default function Transactions() {
                     </div>
                   )}
 
+                  {/* Spacer to push away from sticky footer on mobile */}
+                  {isMobile && <div className="h-20 shrink-0" />}
                 </div>
 
                 {/* Sticky Footer - Submit button */}
