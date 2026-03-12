@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -317,21 +316,6 @@ export function EditarCompraDialog({
                 </p>
               </div>
 
-              {/* Observação */}
-              <div className="space-y-2">
-                <Label htmlFor="observacao">Observação</Label>
-                <Textarea
-                  id="observacao"
-                  rows={3}
-                  placeholder="Adicione detalhes extras sobre esta compra..."
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Anotações internas para seu controle
-                </p>
-              </div>
-
               {/* Toggle: editar só este mês */}
               {totalParcelas > 1 && (
                 <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -476,22 +460,18 @@ export function EditarCompraDialog({
               <Separator />
 
               {/* Botões */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
                   onClick={() => onOpenChange(false)}
+                  disabled={salvando}
                 >
                   Cancelar
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={salvar}
-                  disabled={salvando || !descricao.trim()}
-                >
+                <Button onClick={salvar} disabled={salvando}>
                   {salvando ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Salvando...
                     </>
                   ) : (
