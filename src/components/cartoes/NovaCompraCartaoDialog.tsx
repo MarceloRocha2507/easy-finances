@@ -734,9 +734,11 @@ export function NovaCompraCartaoDialog({
         </div>
 
         {/* Sticky Footer - Submit button */}
-        <div
-          className="shrink-0 bg-white border-t border-border/50 px-6 pt-3"
-          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        <div className={cn(
+          "shrink-0 bg-white border-t border-border/50",
+          isMobile ? "sticky bottom-0 px-5 pt-2 z-10 rounded-b-2xl" : "px-6 pt-3 pb-5"
+        )}
+          style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
         >
           <button
             type="button"
