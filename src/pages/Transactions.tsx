@@ -685,7 +685,7 @@ export default function Transactions() {
                 {/* Sticky Header */}
                 <div className={cn(
                   "flex items-center justify-between shrink-0 bg-white z-10",
-                  isMobile ? "sticky top-0 px-4 pt-2 pb-3" : "px-6 pt-6 pb-0"
+                  isMobile ? "sticky top-0 px-3 pt-2 pb-2" : "px-6 pt-6 pb-0"
                 )}>
                   <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
                     {editingId ? 'Editar Registro' : 'Novo Registro'}
@@ -706,7 +706,7 @@ export default function Transactions() {
                 {/* Scrollable form content */}
                 <div className={cn(
                   "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col",
-                  isMobile ? "px-4 pt-2 pb-4 gap-4" : "px-6 pt-4 pb-5 gap-3"
+                  isMobile ? "px-3 pt-2 pb-2 gap-3" : "px-6 pt-4 pb-5 gap-3"
                 )}>
                   {/* Receita / Despesa underline tabs */}
                   <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
@@ -750,7 +750,7 @@ export default function Transactions() {
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
                         background: "#fff",
-                        padding: isMobile ? "12px 16px" : "10px 12px",
+                        padding: isMobile ? "8px 12px" : "10px 12px",
                         fontSize: 13,
                         color: "#6B7280",
                         cursor: "pointer",
@@ -780,7 +780,7 @@ export default function Transactions() {
                       style={{
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
-                        padding: isMobile ? "12px 16px" : "10px 12px",
+                        padding: isMobile ? "8px 12px" : "10px 12px",
                         fontSize: 14,
                         color: "#111827",
                         background: "#fff",
@@ -805,7 +805,7 @@ export default function Transactions() {
                       style={{
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
-                        padding: isMobile ? "12px 16px" : "10px 12px",
+                        padding: isMobile ? "8px 12px" : "10px 12px",
                         fontSize: 14,
                         color: "#111827",
                         background: "#fff",
@@ -838,7 +838,7 @@ export default function Transactions() {
                     >
                       <SelectTrigger className={cn(
                         "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                        isMobile ? "h-12 px-4" : "h-[42px]"
+                        isMobile ? "h-12 px-3" : "h-[42px]"
                       )}>
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
@@ -891,7 +891,7 @@ export default function Transactions() {
                           style={{
                             border: "1px solid #E5E7EB",
                             borderRadius: 8,
-                            padding: isMobile ? "12px 16px" : "10px 12px",
+                            padding: isMobile ? "8px 12px" : "10px 12px",
                             fontSize: 14,
                             color: "#111827",
                             background: "#fff",
@@ -966,7 +966,7 @@ export default function Transactions() {
                           >
                             <SelectTrigger className={cn(
                               "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                              isMobile ? "h-12 px-4" : "h-[42px]"
+                              isMobile ? "h-12 px-3" : "h-[42px]"
                             )}>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
@@ -991,7 +991,7 @@ export default function Transactions() {
                           >
                             <SelectTrigger className={cn(
                               "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                              isMobile ? "h-12 px-4" : "h-[42px]"
+                              isMobile ? "h-12 px-3" : "h-[42px]"
                             )}>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
@@ -1094,7 +1094,7 @@ export default function Transactions() {
                       >
                         <SelectTrigger className={cn(
                           "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                          isMobile ? "h-12 px-4" : "h-[42px]"
+                          isMobile ? "h-12 px-3" : "h-[42px]"
                         )}>
                           <SelectValue placeholder="Selecione o dia" />
                         </SelectTrigger>
@@ -1119,7 +1119,7 @@ export default function Transactions() {
                       >
                         <SelectTrigger className={cn(
                           "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
-                          isMobile ? "h-12 px-4" : "h-[42px]"
+                          isMobile ? "h-12 px-3" : "h-[42px]"
                         )}>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
@@ -1141,7 +1141,7 @@ export default function Transactions() {
                 {/* Sticky Footer - Submit button */}
                 <div className={cn(
                   "shrink-0 bg-white border-t border-border/50",
-                  isMobile ? "sticky bottom-0 px-4 pt-3 z-10" : "px-6 pt-3 pb-5"
+                  isMobile ? "sticky bottom-0 px-3 pt-2 z-10" : "px-6 pt-3 pb-5"
                 )}
                   style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
                 >
