@@ -292,6 +292,8 @@ export function NovaCompraCartaoDialog({
             ? form.categoriaId
             : undefined,
         responsavelId: form.responsavelId,
+        nomeFatura: form.nomeFatura || undefined,
+        observacao: form.observacao || undefined,
       });
 
       // Telegram notification (fire-and-forget)
