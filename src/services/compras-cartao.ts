@@ -240,6 +240,8 @@ export async function listarParcelasDaFatura(
     subcategoria_cor: p.compra?.subcategoria?.color || null,
     subcategoria_icone: p.compra?.subcategoria?.icon || null,
     tipo_lancamento: p.compra?.tipo_lancamento || null,
+    nome_fatura: p.compra?.nome_fatura || null,
+    observacao: p.compra?.observacao || null,
   }));
 }
 
