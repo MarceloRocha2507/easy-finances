@@ -699,7 +699,13 @@ export function NovaCompraCartaoDialog({
             </div>
           )}
 
-          {/* Submit button */}
+        </div>
+
+        {/* Sticky Footer - Submit button */}
+        <div
+          className="shrink-0 bg-white border-t border-border/50 px-6 pt-3"
+          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        >
           <button
             type="button"
             onClick={handleSalvar}
