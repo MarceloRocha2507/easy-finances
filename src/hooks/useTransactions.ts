@@ -941,29 +941,43 @@ export function usePendingStats() {
   });
 }
 
-// Hook para transações com saldo progressivo
+// Hook para transações com saldo progressivo por conta bancária
 export function useTransactionsWithBalance(filters?: TransactionFilters) {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['transactions-with-balance', user?.id, filters],
     queryFn: async () => {
-      // Buscar saldo inicial do profile
+      // Buscar saldo inicial de todos os bancos ativos
+      const { data: bancos } = await supabase
+        .from('bancos')
+        .select('id, saldo_inicial')
+        .eq('user_id', user!.id)
+        .eq('ativo', true);
+
+      // Mapa banco_id -> saldo_inicial
+      const saldoInicialPorBanco = new Map<string, number>();
+      (bancos || []).forEach(b => {
+        saldoInicialPorBanco.set(b.id, Number(b.saldo_inicial) || 0);
+      });
+
+      // Fallback: saldo inicial do profile (para transações sem banco)
       const { data: profile } = await supabase
         .from('profiles')
         .select('saldo_inicial')
         .eq('user_id', user!.id)
         .single();
 
-      const saldoInicial = Number(profile?.saldo_inicial) || 0;
+      const saldoInicialProfile = Number(profile?.saldo_inicial) || 0;
 
-      // Buscar TODAS as transações completed para calcular saldo progressivo
+      // Buscar TODAS as transações completed ordenadas cronologicamente
       const { data: allCompleted, error: allError } = await supabase
         .from('transactions')
-        .select('id, type, amount, status, created_at')
+        .select('id, type, amount, status, created_at, banco_id, date')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
+        .order('date', { ascending: true })
         .order('created_at', { ascending: true })
         .limit(10000);
 
@@ -993,23 +1007,42 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
 
       const totalGuardado = totalMetas + totalInvestido;
 
-      // Calcular saldo progressivo (patrimônio bruto)
-      let saldo = saldoInicial;
+      // Calcular saldo progressivo POR CONTA BANCÁRIA
+      // saldoMap armazena o saldo da conta ANTES da transação ser aplicada
+      const saldoCorrentePorBanco = new Map<string, number>();
       const saldoMap = new Map<string, number>();
+
+      // Inicializar saldos com saldo_inicial de cada banco
+      saldoInicialPorBanco.forEach((saldoInicial, bancoId) => {
+        saldoCorrentePorBanco.set(bancoId, saldoInicial);
+      });
+
+      // Saldo para transações sem banco vinculado
+      let saldoSemBanco = saldoInicialProfile;
       
       for (const t of allCompleted || []) {
-        saldo += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
-        // Armazenar o patrimônio total após cada transação
-        saldoMap.set(t.id, saldo);
+        const bancoId = t.banco_id;
+        const valor = Number(t.amount);
+
+        if (bancoId && saldoInicialPorBanco.has(bancoId)) {
+          // Transação vinculada a um banco existente
+          const saldoAtual = saldoCorrentePorBanco.get(bancoId) || 0;
+          // Armazenar saldo ANTES da transação
+          saldoMap.set(t.id, saldoAtual);
+          // Atualizar saldo corrente
+          const novoSaldo = saldoAtual + (t.type === 'income' ? valor : -valor);
+          saldoCorrentePorBanco.set(bancoId, novoSaldo);
+        } else {
+          // Transação sem banco - usar saldo global do profile
+          saldoMap.set(t.id, saldoSemBanco);
+          saldoSemBanco += t.type === 'income' ? valor : -valor;
+        }
       }
 
       // Identificar a última transação (mais recente por created_at)
       const ultimaTransacaoId = allCompleted && allCompleted.length > 0 
         ? allCompleted[allCompleted.length - 1].id 
         : undefined;
-
-      // Nota: NÃO subtrair totalGuardado aqui porque depósitos em metas
-      // já são registrados como transações de despesa, evitando dupla contagem
 
       // Buscar transações filtradas para exibição
       let query = supabase
