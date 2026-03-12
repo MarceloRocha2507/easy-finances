@@ -655,20 +655,20 @@ export default function Transactions() {
               <DialogContent
                 noPadding
                 className={cn(
-                  "gap-0 border-0 [&>button]:hidden flex flex-col",
+                  "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl",
                   isMobile
-                    ? "w-full max-w-none h-[100dvh] fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
+                    ? "w-[calc(100%-2rem)] max-w-none h-[calc(100dvh-2rem)] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
                     : "w-[calc(100%-2rem)] max-w-[460px]"
                 )}
                 style={isMobile
                   ? {
-                      borderRadius: 0,
-                      maxWidth: "100dvw",
-                      maxHeight: "100dvh",
-                      boxShadow: "none",
+                      borderRadius: 16,
+                      maxWidth: "calc(100dvw - 2rem)",
+                      maxHeight: "calc(100dvh - 2rem)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                     }
                   : {
-                      borderRadius: 12,
+                      borderRadius: 16,
                       boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                       maxWidth: 460,
                       maxHeight: "90dvh",
@@ -685,7 +685,7 @@ export default function Transactions() {
                 {/* Sticky Header */}
                 <div className={cn(
                   "flex items-center justify-between shrink-0 bg-white z-10",
-                  isMobile ? "sticky top-0 px-3 pt-2 pb-2" : "px-6 pt-6 pb-0"
+                  isMobile ? "sticky top-0 px-5 pt-2 pb-2 rounded-t-2xl" : "px-6 pt-6 pb-0"
                 )}>
                   <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
                     {editingId ? 'Editar Registro' : 'Novo Registro'}
@@ -706,7 +706,7 @@ export default function Transactions() {
                 {/* Scrollable form content */}
                 <div className={cn(
                   "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col",
-                  isMobile ? "px-3 pt-2 pb-2 gap-3" : "px-6 pt-4 pb-5 gap-3"
+                  isMobile ? "px-5 pt-2 pb-2 gap-3" : "px-6 pt-4 pb-5 gap-3"
                 )}>
                   {/* Receita / Despesa underline tabs */}
                   <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
@@ -1141,7 +1141,7 @@ export default function Transactions() {
                 {/* Sticky Footer - Submit button */}
                 <div className={cn(
                   "shrink-0 bg-white border-t border-border/50",
-                  isMobile ? "sticky bottom-0 px-3 pt-2 z-10" : "px-6 pt-3 pb-5"
+                  isMobile ? "sticky bottom-0 px-5 pt-2 z-10 rounded-b-2xl" : "px-6 pt-3 pb-5"
                 )}
                   style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
                 >
