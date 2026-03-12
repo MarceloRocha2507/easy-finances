@@ -685,7 +685,7 @@ export default function Transactions() {
                 {/* Sticky Header */}
                 <div className={cn(
                   "flex items-center justify-between shrink-0 bg-white z-10",
-                  isMobile ? "sticky top-0 px-4 pt-2 pb-3" : "px-6 pt-6 pb-0"
+                  isMobile ? "sticky top-0 px-3 pt-2 pb-2" : "px-6 pt-6 pb-0"
                 )}>
                   <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
                     {editingId ? 'Editar Registro' : 'Novo Registro'}
