@@ -152,11 +152,19 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <FiltroPeriodo
-          mesAtual={mesReferencia}
-          onMesChange={setMesReferencia}
-          mesesDisponiveis={mesesDisponiveis}
-        />
+        <div className="flex items-center gap-2">
+          <FiltroPeriodo
+            mesAtual={mesReferencia}
+            onMesChange={setMesReferencia}
+            mesesDisponiveis={mesesDisponiveis}
+          />
+          <Link to="/transactions">
+            <Button variant="ghost" size="sm" className="text-primary gap-1.5">
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Novo Registro</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Alertas */}
