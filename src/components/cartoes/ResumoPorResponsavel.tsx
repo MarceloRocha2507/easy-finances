@@ -53,7 +53,6 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
     });
 
     // Calcular percentuais e status de acerto
-    let totalPagoOutros = 0;
     Object.values(porResponsavel).forEach((item) => {
       item.percentual = totalGeral > 0 ? (item.total / totalGeral) * 100 : 0;
 
@@ -63,17 +62,9 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
         if (acerto) {
           item.valorPago = acerto.valor_pago;
           item.status = acerto.status as "pendente" | "parcial" | "quitado";
-          totalPagoOutros += acerto.valor_pago;
         }
       }
     });
-
-    // Calcular quanto o titular pagou ao banco (total fatura - o que terceiros reembolsaram)
-    const faturaFoiPaga = parcelas.some((p) => p.paga);
-    const titularItem = Object.values(porResponsavel).find((item) => item.isTitular);
-    if (titularItem && faturaFoiPaga) {
-      titularItem.valorPago = totalGeral - totalPagoOutros;
-    }
 
     // Ordenar: titular primeiro, depois por valor
     return Object.values(porResponsavel).sort((a, b) => {
@@ -139,12 +130,7 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
                 ) : null}
               </div>
 
-              {/* Valor pago - titular e não-titulares */}
-              {item.isTitular && item.valorPago > 0 && (
-                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                  Pagou {formatCurrency(item.valorPago)} ao banco
-                </p>
-              )}
+              {/* Valor pago por não-titulares */}
               {!item.isTitular && item.valorPago > 0 && (
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                   Pagou {formatCurrency(item.valorPago)} de {formatCurrency(item.total)}
