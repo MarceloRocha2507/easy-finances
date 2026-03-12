@@ -654,13 +654,24 @@ export default function Transactions() {
               </DialogTrigger>
               <DialogContent
                 noPadding
-                className="gap-0 border-0 [&>button]:hidden flex flex-col w-[calc(100%-0.5rem)] sm:w-[calc(100%-2rem)]"
-                style={{
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                  maxWidth: 460,
-                  maxHeight: "90dvh",
-                }}
+                className={cn(
+                  "gap-0 border-0 [&>button]:hidden flex flex-col",
+                  isMobile ? "w-[100dvw] max-w-none h-[100dvh]" : "w-[calc(100%-2rem)] max-w-[460px]"
+                )}
+                style={isMobile
+                  ? {
+                      borderRadius: 0,
+                      boxShadow: "none",
+                      maxWidth: "100dvw",
+                      maxHeight: "100dvh",
+                    }
+                  : {
+                      borderRadius: 12,
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                      maxWidth: 460,
+                      maxHeight: "90dvh",
+                    }
+                }
               >
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-0">
