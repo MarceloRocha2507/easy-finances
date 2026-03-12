@@ -299,21 +299,59 @@ export function EditarCompraDialog({
                 />
               </div>
 
-              {/* Valor Total */}
-              <div className="space-y-2">
-                <Label htmlFor="valor">Valor total da compra</Label>
-                <Input
-                  id="valor"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={valorTotal}
-                  onChange={(e) => setValorTotal(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  O valor das parcelas não pagas será recalculado automaticamente.
-                </p>
-              </div>
+              {/* Toggle: editar só este mês */}
+              {totalParcelas > 1 && (
+                <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="editarApenasMes" className="text-sm font-medium" style={{ marginBottom: 0 }}>
+                      Editar só este mês
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Alterar apenas o valor da parcela {parcela.numero_parcela}/{parcela.total_parcelas}
+                    </p>
+                  </div>
+                  <Switch
+                    id="editarApenasMes"
+                    checked={editarApenasMes}
+                    onCheckedChange={setEditarApenasMes}
+                  />
+                </div>
+              )}
+
+              {/* Valor */}
+              {editarApenasMes ? (
+                <div className="space-y-2">
+                  <Label htmlFor="valorParcela">
+                    Valor da parcela {parcela.numero_parcela}/{parcela.total_parcelas}
+                  </Label>
+                  <Input
+                    id="valorParcela"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorParcela}
+                    onChange={(e) => setValorParcela(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Apenas esta parcela será alterada. As demais continuam iguais.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="valor">Valor total da compra</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorTotal}
+                    onChange={(e) => setValorTotal(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O valor das parcelas não pagas será recalculado automaticamente.
+                  </p>
+                </div>
+              )}
 
               {/* Responsável */}
               <ResponsavelSelector
