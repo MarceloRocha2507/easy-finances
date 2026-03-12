@@ -133,6 +133,15 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      {/* FAB */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Link to="/transactions">
+          <Button size="lg" className="rounded-full h-14 w-14 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-110">
+            <Plus className="w-6 h-6" />
+          </Button>
+        </Link>
+      </div>
+
       <div className="page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
