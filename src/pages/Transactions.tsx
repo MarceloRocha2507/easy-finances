@@ -677,7 +677,7 @@ export default function Transactions() {
                   </DialogClose>
                 </div>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pt-4 pb-5 flex flex-col gap-3">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-4 sm:px-6 pt-3 sm:pt-4 pb-4 sm:pb-5 flex flex-col gap-3">
                   {/* Receita / Despesa underline tabs */}
                   <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
                     {[
