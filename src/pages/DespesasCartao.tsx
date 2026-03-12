@@ -825,23 +825,31 @@ export default function DespesasCartao() {
                       </TableCell>
 
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {p.tipo_lancamento === 'estorno' && (
-                            <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                              Estorno
-                            </Badge>
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            {p.tipo_lancamento === 'estorno' && (
+                              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                Estorno
+                              </Badge>
+                            )}
+                            {p.tipo_lancamento === 'ajuste' && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                Ajuste
+                              </Badge>
+                            )}
+                            <p className={cn(
+                              "font-medium",
+                              p.paga && "line-through text-muted-foreground"
+                            )}>
+                              {p.nome_fatura || p.descricao}
+                            </p>
+                          </div>
+                          {/* Mostrar descrição como subtexto quando houver nome_fatura */}
+                          {p.nome_fatura && p.descricao && p.nome_fatura !== p.descricao && (
+                            <p className="text-xs text-muted-foreground truncate max-w-[250px]">
+                              {p.descricao}
+                            </p>
                           )}
-                          {p.tipo_lancamento === 'ajuste' && (
-                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                              Ajuste
-                            </Badge>
-                          )}
-                          <p className={cn(
-                            "font-medium",
-                            p.paga && "line-through text-muted-foreground"
-                          )}>
-                            {p.descricao}
-                          </p>
                         </div>
                       </TableCell>
 
