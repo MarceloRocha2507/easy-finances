@@ -249,6 +249,8 @@ export function EditarCompraDialog({
           responsavelId: responsavelId || undefined,
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
+          nomeFatura: nomeFatura || undefined,
+          observacao: observacao || undefined,
         });
 
         toast({ title: "Compra atualizada!" });
