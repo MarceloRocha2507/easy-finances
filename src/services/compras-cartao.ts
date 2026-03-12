@@ -36,6 +36,9 @@ export type ParcelaFatura = {
   subcategoria_nome?: string;
   subcategoria_cor?: string;
   subcategoria_icone?: string;
+  // Campos de identificação na fatura e observações
+  nome_fatura?: string;
+  observacao?: string;
 };
 
 export type CompraCartaoInput = {
