@@ -651,9 +651,10 @@ export default function Transactions() {
                 </Button>
               </DialogTrigger>
               <DialogContent
-                className="p-0 gap-0 border-0 [&>button]:hidden flex flex-col"
+                noPadding
+                className="gap-0 border-0 [&>button]:hidden flex flex-col w-[calc(100%-0.5rem)] sm:w-[calc(100%-2rem)]"
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 12,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                   maxWidth: 460,
                   maxHeight: "90dvh",
