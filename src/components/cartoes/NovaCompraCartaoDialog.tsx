@@ -157,7 +157,6 @@ export function NovaCompraCartaoDialog({
   const [form, setForm] = useState({
     descricao: "",
     nomeFatura: "",
-    observacao: "",
     valor: "",
     tipoLancamento: "unica" as TipoLancamento,
     parcelas: "2",
@@ -201,7 +200,6 @@ export function NovaCompraCartaoDialog({
       setForm({
         descricao: "",
         nomeFatura: "",
-        observacao: "",
         valor: "",
         tipoLancamento: "unica",
         parcelas: "2",
@@ -293,7 +291,6 @@ export function NovaCompraCartaoDialog({
             : undefined,
         responsavelId: form.responsavelId,
         nomeFatura: form.nomeFatura || undefined,
-        observacao: form.observacao || undefined,
       });
 
       // Telegram notification (fire-and-forget)
@@ -466,32 +463,6 @@ export function NovaCompraCartaoDialog({
             />
             <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 4 }}>
               Como aparece na fatura do cartão
-            </p>
-          </div>
-
-          {/* Observação */}
-          <div>
-            <PremiumLabel htmlFor="observacao">Observação</PremiumLabel>
-            <textarea
-              id="observacao"
-              placeholder="Adicione detalhes extras sobre esta compra..."
-              value={form.observacao}
-              onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-              rows={3}
-              style={{
-                ...inputStyle,
-                resize: "vertical",
-                minHeight: 80,
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.border = "1.5px solid #111827";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.border = "1px solid #E5E7EB";
-              }}
-            />
-            <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 4 }}>
-              Anotações internas para seu controle
             </p>
           </div>
 
