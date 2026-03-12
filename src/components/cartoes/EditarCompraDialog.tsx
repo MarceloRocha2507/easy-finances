@@ -223,20 +223,32 @@ export function EditarCompraDialog({
 
     setSalvando(true);
     try {
-      // Converter mês da fatura
-      const [ano, mes] = mesFatura.split("-").map(Number);
-      const mesFaturaDate = new Date(ano, mes - 1, 1);
+      if (editarApenasMes) {
+        // Editar apenas o valor desta parcela específica
+        const { error } = await (supabase as any)
+          .from("parcelas_cartao")
+          .update({ valor: valorParcela })
+          .eq("id", parcela.id);
 
-      await editarCompra(parcela.compra_id, {
-        descricao,
-        valorTotal,
-        categoriaId: categoriaId || undefined,
-        responsavelId: responsavelId || undefined,
-        mesFatura: mesFaturaDate,
-        parcelaInicial: parseInt(parcelaInicial),
-      });
+        if (error) throw error;
+        toast({ title: "Valor da parcela atualizado!" });
+      } else {
+        // Converter mês da fatura
+        const [ano, mes] = mesFatura.split("-").map(Number);
+        const mesFaturaDate = new Date(ano, mes - 1, 1);
 
-      toast({ title: "Compra atualizada!" });
+        await editarCompra(parcela.compra_id, {
+          descricao,
+          valorTotal,
+          categoriaId: categoriaId || undefined,
+          responsavelId: responsavelId || undefined,
+          mesFatura: mesFaturaDate,
+          parcelaInicial: parseInt(parcelaInicial),
+        });
+
+        toast({ title: "Compra atualizada!" });
+      }
+
       onSaved();
       onOpenChange(false);
     } catch (e) {
