@@ -36,6 +36,7 @@ import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
 import { useAutoCategory } from '@/hooks/useAutoCategory';
 import { BancoSelector } from '@/components/bancos/BancoSelector';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransactionFormData {
   type: 'income' | 'expense';
