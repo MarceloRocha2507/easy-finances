@@ -656,14 +656,16 @@ export default function Transactions() {
                 noPadding
                 className={cn(
                   "gap-0 border-0 [&>button]:hidden flex flex-col",
-                  isMobile ? "w-[calc(100%-1rem)] max-w-none" : "w-[calc(100%-2rem)] max-w-[460px]"
+                  isMobile
+                    ? "w-full max-w-none h-[100dvh] fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
+                    : "w-[calc(100%-2rem)] max-w-[460px]"
                 )}
                 style={isMobile
                   ? {
-                      borderRadius: 14,
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                      maxWidth: "calc(100dvw - 1rem)",
-                      maxHeight: "calc(100dvh - 1rem)",
+                      borderRadius: 0,
+                      maxWidth: "100dvw",
+                      maxHeight: "100dvh",
+                      boxShadow: "none",
                     }
                   : {
                       borderRadius: 12,
@@ -673,8 +675,18 @@ export default function Transactions() {
                     }
                 }
               >
-                {/* Header */}
-                <div className="flex items-center justify-between px-3 sm:px-6 pt-4 sm:pt-6 pb-0">
+                {/* Drag handle - mobile only */}
+                {isMobile && (
+                  <div className="flex justify-center pt-2 pb-1 shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                  </div>
+                )}
+
+                {/* Sticky Header */}
+                <div className={cn(
+                  "flex items-center justify-between shrink-0 bg-white z-10",
+                  isMobile ? "sticky top-0 px-4 pt-2 pb-3" : "px-6 pt-6 pb-0"
+                )}>
                   <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
                     {editingId ? 'Editar Registro' : 'Novo Registro'}
                   </h2>
@@ -691,7 +703,11 @@ export default function Transactions() {
                   </DialogClose>
                 </div>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-3 sm:px-6 pt-2 sm:pt-4 pb-3 sm:pb-5 flex flex-col gap-2.5 sm:gap-3">
+                {/* Scrollable form content */}
+                <div className={cn(
+                  "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col",
+                  isMobile ? "px-4 pt-2 pb-4 gap-4" : "px-6 pt-4 pb-5 gap-3"
+                )}>
                   {/* Receita / Despesa underline tabs */}
                   <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
                     {[
@@ -713,6 +729,7 @@ export default function Transactions() {
                           borderBottom: formData.type === tab.value ? "2px solid #111827" : "2px solid transparent",
                           cursor: "pointer",
                           transition: "all 150ms",
+                          minHeight: isMobile ? 48 : undefined,
                         }}
                       >
                         {tab.label}
@@ -733,11 +750,12 @@ export default function Transactions() {
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
                         background: "#fff",
-                        padding: "10px 12px",
+                        padding: isMobile ? "12px 16px" : "10px 12px",
                         fontSize: 13,
                         color: "#6B7280",
                         cursor: "pointer",
                         textAlign: "left",
+                        minHeight: isMobile ? 48 : undefined,
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.background = "#F9FAFB")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
@@ -762,14 +780,15 @@ export default function Transactions() {
                       style={{
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
-                        padding: "10px 12px",
+                        padding: isMobile ? "12px 16px" : "10px 12px",
                         fontSize: 14,
                         color: "#111827",
                         background: "#fff",
                         outline: "none",
+                        minHeight: isMobile ? 48 : undefined,
                       }}
-                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
-                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
+                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; }}
+                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; }}
                     />
                   </div>
 
@@ -786,7 +805,7 @@ export default function Transactions() {
                       style={{
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
-                        padding: "10px 12px",
+                        padding: isMobile ? "12px 16px" : "10px 12px",
                         fontSize: 14,
                         color: "#111827",
                         background: "#fff",
@@ -795,8 +814,8 @@ export default function Transactions() {
                         resize: "vertical",
                         fontFamily: "inherit",
                       }}
-                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
-                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
+                      onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; }}
+                      onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; }}
                     />
                   </div>
 
@@ -817,7 +836,10 @@ export default function Transactions() {
                         setIsSuggested(false);
                       }}
                     >
-                      <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
+                      <SelectTrigger className={cn(
+                        "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
+                        isMobile ? "h-12 px-4" : "h-[42px]"
+                      )}>
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
@@ -869,14 +891,15 @@ export default function Transactions() {
                           style={{
                             border: "1px solid #E5E7EB",
                             borderRadius: 8,
-                            padding: "10px 12px",
+                            padding: isMobile ? "12px 16px" : "10px 12px",
                             fontSize: 14,
                             color: "#111827",
                             background: "#fff",
                             cursor: "pointer",
+                            minHeight: isMobile ? 48 : undefined,
                           }}
-                          onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; e.currentTarget.style.padding = "9.5px 11.5px"; }}
-                          onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; e.currentTarget.style.padding = "10px 12px"; }}
+                          onFocus={(e) => { e.currentTarget.style.border = "1.5px solid #111827"; }}
+                          onBlur={(e) => { e.currentTarget.style.border = "1px solid #E5E7EB"; }}
                         >
                           <span>{format(formData.date, "dd/MM/yyyy", { locale: ptBR })}</span>
                           <Calendar style={{ width: 16, height: 16, color: "#9CA3AF" }} />
@@ -924,6 +947,7 @@ export default function Transactions() {
                                 borderBottom: formData.tipoLancamento === tab.value ? "2px solid #111827" : "2px solid transparent",
                                 cursor: "pointer",
                                 transition: "all 150ms",
+                                minHeight: isMobile ? 48 : undefined,
                               }}
                             >
                               {tab.label}
@@ -940,7 +964,10 @@ export default function Transactions() {
                             value={formData.totalParcelas.toString()} 
                             onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                           >
-                            <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
+                            <SelectTrigger className={cn(
+                              "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
+                              isMobile ? "h-12 px-4" : "h-[42px]"
+                            )}>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -962,7 +989,10 @@ export default function Transactions() {
                             value={formData.totalParcelas.toString()} 
                             onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                           >
-                            <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
+                            <SelectTrigger className={cn(
+                              "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
+                              isMobile ? "h-12 px-4" : "h-[42px]"
+                            )}>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1035,7 +1065,7 @@ export default function Transactions() {
                   {(formData.type === 'income' || formData.tipoLancamento === 'unica') && (
                     <div
                       className="flex items-center justify-between"
-                      style={{ padding: "10px 0" }}
+                      style={{ padding: "10px 0", minHeight: isMobile ? 48 : undefined }}
                     >
                       <div className="flex items-center gap-2">
                         <RefreshCw style={{ width: 16, height: 16, color: "#9CA3AF" }} />
@@ -1062,7 +1092,10 @@ export default function Transactions() {
                         value={formData.recurrence_day.toString()} 
                         onValueChange={(v) => setFormData({ ...formData, recurrence_day: parseInt(v) })}
                       >
-                        <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
+                        <SelectTrigger className={cn(
+                          "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
+                          isMobile ? "h-12 px-4" : "h-[42px]"
+                        )}>
                           <SelectValue placeholder="Selecione o dia" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1084,7 +1117,10 @@ export default function Transactions() {
                         value={formData.totalParcelas.toString()} 
                         onValueChange={(v) => setFormData({ ...formData, totalParcelas: parseInt(v) })}
                       >
-                        <SelectTrigger className="border-[#E5E7EB] rounded-lg h-[42px] text-sm focus:ring-0 focus:border-[#111827]">
+                        <SelectTrigger className={cn(
+                          "border-[#E5E7EB] rounded-lg text-sm focus:ring-0 focus:border-[#111827]",
+                          isMobile ? "h-12 px-4" : "h-[42px]"
+                        )}>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1098,7 +1134,17 @@ export default function Transactions() {
                     </div>
                   )}
 
-                  {/* Submit */}
+                  {/* Spacer to push away from sticky footer on mobile */}
+                  {isMobile && <div className="h-20 shrink-0" />}
+                </div>
+
+                {/* Sticky Footer - Submit button */}
+                <div className={cn(
+                  "shrink-0 bg-white border-t border-border/50",
+                  isMobile ? "sticky bottom-0 px-4 pt-3 z-10" : "px-6 pt-3 pb-5"
+                )}
+                  style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
+                >
                   <button
                     type="button"
                     onClick={handleSubmit}
@@ -1114,7 +1160,6 @@ export default function Transactions() {
                       background: "#111827",
                       border: "none",
                       cursor: !formData.amount ? "not-allowed" : "pointer",
-                      marginTop: "8px",
                       lineHeight: "1",
                       padding: "0 16px",
                     }}
