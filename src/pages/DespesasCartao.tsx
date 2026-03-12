@@ -253,8 +253,9 @@ export default function DespesasCartao() {
       if (filtros.busca) {
         const termoBusca = filtros.busca.toLowerCase().trim();
         
-        // Buscar por descrição
+        // Buscar por descrição ou nome_fatura
         const matchDescricao = p.descricao.toLowerCase().includes(termoBusca);
+        const matchNomeFatura = (p.nome_fatura || '').toLowerCase().includes(termoBusca);
         
         // Buscar por valor (formatado e numérico)
         const valorFormatado = formatCurrency(Math.abs(p.valor)).toLowerCase();
@@ -262,7 +263,7 @@ export default function DespesasCartao() {
         const matchValor = valorFormatado.includes(termoBusca) || 
                            valorNumerico.includes(termoBusca.replace(',', '.'));
         
-        if (!matchDescricao && !matchValor) {
+        if (!matchDescricao && !matchNomeFatura && !matchValor) {
           return false;
         }
       }
