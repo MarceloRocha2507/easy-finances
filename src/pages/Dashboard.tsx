@@ -134,7 +134,7 @@ export default function Dashboard() {
   return (
     <Layout>
       {/* FAB */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed z-[80] bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))]">
         <Link to="/transactions">
           <Button size="lg" className="rounded-full h-14 w-14 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-110">
             <Plus className="w-6 h-6" />
