@@ -1141,7 +1141,7 @@ export default function Transactions() {
                 {/* Sticky Footer - Submit button */}
                 <div className={cn(
                   "shrink-0 bg-white border-t border-border/50",
-                  isMobile ? "sticky bottom-0 px-4 pt-3 z-10" : "px-6 pt-3 pb-5"
+                  isMobile ? "sticky bottom-0 px-3 pt-2 z-10" : "px-6 pt-3 pb-5"
                 )}
                   style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
                 >
