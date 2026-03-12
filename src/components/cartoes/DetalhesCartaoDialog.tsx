@@ -64,6 +64,7 @@ import {
   RotateCcw,
   Upload,
   Clock,
+  Crown,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/formatters";
