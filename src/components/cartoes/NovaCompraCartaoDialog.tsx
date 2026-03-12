@@ -156,6 +156,8 @@ export function NovaCompraCartaoDialog({
 
   const [form, setForm] = useState({
     descricao: "",
+    nomeFatura: "",
+    observacao: "",
     valor: "",
     tipoLancamento: "unica" as TipoLancamento,
     parcelas: "2",
