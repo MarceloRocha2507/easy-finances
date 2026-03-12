@@ -97,6 +97,8 @@ export async function criarCompraCartao(input: CompraCartaoInput): Promise<void>
       categoria_id: faturaCategoryId,
       subcategoria_id: input.categoriaId || null,
       responsavel_id: input.responsavelId,
+      nome_fatura: input.nomeFatura || null,
+      observacao: input.observacao || null,
     })
     .select()
     .single();
