@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -95,7 +94,6 @@ export function EditarCompraDialog({
 
   const [descricao, setDescricao] = useState("");
   const [nomeFatura, setNomeFatura] = useState("");
-  const [observacao, setObservacao] = useState("");
   const [valorTotal, setValorTotal] = useState(0);
   const [valorParcela, setValorParcela] = useState(0);
   const [editarApenasMes, setEditarApenasMes] = useState(false);
@@ -155,14 +153,13 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura, observacao")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura")
           .eq("id", parcela.compra_id)
           .single();
 
         if (compra) {
           setDescricao(compra.descricao || "");
           setNomeFatura(compra.nome_fatura || "");
-          setObservacao(compra.observacao || "");
           setValorTotal(compra.valor_total || 0);
           setValorParcela(Math.abs(parcela.valor || 0));
           setCategoriaId(compra.subcategoria_id || null);
@@ -250,7 +247,6 @@ export function EditarCompraDialog({
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
           nomeFatura: nomeFatura || undefined,
-          observacao: observacao || undefined,
         });
 
         toast({ title: "Compra atualizada!" });
@@ -317,21 +313,6 @@ export function EditarCompraDialog({
                 />
                 <p className="text-xs text-muted-foreground">
                   Como aparece na fatura do cartão
-                </p>
-              </div>
-
-              {/* Observação */}
-              <div className="space-y-2">
-                <Label htmlFor="observacao">Observação</Label>
-                <Textarea
-                  id="observacao"
-                  rows={3}
-                  placeholder="Adicione detalhes extras sobre esta compra..."
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Anotações internas para seu controle
                 </p>
               </div>
 
@@ -479,22 +460,18 @@ export function EditarCompraDialog({
               <Separator />
 
               {/* Botões */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
                   onClick={() => onOpenChange(false)}
+                  disabled={salvando}
                 >
                   Cancelar
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={salvar}
-                  disabled={salvando || !descricao.trim()}
-                >
+                <Button onClick={salvar} disabled={salvando}>
                   {salvando ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Salvando...
                     </>
                   ) : (
