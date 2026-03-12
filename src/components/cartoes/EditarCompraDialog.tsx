@@ -144,6 +144,7 @@ export function EditarCompraDialog({
   ====================================================== */
   useEffect(() => {
     if (!open || !parcela) return;
+    setEditarApenasMes(false);
 
     async function carregarDados() {
       setLoading(true);
@@ -158,13 +159,12 @@ export function EditarCompraDialog({
         if (compra) {
           setDescricao(compra.descricao || "");
           setValorTotal(compra.valor_total || 0);
+          setValorParcela(Math.abs(parcela.valor || 0));
           setCategoriaId(compra.subcategoria_id || null);
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
           
-          // Calcular mes_inicio a partir do mes_referencia da parcela
-          // Isso garante que o dialog mostre dados consistentes com o contexto
           if (parcela?.mes_referencia) {
             const parcelaAtual = parcela.numero_parcela;
             const parcelaInicialVal = compra.parcela_inicial || 1;
@@ -174,7 +174,6 @@ export function EditarCompraDialog({
             const mesInicioCalculado = new Date(ano, mes - 1 - offset, 1);
             setMesFatura(format(mesInicioCalculado, "yyyy-MM"));
           } else if (compra.mes_inicio) {
-            // Fallback para o valor original
             const mesDate = new Date(compra.mes_inicio);
             setMesFatura(format(mesDate, "yyyy-MM"));
           }
