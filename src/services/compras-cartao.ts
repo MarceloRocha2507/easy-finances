@@ -49,6 +49,8 @@ export type CompraCartaoInput = {
   dataCompra: Date;
   categoriaId?: string;
   responsavelId: string;
+  nomeFatura?: string;
+  observacao?: string;
 };
 
 export type ResumoResponsavel = {
