@@ -387,7 +387,7 @@ export function NovaCompraCartaoDialog({
               left: "max(1.25rem, env(safe-area-inset-left))",
               right: "max(1.25rem, env(safe-area-inset-right))",
               top: "1rem",
-              bottom: "1rem",
+              maxHeight: "calc(100dvh - 2rem)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
             }
           : {
