@@ -750,7 +750,7 @@ export default function Transactions() {
                         border: "1px solid #E5E7EB",
                         borderRadius: 8,
                         background: "#fff",
-                        padding: isMobile ? "12px 16px" : "10px 12px",
+                        padding: isMobile ? "8px 12px" : "10px 12px",
                         fontSize: 13,
                         color: "#6B7280",
                         cursor: "pointer",
