@@ -36,6 +36,9 @@ export type ParcelaFatura = {
   subcategoria_nome?: string;
   subcategoria_cor?: string;
   subcategoria_icone?: string;
+  // Campos de identificação na fatura e observações
+  nome_fatura?: string;
+  observacao?: string;
 };
 
 export type CompraCartaoInput = {
@@ -197,6 +200,8 @@ export async function listarParcelasDaFatura(
         cartao_id,
         created_at,
         updated_at,
+        nome_fatura,
+        observacao,
         categoria:categories!compras_cartao_categoria_id_fkey(id, name, color, icon),
         subcategoria:categories!compras_cartao_subcategoria_id_fkey(id, name, color, icon),
         responsavel:responsaveis(id, nome, apelido, is_titular)
@@ -235,6 +240,8 @@ export async function listarParcelasDaFatura(
     subcategoria_cor: p.compra?.subcategoria?.color || null,
     subcategoria_icone: p.compra?.subcategoria?.icon || null,
     tipo_lancamento: p.compra?.tipo_lancamento || null,
+    nome_fatura: p.compra?.nome_fatura || null,
+    observacao: p.compra?.observacao || null,
   }));
 }
 
