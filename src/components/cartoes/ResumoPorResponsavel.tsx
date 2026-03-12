@@ -52,12 +52,36 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
       porResponsavel[respId].total += valor;
     });
 
+    // Verificar se a fatura foi paga (todas parcelas pagas)
+    const faturaPaga = parcelas.length > 0 && parcelas.every((p) => p.paga);
+
     // Calcular percentuais e status de acerto
     Object.values(porResponsavel).forEach((item) => {
       item.percentual = totalGeral > 0 ? (item.total / totalGeral) * 100 : 0;
 
-      // Buscar acerto existente para não-titulares
-      if (!item.isTitular) {
+      if (item.isTitular) {
+        // Para o titular: se a fatura foi paga, calcular quanto ele pagou
+        // O titular paga o total da fatura menos o que os outros reembolsaram
+        if (faturaPaga) {
+          const totalAcertosRecebidos = acertos.reduce((sum, a) => sum + (a.valor_pago || 0), 0);
+          item.valorPago = totalGeral - totalAcertosRecebidos;
+          // Se recebeu pelo menos algo de volta, pode ser parcial ou quitado
+          const totalDevidoOutros = Object.values(porResponsavel)
+            .filter((r) => !r.isTitular)
+            .reduce((sum, r) => sum + r.total, 0);
+          if (totalDevidoOutros === 0 || totalAcertosRecebidos >= totalDevidoOutros - 0.01) {
+            item.status = "quitado";
+          } else if (totalAcertosRecebidos > 0) {
+            item.status = "parcial";
+          }
+          // Se ninguém devia nada (só titular), marcar como quitado
+          if (totalDevidoOutros === 0) {
+            item.valorPago = item.total;
+            item.status = "quitado";
+          }
+        }
+      } else {
+        // Buscar acerto existente para não-titulares
         const acerto = acertos.find((a) => a.responsavel_id === item.responsavelId);
         if (acerto) {
           item.valorPago = acerto.valor_pago;
