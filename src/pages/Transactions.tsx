@@ -326,6 +326,7 @@ export default function Transactions() {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { data: faturasVirtuais } = useFaturasNaListagem();
   const queryClient = useQueryClient();
 
