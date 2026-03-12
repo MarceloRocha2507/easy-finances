@@ -154,8 +154,8 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
                 ) : null}
               </div>
 
-              {/* Valor pago por não-titulares */}
-              {!item.isTitular && item.valorPago > 0 && (
+              {/* Valor pago */}
+              {item.valorPago > 0 && (
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                   Pagou {formatCurrency(item.valorPago)} de {formatCurrency(item.total)}
                 </p>
