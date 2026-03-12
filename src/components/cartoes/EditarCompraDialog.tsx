@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -93,6 +94,8 @@ export function EditarCompraDialog({
 
   const [descricao, setDescricao] = useState("");
   const [valorTotal, setValorTotal] = useState(0);
+  const [valorParcela, setValorParcela] = useState(0);
+  const [editarApenasMes, setEditarApenasMes] = useState(false);
   const [categoriaId, setCategoriaId] = useState<string | null>(null); // This is now subcategoria_id
   const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [mesFatura, setMesFatura] = useState("");
@@ -141,6 +144,7 @@ export function EditarCompraDialog({
   ====================================================== */
   useEffect(() => {
     if (!open || !parcela) return;
+    setEditarApenasMes(false);
 
     async function carregarDados() {
       setLoading(true);
@@ -155,13 +159,12 @@ export function EditarCompraDialog({
         if (compra) {
           setDescricao(compra.descricao || "");
           setValorTotal(compra.valor_total || 0);
+          setValorParcela(Math.abs(parcela.valor || 0));
           setCategoriaId(compra.subcategoria_id || null);
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
           
-          // Calcular mes_inicio a partir do mes_referencia da parcela
-          // Isso garante que o dialog mostre dados consistentes com o contexto
           if (parcela?.mes_referencia) {
             const parcelaAtual = parcela.numero_parcela;
             const parcelaInicialVal = compra.parcela_inicial || 1;
@@ -171,7 +174,6 @@ export function EditarCompraDialog({
             const mesInicioCalculado = new Date(ano, mes - 1 - offset, 1);
             setMesFatura(format(mesInicioCalculado, "yyyy-MM"));
           } else if (compra.mes_inicio) {
-            // Fallback para o valor original
             const mesDate = new Date(compra.mes_inicio);
             setMesFatura(format(mesDate, "yyyy-MM"));
           }
@@ -221,20 +223,32 @@ export function EditarCompraDialog({
 
     setSalvando(true);
     try {
-      // Converter mês da fatura
-      const [ano, mes] = mesFatura.split("-").map(Number);
-      const mesFaturaDate = new Date(ano, mes - 1, 1);
+      if (editarApenasMes) {
+        // Editar apenas o valor desta parcela específica
+        const { error } = await (supabase as any)
+          .from("parcelas_cartao")
+          .update({ valor: valorParcela })
+          .eq("id", parcela.id);
 
-      await editarCompra(parcela.compra_id, {
-        descricao,
-        valorTotal,
-        categoriaId: categoriaId || undefined,
-        responsavelId: responsavelId || undefined,
-        mesFatura: mesFaturaDate,
-        parcelaInicial: parseInt(parcelaInicial),
-      });
+        if (error) throw error;
+        toast({ title: "Valor da parcela atualizado!" });
+      } else {
+        // Converter mês da fatura
+        const [ano, mes] = mesFatura.split("-").map(Number);
+        const mesFaturaDate = new Date(ano, mes - 1, 1);
 
-      toast({ title: "Compra atualizada!" });
+        await editarCompra(parcela.compra_id, {
+          descricao,
+          valorTotal,
+          categoriaId: categoriaId || undefined,
+          responsavelId: responsavelId || undefined,
+          mesFatura: mesFaturaDate,
+          parcelaInicial: parseInt(parcelaInicial),
+        });
+
+        toast({ title: "Compra atualizada!" });
+      }
+
       onSaved();
       onOpenChange(false);
     } catch (e) {
@@ -285,21 +299,59 @@ export function EditarCompraDialog({
                 />
               </div>
 
-              {/* Valor Total */}
-              <div className="space-y-2">
-                <Label htmlFor="valor">Valor total da compra</Label>
-                <Input
-                  id="valor"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={valorTotal}
-                  onChange={(e) => setValorTotal(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  O valor das parcelas não pagas será recalculado automaticamente.
-                </p>
-              </div>
+              {/* Toggle: editar só este mês */}
+              {totalParcelas > 1 && (
+                <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="editarApenasMes" className="text-sm font-medium" style={{ marginBottom: 0 }}>
+                      Editar só este mês
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Alterar apenas o valor da parcela {parcela.numero_parcela}/{parcela.total_parcelas}
+                    </p>
+                  </div>
+                  <Switch
+                    id="editarApenasMes"
+                    checked={editarApenasMes}
+                    onCheckedChange={setEditarApenasMes}
+                  />
+                </div>
+              )}
+
+              {/* Valor */}
+              {editarApenasMes ? (
+                <div className="space-y-2">
+                  <Label htmlFor="valorParcela">
+                    Valor da parcela {parcela.numero_parcela}/{parcela.total_parcelas}
+                  </Label>
+                  <Input
+                    id="valorParcela"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorParcela}
+                    onChange={(e) => setValorParcela(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Apenas esta parcela será alterada. As demais continuam iguais.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="valor">Valor total da compra</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorTotal}
+                    onChange={(e) => setValorTotal(Number(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O valor das parcelas não pagas será recalculado automaticamente.
+                  </p>
+                </div>
+              )}
 
               {/* Responsável */}
               <ResponsavelSelector
