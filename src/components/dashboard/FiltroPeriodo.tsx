@@ -91,20 +91,20 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
   const podeAvancar = currentIndex < mesOptions.length - 1;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <Button
         variant="outline"
         size="icon"
         onClick={handleMesAnterior}
         disabled={!podeVoltar}
-        className="h-9 w-9"
+        className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
       <Select value={mesValue} onValueChange={handleSelectChange}>
-        <SelectTrigger className="w-[180px]">
-          <Calendar className="h-4 w-4 mr-2" />
+        <SelectTrigger className="w-[140px] sm:w-[180px] h-8 sm:h-9">
+          <Calendar className="h-4 w-4 mr-2 shrink-0" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -121,7 +121,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
           variant="ghost"
           size="sm"
           onClick={handleResetToCurrentMonth}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground hover:text-foreground h-8 sm:h-9 px-2"
           title="Voltar ao mês atual"
         >
           Hoje
@@ -133,7 +133,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
         size="icon"
         onClick={handleProximoMes}
         disabled={!podeAvancar}
-        className="h-9 w-9"
+        className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -144,7 +144,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
           size="icon"
           onClick={onRefresh}
           disabled={isLoading}
-          className="h-9 w-9"
+          className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
         </Button>
