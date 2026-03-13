@@ -136,34 +136,39 @@ export default function Dashboard() {
 
       <div className="page-enter">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            Olá, {user?.user_metadata?.full_name || "Usuário"}
-          </p>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-8 w-8"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </Button>
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Linha 1: Saudação e refresh */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground truncate">
+              Olá, {user?.user_metadata?.full_name || "Usuário"}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-8 w-8 shrink-0"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+          
+          <Link to="/transactions" className="shrink-0">
+            <Button variant="ghost" size="sm" className="text-primary gap-1.5 px-2 sm:px-3">
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Novo Registro</span>
+            </Button>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Linha 2: Filtro de período */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           <FiltroPeriodo
             mesAtual={mesReferencia}
             onMesChange={setMesReferencia}
             mesesDisponiveis={mesesDisponiveis}
           />
-          <Link to="/transactions">
-            <Button variant="ghost" size="sm" className="text-primary gap-1.5">
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Novo Registro</span>
-            </Button>
-          </Link>
         </div>
       </div>
 
