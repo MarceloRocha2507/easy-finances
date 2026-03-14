@@ -6,6 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from "@/components/ui/select";
 import { Calendar, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 
@@ -83,6 +84,10 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
   }
 
   function handleSelectChange(value: string) {
+    if (value === "__current__") {
+      handleResetToCurrentMonth();
+      return;
+    }
     const [ano, mes] = value.split("-");
     onMesChange(new Date(Number(ano), Number(mes) - 1, 1));
   }
@@ -102,12 +107,16 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <Select value={mesValue} onValueChange={handleSelectChange}>
-        <SelectTrigger className="w-[140px] sm:w-[180px] h-8 sm:h-9">
+      <Select value={isMesAtual ? "__current__" : mesValue} onValueChange={handleSelectChange}>
+        <SelectTrigger className="w-[150px] sm:w-[180px] h-8 sm:h-9">
           <Calendar className="h-4 w-4 mr-2 shrink-0" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="__current__">
+            <span className="font-medium text-primary">Mês Atual</span>
+          </SelectItem>
+          <SelectSeparator />
           {mesOptions.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               <span className="capitalize">{opt.label}</span>
@@ -115,18 +124,6 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
           ))}
         </SelectContent>
       </Select>
-
-      {!isMesAtual && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleResetToCurrentMonth}
-          className="text-xs text-muted-foreground hover:text-foreground h-8 sm:h-9 px-2"
-          title="Voltar ao mês atual"
-        >
-          Hoje
-        </Button>
-      )}
 
       <Button
         variant="outline"
