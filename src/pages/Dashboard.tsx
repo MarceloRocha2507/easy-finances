@@ -163,7 +163,7 @@ export default function Dashboard() {
         </div>
 
         {/* Linha 2: Filtro de período */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           <FiltroPeriodo
             mesAtual={mesReferencia}
             onMesChange={setMesReferencia}
