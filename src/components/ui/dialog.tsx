@@ -48,7 +48,7 @@ const DialogContent = React.forwardRef<
     >
       <div
         className={cn(
-          "overflow-y-auto overflow-x-hidden flex flex-col",
+          "overflow-y-auto overflow-x-hidden flex flex-col rounded-2xl",
           noPadding ? "p-0 gap-0" : "gap-3 p-4 sm:p-6",
         )}
       >
