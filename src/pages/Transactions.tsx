@@ -655,7 +655,7 @@ export default function Transactions() {
               <DialogContent
                 noPadding
                 className={cn(
-                  "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl",
+                  "gap-0 border-0 [&>button]:hidden flex flex-col rounded-2xl overflow-hidden",
                   isMobile
                     ? "!w-auto max-w-none fixed !translate-x-0 !translate-y-0 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom data-[state=open]:duration-300 data-[state=closed]:duration-200"
                     : "w-[calc(100%-2rem)] max-w-[460px]"
