@@ -1262,15 +1262,7 @@ export default function Transactions() {
               delay={0.1}
               isLoading={isStatsFetching}
             />
-            <StatCardMinimal
-              title="A Pagar"
-              value={stats?.pendingExpense || 0}
-              icon={AlertTriangle}
-              prefix="-"
-              subInfo="pendentes"
-              delay={0.15}
-              isLoading={isStatsFetching}
-            />
+            <TotalAPagarCard mesReferencia={dataInicial || new Date()} />
             <StatCardMinimal
               title="Saldo Real"
               value={stats?.realBalance || 0}
