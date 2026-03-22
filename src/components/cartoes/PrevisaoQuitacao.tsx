@@ -95,10 +95,10 @@ export function PrevisaoQuitacao({ parcelamentos }: Props) {
       </h2>
 
       {/* Highlight card */}
-      <Card className="border-green-200 dark:border-green-900/40">
+      <Card className="border-emerald-200/60 dark:border-emerald-800/30">
         <CardContent className="p-4 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-            <CalendarCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+          <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
+            <CalendarCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="flex-1">
             <p className="text-sm text-muted-foreground">Quitação total estimada</p>
