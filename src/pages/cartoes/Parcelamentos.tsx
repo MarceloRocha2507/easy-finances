@@ -327,6 +327,9 @@ export default function Parcelamentos() {
             })
           )}
         </div>
+
+        {/* Previsão de Quitação */}
+        <PrevisaoQuitacao parcelamentos={parcelamentosFiltrados} />
       </div>
     </Layout>
   );
