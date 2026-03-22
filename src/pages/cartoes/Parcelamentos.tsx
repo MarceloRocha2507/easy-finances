@@ -74,6 +74,10 @@ export default function Parcelamentos() {
       const result: Parcelamento[] = [];
 
       for (const compra of compras || []) {
+        const responsavel = compra.responsaveis as any;
+        const isTitular = !responsavel || responsavel?.is_titular === true;
+        if (!isTitular) continue;
+
         const { data: parcelas } = await supabase
           .from("parcelas_cartao")
           .select("id, numero_parcela, paga, mes_referencia, valor, total_parcelas")
