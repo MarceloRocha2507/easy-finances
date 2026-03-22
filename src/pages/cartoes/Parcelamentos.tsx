@@ -124,11 +124,10 @@ export default function Parcelamentos() {
   const parcelamentosFiltrados = useMemo(() => {
     return parcelamentos.filter((p) => {
       if (filtroCartao !== "todos" && p.cartaoId !== filtroCartao) return false;
-      if (filtroResponsavel !== "todos" && p.responsavelNome !== filtroResponsavel) return false;
       if (filtroTipo !== "todos" && p.tipo !== filtroTipo) return false;
       return true;
     });
-  }, [parcelamentos, filtroCartao, filtroResponsavel, filtroTipo]);
+  }, [parcelamentos, filtroCartao, filtroTipo]);
 
   const totais = useMemo(() => {
     const totalRestante = parcelamentosFiltrados.reduce(
