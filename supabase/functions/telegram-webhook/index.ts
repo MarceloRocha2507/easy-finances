@@ -76,7 +76,8 @@ async function handlePergunta(supabase: any, botToken: string, chatId: string, t
       .select("nome, limite, dia_fechamento, dia_vencimento, bandeira")
       .eq("user_id", userId),
     supabase.from("parcelas_cartao")
-      .select("valor, numero_parcela, total_parcelas, mes_referencia, paga, tipo_recorrencia, compras_cartao(descricao, valor_total, cartoes(nome))")
+      .select("valor, numero_parcela, total_parcelas, mes_referencia, paga, tipo_recorrencia, compras_cartao!inner(descricao, valor_total, user_id, cartoes(nome))")
+      .eq("compras_cartao.user_id", userId)
       .eq("paga", false).eq("ativo", true).gte("mes_referencia", inicioMes).limit(100),
     supabase.from("bancos")
       .select("nome, saldo_inicial, tipo_conta")
