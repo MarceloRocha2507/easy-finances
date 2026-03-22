@@ -40,7 +40,6 @@ function monthLabel(d: Date) {
 
 export default function Parcelamentos() {
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
-  const [filtroResponsavel, setFiltroResponsavel] = useState<string>("todos");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
 
   const { data: cartoes = [], isLoading: cartoesLoading } = useCartoes();
