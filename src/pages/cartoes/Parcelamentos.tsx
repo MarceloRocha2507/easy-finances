@@ -198,19 +198,6 @@ export default function Parcelamentos() {
             </SelectContent>
           </Select>
 
-          <Select value={filtroResponsavel} onValueChange={setFiltroResponsavel}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              {responsaveis.map((r) => (
-                <SelectItem key={r.id} value={r.apelido || r.nome}>
-                  {r.apelido || r.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Select value={filtroTipo} onValueChange={setFiltroTipo}>
             <SelectTrigger className="w-[140px]">
