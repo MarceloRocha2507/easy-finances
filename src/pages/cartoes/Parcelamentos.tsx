@@ -16,7 +16,7 @@ import { Layers, CreditCard, Calendar, TrendingUp, AlertTriangle } from "lucide-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCartoes } from "@/services/cartoes";
-import { useResponsaveis } from "@/services/responsaveis";
+
 import { formatCurrency } from "@/lib/formatters";
 
 interface Parcelamento {
