@@ -1,39 +1,29 @@
 
 
-## Problema
+## Plan: Filter Parcelamentos to show only titular (EU) entries
 
-A seção "Contas a Pagar" está visualmente pesada: header + 2 collapsibles + subtotais separados (Cartões / Contas) + banner "Total a Pagar". Muita informação exposta por padrão.
+The user wants the Parcelamentos page to only show installments where the responsible person is the titular (is_titular = true) or where no responsible is assigned (null), matching the existing pattern used elsewhere in the app.
 
-## Solução
+### Changes
 
-Redesenhar como um card compacto com visão resumida por padrão, expandível ao clicar:
+**File: `src/pages/cartoes/Parcelamentos.tsx`**
 
-**Estado colapsado (padrão):**
-- Uma linha única mostrando "Contas a Pagar" + total geral + quantidade de itens + chevron
-- Compacto, ocupa mínimo de espaço no Dashboard
+1. Update the query select to include `is_titular` from the `responsaveis` join: add `is_titular` to the select fields
+2. After fetching compras, filter out entries where `responsaveis` exists and `is_titular` is false — keep only entries where:
+   - `responsavel_id` is null (no responsible = titular)
+   - OR `responsaveis.is_titular` is true
+3. Remove the "Responsável" filter dropdown since only titular entries will be shown
+4. Remove the `filtroResponsavel` state and its usage in the filtering logic
+5. Remove display of `responsavelNome` in the card items (or keep showing "Eu" label)
 
-**Estado expandido (ao clicar):**
-- Duas seções internas: Faturas de Cartão e Contas Pendentes (cada uma com seus itens listados diretamente, sem collapsible aninhado)
-- Total geral no rodapé
+### Technical detail
 
-## Alterações
+In the query loop (line ~77), add a check after fetching each compra:
+```typescript
+const responsavel = compra.responsaveis as any;
+const isTitular = !responsavel || responsavel?.is_titular === true;
+if (!isTitular) continue;
+```
 
-**Arquivo: `src/components/dashboard/ContasAPagar.tsx`**
-
-Reescrever o componente:
-
-1. **Estado único `open`** — substituir os 3 estados (faturasOpen, contasOpen, contasExpanded) por um único `open` que controla a expansão geral
-
-2. **Header compacto clicável** — uma linha com:
-   - Icone + "Contas a Pagar"
-   - Badge com quantidade total (faturas + contas)
-   - Valor total em vermelho
-   - Chevron
-
-3. **Conteúdo expandido** — ao abrir:
-   - Se houver faturas: label "Faturas" + lista simples (nome do cartão, vencimento curto, valor)
-   - Se houver contas: label "Contas" + lista simples (descrição, vencimento curto, valor)
-   - Rodapé com total geral
-
-4. **Remover**: subtotais separados (Total Cartões / Total Contas), banner vermelho redundante, collapsibles aninhados, botão "mostrar mais"
+This follows the same titular filtering pattern used in `useFaturasNaListagem.ts` and other parts of the app.
 
