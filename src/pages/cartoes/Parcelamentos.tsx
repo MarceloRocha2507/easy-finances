@@ -16,7 +16,7 @@ import { Layers, CreditCard, Calendar, TrendingUp, AlertTriangle } from "lucide-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCartoes } from "@/services/cartoes";
-import { useResponsaveis } from "@/services/responsaveis";
+
 import { formatCurrency } from "@/lib/formatters";
 
 interface Parcelamento {
@@ -40,11 +40,10 @@ function monthLabel(d: Date) {
 
 export default function Parcelamentos() {
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
-  const [filtroResponsavel, setFiltroResponsavel] = useState<string>("todos");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
 
   const { data: cartoes = [], isLoading: cartoesLoading } = useCartoes();
-  const { data: responsaveis = [] } = useResponsaveis();
+  
 
   const { data: parcelamentos = [], isLoading } = useQuery({
     queryKey: ["parcelamentos-ativos"],
@@ -75,6 +74,10 @@ export default function Parcelamentos() {
       const result: Parcelamento[] = [];
 
       for (const compra of compras || []) {
+        const responsavel = compra.responsaveis as any;
+        const isTitular = !responsavel || responsavel?.is_titular === true;
+        if (!isTitular) continue;
+
         const { data: parcelas } = await supabase
           .from("parcelas_cartao")
           .select("id, numero_parcela, paga, mes_referencia, valor, total_parcelas")
@@ -121,11 +124,10 @@ export default function Parcelamentos() {
   const parcelamentosFiltrados = useMemo(() => {
     return parcelamentos.filter((p) => {
       if (filtroCartao !== "todos" && p.cartaoId !== filtroCartao) return false;
-      if (filtroResponsavel !== "todos" && p.responsavelNome !== filtroResponsavel) return false;
       if (filtroTipo !== "todos" && p.tipo !== filtroTipo) return false;
       return true;
     });
-  }, [parcelamentos, filtroCartao, filtroResponsavel, filtroTipo]);
+  }, [parcelamentos, filtroCartao, filtroTipo]);
 
   const totais = useMemo(() => {
     const totalRestante = parcelamentosFiltrados.reduce(
@@ -196,19 +198,6 @@ export default function Parcelamentos() {
             </SelectContent>
           </Select>
 
-          <Select value={filtroResponsavel} onValueChange={setFiltroResponsavel}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              {responsaveis.map((r) => (
-                <SelectItem key={r.id} value={r.apelido || r.nome}>
-                  {r.apelido || r.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Select value={filtroTipo} onValueChange={setFiltroTipo}>
             <SelectTrigger className="w-[140px]">
