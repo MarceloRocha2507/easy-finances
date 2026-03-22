@@ -1,21 +1,23 @@
 
 
-## Plan: Fix Parcelamentos not showing data
+## Plan: Replace "A Pagar" card with TotalAPagarCard on Transactions page
 
-**Problem**: The `is_titular` field is not included in the `responsaveis` select query, so when a purchase has a responsible person assigned, `is_titular` is always `undefined`, causing the filter `responsavel?.is_titular === true` to fail and skip all entries with a responsible person.
+The current "A Pagar" card on the Transactions page only shows pending expenses (excluding credit card invoices). The user wants it to include all obligations — pending transactions + unpaid credit card invoices — with the expandable modal, exactly like the Dashboard.
 
-**Fix**: Add `is_titular` to the responsaveis select in the Supabase query.
+### Changes
 
-**File: `src/pages/cartoes/Parcelamentos.tsx`**
+**File: `src/pages/Transactions.tsx`**
 
-Change the select from:
-```
-responsaveis(id, nome, apelido)
-```
-to:
-```
-responsaveis(id, nome, apelido, is_titular)
-```
+1. Import `TotalAPagarCard` from `@/components/dashboard`
+2. Replace the `StatCardMinimal` for "A Pagar" (lines 1264-1272) with a `TotalAPagarCard` component, passing a `mesReferencia` derived from `dataInicial` (the selected month filter)
+3. Wrap it in a div to maintain grid alignment with the other stat cards
 
-This single-line fix ensures the titular check has the data it needs to work correctly.
+The `TotalAPagarCard` already:
+- Sums pending transactions + unpaid credit card invoices
+- Shows a click-to-expand modal listing all items grouped by "Contas pendentes" and "Fatura cartao"
+- Uses the same visual style as the other minimal cards
+
+### Technical detail
+
+The `mesReferencia` prop will be derived from the existing `dataInicial` state (which defaults to `startOfMonth(new Date())`). Since `dataInicial` could be `undefined`, we'll fallback to `new Date()`.
 
