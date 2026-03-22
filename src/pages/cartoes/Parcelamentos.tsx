@@ -43,7 +43,7 @@ export default function Parcelamentos() {
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
 
   const { data: cartoes = [], isLoading: cartoesLoading } = useCartoes();
-  const { data: responsaveis = [] } = useResponsaveis();
+  
 
   const { data: parcelamentos = [], isLoading } = useQuery({
     queryKey: ["parcelamentos-ativos"],
