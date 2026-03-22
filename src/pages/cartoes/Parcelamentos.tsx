@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Layers, CreditCard, Calendar, TrendingUp, AlertTriangle } from "lucide-react";
+import { Layers, CreditCard, Calendar, TrendingUp } from "lucide-react";
+import { PrevisaoQuitacao } from "@/components/cartoes/PrevisaoQuitacao";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCartoes } from "@/services/cartoes";
@@ -326,6 +327,9 @@ export default function Parcelamentos() {
             })
           )}
         </div>
+
+        {/* Previsão de Quitação */}
+        <PrevisaoQuitacao parcelamentos={parcelamentosFiltrados} />
       </div>
     </Layout>
   );
