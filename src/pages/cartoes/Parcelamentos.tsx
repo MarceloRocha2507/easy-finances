@@ -252,6 +252,9 @@ export default function Parcelamentos() {
           </Card>
         </div>
 
+        {/* Previsão de Quitação */}
+        <PrevisaoQuitacao parcelamentos={parcelamentosFiltrados} />
+
         {/* Lista de parcelamentos */}
         <div className="space-y-3">
           {parcelamentosFiltrados.length === 0 ? (
@@ -327,9 +330,6 @@ export default function Parcelamentos() {
             })
           )}
         </div>
-
-        {/* Previsão de Quitação */}
-        <PrevisaoQuitacao parcelamentos={parcelamentosFiltrados} />
       </div>
     </Layout>
   );
