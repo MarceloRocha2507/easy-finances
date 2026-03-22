@@ -63,7 +63,7 @@ export default function Parcelamentos() {
           cartao_id,
           responsavel_id,
           cartoes!inner(id, nome),
-          responsaveis(id, nome, apelido)
+          responsaveis(id, nome, apelido, is_titular)
         `)
         .eq("user_id", user.id)
         .or("parcelas.gt.1,tipo_lancamento.eq.fixa");
