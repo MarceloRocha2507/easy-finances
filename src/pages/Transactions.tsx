@@ -321,6 +321,11 @@ export default function Transactions() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState<number>(() => {
+    const saved = localStorage.getItem('txn_display_limit');
+    return saved ? parseInt(saved, 10) : 10;
+  });
+  const [showAll, setShowAll] = useState(false);
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
