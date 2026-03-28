@@ -1276,7 +1276,19 @@ export default function Transactions() {
               title="Estimado"
               value={stats?.estimatedBalance || 0}
               icon={Info}
-              subInfo="real + a receber - a pagar"
+              subInfo={
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-foreground">
+                    {formatCurrency(
+                      (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
+                      - (stats?.completedExpense || 0) - (stats?.pendingExpense || 0)
+                      - (stats?.faturaCartao || 0)
+                    )}{" "}
+                    <span className="text-muted-foreground/60">só este mês</span>
+                  </span>
+                  <span>real + a receber - a pagar</span>
+                </div>
+              }
               delay={0.25}
               isLoading={isStatsFetching}
             />
