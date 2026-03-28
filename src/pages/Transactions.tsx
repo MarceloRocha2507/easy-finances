@@ -1372,14 +1372,34 @@ export default function Transactions() {
             ))}
           </div>
           
-          <div className="relative w-full sm:w-64 pb-3 sm:pb-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Buscar..." 
-              className="pl-9 h-9" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto pb-3 sm:pb-0">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Buscar..." 
+                className="pl-9 h-9" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select
+              value={String(displayLimit)}
+              onValueChange={(val) => {
+                const limit = parseInt(val, 10);
+                setDisplayLimit(limit);
+                setShowAll(false);
+                localStorage.setItem('txn_display_limit', val);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[130px] shrink-0 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">Últimas 5</SelectItem>
+                <SelectItem value="10">Últimas 10</SelectItem>
+                <SelectItem value="15">Últimas 15</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
