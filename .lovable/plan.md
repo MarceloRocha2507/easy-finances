@@ -1,43 +1,41 @@
 
 
-## Plan: Add "só este mês" secondary value to the Estimado card
-
-The "Estimado" card currently shows the accumulated estimated balance (`saldoDisponivel + pendingIncome - pendingExpense - faturaCartao`). The user wants a secondary line showing only the current month's net result.
-
-### Calculation
-
-The month-only value = `completedIncome + pendingIncome - completedExpense - pendingExpense - faturaCartao`
-
-All these values already exist in the `stats` object from `useCompleteStats` — they represent only the selected month's data (not accumulated).
+## Plan: Limited transaction display with "Ver todas" toggle
 
 ### Changes
 
 **File: `src/pages/Transactions.tsx`**
 
-Replace the `StatCardMinimal` for "Estimado" with an updated `subInfo` that includes the monthly-only value:
+1. **Add state for limit and expanded mode**:
+   - `displayLimit`: number (5, 10, or 15), initialized from `localStorage` key `"txn_display_limit"`, default `10`
+   - `showAll`: boolean, default `false` — toggles between limited and full view
+   - Reset `showAll` to `false` when `activeTab`, `searchQuery`, or date filters change
 
-```tsx
-<StatCardMinimal
-  title="Estimado"
-  value={stats?.estimatedBalance || 0}
-  icon={Info}
-  subInfo={
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[11px] text-[#6B7280]">
-        {formatCurrency(
-          (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-          - (stats?.completedExpense || 0) - (stats?.pendingExpense || 0)
-          - (stats?.faturaCartao || 0)
-        )}{" "}
-        <span className="text-[#9CA3AF]">só este mês</span>
-      </span>
-      <span>real + a receber - a pagar</span>
-    </div>
-  }
-  delay={0.25}
-  isLoading={isStatsFetching}
-/>
+2. **Add limit selector** next to the search bar (line ~1355-1365 area):
+   - A `Select` dropdown with options: "Últimas 5", "Últimas 10", "Últimas 15"
+   - On change: save to `localStorage`, update state, reset `showAll` to false
+   - Visually compact (`h-9`, `w-[130px]`), aligned with the search input
+
+3. **Apply limit to displayed transactions**:
+   - Create `displayedTransactions` memo: when `showAll` is false, slice `sortedTransactions` to first `displayLimit` items; otherwise show all
+   - For grouped view: flatten all group items, take first N from the sorted list, then re-group only those items — this ensures the limit applies across groups as requested
+   - Replace references to `sortedTransactions` and `grupos` in the rendering section with the limited versions
+
+4. **Add "Ver todas" / "Ver menos" button** after the transaction list (after line ~1461):
+   - When limited and there are more items: show centered `Button` variant="ghost" with text `Ver todas as transações (X)` where X = total count
+   - When expanded: show `Ver menos` button to collapse back
+   - Button only visible when total > displayLimit
+
+### Visual layout
+```text
+[Todos 31] [Receitas 13] [Despesas 18] [Pendentes] [Fixas]   🔍 Buscar...   [Últimas 10 ▾]
+
+— transaction groups/items (limited to N) —
+
+              [ Ver todas as transações (31) ]
 ```
 
-The secondary value uses a smaller font and muted color, all within the existing card — no new components needed.
+### Persistence
+- `localStorage.setItem("txn_display_limit", value)` on change
+- `localStorage.getItem("txn_display_limit")` on init with fallback to `10`
 
