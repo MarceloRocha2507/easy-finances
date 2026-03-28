@@ -457,13 +457,26 @@ export default function Transactions() {
     });
   }, [activeTransactions]);
 
+  // Reset showAll when filters change
+  useEffect(() => {
+    setShowAll(false);
+  }, [activeTab, searchQuery, dataInicial, dataFinal]);
+
+  const totalTransactions = sortedTransactions.length;
+
+  // Apply display limit
+  const displayedTransactions = useMemo(() => {
+    if (showAll || totalTransactions <= displayLimit) return sortedTransactions;
+    return sortedTransactions.slice(0, displayLimit);
+  }, [sortedTransactions, showAll, displayLimit, totalTransactions]);
+
   // Tabs que usam agrupamento
   const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income' || activeTab === 'pending';
 
   const grupos = useMemo(() => {
     if (!useGrouping) return [];
-    return agruparTransacoes(sortedTransactions, activeTab);
-  }, [sortedTransactions, activeTab, useGrouping]);
+    return agruparTransacoes(displayedTransactions, activeTab);
+  }, [displayedTransactions, activeTab, useGrouping]);
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => {
