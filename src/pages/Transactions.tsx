@@ -321,6 +321,11 @@ export default function Transactions() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState<number>(() => {
+    const saved = localStorage.getItem('txn_display_limit');
+    return saved ? parseInt(saved, 10) : 10;
+  });
+  const [showAll, setShowAll] = useState(false);
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
@@ -452,13 +457,26 @@ export default function Transactions() {
     });
   }, [activeTransactions]);
 
+  // Reset showAll when filters change
+  useEffect(() => {
+    setShowAll(false);
+  }, [activeTab, searchQuery, dataInicial, dataFinal]);
+
+  const totalTransactions = sortedTransactions.length;
+
+  // Apply display limit
+  const displayedTransactions = useMemo(() => {
+    if (showAll || totalTransactions <= displayLimit) return sortedTransactions;
+    return sortedTransactions.slice(0, displayLimit);
+  }, [sortedTransactions, showAll, displayLimit, totalTransactions]);
+
   // Tabs que usam agrupamento
   const useGrouping = activeTab === 'all' || activeTab === 'expense' || activeTab === 'income' || activeTab === 'pending';
 
   const grupos = useMemo(() => {
     if (!useGrouping) return [];
-    return agruparTransacoes(sortedTransactions, activeTab);
-  }, [sortedTransactions, activeTab, useGrouping]);
+    return agruparTransacoes(displayedTransactions, activeTab);
+  }, [displayedTransactions, activeTab, useGrouping]);
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => {
@@ -1354,14 +1372,34 @@ export default function Transactions() {
             ))}
           </div>
           
-          <div className="relative w-full sm:w-64 pb-3 sm:pb-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Buscar..." 
-              className="pl-9 h-9" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto pb-3 sm:pb-0">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Buscar..." 
+                className="pl-9 h-9" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select
+              value={String(displayLimit)}
+              onValueChange={(val) => {
+                const limit = parseInt(val, 10);
+                setDisplayLimit(limit);
+                setShowAll(false);
+                localStorage.setItem('txn_display_limit', val);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[130px] shrink-0 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">Últimas 5</SelectItem>
+                <SelectItem value="10">Últimas 10</SelectItem>
+                <SelectItem value="15">Últimas 15</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -1369,7 +1407,7 @@ export default function Transactions() {
         <div className="space-y-2">
           {isLoading ? (
             <LoadingList />
-          ) : sortedTransactions.length === 0 ? (
+          ) : displayedTransactions.length === 0 ? (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
@@ -1384,7 +1422,6 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              // Em faturas pendentes, nunca exibir itens já pagos
               const displayItems = grupo.key === 'faturas_pendentes'
                 ? grupo.items.filter(item => !isFaturaPaga(item))
                 : grupo.items;
@@ -1435,7 +1472,7 @@ export default function Transactions() {
               );
             })
           ) : (
-            sortedTransactions.map((item, itemIdx) => (
+            displayedTransactions.map((item, itemIdx) => (
               <AnimatedItem key={item.id} index={itemIdx}>
                 {'isFaturaCartao' in item ? (
                   <FaturaCartaoRow 
@@ -1458,6 +1495,22 @@ export default function Transactions() {
                 )}
               </AnimatedItem>
             ))
+          )}
+
+          {/* Botão Ver todas / Ver menos */}
+          {totalTransactions > displayLimit && (
+            <div className="flex justify-center pt-2 pb-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground text-sm"
+                onClick={() => setShowAll(prev => !prev)}
+              >
+                {showAll
+                  ? 'Ver menos'
+                  : `Ver todas as transações (${totalTransactions})`}
+              </Button>
+            </div>
           )}
         </div>
 
