@@ -1,17 +1,43 @@
 
 
-## Diagnóstico: A Previsão de Quitação já está funcionando
+## Plan: Add "só este mês" secondary value to the Estimado card
 
-Pela análise dos logs do console, o componente `PrevisaoQuitacao` **está renderizando** na página. Com 17 parcelamentos ativos, a seção de previsão fica **abaixo de todos os cards** — é necessário rolar a página até o final para visualizá-la.
+The "Estimado" card currently shows the accumulated estimated balance (`saldoDisponivel + pendingIncome - pendingExpense - faturaCartao`). The user wants a secondary line showing only the current month's net result.
 
-No entanto, para melhorar a experiência, posso fazer um ajuste simples:
+### Calculation
 
-### Mudança proposta
+The month-only value = `completedIncome + pendingIncome - completedExpense - pendingExpense - faturaCartao`
 
-**Mover a seção "Previsão de Quitação" para cima** — logo após os cards de resumo (Parcelamentos Ativos / Compromisso Mensal / Total a Pagar) e antes da lista de parcelamentos individuais. Assim o gráfico e a data de quitação ficam visíveis sem precisar rolar por todos os 17 cards.
+All these values already exist in the `stats` object from `useCompleteStats` — they represent only the selected month's data (not accumulated).
 
-**Arquivo: `src/pages/cartoes/Parcelamentos.tsx`**
-- Mover o `<PrevisaoQuitacao parcelamentos={parcelamentosFiltrados} />` de depois da lista de parcelamentos para logo após os 3 cards de resumo
+### Changes
 
-Essa é uma mudança de 2 linhas — cortar e colar o componente.
+**File: `src/pages/Transactions.tsx`**
+
+Replace the `StatCardMinimal` for "Estimado" with an updated `subInfo` that includes the monthly-only value:
+
+```tsx
+<StatCardMinimal
+  title="Estimado"
+  value={stats?.estimatedBalance || 0}
+  icon={Info}
+  subInfo={
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[11px] text-[#6B7280]">
+        {formatCurrency(
+          (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
+          - (stats?.completedExpense || 0) - (stats?.pendingExpense || 0)
+          - (stats?.faturaCartao || 0)
+        )}{" "}
+        <span className="text-[#9CA3AF]">só este mês</span>
+      </span>
+      <span>real + a receber - a pagar</span>
+    </div>
+  }
+  delay={0.25}
+  isLoading={isStatsFetching}
+/>
+```
+
+The secondary value uses a smaller font and muted color, all within the existing card — no new components needed.
 
