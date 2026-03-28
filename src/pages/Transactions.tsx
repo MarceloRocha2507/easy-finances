@@ -1407,7 +1407,7 @@ export default function Transactions() {
         <div className="space-y-2">
           {isLoading ? (
             <LoadingList />
-          ) : sortedTransactions.length === 0 ? (
+          ) : displayedTransactions.length === 0 ? (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">
@@ -1422,7 +1422,6 @@ export default function Transactions() {
           ) : useGrouping && grupos.length > 0 ? (
             grupos.map((grupo, grupoIdx) => {
               const isCollapsed = collapsedGroups.has(grupo.key);
-              // Em faturas pendentes, nunca exibir itens já pagos
               const displayItems = grupo.key === 'faturas_pendentes'
                 ? grupo.items.filter(item => !isFaturaPaga(item))
                 : grupo.items;
@@ -1473,7 +1472,7 @@ export default function Transactions() {
               );
             })
           ) : (
-            sortedTransactions.map((item, itemIdx) => (
+            displayedTransactions.map((item, itemIdx) => (
               <AnimatedItem key={item.id} index={itemIdx}>
                 {'isFaturaCartao' in item ? (
                   <FaturaCartaoRow 
@@ -1496,6 +1495,22 @@ export default function Transactions() {
                 )}
               </AnimatedItem>
             ))
+          )}
+
+          {/* Botão Ver todas / Ver menos */}
+          {totalTransactions > displayLimit && (
+            <div className="flex justify-center pt-2 pb-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground text-sm"
+                onClick={() => setShowAll(prev => !prev)}
+              >
+                {showAll
+                  ? 'Ver menos'
+                  : `Ver todas as transações (${totalTransactions})`}
+              </Button>
+            </div>
           )}
         </div>
 
