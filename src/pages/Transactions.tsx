@@ -1345,14 +1345,15 @@ export default function Transactions() {
         />
 
         {/* Tabs + Busca Integrados */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-0">
-          <div className="flex gap-1 overflow-x-auto">
+        <div className="flex flex-col gap-3 border-b pb-3">
+          {/* Line 1: Filter tabs */}
+          <div className="flex flex-wrap gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+                  "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
                   activeTab === tab.value 
                     ? tab.activeClass
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -1372,12 +1373,13 @@ export default function Transactions() {
             ))}
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-auto pb-3 sm:pb-0">
-            <div className="relative flex-1 sm:w-64">
+          {/* Line 2: Search + limit dropdown */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
                 placeholder="Buscar..." 
-                className="pl-9 h-9" 
+                className="pl-9 h-9 w-full" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
