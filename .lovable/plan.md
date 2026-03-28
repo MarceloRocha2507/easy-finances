@@ -1,41 +1,66 @@
 
 
-## Plan: Limited transaction display with "Ver todas" toggle
+## Plan: Reorganize filter bar into 2 lines
 
-### Changes
+### Change
 
-**File: `src/pages/Transactions.tsx`**
+**File: `src/pages/Transactions.tsx` (lines 1348-1403)**
 
-1. **Add state for limit and expanded mode**:
-   - `displayLimit`: number (5, 10, or 15), initialized from `localStorage` key `"txn_display_limit"`, default `10`
-   - `showAll`: boolean, default `false` — toggles between limited and full view
-   - Reset `showAll` to `false` when `activeTab`, `searchQuery`, or date filters change
+Replace the current single-row `flex-col sm:flex-row` wrapper with a two-line stacked layout:
 
-2. **Add limit selector** next to the search bar (line ~1355-1365 area):
-   - A `Select` dropdown with options: "Últimas 5", "Últimas 10", "Últimas 15"
-   - On change: save to `localStorage`, update state, reset `showAll` to false
-   - Visually compact (`h-9`, `w-[130px]`), aligned with the search input
+**Line 1** — Tab buttons: Remove `overflow-x-auto`, use `flex-wrap` instead, reduce padding from `px-4` to `px-3`.
 
-3. **Apply limit to displayed transactions**:
-   - Create `displayedTransactions` memo: when `showAll` is false, slice `sortedTransactions` to first `displayLimit` items; otherwise show all
-   - For grouped view: flatten all group items, take first N from the sorted list, then re-group only those items — this ensures the limit applies across groups as requested
-   - Replace references to `sortedTransactions` and `grupos` in the rendering section with the limited versions
+**Line 2** — Search + dropdown: Always a row with search taking `flex-1` and dropdown at fixed width.
 
-4. **Add "Ver todas" / "Ver menos" button** after the transaction list (after line ~1461):
-   - When limited and there are more items: show centered `Button` variant="ghost" with text `Ver todas as transações (X)` where X = total count
-   - When expanded: show `Ver menos` button to collapse back
-   - Button only visible when total > displayLimit
-
-### Visual layout
-```text
-[Todos 31] [Receitas 13] [Despesas 18] [Pendentes] [Fixas]   🔍 Buscar...   [Últimas 10 ▾]
-
-— transaction groups/items (limited to N) —
-
-              [ Ver todas as transações (31) ]
+```tsx
+{/* Tabs + Busca Integrados */}
+<div className="flex flex-col gap-3 border-b pb-3">
+  {/* Line 1: Filter tabs */}
+  <div className="flex flex-wrap gap-1">
+    {tabs.map((tab) => (
+      <button
+        key={tab.value}
+        onClick={() => setActiveTab(tab.value)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+          activeTab === tab.value 
+            ? tab.activeClass
+            : "border-transparent text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {tab.icon}
+        {tab.label}
+        <span className={cn(
+          "text-xs px-1.5 py-0.5 rounded-full",
+          activeTab === tab.value 
+            ? "bg-foreground/10" 
+            : "bg-muted text-muted-foreground"
+        )}>
+          {tab.count}
+        </span>
+      </button>
+    ))}
+  </div>
+  
+  {/* Line 2: Search + limit dropdown */}
+  <div className="flex items-center gap-2">
+    <div className="relative flex-1">
+      <Search ... />
+      <Input ... />
+    </div>
+    <Select ...>
+      <SelectTrigger className="h-9 w-[130px] shrink-0 text-xs">
+        ...
+      </SelectTrigger>
+      ...
+    </Select>
+  </div>
+</div>
 ```
 
-### Persistence
-- `localStorage.setItem("txn_display_limit", value)` on change
-- `localStorage.getItem("txn_display_limit")` on init with fallback to `10`
+Key differences from current code:
+- Outer wrapper: `flex-col gap-3` (always stacked, no `sm:flex-row`)
+- Tabs: `flex-wrap` replaces `overflow-x-auto`, `px-3` replaces `px-4`
+- Search row: always horizontal, search is `flex-1` (fills available space), dropdown stays fixed `w-[130px]`
+- No `pb-3 sm:pb-0` needed on the search row since layout is always 2 lines
 
