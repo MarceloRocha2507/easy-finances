@@ -1274,8 +1274,9 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
       });
 
-      // Conciliar: usar o maior entre fatura via transação e via parcelas pagas
-      const faturaConsolidada = Math.max(faturaViaTransacao, faturaViaParcelasPagas);
+      // Conciliar: usar o maior entre fatura via transação e o total da fatura (pagas + pendentes)
+      const faturaTotalParcelas = faturaViaParcelasPagas + faturaCartaoTitular;
+      const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
 
       // Pendentes do mês
