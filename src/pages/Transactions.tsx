@@ -1243,7 +1243,7 @@ export default function Transactions() {
                   <Skeleton className="h-5 w-20 sm:h-6 sm:w-24" />
                 </div>
               ) : (stats?.totalMetas || 0) > 0 && (
-                <div className="text-right">
+                <div className="flex flex-col items-end">
                   <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
                   <p className="font-semibold text-primary text-sm sm:text-base">
                     {formatCurrency(stats?.totalMetas || 0)}
