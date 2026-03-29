@@ -1,66 +1,56 @@
 
 
-## Plan: Reorganize filter bar into 2 lines
+## Plan: Mobile layout improvements for the financial dashboard
 
-### Change
+### Changes
 
-**File: `src/pages/Transactions.tsx` (lines 1348-1403)**
+**File: `src/pages/Transactions.tsx`**
 
-Replace the current single-row `flex-col sm:flex-row` wrapper with a two-line stacked layout:
+1. **Cards grid — responsive layout with specific spans**
 
-**Line 1** — Tab buttons: Remove `overflow-x-auto`, use `flex-wrap` instead, reduce padding from `px-4` to `px-3`.
-
-**Line 2** — Search + dropdown: Always a row with search taking `flex-1` and dropdown at fixed width.
+Replace the current uniform `grid-cols-2 lg:grid-cols-3` (line 1256) with a mobile-aware grid where "Saldo Real" and "Estimado" span full width on mobile:
 
 ```tsx
-{/* Tabs + Busca Integrados */}
-<div className="flex flex-col gap-3 border-b pb-3">
-  {/* Line 1: Filter tabs */}
-  <div className="flex flex-wrap gap-1">
-    {tabs.map((tab) => (
-      <button
-        key={tab.value}
-        onClick={() => setActiveTab(tab.value)}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
-          activeTab === tab.value 
-            ? tab.activeClass
-            : "border-transparent text-muted-foreground hover:text-foreground"
-        )}
-      >
-        {tab.icon}
-        {tab.label}
-        <span className={cn(
-          "text-xs px-1.5 py-0.5 rounded-full",
-          activeTab === tab.value 
-            ? "bg-foreground/10" 
-            : "bg-muted text-muted-foreground"
-        )}>
-          {tab.count}
-        </span>
-      </button>
-    ))}
-  </div>
-  
-  {/* Line 2: Search + limit dropdown */}
-  <div className="flex items-center gap-2">
-    <div className="relative flex-1">
-      <Search ... />
-      <Input ... />
-    </div>
-    <Select ...>
-      <SelectTrigger className="h-9 w-[130px] shrink-0 text-xs">
-        ...
-      </SelectTrigger>
-      ...
-    </Select>
-  </div>
-</div>
+<AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+  {/* Receitas, Despesas — stay 2-col */}
+  <StatCardMinimal title="Receitas" ... />
+  <StatCardMinimal title="Despesas" ... />
+  {/* A Receber, Total a Pagar — stay 2-col */}
+  <StatCardMinimal title="A Receber" ... />
+  <TotalAPagarCard ... />
+  {/* Saldo Real — full width on mobile */}
+  <StatCardMinimal title="Saldo Real" ... className="col-span-2 lg:col-span-1" />
+  {/* Estimado — full width on mobile */}
+  <StatCardMinimal title="Estimado" ... className="col-span-2 lg:col-span-1" />
+  {/* Assinaturas — single column on mobile */}
+  <StatCardMinimal title="Assinaturas" ... className="col-span-2 lg:col-span-1" />
+</AnimatedSection>
 ```
 
-Key differences from current code:
-- Outer wrapper: `flex-col gap-3` (always stacked, no `sm:flex-row`)
-- Tabs: `flex-wrap` replaces `overflow-x-auto`, `px-3` replaces `px-4`
-- Search row: always horizontal, search is `flex-1` (fills available space), dropdown stays fixed `w-[130px]`
-- No `pb-3 sm:pb-0` needed on the search row since layout is always 2 lines
+2. **Filter tabs — horizontal scroll on mobile**
+
+Replace `flex-wrap` (line 1350) with horizontal scroll styling:
+
+```tsx
+<div className="flex overflow-x-auto gap-1 scrollbar-hide">
+```
+
+Add CSS for `scrollbar-hide` in `src/index.css` (if not already present):
+```css
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+```
+
+3. **Search + dropdown line** — no changes needed, already works correctly.
+
+4. **Padding and typography on mobile**
+
+**File: `src/components/dashboard/StatCardMinimal.tsx`**
+
+Update the container padding from `p-4` to `p-3 sm:p-4` for slightly more breathing room awareness on mobile. The "só este mês" secondary text in the Estimado card already uses `text-[11px]` which is equivalent to `text-xs` — no change needed there.
+
+### Summary of files
+- `src/pages/Transactions.tsx` — grid spans + scrollable filter tabs
+- `src/components/dashboard/StatCardMinimal.tsx` — mobile padding tweak
+- `src/index.css` — scrollbar-hide utility (if missing)
 
