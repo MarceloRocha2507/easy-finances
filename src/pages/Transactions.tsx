@@ -453,7 +453,16 @@ export default function Transactions() {
       const bFuture = dateB > now;
       if (aFuture !== bFuture) return aFuture ? 1 : -1;
       if (aFuture && bFuture) return dateA - dateB;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
+      // For paid faturas, use dataPagamento or date instead of created_at
+      const sortDateA = 'isFaturaCartao' in a && (a as FaturaVirtual).paga
+        ? new Date((a as FaturaVirtual).dataPagamento || a.date).getTime()
+        : new Date(a.created_at).getTime();
+      const sortDateB = 'isFaturaCartao' in b && (b as FaturaVirtual).paga
+        ? new Date((b as FaturaVirtual).dataPagamento || b.date).getTime()
+        : new Date(b.created_at).getTime();
+
+      return sortDateB - sortDateA;
     });
   }, [activeTransactions]);
 
