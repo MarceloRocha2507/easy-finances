@@ -181,7 +181,7 @@ export default function Dashboard() {
 
       {/* Card Resultado do Mês */}
       {(() => {
-        const resultado = (completeStats?.completedIncome || 0) - (completeStats?.completedExpense || 0);
+        const resultado = (completeStats?.completedIncome || 0) - (completeStats?.completedExpenseWithFatura || 0);
         const isPositive = resultado >= 0;
         return (
           <Card
