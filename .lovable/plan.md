@@ -1,56 +1,42 @@
 
 
-## Plan: Mobile layout improvements for the financial dashboard
+## Plan: Fix paid invoices appearing as recent transactions
 
-### Changes
+### Problem
+`FaturaVirtual` objects are created with `created_at: new Date().toISOString()` (always the current timestamp). The sort function uses `created_at` descending for non-future items, so all virtual invoices — including ones paid weeks ago — always appear at the top of the list.
 
-**File: `src/pages/Transactions.tsx`**
+### Fix
 
-1. **Cards grid — responsive layout with specific spans**
+**File: `src/pages/Transactions.tsx` (lines 446-458)**
 
-Replace the current uniform `grid-cols-2 lg:grid-cols-3` (line 1256) with a mobile-aware grid where "Saldo Real" and "Estimado" span full width on mobile:
-
-```tsx
-<AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-  {/* Receitas, Despesas — stay 2-col */}
-  <StatCardMinimal title="Receitas" ... />
-  <StatCardMinimal title="Despesas" ... />
-  {/* A Receber, Total a Pagar — stay 2-col */}
-  <StatCardMinimal title="A Receber" ... />
-  <TotalAPagarCard ... />
-  {/* Saldo Real — full width on mobile */}
-  <StatCardMinimal title="Saldo Real" ... className="col-span-2 lg:col-span-1" />
-  {/* Estimado — full width on mobile */}
-  <StatCardMinimal title="Estimado" ... className="col-span-2 lg:col-span-1" />
-  {/* Assinaturas — single column on mobile */}
-  <StatCardMinimal title="Assinaturas" ... className="col-span-2 lg:col-span-1" />
-</AnimatedSection>
-```
-
-2. **Filter tabs — horizontal scroll on mobile**
-
-Replace `flex-wrap` (line 1350) with horizontal scroll styling:
+Update the sort logic to use `date` (the due/payment date) for `FaturaVirtual` items instead of `created_at`:
 
 ```tsx
-<div className="flex overflow-x-auto gap-1 scrollbar-hide">
+const sortedTransactions = useMemo(() => {
+  return [...activeTransactions].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    const now = Date.now();
+    const aFuture = dateA > now;
+    const bFuture = dateB > now;
+    if (aFuture !== bFuture) return aFuture ? 1 : -1;
+    if (aFuture && bFuture) return dateA - dateB;
+
+    // For paid faturas, use dataPagamento or date instead of created_at
+    const sortDateA = 'isFaturaCartao' in a && (a as FaturaVirtual).paga
+      ? new Date((a as FaturaVirtual).dataPagamento || a.date).getTime()
+      : new Date(a.created_at).getTime();
+    const sortDateB = 'isFaturaCartao' in b && (b as FaturaVirtual).paga
+      ? new Date((b as FaturaVirtual).dataPagamento || b.date).getTime()
+      : new Date(b.created_at).getTime();
+
+    return sortDateB - sortDateA;
+  });
+}, [activeTransactions]);
 ```
 
-Add CSS for `scrollbar-hide` in `src/index.css` (if not already present):
-```css
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-```
+This ensures paid invoices sort by their actual payment date (or due date), placing them chronologically among other transactions instead of always at the top.
 
-3. **Search + dropdown line** — no changes needed, already works correctly.
-
-4. **Padding and typography on mobile**
-
-**File: `src/components/dashboard/StatCardMinimal.tsx`**
-
-Update the container padding from `p-4` to `p-3 sm:p-4` for slightly more breathing room awareness on mobile. The "só este mês" secondary text in the Estimado card already uses `text-[11px]` which is equivalent to `text-xs` — no change needed there.
-
-### Summary of files
-- `src/pages/Transactions.tsx` — grid spans + scrollable filter tabs
-- `src/components/dashboard/StatCardMinimal.tsx` — mobile padding tweak
-- `src/index.css` — scrollbar-hide utility (if missing)
+### Single file change
+- `src/pages/Transactions.tsx` — sort comparator only
 
