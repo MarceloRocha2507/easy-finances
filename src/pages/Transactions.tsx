@@ -1289,7 +1289,7 @@ export default function Transactions() {
               delay={0.1}
               isLoading={isStatsFetching}
             />
-            <TotalAPagarCard mesReferencia={dataInicial || new Date()} />
+            <TotalAPagarCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
             <StatCardMinimal
               title="Saldo Real"
               value={stats?.realBalance || 0}

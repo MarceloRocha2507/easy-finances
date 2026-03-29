@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface TotalAPagarCardProps {
   mesReferencia: Date;
+  isLoading?: boolean;
 }
 
 function getDueDateShort(dueDateStr: string): string {
@@ -35,7 +36,7 @@ function getDueDateStatus(dueDateStr: string): "overdue" | "today" | "upcoming" 
   return "upcoming";
 }
 
-export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
+export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: TotalAPagarCardProps) {
   const [open, setOpen] = useState(false);
 
   const inicioMes = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}-01`;
@@ -53,7 +54,7 @@ export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
 
   const { data: todasFaturas, isLoading: isLoadingFaturas } = useFaturasNaListagem(mesReferencia);
 
-  const isLoading = isLoadingTx || isLoadingFaturas;
+  const isLoading = isLoadingTx || isLoadingFaturas || externalLoading;
 
   const mesRefStr = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}`;
   const faturasMes = (todasFaturas || []).filter(f => f.mesReferencia.startsWith(mesRefStr) && f.statusFatura !== 'paga');
