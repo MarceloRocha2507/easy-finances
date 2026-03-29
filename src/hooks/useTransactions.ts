@@ -1236,7 +1236,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       const stats = {
         saldoInicial,
         completedIncome: 0,  // Receitas do mês
-        completedExpense: 0, // Despesas do mês
+        completedExpense: 0, // Despesas do mês (sem fatura cartão)
+        completedExpenseWithFatura: 0, // Despesas do mês (com fatura cartão)
         pendingIncome: 0,
         pendingExpense: 0,
         overdueCount: 0,
@@ -1253,9 +1254,12 @@ export function useCompleteStats(mesReferencia?: Date) {
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
-        if (!isMetaCategory && !isFaturaCartao) {
-          if (t.type === 'income') stats.completedIncome += amount;
-          else stats.completedExpense += amount;
+        if (!isMetaCategory) {
+          if (t.type === 'expense') stats.completedExpenseWithFatura += amount;
+          if (!isFaturaCartao) {
+            if (t.type === 'income') stats.completedIncome += amount;
+            else stats.completedExpense += amount;
+          }
         }
       });
 
@@ -1305,7 +1309,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         console.error('Erro ao calcular estatísticas completas:', error);
         // Retornar valores zerados para não quebrar o dashboard
         return {
-          saldoInicial: 0, completedIncome: 0, completedExpense: 0,
+          saldoInicial: 0, completedIncome: 0, completedExpense: 0, completedExpenseWithFatura: 0,
           pendingIncome: 0, pendingExpense: 0, overdueCount: 0, pendingCount: 0,
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
           realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
