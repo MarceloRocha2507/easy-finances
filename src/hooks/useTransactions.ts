@@ -1160,7 +1160,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão', 'Fatura de Cartão']);
 
       const metaCategoryIds = new Set(
         (metaCategories || [])
