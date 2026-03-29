@@ -1352,7 +1352,7 @@ export default function Transactions() {
         {/* Tabs + Busca Integrados */}
         <div className="flex flex-col gap-3 border-b pb-3">
           {/* Line 1: Filter tabs */}
-          <div className="flex flex-wrap gap-1">
+          <div className="flex overflow-x-auto gap-1 scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
