@@ -265,7 +265,7 @@ export default function Dashboard() {
           prefix="-"
           delay={0.15}
           isLoading={isStatsFetching}
-          subInfo={<span className="hidden sm:inline">No valor de só este mês</span>}
+          subInfo={<span className="text-[11px]">No valor de só este mês</span>}
         />
       </div>
 
