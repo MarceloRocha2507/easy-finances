@@ -260,12 +260,12 @@ export default function Dashboard() {
 
         <StatCardMinimal
           title="Despesas"
-          value={completeStats?.completedExpense || 0}
+          value={completeStats?.completedExpenseWithFatura || 0}
           icon={TrendingDown}
           prefix="-"
           delay={0.15}
           isLoading={isStatsFetching}
-          subInfo={<span className="hidden sm:inline">pagas</span>}
+          subInfo={<span className="hidden sm:inline">pagas (inclui fatura)</span>}
         />
       </div>
 
