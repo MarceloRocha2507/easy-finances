@@ -1,48 +1,37 @@
 
+Objetivo: corrigir a divergência onde “Despesas pagas” continua em R$ 1.147,09 mesmo com faturas pagas, e alinhar Dashboard + Transações para refletirem a saída de caixa real.
 
-## Plan: Fix "Despesas" card to include credit card invoice payments
+1) Causa raiz identificada
+- Hoje o card depende principalmente de `transactions` do mês.
+- Parte dos pagamentos de cartão foi marcada diretamente em `parcelas_cartao.paga` (fluxo manual), sem criar transação de “Fatura”.
+- Resultado: existe valor pago nas parcelas (ex.: R$ 1.427,50), mas não totalmente em `transactions`, então o card fica menor.
 
-### Problem
-The "Despesas" card on the Transactions page shows R$ 1,147.09 but excludes the R$ 1,427.50 credit card invoice payment. This happens because the calculation at line 1256 of `useTransactions.ts` filters out transactions with the "Fatura do Cartão" category to avoid double-counting with `parcelas_cartao` installments.
+2) Ajuste no cálculo central (`src/hooks/useTransactions.ts` – `useCompleteStats`)
+- Manter `completedExpense` como está (sem fatura) para não quebrar “Resultado do Mês”/estimado.
+- Recalcular `completedExpenseWithFatura` com lógica de conciliação:
+  - `despesasBase` = despesas completed do mês sem categorias de meta e sem categoria de fatura.
+  - `faturaViaTransacao` = soma de despesas completed de fatura no mês.
+  - `faturaViaParcelasPagas` = soma de `parcelas_cartao` do titular com `paga = true`, `ativo = true`, e `updated_at` dentro do mês selecionado.
+  - `faturaConsolidada = max(faturaViaTransacao, faturaViaParcelasPagas)` (evita subcontagem e evita dupla em cenários mistos).
+  - `completedExpenseWithFatura = despesasBase + faturaConsolidada`.
+- Incluir compatibilidade com categorias legadas:
+  - considerar “Fatura do Cartão” e “Fatura de Cartão”.
 
-However, on the Transactions page, the "Despesas pagas" card should reflect **actual cash outflow** — money that left your bank account — which includes credit card invoice payments.
+3) Alinhamento visual de cards
+- `src/pages/Transactions.tsx`
+  - Confirmar uso de `stats?.completedExpenseWithFatura` no card “Despesas” (já está, manter).
+  - Ajustar subtítulo para deixar explícito: “pagas (inclui fatura)”.
+- `src/pages/Dashboard.tsx`
+  - Trocar card “Despesas” para `completeStats?.completedExpenseWithFatura`.
+  - Manter “Resultado do Mês” e “Estimado” com a lógica atual (sem alteração de fórmula).
 
-### Solution
+4) Validação pós-implementação
+- Cenário A: pagamento via “Pagar Fatura” (com transação criada) → valor correto sem duplicar.
+- Cenário B: marcação manual de parcelas pagas (sem transação) → card passa a refletir valor pago.
+- Cenário C: mês sem fatura paga → números permanecem iguais ao comportamento atual.
+- Cenário D: Dashboard e Transações mostram o mesmo total de “Despesas pagas” (saída de caixa), enquanto “Resultado do Mês” continua consistente.
 
-**File: `src/hooks/useTransactions.ts` (useCompleteStats hook, ~line 1237-1260)**
-
-Add a new field `completedExpenseWithFatura` to the stats object that includes all completed expenses (including "Fatura do Cartão" payments). The existing `completedExpense` field stays unchanged to preserve the Dashboard behavior.
-
-```tsx
-// New field in stats object:
-completedExpenseWithFatura: 0,  // Includes credit card invoice payments
-
-// In the completedDoMes loop:
-if (!isMetaCategory) {
-  if (t.type === 'expense') stats.completedExpenseWithFatura += amount;
-  if (!isFaturaCartao) {
-    if (t.type === 'income') stats.completedIncome += amount;
-    else stats.completedExpense += amount;
-  }
-}
-```
-
-**File: `src/pages/Transactions.tsx` (~line 1276)**
-
-Update the "Despesas" card to use the new field:
-
-```tsx
-<StatCardMinimal
-  title="Despesas"
-  value={stats?.completedExpenseWithFatura || 0}
-  ...
-/>
-```
-
-### Why not just remove the filter?
-The `completedExpense` field (without "Fatura do Cartão") is still needed by the Dashboard's "Resultado do Mês" calculation and the estimated balance formula, where including it would cause double-counting with `faturaCartao` from `parcelas_cartao`. Adding a separate field keeps both use cases correct.
-
-### Files changed
-- `src/hooks/useTransactions.ts` — add `completedExpenseWithFatura` field
-- `src/pages/Transactions.tsx` — use new field in "Despesas" card
-
+Arquivos previstos
+- `src/hooks/useTransactions.ts`
+- `src/pages/Dashboard.tsx`
+- `src/pages/Transactions.tsx` (texto/subinfo)
