@@ -288,7 +288,7 @@ export default function Dashboard() {
             )}
             {totalAPagar > 0 && (
               <div className="flex-1">
-                <TotalAPagarCard mesReferencia={mesReferencia} />
+                <TotalAPagarCard mesReferencia={mesReferencia} isLoading={isStatsFetching} />
               </div>
             )}
           </div>
