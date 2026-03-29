@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface TotalAPagarCardProps {
   mesReferencia: Date;
+  isLoading?: boolean;
 }
 
 function getDueDateShort(dueDateStr: string): string {
