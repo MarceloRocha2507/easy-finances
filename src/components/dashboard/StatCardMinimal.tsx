@@ -46,7 +46,7 @@ export function StatCardMinimal({
   return (
     <div
       className={cn(
-        "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px] p-4",
+        "relative bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px] p-3 sm:p-4",
         "shadow-[0_1px_3px_rgba(0,0,0,0.07)] animate-fade-in-up transition-all duration-200",
         onClick && "cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:-translate-y-0.5",
         className

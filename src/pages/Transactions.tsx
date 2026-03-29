@@ -1289,6 +1289,7 @@ export default function Transactions() {
               onClick={() => setAjustarSaldoOpen(true)}
               delay={0.2}
               isLoading={isStatsFetching}
+              className="col-span-2 lg:col-span-1"
             />
             <StatCardMinimal
               title="Estimado"
@@ -1309,6 +1310,7 @@ export default function Transactions() {
               }
               delay={0.25}
               isLoading={isStatsFetching}
+              className="col-span-2 lg:col-span-1"
             />
             <StatCardMinimal
               title="Assinaturas"
@@ -1328,6 +1330,7 @@ export default function Transactions() {
               delay={0.3}
               isLoading={isStatsFetching || isAssinaturasLoading}
               valueColor="expense"
+              className="col-span-2 lg:col-span-1"
             />
           </AnimatedSection>
         </AnimatedSection>
@@ -1347,7 +1350,7 @@ export default function Transactions() {
         {/* Tabs + Busca Integrados */}
         <div className="flex flex-col gap-3 border-b pb-3">
           {/* Line 1: Filter tabs */}
-          <div className="flex flex-wrap gap-1">
+          <div className="flex overflow-x-auto gap-1 scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
