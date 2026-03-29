@@ -265,7 +265,7 @@ export default function Dashboard() {
           prefix="-"
           delay={0.15}
           isLoading={isStatsFetching}
-          subInfo={<span className="hidden sm:inline">pagas (inclui fatura)</span>}
+          subInfo={<span className="hidden sm:inline">total do mês (inclui fatura)</span>}
         />
       </div>
 
