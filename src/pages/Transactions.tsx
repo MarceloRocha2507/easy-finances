@@ -1312,6 +1312,10 @@ export default function Transactions() {
               isLoading={isStatsFetching}
             />
             <StatCardMinimal
+              title="Estimado"
+              className="col-span-2 lg:col-span-1"
+            />
+            <StatCardMinimal
               title="Assinaturas"
               value={totalMensalAssinaturas}
               icon={Repeat}
