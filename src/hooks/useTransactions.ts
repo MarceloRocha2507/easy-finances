@@ -1309,7 +1309,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         console.error('Erro ao calcular estatísticas completas:', error);
         // Retornar valores zerados para não quebrar o dashboard
         return {
-          saldoInicial: 0, completedIncome: 0, completedExpense: 0,
+          saldoInicial: 0, completedIncome: 0, completedExpense: 0, completedExpenseWithFatura: 0,
           pendingIncome: 0, pendingExpense: 0, overdueCount: 0, pendingCount: 0,
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
           realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
