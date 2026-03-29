@@ -1209,13 +1209,18 @@ export function useCompleteStats(mesReferencia?: Date) {
         .lte('mes_referencia', fimMes)
         .eq('ativo', true);
 
-      // Calcular total da fatura do titular (apenas parcelas não pagas)
+      // Calcular total da fatura do titular (parcelas não pagas = pendente, pagas = já saiu do caixa)
       let faturaCartaoTitular = 0;
+      let faturaViaParcelasPagas = 0;
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
-        if (isTitular && !isPaga) {
-          faturaCartaoTitular += Number(p.valor) || 0;
+        if (isTitular) {
+          if (!isPaga) {
+            faturaCartaoTitular += Number(p.valor) || 0;
+          } else {
+            faturaViaParcelasPagas += Number(p.valor) || 0;
+          }
         }
       });
 
