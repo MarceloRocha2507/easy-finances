@@ -1169,7 +1169,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       );
       const faturaCategoryIds = new Set(
         (metaCategories || [])
-          .filter(c => c.name === 'Fatura do Cartão')
+          .filter(c => c.name === 'Fatura do Cartão' || c.name === 'Fatura de Cartão')
           .map(c => c.id)
       );
 
