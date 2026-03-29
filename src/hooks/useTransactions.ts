@@ -1160,7 +1160,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         .from('categories')
         .select('id, name')
         .eq('user_id', user!.id)
-        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão']);
+        .in('name', ['Depósito em Meta', 'Retirada de Meta', 'Fatura do Cartão', 'Fatura de Cartão']);
 
       const metaCategoryIds = new Set(
         (metaCategories || [])
@@ -1169,7 +1169,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       );
       const faturaCategoryIds = new Set(
         (metaCategories || [])
-          .filter(c => c.name === 'Fatura do Cartão')
+          .filter(c => c.name === 'Fatura do Cartão' || c.name === 'Fatura de Cartão')
           .map(c => c.id)
       );
 
@@ -1209,13 +1209,18 @@ export function useCompleteStats(mesReferencia?: Date) {
         .lte('mes_referencia', fimMes)
         .eq('ativo', true);
 
-      // Calcular total da fatura do titular (apenas parcelas não pagas)
+      // Calcular total da fatura do titular (parcelas não pagas = pendente, pagas = já saiu do caixa)
       let faturaCartaoTitular = 0;
+      let faturaViaParcelasPagas = 0;
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
-        if (isTitular && !isPaga) {
-          faturaCartaoTitular += Number(p.valor) || 0;
+        if (isTitular) {
+          if (!isPaga) {
+            faturaCartaoTitular += Number(p.valor) || 0;
+          } else {
+            faturaViaParcelasPagas += Number(p.valor) || 0;
+          }
         }
       });
 
@@ -1250,18 +1255,28 @@ export function useCompleteStats(mesReferencia?: Date) {
       };
 
       // Receitas e Despesas apenas do mês selecionado (excluindo movimentações de meta)
+      let faturaViaTransacao = 0;
+      let despesasBase = 0;
       (completedDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
         if (!isMetaCategory) {
-          if (t.type === 'expense') stats.completedExpenseWithFatura += amount;
-          if (!isFaturaCartao) {
+          if (isFaturaCartao && t.type === 'expense') {
+            faturaViaTransacao += amount;
+          } else if (!isFaturaCartao) {
             if (t.type === 'income') stats.completedIncome += amount;
-            else stats.completedExpense += amount;
+            else {
+              stats.completedExpense += amount;
+              despesasBase += amount;
+            }
           }
         }
       });
+
+      // Conciliar: usar o maior entre fatura via transação e via parcelas pagas
+      const faturaConsolidada = Math.max(faturaViaTransacao, faturaViaParcelasPagas);
+      stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
 
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {

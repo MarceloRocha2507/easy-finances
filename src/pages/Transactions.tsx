@@ -1275,7 +1275,7 @@ export default function Transactions() {
               title="Despesas"
               value={stats?.completedExpenseWithFatura || 0}
               icon={TrendingDown}
-              subInfo="pagas"
+              subInfo="pagas (inclui fatura)"
               valueColor="expense"
               delay={0.05}
               isLoading={isStatsFetching}
