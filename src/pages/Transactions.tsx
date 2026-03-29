@@ -1310,9 +1310,6 @@ export default function Transactions() {
               }
               delay={0.25}
               isLoading={isStatsFetching}
-            />
-            <StatCardMinimal
-              title="Estimado"
               className="col-span-2 lg:col-span-1"
             />
             <StatCardMinimal
@@ -1333,6 +1330,7 @@ export default function Transactions() {
               delay={0.3}
               isLoading={isStatsFetching || isAssinaturasLoading}
               valueColor="expense"
+              className="col-span-2 lg:col-span-1"
             />
           </AnimatedSection>
         </AnimatedSection>
