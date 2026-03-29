@@ -1236,7 +1236,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       const stats = {
         saldoInicial,
         completedIncome: 0,  // Receitas do mês
-        completedExpense: 0, // Despesas do mês
+        completedExpense: 0, // Despesas do mês (sem fatura cartão)
+        completedExpenseWithFatura: 0, // Despesas do mês (com fatura cartão)
         pendingIncome: 0,
         pendingExpense: 0,
         overdueCount: 0,
