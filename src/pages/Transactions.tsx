@@ -1215,9 +1215,9 @@ export default function Transactions() {
         />
 
         {/* Saldo Inicial + Resumo Completo */}
-        <AnimatedSection className="space-y-3">
+        <AnimatedSection className="space-y-4">
           {/* Card de Saldo Inicial e Metas */}
-          <div className="flex items-center justify-between p-2 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50">
+          <div className="flex items-center justify-between p-3 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50 mt-1">
             {/* Saldo Inicial */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
