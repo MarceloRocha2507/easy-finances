@@ -36,7 +36,7 @@ function getDueDateStatus(dueDateStr: string): "overdue" | "today" | "upcoming" 
   return "upcoming";
 }
 
-export function TotalAPagarCard({ mesReferencia }: TotalAPagarCardProps) {
+export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: TotalAPagarCardProps) {
   const [open, setOpen] = useState(false);
 
   const inicioMes = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, "0")}-01`;
