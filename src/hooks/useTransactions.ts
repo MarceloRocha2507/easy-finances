@@ -1254,9 +1254,12 @@ export function useCompleteStats(mesReferencia?: Date) {
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
-        if (!isMetaCategory && !isFaturaCartao) {
-          if (t.type === 'income') stats.completedIncome += amount;
-          else stats.completedExpense += amount;
+        if (!isMetaCategory) {
+          if (t.type === 'expense') stats.completedExpenseWithFatura += amount;
+          if (!isFaturaCartao) {
+            if (t.type === 'income') stats.completedIncome += amount;
+            else stats.completedExpense += amount;
+          }
         }
       });
 

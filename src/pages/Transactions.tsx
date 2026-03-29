@@ -1273,7 +1273,7 @@ export default function Transactions() {
             />
              <StatCardMinimal
               title="Despesas"
-              value={stats?.completedExpense || 0}
+              value={stats?.completedExpenseWithFatura || 0}
               icon={TrendingDown}
               subInfo="pagas"
               valueColor="expense"
