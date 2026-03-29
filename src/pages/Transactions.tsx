@@ -1289,6 +1289,7 @@ export default function Transactions() {
               onClick={() => setAjustarSaldoOpen(true)}
               delay={0.2}
               isLoading={isStatsFetching}
+              className="col-span-2 lg:col-span-1"
             />
             <StatCardMinimal
               title="Estimado"
