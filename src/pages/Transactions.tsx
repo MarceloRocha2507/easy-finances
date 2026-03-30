@@ -1312,7 +1312,7 @@ export default function Transactions() {
                       - (stats?.completedExpense || 0) - (stats?.pendingExpense || 0)
                       - (stats?.faturaCartao || 0)
                     )}{" "}
-                    <span className="text-muted-foreground/60">só este mês</span>
+                    <span className="text-muted-foreground/60">referente apenas a este mês</span>
                   </span>
                   <span>real + a receber - a pagar</span>
                 </div>
