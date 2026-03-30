@@ -1,27 +1,30 @@
 
 
-## Plan: Include paid invoices in the "referente apenas a este mês" value
+## Plan: Show only PAID invoice values in "Despesas" card
 
 ### Problem
-The secondary value under "Estimado" on the Transactions page (highlighted in red in the screenshot) calculates the monthly net result as:
+Currently, `completedExpenseWithFatura` includes both paid AND unpaid credit card installments (`faturaViaParcelasPagas + faturaCartaoTitular`). The user wants only **paid** invoice amounts to appear in the Despesas card — unpaid invoices should remain in "Total a Pagar" / "faturaCartao" only.
 
+### Root cause (line 1278 of `useTransactions.ts`)
+```typescript
+// Current — includes unpaid installments (faturaCartaoTitular)
+const faturaTotalParcelas = faturaViaParcelasPagas + faturaCartaoTitular;
 ```
-completedIncome + pendingIncome - completedExpense - pendingExpense - faturaCartao
-```
-
-- `completedExpense` excludes invoice payment transactions
-- `faturaCartao` only includes **unpaid** installments from `parcelas_cartao`
-
-Result: paid credit card invoices are not counted at all in this value.
 
 ### Fix
-Replace `completedExpense` with `completedExpenseWithFatura` in the formula. This field already includes paid invoices (via the reconciliation logic implemented earlier). The `faturaCartao` stays as-is since it only covers unpaid invoices.
+Change to only use paid parcels:
+```typescript
+const faturaTotalParcelas = faturaViaParcelasPagas;
+```
 
-**New formula:**
-```
-completedIncome + pendingIncome - completedExpenseWithFatura - pendingExpense - faturaCartao
-```
+This ensures `faturaConsolidada = Math.max(faturaViaTransacao, faturaViaParcelasPagas)` — only counting invoices that were actually paid, matching the "saída de caixa real" concept.
+
+### Impact
+- **Despesas card** (Dashboard + Transactions): will only include invoice amounts marked as paid
+- **Total a Pagar card**: unchanged — still shows unpaid invoices via `faturaCartao`
+- **Resultado do Mês**: uses `completedExpenseWithFatura`, so it also corrects to reflect only realized expenses
+- **Estimado secondary value**: also uses this field, stays consistent
 
 ### File changed
-- `src/pages/Transactions.tsx` — line 1312: swap `completedExpense` → `completedExpenseWithFatura`
+- `src/hooks/useTransactions.ts` — line 1278: remove `faturaCartaoTitular` from `faturaTotalParcelas`
 
