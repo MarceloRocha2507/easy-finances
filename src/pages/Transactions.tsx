@@ -1309,7 +1309,7 @@ export default function Transactions() {
                   <span className="text-[11px] text-muted-foreground">
                     {formatCurrency(
                       (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-                      - (stats?.completedExpense || 0) - (stats?.pendingExpense || 0)
+                      - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
                       - (stats?.faturaCartao || 0)
                     )}{" "}
                     <span className="text-muted-foreground/60">referente apenas a este mês</span>
