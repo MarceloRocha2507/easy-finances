@@ -96,7 +96,7 @@ export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: T
               <p className="text-lg sm:text-xl font-bold tabular-nums text-destructive">
                 -{formatCurrency(totalGeral)}
               </p>
-              <p className="text-[11px] text-[#6B7280]">No valor de só este mês</p>
+              <p className="text-[11px] text-[#6B7280]">Referente apenas a este mês</p>
             </div>
           )}
 
