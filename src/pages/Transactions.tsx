@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
+import { RecurringEditDialog } from '@/components/transactions/RecurringEditDialog';
 import { LixeiraDialog } from '@/components/transactions/LixeiraDialog';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useUpdateRecurringTransactions, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
@@ -320,6 +321,8 @@ export default function Transactions() {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
+  const [recurringEditTransaction, setRecurringEditTransaction] = useState<Transaction | null>(null);
+  const [pendingEditData, setPendingEditData] = useState<Partial<Transaction> | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
   const [displayLimit, setDisplayLimit] = useState<number>(() => {
     const saved = localStorage.getItem('txn_display_limit');
@@ -376,6 +379,7 @@ export default function Transactions() {
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
+  const updateRecurringMutation = useUpdateRecurringTransactions();
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
@@ -529,6 +533,17 @@ export default function Transactions() {
     };
 
     if (editingId) {
+      const isRecurring = formData.tipoLancamento === 'fixa' || formData.tipoLancamento === 'parcelada' || formData.is_recurring;
+      if (isRecurring) {
+        // Find the original transaction to pass to the dialog
+        const originalTxn = transactions?.find(t => t.id === editingId);
+        if (originalTxn) {
+          setPendingEditData({ id: editingId, ...data });
+          setRecurringEditTransaction(originalTxn);
+          setDialogOpen(false);
+          return;
+        }
+      }
       updateMutation.mutate({ id: editingId, ...data }, {
         onSuccess: () => {
           setDialogOpen(false);
@@ -1572,6 +1587,28 @@ export default function Transactions() {
             if (recurringDeleteTransaction) {
               deleteRecurringMutation.mutate({ transactionId: recurringDeleteTransaction.id, mode });
               setRecurringDeleteTransaction(null);
+            }
+          }}
+        />
+
+        {/* Dialog edição recorrente */}
+        <RecurringEditDialog
+          transaction={recurringEditTransaction}
+          onClose={() => {
+            setRecurringEditTransaction(null);
+            setPendingEditData(null);
+            resetForm();
+          }}
+          onConfirm={(mode) => {
+            if (recurringEditTransaction && pendingEditData) {
+              const { id, ...updates } = pendingEditData as Partial<Transaction> & { id: string };
+              updateRecurringMutation.mutate({ id, mode, updates }, {
+                onSuccess: () => {
+                  setRecurringEditTransaction(null);
+                  setPendingEditData(null);
+                  resetForm();
+                },
+              });
             }
           }}
         />
