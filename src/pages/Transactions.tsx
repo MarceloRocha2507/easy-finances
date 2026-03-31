@@ -379,6 +379,7 @@ export default function Transactions() {
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
+  const updateRecurringMutation = useUpdateRecurringTransactions();
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
