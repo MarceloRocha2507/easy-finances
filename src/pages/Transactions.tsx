@@ -533,6 +533,17 @@ export default function Transactions() {
     };
 
     if (editingId) {
+      const isRecurring = formData.tipoLancamento === 'fixa' || formData.tipoLancamento === 'parcelada' || formData.is_recurring;
+      if (isRecurring) {
+        // Find the original transaction to pass to the dialog
+        const originalTxn = allTransactions?.find(t => t.id === editingId);
+        if (originalTxn) {
+          setPendingEditData({ id: editingId, ...data });
+          setRecurringEditTransaction(originalTxn);
+          setDialogOpen(false);
+          return;
+        }
+      }
       updateMutation.mutate({ id: editingId, ...data }, {
         onSuccess: () => {
           setDialogOpen(false);
