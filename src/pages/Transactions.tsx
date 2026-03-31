@@ -536,7 +536,7 @@ export default function Transactions() {
       const isRecurring = formData.tipoLancamento === 'fixa' || formData.tipoLancamento === 'parcelada' || formData.is_recurring;
       if (isRecurring) {
         // Find the original transaction to pass to the dialog
-        const originalTxn = allTransactions?.find(t => t.id === editingId);
+        const originalTxn = transactions?.find(t => t.id === editingId);
         if (originalTxn) {
           setPendingEditData({ id: editingId, ...data });
           setRecurringEditTransaction(originalTxn);
