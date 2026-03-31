@@ -1,30 +1,32 @@
 
 
-## Plan: Show only PAID invoice values in "Despesas" card
+## Plano: Diálogo de edição para transações recorrentes/parceladas
 
-### Problem
-Currently, `completedExpenseWithFatura` includes both paid AND unpaid credit card installments (`faturaViaParcelasPagas + faturaCartaoTitular`). The user wants only **paid** invoice amounts to appear in the Despesas card — unpaid invoices should remain in "Total a Pagar" / "faturaCartao" only.
+### Problema
+Ao editar o **valor** de uma receita (ou despesa) recorrente/parcelada, o sistema atualiza apenas o registro individual, sem perguntar se o usuário quer alterar **todas** as transações da série ou **somente a do mês selecionado**.
 
-### Root cause (line 1278 of `useTransactions.ts`)
-```typescript
-// Current — includes unpaid installments (faturaCartaoTitular)
-const faturaTotalParcelas = faturaViaParcelasPagas + faturaCartaoTitular;
-```
+### Solução
+Criar um fluxo similar ao que já existe para exclusão (`RecurringDeleteDialog`), mas para edição.
 
-### Fix
-Change to only use paid parcels:
-```typescript
-const faturaTotalParcelas = faturaViaParcelasPagas;
-```
+### Arquivos e mudanças
 
-This ensures `faturaConsolidada = Math.max(faturaViaTransacao, faturaViaParcelasPagas)` — only counting invoices that were actually paid, matching the "saída de caixa real" concept.
+**1. Novo componente: `src/components/transactions/RecurringEditDialog.tsx`**
+- Dialog com duas opções: "Editar apenas este mês" e "Editar este e todos os seguintes"
+- Recebe a transação sendo editada e os dados atualizados
+- Usa `parent_id` para identificar o grupo (mesmo padrão do `RecurringDeleteDialog`)
+- Conta quantos registros futuros serão afetados
 
-### Impact
-- **Despesas card** (Dashboard + Transactions): will only include invoice amounts marked as paid
-- **Total a Pagar card**: unchanged — still shows unpaid invoices via `faturaCartao`
-- **Resultado do Mês**: uses `completedExpenseWithFatura`, so it also corrects to reflect only realized expenses
-- **Estimado secondary value**: also uses this field, stays consistent
+**2. Novo hook: `useUpdateRecurringTransactions` em `src/hooks/useTransactions.ts`**
+- Modo `single`: atualiza apenas o registro com o `id` informado (comportamento atual)
+- Modo `future`: busca `parent_id` do registro, depois atualiza todos os registros do grupo com `date >= date` da transação selecionada (valor, categoria, descrição, banco)
 
-### File changed
-- `src/hooks/useTransactions.ts` — line 1278: remove `faturaCartaoTitular` from `faturaTotalParcelas`
+**3. Alteração em `src/pages/Transactions.tsx`**
+- No `handleSubmit`, quando `editingId` estiver preenchido E a transação for recorrente/parcelada (`tipo_lancamento !== 'unica'` ou `is_recurring`):
+  - Em vez de chamar `updateMutation` direto, armazena os dados pendentes em um state e abre o `RecurringEditDialog`
+  - O callback do dialog chama o novo hook com o modo escolhido
+- Transações únicas continuam com o fluxo atual sem interrupção
+
+### Comportamento esperado
+- Editar transação **única** → salva direto (sem mudança)
+- Editar transação **recorrente/parcelada** → fecha o formulário, abre dialog perguntando "apenas este mês" ou "este e todos os seguintes" → aplica conforme escolha
 
