@@ -1590,6 +1590,28 @@ export default function Transactions() {
             }
           }}
         />
+
+        {/* Dialog edição recorrente */}
+        <RecurringEditDialog
+          transaction={recurringEditTransaction}
+          onClose={() => {
+            setRecurringEditTransaction(null);
+            setPendingEditData(null);
+            resetForm();
+          }}
+          onConfirm={(mode) => {
+            if (recurringEditTransaction && pendingEditData) {
+              const { id, ...updates } = pendingEditData as Partial<Transaction> & { id: string };
+              updateRecurringMutation.mutate({ id, mode, updates }, {
+                onSuccess: () => {
+                  setRecurringEditTransaction(null);
+                  setPendingEditData(null);
+                  resetForm();
+                },
+              });
+            }
+          }}
+        />
       </div>
     </Layout>
   );
