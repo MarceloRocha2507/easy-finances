@@ -321,6 +321,8 @@ export default function Transactions() {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [recurringDeleteTransaction, setRecurringDeleteTransaction] = useState<Transaction | null>(null);
+  const [recurringEditTransaction, setRecurringEditTransaction] = useState<Transaction | null>(null);
+  const [pendingEditData, setPendingEditData] = useState<Partial<Transaction> | null>(null);
   const [isSuggested, setIsSuggested] = useState(false);
   const [displayLimit, setDisplayLimit] = useState<number>(() => {
     const saved = localStorage.getItem('txn_display_limit');
