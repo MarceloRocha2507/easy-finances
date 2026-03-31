@@ -716,6 +716,58 @@ export function useUpdateTransaction() {
   });
 }
 
+export function useUpdateRecurringTransactions() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, mode, updates }: { id: string; mode: 'single' | 'future'; updates: Partial<Transaction> }) => {
+      if (mode === 'single') {
+        const { error } = await supabase
+          .from('transactions')
+          .update(updates)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        // Get the transaction to find parent_id and date
+        const { data: txn, error: fetchErr } = await supabase
+          .from('transactions')
+          .select('parent_id, date')
+          .eq('id', id)
+          .single();
+        if (fetchErr) throw fetchErr;
+
+        const groupId = txn.parent_id || id;
+
+        // Update all in group with date >= this transaction's date
+        const { error } = await supabase
+          .from('transactions')
+          .update(updates)
+          .or(`parent_id.eq.${groupId},id.eq.${groupId}`)
+          .gte('date', txn.date)
+          .is('deleted_at', null);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, vars) => {
+      invalidateTransactionCaches(queryClient);
+      toast({
+        title: 'Registro atualizado',
+        description: vars.mode === 'single'
+          ? 'Apenas este mês foi atualizado.'
+          : 'Este e todos os seguintes foram atualizados.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar os registros.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
