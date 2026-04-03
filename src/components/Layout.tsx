@@ -69,10 +69,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background relative">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/10">
-          <span className="text-sm font-semibold text-primary">Fina</span>
-        </div>
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center px-4">
         <button
           className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
           onClick={toggleSidebar}
