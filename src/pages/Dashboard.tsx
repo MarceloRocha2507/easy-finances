@@ -45,6 +45,7 @@ import {
   StatCardMinimal,
   PieChartWithLegend,
   TotalAPagarCard,
+  TotalAReceberCard,
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
