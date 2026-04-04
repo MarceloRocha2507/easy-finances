@@ -10,6 +10,7 @@ import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListage
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
 import { TotalAPagarCard } from '@/components/dashboard/TotalAPagarCard';
+import { TotalAReceberCard } from '@/components/dashboard/TotalAReceberCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
@@ -1295,15 +1296,7 @@ export default function Transactions() {
               delay={0.05}
               isLoading={isStatsFetching}
             />
-            <StatCardMinimal
-              title="A Receber"
-              value={stats?.pendingIncome || 0}
-              icon={Clock}
-              prefix="+"
-              subInfo="pendentes"
-              delay={0.1}
-              isLoading={isStatsFetching}
-            />
+            <TotalAReceberCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
             <TotalAPagarCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
             <StatCardMinimal
               title="Saldo Real"
