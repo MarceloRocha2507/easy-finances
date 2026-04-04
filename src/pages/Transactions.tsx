@@ -10,6 +10,7 @@ import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListage
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
 import { TotalAPagarCard } from '@/components/dashboard/TotalAPagarCard';
+import { TotalAReceberCard } from '@/components/dashboard/TotalAReceberCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
