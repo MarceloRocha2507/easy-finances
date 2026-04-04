@@ -1296,15 +1296,7 @@ export default function Transactions() {
               delay={0.05}
               isLoading={isStatsFetching}
             />
-            <StatCardMinimal
-              title="A Receber"
-              value={stats?.pendingIncome || 0}
-              icon={Clock}
-              prefix="+"
-              subInfo="pendentes"
-              delay={0.1}
-              isLoading={isStatsFetching}
-            />
+            <TotalAReceberCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
             <TotalAPagarCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
             <StatCardMinimal
               title="Saldo Real"
