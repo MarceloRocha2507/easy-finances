@@ -45,6 +45,7 @@ import {
   StatCardMinimal,
   PieChartWithLegend,
   TotalAPagarCard,
+  TotalAReceberCard,
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
@@ -283,7 +284,7 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row items-stretch gap-3 mb-4">
             {pendingIncome > 0 && (
               <div className="flex-1">
-                <StatCardMinimal key="receber" title="A Receber" value={pendingIncome} icon={Clock} prefix="+" subInfo="pendentes" delay={0.2} isLoading={isStatsFetching} className="h-full" />
+                <TotalAReceberCard mesReferencia={mesReferencia} isLoading={isStatsFetching} />
               </div>
             )}
             {totalAPagar > 0 && (
