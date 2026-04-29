@@ -156,7 +156,7 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura, cartao_id")
           .eq("id", parcela.compra_id)
           .single();
 
@@ -169,6 +169,7 @@ export function EditarCompraDialog({
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
+          setCartaoId(compra.cartao_id || "");
           
           if (parcela?.mes_referencia) {
             const parcelaAtual = parcela.numero_parcela;
