@@ -208,6 +208,18 @@ export function EditarCompraDialog({
           console.log("Categorias não disponíveis:", e);
           setCategorias([]);
         }
+
+        // Carregar cartões do usuário
+        try {
+          const { data: cards } = await (supabase as any)
+            .from("cartoes")
+            .select("id, nome, cor")
+            .order("nome");
+          if (cards) setCartoes(cards);
+        } catch (e) {
+          console.log("Cartões não disponíveis:", e);
+          setCartoes([]);
+        }
       } catch (e) {
         console.error("Erro ao carregar dados:", e);
       } finally {
