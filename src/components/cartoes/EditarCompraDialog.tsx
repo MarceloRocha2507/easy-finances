@@ -38,6 +38,7 @@ import {
   MoreHorizontal,
   Calendar,
   Hash,
+  CreditCard,
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
