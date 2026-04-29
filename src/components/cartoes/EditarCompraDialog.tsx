@@ -263,7 +263,14 @@ export function EditarCompraDialog({
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
           nomeFatura: nomeFatura || undefined,
+          cartaoId: cartaoId || undefined,
         });
+
+        // Invalidar caches relacionados a cartões e parcelas
+        queryClient.invalidateQueries({ queryKey: ["cartoes"] });
+        queryClient.invalidateQueries({ queryKey: ["compras-cartao"] });
+        queryClient.invalidateQueries({ queryKey: ["parcelas-cartao"] });
+        queryClient.invalidateQueries({ queryKey: ["faturas"] });
 
         toast({ title: "Compra atualizada!" });
       }
