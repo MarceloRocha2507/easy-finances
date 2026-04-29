@@ -339,6 +339,43 @@ export function EditarCompraDialog({
                 </p>
               </div>
 
+              {/* Cartão de pagamento */}
+              {cartoes.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="cartaoId" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Cartão de pagamento
+                  </Label>
+                  <Select
+                    value={cartaoId}
+                    onValueChange={setCartaoId}
+                    disabled={editarApenasMes}
+                  >
+                    <SelectTrigger id="cartaoId">
+                      <SelectValue placeholder="Selecione o cartão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cartoes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: c.cor }}
+                            />
+                            <span>{c.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editarApenasMes && (
+                    <p className="text-xs text-muted-foreground">
+                      Desative "Editar só este mês" para alterar o cartão.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Toggle: editar só este mês */}
               {totalParcelas > 1 && (
                 <div className="flex items-center justify-between rounded-lg border border-border p-3">
