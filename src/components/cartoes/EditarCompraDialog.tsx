@@ -105,6 +105,8 @@ export function EditarCompraDialog({
   const [totalParcelas, setTotalParcelas] = useState(1);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [cartaoId, setCartaoId] = useState<string>("");
+  const [cartoes, setCartoes] = useState<Array<{ id: string; nome: string; cor: string }>>([]);
 
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
