@@ -38,6 +38,7 @@ import {
   MoreHorizontal,
   Calendar,
   Hash,
+  CreditCard,
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -104,6 +105,8 @@ export function EditarCompraDialog({
   const [totalParcelas, setTotalParcelas] = useState(1);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [cartaoId, setCartaoId] = useState<string>("");
+  const [cartoes, setCartoes] = useState<Array<{ id: string; nome: string; cor: string }>>([]);
 
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -153,7 +156,7 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura, cartao_id")
           .eq("id", parcela.compra_id)
           .single();
 
@@ -166,6 +169,7 @@ export function EditarCompraDialog({
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
+          setCartaoId(compra.cartao_id || "");
           
           if (parcela?.mes_referencia) {
             const parcelaAtual = parcela.numero_parcela;
@@ -203,6 +207,18 @@ export function EditarCompraDialog({
         } catch (e) {
           console.log("Categorias não disponíveis:", e);
           setCategorias([]);
+        }
+
+        // Carregar cartões do usuário
+        try {
+          const { data: cards } = await (supabase as any)
+            .from("cartoes")
+            .select("id, nome, cor")
+            .order("nome");
+          if (cards) setCartoes(cards);
+        } catch (e) {
+          console.log("Cartões não disponíveis:", e);
+          setCartoes([]);
         }
       } catch (e) {
         console.error("Erro ao carregar dados:", e);
@@ -247,7 +263,14 @@ export function EditarCompraDialog({
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
           nomeFatura: nomeFatura || undefined,
+          cartaoId: cartaoId || undefined,
         });
+
+        // Invalidar caches relacionados a cartões e parcelas
+        queryClient.invalidateQueries({ queryKey: ["cartoes"] });
+        queryClient.invalidateQueries({ queryKey: ["compras-cartao"] });
+        queryClient.invalidateQueries({ queryKey: ["parcelas-cartao"] });
+        queryClient.invalidateQueries({ queryKey: ["faturas"] });
 
         toast({ title: "Compra atualizada!" });
       }
@@ -315,6 +338,43 @@ export function EditarCompraDialog({
                   Como aparece na fatura do cartão
                 </p>
               </div>
+
+              {/* Cartão de pagamento */}
+              {cartoes.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="cartaoId" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Cartão de pagamento
+                  </Label>
+                  <Select
+                    value={cartaoId}
+                    onValueChange={setCartaoId}
+                    disabled={editarApenasMes}
+                  >
+                    <SelectTrigger id="cartaoId">
+                      <SelectValue placeholder="Selecione o cartão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cartoes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: c.cor }}
+                            />
+                            <span>{c.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editarApenasMes && (
+                    <p className="text-xs text-muted-foreground">
+                      Desative "Editar só este mês" para alterar o cartão.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Toggle: editar só este mês */}
               {totalParcelas > 1 && (

@@ -1,32 +1,33 @@
+# Plano: Permitir alterar o cartão de uma compra de cartão
 
+## Problema
+No `EditarCompraDialog` é possível editar descrição, valor, mês, parcela inicial, responsável, categoria e nome na fatura — **mas não o cartão**. Se o usuário registrou a compra no cartão errado, hoje precisa excluir e recadastrar.
 
-## Plano: Diálogo de edição para transações recorrentes/parceladas
+## Solução
+Adicionar um seletor de **Cartão** no dialog de edição da compra. Ao salvar, o `cartao_id` da compra é atualizado, e como as parcelas se vinculam ao cartão via `compras_cartao.cartao_id`, todas as parcelas (pagas e não pagas) passam automaticamente a pertencer ao novo cartão — não há necessidade de mexer em `parcelas_cartao`.
 
-### Problema
-Ao editar o **valor** de uma receita (ou despesa) recorrente/parcelada, o sistema atualiza apenas o registro individual, sem perguntar se o usuário quer alterar **todas** as transações da série ou **somente a do mês selecionado**.
+## Arquivos alterados
 
-### Solução
-Criar um fluxo similar ao que já existe para exclusão (`RecurringDeleteDialog`), mas para edição.
+### 1. `src/services/compras-cartao.ts` — função `editarCompra`
+- Aceitar novo campo opcional `cartaoId` no objeto `dados`.
+- Se informado e diferente do atual, incluir `cartao_id` no `updateData` da tabela `compras_cartao`.
 
-### Arquivos e mudanças
+### 2. `src/components/cartoes/EditarCompraDialog.tsx`
+- Carregar a lista de cartões do usuário ao abrir (via `listarCartoes()` de `services/cartoes.ts`, ou query direta a `cartoes`).
+- Carregar `cartao_id` atual da compra junto com os outros campos no `useEffect` existente.
+- Adicionar um novo state `cartaoId` e um `<Select>` "Cartão de pagamento" no formulário (logo após "Descrição" / "Nome na Fatura", antes do toggle "Editar só este mês").
+- O seletor fica **desabilitado** quando `editarApenasMes` está ligado (a troca de cartão é uma alteração estrutural da compra, não de uma parcela isolada).
+- Ao salvar (modo "compra inteira"), passar `cartaoId` para `editarCompra`.
+- Após salvar, invalidar as queries de `cartoes`, `compras-cartao` e `parcelas-cartao` para refletir a mudança nos dois cartões (origem e destino).
 
-**1. Novo componente: `src/components/transactions/RecurringEditDialog.tsx`**
-- Dialog com duas opções: "Editar apenas este mês" e "Editar este e todos os seguintes"
-- Recebe a transação sendo editada e os dados atualizados
-- Usa `parent_id` para identificar o grupo (mesmo padrão do `RecurringDeleteDialog`)
-- Conta quantos registros futuros serão afetados
+## Comportamento esperado
+- Compra única ou parcelada → usuário pode trocar o cartão pelo dropdown e salvar.
+- Todas as parcelas (incluindo pagas) ficam vinculadas ao novo cartão automaticamente, pois a tabela `parcelas_cartao` referencia a compra e a compra referencia o cartão.
+- Toggle "Editar só este mês" desabilita o seletor de cartão (não faz sentido trocar o cartão de uma parcela isolada).
+- Toast de sucesso e atualização imediata das listagens dos dois cartões envolvidos.
 
-**2. Novo hook: `useUpdateRecurringTransactions` em `src/hooks/useTransactions.ts`**
-- Modo `single`: atualiza apenas o registro com o `id` informado (comportamento atual)
-- Modo `future`: busca `parent_id` do registro, depois atualiza todos os registros do grupo com `date >= date` da transação selecionada (valor, categoria, descrição, banco)
-
-**3. Alteração em `src/pages/Transactions.tsx`**
-- No `handleSubmit`, quando `editingId` estiver preenchido E a transação for recorrente/parcelada (`tipo_lancamento !== 'unica'` ou `is_recurring`):
-  - Em vez de chamar `updateMutation` direto, armazena os dados pendentes em um state e abre o `RecurringEditDialog`
-  - O callback do dialog chama o novo hook com o modo escolhido
-- Transações únicas continuam com o fluxo atual sem interrupção
-
-### Comportamento esperado
-- Editar transação **única** → salva direto (sem mudança)
-- Editar transação **recorrente/parcelada** → fecha o formulário, abre dialog perguntando "apenas este mês" ou "este e todos os seguintes" → aplica conforme escolha
-
+## Detalhes técnicos
+- Sem alterações de schema — `compras_cartao.cartao_id` já existe e é editável.
+- Sem alterações em `parcelas_cartao` — relacionamento via `compra_id` mantém integridade.
+- RLS já cobre o caso (usuário só pode atualizar suas próprias compras e só pode escolher seus próprios cartões).
+- Auditoria: o trigger `audit_compras_cartao` já registra o UPDATE com dados anteriores e novos, então a troca de cartão fica rastreada automaticamente.

@@ -565,6 +565,7 @@ export async function editarCompra(
     parcelaInicial?: number;
     nomeFatura?: string;
     observacao?: string;
+    cartaoId?: string;
   }
 ): Promise<void> {
   const updateData: any = {};
@@ -574,6 +575,7 @@ export async function editarCompra(
   if (dados.responsavelId !== undefined) updateData.responsavel_id = dados.responsavelId;
   if (dados.nomeFatura !== undefined) updateData.nome_fatura = dados.nomeFatura || null;
   if (dados.observacao !== undefined) updateData.observacao = dados.observacao || null;
+  if (dados.cartaoId !== undefined) updateData.cartao_id = dados.cartaoId;
 
   // Atualizar compra principal
   if (Object.keys(updateData).length > 0) {
