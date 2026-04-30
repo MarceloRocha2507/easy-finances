@@ -210,13 +210,13 @@ export async function listarCartoesComResumo(
     const percentualUsado = cartao.limite > 0 ? (limiteUsado / cartao.limite) * 100 : 0;
 
     // Determinar status do badge baseado no MÊS EXIBIDO (não no mês ativo)
-    const hoje = new Date();
+    const hojeRef = new Date();
     const isMesExibicaoAtual =
-      mesExibicao.getFullYear() === hoje.getFullYear() &&
-      mesExibicao.getMonth() === hoje.getMonth();
+      mesExibicao.getFullYear() === hojeRef.getFullYear() &&
+      mesExibicao.getMonth() === hojeRef.getMonth();
     const isMesExibicaoFuturo =
-      mesExibicao.getFullYear() > hoje.getFullYear() ||
-      (mesExibicao.getFullYear() === hoje.getFullYear() && mesExibicao.getMonth() > hoje.getMonth());
+      mesExibicao.getFullYear() > hojeRef.getFullYear() ||
+      (mesExibicao.getFullYear() === hojeRef.getFullYear() && mesExibicao.getMonth() > hojeRef.getMonth());
 
     let statusFaturaExibida: "paga" | "fechada" | "aberta";
     if (faturaAtualPaga && faturaExibida === 0) {
