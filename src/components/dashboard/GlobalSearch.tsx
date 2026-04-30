@@ -84,17 +84,36 @@ export function GlobalSearch({ variant = "default" }: { variant?: "default" | "m
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg border border-border shadow-sm transition-all w-full max-w-[240px] text-left group"
-        title="Busca global (Ctrl+K)"
-      >
-        <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
-        <span className="truncate group-hover:text-foreground transition-colors font-medium">Busca global...</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex ml-auto shrink-0 shadow-xs">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
+      {variant === "icon" ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+          title="Busca global (Ctrl+K)"
+        >
+          <Search className="h-5 w-5" />
+        </button>
+      ) : variant === "minimal" ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground bg-muted/50 hover:bg-muted rounded-md border border-border/50 transition-all w-full text-left"
+          title="Busca global (Ctrl+K)"
+        >
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Buscar...</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg border border-border shadow-sm transition-all w-full max-w-[240px] text-left group"
+          title="Busca global (Ctrl+K)"
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <span className="truncate group-hover:text-foreground transition-colors font-medium">Busca global...</span>
+          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex ml-auto shrink-0 shadow-xs">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </button>
+      )}
 
       <CommandDialog 
         open={open} 
