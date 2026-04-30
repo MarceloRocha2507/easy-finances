@@ -397,12 +397,18 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           }
 
           // Se não tem pendência no mês selecionado, procura a PRÓXIMA pendência em qualquer mês futuro
-          const proximaParcela = todasParcelasPendentes
+          // Agrupamos por mês para pegar o total da fatura daquele mês específico
+          const parcelasFuturas = todasParcelasPendentes
             .filter((p: any) => compraCartaoMap[p.compra_id] === cartao.id && p.mes_referencia > mesAtual)
-            .sort((a: any, b: any) => a.mes_referencia.localeCompare(b.mes_referencia))[0];
+            .sort((a: any, b: any) => a.mes_referencia.localeCompare(b.mes_referencia));
 
-          if (proximaParcela) {
-            const dataRef = new Date(proximaParcela.mes_referencia + 'T12:00:00');
+          if (parcelasFuturas.length > 0) {
+            const primeiroMesFuturo = parcelasFuturas[0].mes_referencia;
+            const valorTotalMesFuturo = parcelasFuturas
+              .filter((p: any) => p.mes_referencia === primeiroMesFuturo)
+              .reduce((sum: number, p: any) => sum + Math.abs(Number(p.valor) || 0), 0);
+
+            const dataRef = new Date(primeiroMesFuturo + 'T12:00:00');
             const dataVencimento = new Date(dataRef.getFullYear(), dataRef.getMonth(), cartao.dia_vencimento);
             
             // Recalcula dias restantes para essa data futura
@@ -413,7 +419,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
               cartaoId: cartao.id,
               cartaoNome: cartao.nome,
               bandeira: cartao.bandeira,
-              valor: Math.abs(Number(proximaParcela.valor) || 0),
+              valor: valorTotalMesFuturo,
               dataVencimento,
               diasRestantes,
             };
