@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
+import { Menu, X, Wallet, ChevronLeft, Search } from "lucide-react";
+import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 
