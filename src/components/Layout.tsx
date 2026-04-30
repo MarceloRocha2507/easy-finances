@@ -70,13 +70,16 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background relative">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center px-4 justify-between gap-4">
         <button
-          className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+          className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0"
           onClick={toggleSidebar}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
+        <div className="flex-1 max-w-xs">
+          <GlobalSearch />
+        </div>
       </header>
 
       {/* Desktop Sidebar - Flush, minimal */}
