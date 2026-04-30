@@ -143,12 +143,18 @@ const filtrosIniciais: Filtros = {
 export default function DespesasCartao() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [cartao, setCartao] = useState<Cartao | null>(null);
-  const [mesRef, setMesRef] = useState(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  );
+  const [mesRef, setMesRef] = useState(() => {
+    const month = searchParams.get("month");
+    const year = searchParams.get("year");
+    if (month && year) {
+      return new Date(parseInt(year), parseInt(month) - 1, 1);
+    }
+    return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  });
   const [parcelas, setParcelas] = useState<ParcelaFatura[]>([]);
   const [resumoResponsaveis, setResumoResponsaveis] = useState<ResumoResponsavel[]>([]);
   const [loading, setLoading] = useState(true);
