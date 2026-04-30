@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,12 +143,18 @@ const filtrosIniciais: Filtros = {
 export default function DespesasCartao() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [cartao, setCartao] = useState<Cartao | null>(null);
-  const [mesRef, setMesRef] = useState(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  );
+  const [mesRef, setMesRef] = useState(() => {
+    const month = searchParams.get("month");
+    const year = searchParams.get("year");
+    if (month && year) {
+      return new Date(parseInt(year), parseInt(month) - 1, 1);
+    }
+    return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  });
   const [parcelas, setParcelas] = useState<ParcelaFatura[]>([]);
   const [resumoResponsaveis, setResumoResponsaveis] = useState<ResumoResponsavel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,6 +165,15 @@ export default function DespesasCartao() {
   // Ordenação
   type OrdemData = 'asc' | 'desc' | null;
   const [ordemData, setOrdemData] = useState<OrdemData>(null);
+
+  // Sync URL with month
+  useEffect(() => {
+    if (id) {
+      const month = mesRef.getMonth() + 1;
+      const year = mesRef.getFullYear();
+      navigate(`/cartoes/${id}/despesas?month=${month}&year=${year}`, { replace: true });
+    }
+  }, [mesRef, id, navigate]);
 
   // Dialogs
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
