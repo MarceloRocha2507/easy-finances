@@ -4,7 +4,7 @@ export type SearchResult = {
   id: string;
   title: string;
   subtitle?: string;
-  category: "Cartões" | "Transações" | "Compras no Cartão" | "Categorias" | "Responsáveis" | "Bancos";
+  category: "Cartões" | "Transações" | "Compras no Cartão" | "Categorias" | "Responsáveis" | "Bancos" | "Assinaturas" | "Metas" | "Investimentos";
   type: string;
   url?: string;
   amount?: number;
@@ -59,7 +59,7 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
           type: "transacao",
           amount: t.amount,
           date: t.date,
-          url: "/transactions", // We might want a more specific URL if possible
+          url: "/transactions",
         });
       });
     }
@@ -141,6 +141,66 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
           category: "Bancos",
           type: "banco",
           url: "/cartoes/bancos",
+        });
+      });
+    }
+
+    // 7. Search in Assinaturas
+    const { data: assinaturas } = await supabase
+      .from("assinaturas")
+      .select("id, nome, valor")
+      .ilike("nome", searchTerm)
+      .limit(5);
+
+    if (assinaturas) {
+      assinaturas.forEach((a) => {
+        results.push({
+          id: a.id,
+          title: a.nome,
+          category: "Assinaturas",
+          type: "assinatura",
+          amount: a.valor,
+          url: "/assinaturas",
+        });
+      });
+    }
+
+    // 8. Search in Metas
+    const { data: metas } = await supabase
+      .from("metas")
+      .select("id, titulo, valor_alvo")
+      .ilike("titulo", searchTerm)
+      .limit(5);
+
+    if (metas) {
+      metas.forEach((m) => {
+        results.push({
+          id: m.id,
+          title: m.titulo,
+          category: "Metas",
+          type: "meta",
+          amount: m.valor_alvo,
+          url: "/economia/metas",
+        });
+      });
+    }
+
+    // 9. Search in Investimentos
+    const { data: investimentos } = await supabase
+      .from("investimentos")
+      .select("id, nome, valor_atual")
+      .ilike("nome", searchTerm)
+      .limit(5);
+
+    if (investimentos) {
+      investimentos.forEach((i) => {
+        results.push({
+          id: i.id,
+          title: i.nome,
+          category: "Investimentos",
+          type: "investimento",
+          amount: i.valor_atual,
+          url: "/economia/investimentos",
         });
       });
     }
