@@ -214,6 +214,5 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     console.error("Error in global search:", error);
   }
 
-  console.log(`Global search for "${query}" finished with ${results.length} results`);
   return results;
 }
