@@ -77,8 +77,8 @@ export function Layout({ children }: LayoutProps) {
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <div className="flex-1 max-w-xs">
-          <GlobalSearch />
+        <div className="flex-1 max-w-[200px]">
+          <GlobalSearch variant="minimal" />
         </div>
       </header>
 
