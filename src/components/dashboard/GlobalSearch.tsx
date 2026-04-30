@@ -99,6 +99,7 @@ export function GlobalSearch() {
       <CommandDialog 
         open={open} 
         onOpenChange={setOpen}
+        shouldFilter={false}
       >
         <CommandInput 
           placeholder="Pesquisar por cartões, despesas, responsáveis..." 
