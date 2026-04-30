@@ -46,6 +46,7 @@ import {
   PieChartWithLegend,
   TotalAPagarCard,
   TotalAReceberCard,
+  GlobalSearch,
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
