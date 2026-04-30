@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
+import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -69,27 +70,33 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background relative">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border/50 z-50 flex items-center px-4 justify-between gap-4">
         <button
-          className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+          className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0"
           onClick={toggleSidebar}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
+        <div className="flex-1 max-w-xs">
+          <GlobalSearch />
+        </div>
       </header>
 
       {/* Desktop Sidebar - Flush, minimal */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
-        <div className="h-14 flex items-center px-5 border-b border-border/30">
+        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0">
           <div className="flex items-center gap-2.5">
             <Wallet className="h-5 w-5 text-foreground" />
             <span className="text-xl font-bold text-foreground">Fina</span>
           </div>
         </div>
-          <SidebarNav 
-            isAdmin={!isCheckingRole && isAdmin} 
-            onItemClick={closeSidebar}
-          />
+        <div className="px-4 py-3 border-b border-border/30 shrink-0">
+          <GlobalSearch />
+        </div>
+        <SidebarNav 
+          isAdmin={!isCheckingRole && isAdmin} 
+          onItemClick={closeSidebar}
+        />
         <SidebarUserSection 
           user={user} 
           onClose={closeSidebar} 
