@@ -141,7 +141,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4 mb-6">
         {/* Linha 1: Saudação e refresh */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <p className="text-sm text-muted-foreground truncate">
               Olá, {user?.user_metadata?.full_name || "Usuário"}
             </p>
@@ -154,15 +154,17 @@ export default function Dashboard() {
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
-            <GlobalSearch variant="icon" />
           </div>
           
-          <Link to="/transactions" className="shrink-0">
-            <Button variant="ghost" size="sm" className="text-primary gap-1.5 px-2 sm:px-3">
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Novo Registro</span>
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <GlobalSearch variant="icon" />
+            <Link to="/transactions">
+              <Button variant="ghost" size="sm" className="text-primary gap-1.5 px-2 sm:px-3">
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Novo Registro</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Linha 2: Filtro de período */}
