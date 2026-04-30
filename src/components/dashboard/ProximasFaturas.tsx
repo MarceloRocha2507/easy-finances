@@ -62,10 +62,14 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
             ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
             : "";
 
-          const diasLabel = fatura.diasRestantes === 0
+          const diasLabel = fatura.diasRestantes < 0
+            ? `${Math.abs(fatura.diasRestantes)}d atrás`
+            : fatura.diasRestantes === 0
             ? "Hoje"
             : fatura.diasRestantes === 1
             ? "Amanhã"
+            : fatura.diasRestantes > 31
+            ? fatura.dataVencimento.toLocaleDateString('pt-BR', { month: 'short', day: '2-digit' })
             : `${fatura.diasRestantes} dias`;
 
           return (
