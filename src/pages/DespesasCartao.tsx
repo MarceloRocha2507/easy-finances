@@ -166,6 +166,15 @@ export default function DespesasCartao() {
   type OrdemData = 'asc' | 'desc' | null;
   const [ordemData, setOrdemData] = useState<OrdemData>(null);
 
+  // Sync URL with month
+  useEffect(() => {
+    if (id) {
+      const month = mesRef.getMonth() + 1;
+      const year = mesRef.getFullYear();
+      navigate(`/cartoes/${id}/despesas?month=${month}&year=${year}`, { replace: true });
+    }
+  }, [mesRef, id, navigate]);
+
   // Dialogs
   const [novaCompraOpen, setNovaCompraOpen] = useState(false);
   const [editarCompraOpen, setEditarCompraOpen] = useState(false);
