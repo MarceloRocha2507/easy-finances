@@ -43,6 +43,7 @@ export function GlobalSearch() {
     setIsLoading(true);
     try {
       const searchResults = await globalSearch(q);
+      console.log(`Search for "${q}" returned ${searchResults.length} results`);
       setResults(searchResults);
     } catch (error) {
       console.error("Search failed:", error);
@@ -92,7 +93,11 @@ export function GlobalSearch() {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog 
+        open={open} 
+        onOpenChange={setOpen}
+        shouldFilter={false}
+      >
         <CommandInput 
           placeholder="Pesquisar por cartões, despesas, responsáveis..." 
           value={query}
@@ -126,6 +131,7 @@ export function GlobalSearch() {
                 .map((result) => (
                   <CommandItem
                     key={result.id}
+                    value={`${result.category}-${result.id}-${result.title}`}
                     onSelect={() => onSelect(result)}
                     className="flex items-center justify-between cursor-pointer py-3"
                   >
