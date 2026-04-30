@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, CreditCard, ArrowRightLeft, ShoppingCart, Tag, Users, Landmark, Loader2, Repeat, Target, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { 
   CommandDialog, 
   CommandEmpty, 
