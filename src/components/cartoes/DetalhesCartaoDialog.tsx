@@ -460,7 +460,9 @@ export function DetalhesCartaoDialog({
               className="w-full h-10 sm:h-9 text-sm gap-2"
               onClick={() => {
                 onOpenChange(false);
-                navigate(`/cartoes/${cartao.id}/despesas`);
+                const month = mesRef.getMonth() + 1;
+                const year = mesRef.getFullYear();
+                navigate(`/cartoes/${cartao.id}/despesas?month=${month}&year=${year}`);
               }}
             >
               <ExternalLink className="h-3.5 w-3.5" />
