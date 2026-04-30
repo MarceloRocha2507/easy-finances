@@ -32,6 +32,7 @@ export type CartaoComResumo = Cartao & {
   proximaFatura: number;
   mesExibicao: Date;
   faturaExibida: number;
+  statusFaturaExibida: "paga" | "fechada" | "aberta";
 };
 
 /* ======================================================
@@ -208,6 +209,28 @@ export async function listarCartoesComResumo(
     const limiteDisponivel = Math.max(cartao.limite - limiteUsado, 0);
     const percentualUsado = cartao.limite > 0 ? (limiteUsado / cartao.limite) * 100 : 0;
 
+    // Determinar status do badge baseado no MÊS EXIBIDO (não no mês ativo)
+    const hojeRef = new Date();
+    const isMesExibicaoAtual =
+      mesExibicao.getFullYear() === hojeRef.getFullYear() &&
+      mesExibicao.getMonth() === hojeRef.getMonth();
+    const isMesExibicaoFuturo =
+      mesExibicao.getFullYear() > hojeRef.getFullYear() ||
+      (mesExibicao.getFullYear() === hojeRef.getFullYear() && mesExibicao.getMonth() > hojeRef.getMonth());
+
+    let statusFaturaExibida: "paga" | "fechada" | "aberta";
+    if (faturaAtualPaga && faturaExibida === 0) {
+      // Tudo quitado, sem próxima fatura em aberto
+      statusFaturaExibida = "paga";
+    } else if (isMesExibicaoFuturo) {
+      // Fatura futura sempre é "aberta"
+      statusFaturaExibida = "aberta";
+    } else if (isMesExibicaoAtual && hoje.getDate() >= cartao.dia_fechamento) {
+      statusFaturaExibida = "fechada";
+    } else {
+      statusFaturaExibida = "aberta";
+    }
+
     return {
       ...cartao,
       limiteUsado,
@@ -219,6 +242,7 @@ export async function listarCartoesComResumo(
       proximaFatura,
       mesExibicao,
       faturaExibida,
+      statusFaturaExibida,
     };
   });
 }

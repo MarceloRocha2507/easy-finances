@@ -357,13 +357,13 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
           </div>
           <span className={cn(
             "text-[11px] font-medium px-2.5 py-0.5 rounded-full",
-            cartao.faturaAtualPaga
+            cartao.statusFaturaExibida === "paga"
               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-              : new Date().getDate() >= cartao.dia_fechamento
+              : cartao.statusFaturaExibida === "fechada"
               ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
               : "bg-muted text-muted-foreground"
           )}>
-            {cartao.faturaAtualPaga ? "Paga" : new Date().getDate() >= cartao.dia_fechamento ? "Fechada" : "Aberta"}
+            {cartao.statusFaturaExibida === "paga" ? "Paga" : cartao.statusFaturaExibida === "fechada" ? "Fechada" : "Aberta"}
           </span>
         </div>
 
