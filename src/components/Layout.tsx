@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
 import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
-import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
+import { GlobalSearch } from "@/components/dashboard";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
 
