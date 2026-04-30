@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listarParcelasDaFatura,
   ParcelaFatura,
@@ -458,17 +459,40 @@ export function DetalhesCartaoDialog({
             {/* Ver todas as despesas */}
             <Button
               className="w-full h-10 sm:h-9 text-sm gap-2"
-              onClick={() => {
+              onClick={async () => {
                 onOpenChange(false);
-                const month = mesRef.getMonth() + 1;
-                const year = mesRef.getFullYear();
+                
+                // Busca a primeira parcela não paga deste cartão (o mês "aberto")
+                const { data: openParcela } = await supabase
+                  .from("parcelas_cartao")
+                  .select("mes_referencia, compra:compras_cartao!inner(cartao_id)")
+                  .eq("compra.cartao_id", cartao.id)
+                  .eq("paga", false)
+                  .eq("ativo", true)
+                  .order("mes_referencia", { ascending: true })
+                  .limit(1)
+                  .maybeSingle();
+
+                let month, year;
+                
+                if (openParcela?.mes_referencia) {
+                  // Converte para objeto Date garantindo que não haja problemas de fuso horário
+                  const openDate = new Date(openParcela.mes_referencia + 'T12:00:00');
+                  month = openDate.getMonth() + 1;
+                  year = openDate.getFullYear();
+                } else {
+                  // Se não houver nada aberto, usa o mês que estava sendo visualizado no modal
+                  month = mesRef.getMonth() + 1;
+                  year = mesRef.getFullYear();
+                }
+                
                 navigate(`/cartoes/${cartao.id}/despesas?month=${month}&year=${year}`);
               }}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              {parcelas.length > 0
+              {parcelas.length > 0 && totalMes > 0
                 ? `Ver todas as ${parcelas.length} despesas`
-                : "Ver tela ampla"}
+                : "Ver fatura aberta"}
             </Button>
 
             {/* Ações do cartão - discretas */}
