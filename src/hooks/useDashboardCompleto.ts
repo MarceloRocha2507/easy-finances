@@ -233,10 +233,36 @@ export function useDashboardCompleto(mesReferencia?: Date) {
       // ========== 5. FORMATAR CARTÕES ==========
       const cartoesFormatados: CartaoDashboard[] = cartoes.map((cartao: any) => {
         const limite = Number(cartao.limite) || 0;
-        const totais = parcelasPorCartao[cartao.id] || { total: 0, pago: 0, pendente: 0 };
+        let totais = parcelasPorCartao[cartao.id] || { total: 0, pago: 0, pendente: 0 };
+        let mesReferenciaCartao = mesRef;
+        let diasParaVencimento = calcularDiasParaVencimento(cartao.dia_vencimento || 10, mesRef);
+
+        // REGRA: Se o cartão está TOTALMENTE PAGO no mês selecionado, 
+        // e existe uma fatura futura em aberto, mostrar os dados dessa fatura futura nos cards
+        if (totais.pendente === 0) {
+          const parcelasFuturas = todasParcelasPendentes
+            .filter((p: any) => compraCartaoMap[p.compra_id] === cartao.id && p.mes_referencia > mesAtual)
+            .sort((a: any, b: any) => a.mes_referencia.localeCompare(b.mes_referencia));
+
+          if (parcelasFuturas.length > 0) {
+            const primeiroMesFuturo = parcelasFuturas[0].mes_referencia;
+            const valorTotalMesFuturo = parcelasFuturas
+              .filter((p: any) => p.mes_referencia === primeiroMesFuturo)
+              .reduce((sum: number, p: any) => sum + Math.abs(Number(p.valor) || 0), 0);
+
+            totais = {
+              total: valorTotalMesFuturo,
+              pendente: valorTotalMesFuturo,
+              pago: 0
+            };
+            
+            mesReferenciaCartao = new Date(primeiroMesFuturo + 'T12:00:00');
+            diasParaVencimento = calcularDiasParaVencimento(cartao.dia_vencimento || 10, mesReferenciaCartao);
+          }
+        }
+
         const disponivel = Math.max(limite - totais.pendente, 0);
         const usoPct = limite > 0 ? Math.min((totais.pendente / limite) * 100, 100) : 0;
-        const diasParaVencimento = calcularDiasParaVencimento(cartao.dia_vencimento || 10, mesRef);
 
         return {
           id: cartao.id,
