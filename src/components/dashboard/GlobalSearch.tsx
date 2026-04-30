@@ -1,4 +1,4 @@
-console.log("GlobalSearch component loading...");
+
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, CreditCard, ArrowRightLeft, ShoppingCart, Tag, Users, Landmark, Loader2, Repeat, Target, BarChart3 } from "lucide-react";
@@ -99,6 +99,7 @@ export function GlobalSearch() {
       <CommandDialog 
         open={open} 
         onOpenChange={setOpen}
+        shouldFilter={false}
       >
         <CommandInput 
           placeholder="Pesquisar por cartões, despesas, responsáveis..." 
