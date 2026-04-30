@@ -86,13 +86,15 @@ export function GlobalSearch({ variant = "default" }: { variant?: "default" | "m
   return (
     <>
       {variant === "icon" ? (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setOpen(true)}
-          className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
           title="Busca global (Ctrl+K)"
         >
-          <Search className="h-5 w-5" />
-        </button>
+          <Search className="h-4 w-4" />
+        </Button>
       ) : variant === "minimal" ? (
         <button
           onClick={() => setOpen(true)}
