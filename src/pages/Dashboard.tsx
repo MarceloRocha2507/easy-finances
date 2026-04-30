@@ -153,6 +153,7 @@ export default function Dashboard() {
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
+            <GlobalSearch variant="icon" />
           </div>
           
           <Link to="/transactions" className="shrink-0">
