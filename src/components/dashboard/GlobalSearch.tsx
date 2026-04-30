@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, CreditCard, ArrowRightLeft, ShoppingCart, Tag, Users, Landmark, Loader2 } from "lucide-react";
+import { Search, CreditCard, ArrowRightLeft, ShoppingCart, Tag, Users, Landmark, Loader2, Repeat, Target, BarChart3 } from "lucide-react";
 import { 
   CommandDialog, 
   CommandEmpty, 
