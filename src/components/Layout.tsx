@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, Wallet, ChevronLeft, Search } from "lucide-react";
+import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
 import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -84,16 +84,19 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop Sidebar - Flush, minimal */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
-        <div className="h-14 flex items-center px-5 border-b border-border/30">
+        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0">
           <div className="flex items-center gap-2.5">
             <Wallet className="h-5 w-5 text-foreground" />
             <span className="text-xl font-bold text-foreground">Fina</span>
           </div>
         </div>
-          <SidebarNav 
-            isAdmin={!isCheckingRole && isAdmin} 
-            onItemClick={closeSidebar}
-          />
+        <div className="px-4 py-3 border-b border-border/30 shrink-0">
+          <GlobalSearch />
+        </div>
+        <SidebarNav 
+          isAdmin={!isCheckingRole && isAdmin} 
+          onItemClick={closeSidebar}
+        />
         <SidebarUserSection 
           user={user} 
           onClose={closeSidebar} 
