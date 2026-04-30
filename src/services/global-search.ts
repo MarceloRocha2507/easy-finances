@@ -14,7 +14,7 @@ export type SearchResult = {
 export async function globalSearch(query: string): Promise<SearchResult[]> {
   if (!query || query.length < 2) return [];
 
-  console.log("Global search for:", query);
+  
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
