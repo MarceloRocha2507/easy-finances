@@ -17,3 +17,4 @@ export { PieChartWithLegend } from "./PieChartWithLegend";
 export { StatCardMinimal } from "./StatCardMinimal";
 export { TotalAPagarCard } from "./TotalAPagarCard";
 export { TotalAReceberCard } from "./TotalAReceberCard";
+export { GlobalSearch } from "./GlobalSearch";

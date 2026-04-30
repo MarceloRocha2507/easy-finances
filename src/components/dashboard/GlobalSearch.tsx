@@ -1,3 +1,4 @@
+console.log("GlobalSearch component loading...");
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, CreditCard, ArrowRightLeft, ShoppingCart, Tag, Users, Landmark, Loader2, Repeat, Target, BarChart3 } from "lucide-react";
@@ -43,7 +44,6 @@ export function GlobalSearch() {
     setIsLoading(true);
     try {
       const searchResults = await globalSearch(q);
-      console.log(`Search for "${q}" returned ${searchResults.length} results`);
       setResults(searchResults);
     } catch (error) {
       console.error("Search failed:", error);
@@ -53,8 +53,10 @@ export function GlobalSearch() {
   }, []);
 
   useEffect(() => {
-    handleSearch(debouncedQuery);
-  }, [debouncedQuery, handleSearch]);
+    if (open) {
+      handleSearch(debouncedQuery);
+    }
+  }, [debouncedQuery, handleSearch, open]);
 
   const onSelect = (result: SearchResult) => {
     setOpen(false);
@@ -84,11 +86,12 @@ export function GlobalSearch() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground bg-muted/50 hover:bg-muted rounded-full border border-border/50 transition-colors w-full max-w-[240px] text-left"
+        className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg border border-border shadow-sm transition-all w-full max-w-[240px] text-left group"
+        title="Busca global (Ctrl+K)"
       >
-        <Search className="h-4 w-4 shrink-0" />
-        <span className="truncate">Busca global...</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex ml-auto shrink-0">
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <span className="truncate group-hover:text-foreground transition-colors font-medium">Busca global...</span>
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex ml-auto shrink-0 shadow-xs">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
@@ -96,7 +99,6 @@ export function GlobalSearch() {
       <CommandDialog 
         open={open} 
         onOpenChange={setOpen}
-        shouldFilter={false}
       >
         <CommandInput 
           placeholder="Pesquisar por cartões, despesas, responsáveis..." 
@@ -131,7 +133,6 @@ export function GlobalSearch() {
                 .map((result) => (
                   <CommandItem
                     key={result.id}
-                    value={`${result.category}-${result.id}-${result.title}`}
                     onSelect={() => onSelect(result)}
                     className="flex items-center justify-between cursor-pointer py-3"
                   >
