@@ -16,7 +16,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export function GlobalSearch() {
+export function GlobalSearch({ variant = "default" }: { variant?: "default" | "minimal" | "icon" }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
