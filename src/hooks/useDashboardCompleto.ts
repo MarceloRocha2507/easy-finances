@@ -179,9 +179,8 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         .from("compras_cartao")
         .select("id, cartao_id, descricao, valor_total, parcelas, created_at")
         .in("cartao_id", cartaoIds)
-        .gte("created_at", dataLimiteStr)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(300);
 
       const compraIds = (compras || []).map((c: any) => c.id);
       const compraCartaoMap: Record<string, string> = {};
@@ -189,17 +188,17 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         compraCartaoMap[c.id] = c.cartao_id;
       });
 
-      // ========== 3. BUSCAR PARCELAS DO MÊS ATUAL ==========
+      // ========== 3. BUSCAR PARCELAS ==========
       let parcelasMesAtual: any[] = [];
       let parcelasMesAnterior: any[] = [];
+      let todasParcelasPendentes: any[] = [];
 
       if (compraIds.length > 0) {
         const { data: parcelas } = await (supabase as any)
           .from("parcelas_cartao")
           .select("id, compra_id, valor, numero_parcela, total_parcelas, mes_referencia, paga")
           .in("compra_id", compraIds)
-          .gte("mes_referencia", mesAnterior)
-          .lt("mes_referencia", proximoMes);
+          .eq("ativo", true);
 
         if (parcelas) {
           parcelasMesAtual = parcelas.filter(
@@ -208,6 +207,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           parcelasMesAnterior = parcelas.filter(
             (p: any) => p.mes_referencia >= mesAnterior && p.mes_referencia < mesAtual
           );
+          todasParcelasPendentes = parcelas.filter((p: any) => !p.paga);
         }
       }
 
