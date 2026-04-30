@@ -32,6 +32,7 @@ export type CartaoComResumo = Cartao & {
   proximaFatura: number;
   mesExibicao: Date;
   faturaExibida: number;
+  statusFaturaExibida: "paga" | "fechada" | "aberta";
 };
 
 /* ======================================================
