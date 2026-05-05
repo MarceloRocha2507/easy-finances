@@ -5,6 +5,7 @@ import {
   CreditCard, Receipt, Wallet, ChevronRight, Users, 
   Package, TrendingDown
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
