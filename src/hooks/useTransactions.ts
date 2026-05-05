@@ -1380,6 +1380,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         totalMetas,
         totalInvestido,
         totalGuardado,
+        totalGeralDespesas: stats.totalGeralDespesas,
+        faturaCartaoOutros: stats.faturaCartaoOutros,
       };
      } catch (error) {
         console.error('Erro ao calcular estatísticas completas:', error);
