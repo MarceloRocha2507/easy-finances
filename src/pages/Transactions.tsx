@@ -330,6 +330,10 @@ export default function Transactions() {
     return saved ? parseInt(saved, 10) : 10;
   });
   const [showAll, setShowAll] = useState(false);
+  const [showTotalGeral, setShowTotalGeral] = useState(() => {
+    const saved = localStorage.getItem('show_total_geral_transacoes');
+    return saved !== 'false';
+  });
   // Formatar datas para o hook
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
