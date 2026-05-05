@@ -1292,6 +1292,30 @@ export default function Transactions() {
           {/* Resumo - StatCards Minimalistas */}
           <AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <StatCardMinimal
+              title="Gasto Total (Todos)"
+              value={stats?.totalGeralDespesas || 0}
+              icon={CreditCard}
+              subInfo="inclui outros responsáveis"
+              valueColor="expense"
+              delay={0}
+              isLoading={isStatsFetching}
+              formatValue={(val) => showTotalGeral ? formatCurrency(val) : '••••••'}
+              actions={
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTotalGeralVisibility();
+                  }}
+                >
+                  {showTotalGeral ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                </Button>
+              }
+              className="col-span-2 lg:col-span-3"
+            />
+            <StatCardMinimal
               title="Receitas"
               value={stats?.completedIncome || 0}
               icon={TrendingUp}
