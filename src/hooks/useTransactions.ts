@@ -1339,8 +1339,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const faturaTotalParcelas = faturaViaParcelasPagas;
       const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
-      // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis (titular pagas+pendentes + outros pagas+pendentes)
-      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
+      // (totalGeralDespesas é calculado APÓS o loop de pending, abaixo)
 
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
@@ -1359,6 +1358,9 @@ export function useCompleteStats(mesReferencia?: Date) {
         }
         if (t.due_date && t.due_date < today) stats.overdueCount++;
       });
+
+      // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis
+      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
 
       // Saldo Disponível = Saldo Inicial + Receitas Acumuladas - Despesas Acumuladas
       // (dinheiro "livre" que você pode gastar - usa histórico completo)
