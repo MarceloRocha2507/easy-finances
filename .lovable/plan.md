@@ -1,63 +1,45 @@
-# Layout: 2 Painéis Agrupados (Visão Geral + Este Mês)
+## Diagnóstico
 
-Substituir o painel único atual da página `/transactions` por **dois painéis lado a lado**, mantendo a separação semântica entre métricas globais e do mês corrente.
+O código em `src/pages/Dashboard.tsx` **já contém o novo layout** (2 painéis: "Visão Geral" + "Este Mês"). A captura mostrando os 3 cards antigos (Saldo Disponível / Receitas / Despesas soltos) é a versão **em cache** sendo servida ao navegador.
 
-## Estrutura visual
+Causas identificadas:
 
-```text
-┌─────────────────────────────┬───────────────────────────────────────┐
-│ VISÃO GERAL                 │ ESTE MÊS                              │
-│                             │ ─────────────────────────────────────│
-│ Total de Despesas (hero)    │ ┌────────┬─────────┬─────────┐       │
-│ R$ 3.496,59       👁 💳     │ │Receitas│Despesas │A Receber│       │
-│ inclui outros · detalhes    │ ├────────┼─────────┼─────────┤       │
-│ ───────────────────────────│ │A Pagar │Assinat. │         │       │
-│ ┌──────────┬──────────┐    │ └────────┴─────────┴─────────┘       │
-│ │Saldo Real│Estimado  │    │                                       │
-│ └──────────┴──────────┘    │                                       │
-└─────────────────────────────┴───────────────────────────────────────┘
-       2/5 da largura                    3/5 da largura
+1. **Service Worker antigo persistente.** O projeto teve PWA habilitado anteriormente. Hoje o `src/main.tsx` tenta desregistrar SWs e limpar `caches`, mas isso só roda **depois** que o navegador já carregou o `index.html` cacheado pelo SW antigo — então na primeira visita após o deploy o usuário ainda vê o shell velho. O cleanup só tem efeito a partir do próximo refresh.
+2. **Sem versionamento/cache-busting no `index.html`.** Não há `<meta http-equiv="Cache-Control">`, então proxies/CDN/navegador podem reter o HTML antigo (que aponta para um bundle JS antigo).
+3. **`workbox-window` ainda nas dependências**, sem uso — apenas peso morto, mas reforça a narrativa de PWA legado.
+
+## O que vai ser feito
+
+### 1. Forçar limpeza síncrona e recarga única (`src/main.tsx`)
+- Detectar se há SW registrado **antes** de renderizar o app.
+- Se houver: desregistrar, limpar `caches`, e disparar **um único** `location.reload()` (com flag em `sessionStorage` para não criar loop).
+- Sem SW: render normal.
+
+Isso garante que qualquer usuário que abra o app com SW antigo recebe imediatamente o bundle novo, sem precisar de refresh manual.
+
+### 2. Adicionar meta tags de no-cache no `index.html`
+```html
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 ```
+O HTML deixa de ser cacheado; bundles JS/CSS continuam com hash do Vite (cacheáveis com segurança).
 
-No mobile (`< lg`), os dois painéis empilham em coluna única.
+### 3. Remover `workbox-window` do `package.json`
+Dependência não utilizada, removendo qualquer chance de reintrodução acidental de PWA.
 
-## Painel 1 — Visão Geral (`lg:col-span-2`)
+### 4. Verificação visual
+Após o deploy, navegar até `/dashboard` no preview e confirmar via screenshot que os 2 painéis "Visão Geral" + "Este Mês" são exibidos.
 
-- Título compacto: **"VISÃO GERAL"** (11px uppercase, tracking-wider, cinza #6B7280)
-- **Hero "Total de Despesas"** — destaque grande (texto 2xl/26px), cor `#DC2626`, com:
-  - Botão olho (toggle visibilidade) e ícone `CreditCard`
-  - Clique no card → abre `DetalhesDespesasDialog`
-  - Subtítulo: *"inclui outros responsáveis · clique para detalhes"*
-- Divisor sutil
-- Grid 2 colunas com:
-  - **Saldo Real** (clica → `AjustarSaldoDialog`)
-  - **Estimado** (com cálculo "neste mês" + fórmula "real + a receber - a pagar")
+## Detalhes técnicos
 
-## Painel 2 — Este Mês (`lg:col-span-3`)
+**Arquivos alterados:**
+- `src/main.tsx` — guarda síncrona + reload único via `sessionStorage` flag (`__sw_cleanup_done`).
+- `index.html` — 3 metas de cache-control no `<head>`.
+- `package.json` — remover `workbox-window`.
 
-- Título: **"ESTE MÊS"** (mesmo estilo)
-- Divisor
-- Grid 3 colunas com 5 tiles:
-  - **Receitas** — `completedIncome` (verde)
-  - **Despesas** — `completedExpenseWithFatura` (vermelho)
-  - **A Receber** — `pendingIncome` (verde, prefix "+")
-  - **A Pagar** — `pendingExpense` (vermelho, prefix "-")
-  - **Assinaturas** — `totalMensalAssinaturas` (clica → `/assinaturas`)
+**Não alterado:** `Dashboard.tsx`, `Transactions.tsx`, `UnifiedMetricTile.tsx`, `DetalhesDespesasDialog.tsx` — o layout novo já está correto.
 
-## Implementação
+## Observação ao usuário
 
-**Arquivo único alterado:** `src/pages/Transactions.tsx` (linhas 1293–1418).
-
-Substituir o bloco atual `{/* Painel unificado - Hero + grid compacto interno */}` por dois containers `<div>` dentro de `<AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">`.
-
-Reaproveita 100% dos componentes/lógica existente:
-- `UnifiedMetricTile` (já criado)
-- `DetalhesDespesasDialog`, `AjustarSaldoDialog`
-- Mesmos dados de `stats`, `totalMensalAssinaturas`, `assinaturasAtivas`, `renovamEssaSemana`
-
-**Tokens de design respeitados:**
-- Containers: `bg-white border border-[#E5E7EB] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)]`
-- Tema light, sem gradientes pesados
-- Divisores `divide-[#E5E7EB]` entre tiles
-
-**Removido:** card único anterior. Nada na lógica de cálculo é alterado — só o layout/agrupamento visual.
+Se mesmo após o deploy você ainda vir o layout antigo em algum dispositivo específico, faça **um hard refresh** (Ctrl+Shift+R no desktop, ou desinstalar e reinstalar o atalho/PWA no celular) — após esse hard refresh único, todos os acessos seguintes virão sempre atualizados.
