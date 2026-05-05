@@ -1263,14 +1263,16 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       // Calcular total da fatura do titular e de outros responsáveis
       let faturaCartaoTitular = 0;
-      let faturaCartaoOutros = 0;
-      let faturaViaParcelasPagas = 0;
+      let faturaCartaoOutros = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
+      let faturaViaParcelasPagas = 0; // titular pagas (para conciliação)
+      let faturaTitularTodas = 0; // titular pagas + pendentes (para totalGeralDespesas)
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
         const valor = Number(p.valor) || 0;
         
         if (isTitular) {
+          faturaTitularTodas += valor;
           if (!isPaga) {
             faturaCartaoTitular += valor;
           } else {
