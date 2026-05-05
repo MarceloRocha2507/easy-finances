@@ -1,37 +1,63 @@
-# Corrigir: Alterações somem e deploy demora a propagar
+# Layout: 2 Painéis Agrupados (Visão Geral + Este Mês)
 
-## Diagnóstico
+Substituir o painel único atual da página `/transactions` por **dois painéis lado a lado**, mantendo a separação semântica entre métricas globais e do mês corrente.
 
-A causa raiz é o **PWA / Service Worker** registrado pelo `vite-plugin-pwa`. Os sintomas batem exatamente:
+## Estrutura visual
 
-1. **"Alterações somem depois de um tempo"** → o Service Worker está servindo a versão antiga em cache (`runtimeCaching` com `NetworkFirst` no Supabase + `globPatterns` cacheando JS/CSS/HTML). Quando o cache responde, o usuário vê dados/UI antigos.
-2. **"Deploy demora muito a atualizar para usuários"** → o navegador continua usando o SW antigo até ele detectar uma nova versão. O `manifest.webmanifest` é carregado pelo `index.html` em todos os usuários, mantendo o ciclo.
-3. **Erro confirmado no runtime**: `Failed to update a ServiceWorker ... The script resource is behind a redirect, which is disallowed` — o SW nem consegue se atualizar, ficando preso na versão antiga indefinidamente.
+```text
+┌─────────────────────────────┬───────────────────────────────────────┐
+│ VISÃO GERAL                 │ ESTE MÊS                              │
+│                             │ ─────────────────────────────────────│
+│ Total de Despesas (hero)    │ ┌────────┬─────────┬─────────┐       │
+│ R$ 3.496,59       👁 💳     │ │Receitas│Despesas │A Receber│       │
+│ inclui outros · detalhes    │ ├────────┼─────────┼─────────┤       │
+│ ───────────────────────────│ │A Pagar │Assinat. │         │       │
+│ ┌──────────┬──────────┐    │ └────────┴─────────┴─────────┘       │
+│ │Saldo Real│Estimado  │    │                                       │
+│ └──────────┴──────────┘    │                                       │
+└─────────────────────────────┴───────────────────────────────────────┘
+       2/5 da largura                    3/5 da largura
+```
 
-O `src/main.tsx` já tenta desregistrar o SW no boot, mas isso só funciona **depois** que o usuário consegue carregar o app novo — o que pode nunca acontecer se o SW antigo estiver servindo HTML/JS em cache.
+No mobile (`< lg`), os dois painéis empilham em coluna única.
 
-## Mudanças
+## Painel 1 — Visão Geral (`lg:col-span-2`)
 
-**1. `vite.config.ts`** — Remover completamente o plugin `VitePWA`:
-- Remover o import `import { VitePWA } from "vite-plugin-pwa"`.
-- Remover o bloco `VitePWA({ ... })` do array de plugins.
-- Manter os outros plugins (`react`, `componentTagger`).
+- Título compacto: **"VISÃO GERAL"** (11px uppercase, tracking-wider, cinza #6B7280)
+- **Hero "Total de Despesas"** — destaque grande (texto 2xl/26px), cor `#DC2626`, com:
+  - Botão olho (toggle visibilidade) e ícone `CreditCard`
+  - Clique no card → abre `DetalhesDespesasDialog`
+  - Subtítulo: *"inclui outros responsáveis · clique para detalhes"*
+- Divisor sutil
+- Grid 2 colunas com:
+  - **Saldo Real** (clica → `AjustarSaldoDialog`)
+  - **Estimado** (com cálculo "neste mês" + fórmula "real + a receber - a pagar")
 
-**2. `index.html`** — Remover referências PWA que não são mais necessárias:
-- Remover `<link rel="manifest" href="/manifest.webmanifest" />` (o arquivo deixa de existir).
-- Manter as meta tags `theme-color`, `apple-mobile-web-app-*` e `apple-touch-icon` (são inofensivas e ajudam em "Adicionar à tela de início").
+## Painel 2 — Este Mês (`lg:col-span-3`)
 
-**3. `src/main.tsx`** — Reforçar a limpeza de SW e caches antigos para usuários que já têm o SW instalado:
-- Manter o `unregister()` de todos os service workers.
-- Adicionar limpeza do `caches` API (`caches.keys()` → `caches.delete(...)`) para apagar caches do Workbox que ainda existam no navegador do usuário.
-- Isso garante que, na primeira vez que um usuário existente abrir o app após o deploy, todos os caches sejam limpos.
+- Título: **"ESTE MÊS"** (mesmo estilo)
+- Divisor
+- Grid 3 colunas com 5 tiles:
+  - **Receitas** — `completedIncome` (verde)
+  - **Despesas** — `completedExpenseWithFatura` (vermelho)
+  - **A Receber** — `pendingIncome` (verde, prefix "+")
+  - **A Pagar** — `pendingExpense` (vermelho, prefix "-")
+  - **Assinaturas** — `totalMensalAssinaturas` (clica → `/assinaturas`)
 
-## Resultado
+## Implementação
 
-- Usuários sempre receberão a versão mais recente assim que o deploy concluir (sem espera de invalidação de SW).
-- Alterações feitas no app não vão mais "sumir depois de um tempo" — não haverá cache do SW substituindo respostas frescas do Supabase.
-- O erro `Failed to update a ServiceWorker` desaparece.
+**Arquivo único alterado:** `src/pages/Transactions.tsx` (linhas 1293–1418).
 
-## Trade-off
+Substituir o bloco atual `{/* Painel unificado - Hero + grid compacto interno */}` por dois containers `<div>` dentro de `<AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">`.
 
-A app perde a capacidade de funcionar offline (instalar como PWA continua possível via meta tags, mas sem cache offline). Considerando os problemas que o cache vinha causando, é a troca correta. Se no futuro for desejado reativar PWA, deve ser feito com versionamento explícito e estratégia `NetworkFirst` para HTML.
+Reaproveita 100% dos componentes/lógica existente:
+- `UnifiedMetricTile` (já criado)
+- `DetalhesDespesasDialog`, `AjustarSaldoDialog`
+- Mesmos dados de `stats`, `totalMensalAssinaturas`, `assinaturasAtivas`, `renovamEssaSemana`
+
+**Tokens de design respeitados:**
+- Containers: `bg-white border border-[#E5E7EB] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)]`
+- Tema light, sem gradientes pesados
+- Divisores `divide-[#E5E7EB]` entre tiles
+
+**Removido:** card único anterior. Nada na lógica de cálculo é alterado — só o layout/agrupamento visual.

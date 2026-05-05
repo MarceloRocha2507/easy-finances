@@ -1290,130 +1290,145 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Painel unificado - Hero + grid compacto interno */}
-          <AnimatedSection
-            delay={0.1}
-            className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden"
-          >
-            {/* HERO - Total de Despesas */}
-            <div
-              className={cn(
-                "relative p-5 sm:p-6 transition-colors",
-                "cursor-pointer hover:bg-[#FAFAFA] dark:hover:bg-[#1f1f1f]"
-              )}
-              onClick={() => setDetalhesDespesasOpen(true)}
-            >
-              <div className="absolute top-5 right-5 flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleTotalGeralVisibility();
-                  }}
-                >
-                  {showTotalGeral ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                <CreditCard className="h-4 w-4 text-foreground/30" />
+          {/* Dois painéis agrupados: Visão Geral + Este Mês */}
+          <AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+            {/* PAINEL 1 — Visão Geral (2/5) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                  Visão Geral
+                </h3>
               </div>
 
-              <p className="text-[#6B7280] text-xs sm:text-sm mb-1.5">Total de Despesas</p>
-              {isStatsFetching ? (
-                <Skeleton className="h-9 w-48 bg-gray-200/60 dark:bg-gray-700/40" />
-              ) : (
-                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-[#DC2626]">
-                  {showTotalGeral ? formatCurrency(stats?.totalGeralDespesas || 0) : '••••••'}
+              {/* Hero - Total de Despesas */}
+              <div
+                className="relative px-5 py-4 cursor-pointer hover:bg-[#FAFAFA] dark:hover:bg-[#1f1f1f] transition-colors"
+                onClick={() => setDetalhesDespesasOpen(true)}
+              >
+                <div className="absolute top-4 right-5 flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleTotalGeralVisibility();
+                    }}
+                  >
+                    {showTotalGeral ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <CreditCard className="h-4 w-4 text-foreground/30" />
+                </div>
+                <p className="text-[#6B7280] text-xs mb-1.5">Total de Despesas</p>
+                {isStatsFetching ? (
+                  <Skeleton className="h-8 w-44 bg-gray-200/60 dark:bg-gray-700/40" />
+                ) : (
+                  <p className="text-2xl sm:text-[26px] font-bold tabular-nums text-[#DC2626]">
+                    {showTotalGeral ? formatCurrency(stats?.totalGeralDespesas || 0) : '••••••'}
+                  </p>
+                )}
+                <p className="text-[11px] text-[#6B7280] mt-1">
+                  inclui outros responsáveis · clique para detalhes
                 </p>
-              )}
-              <p className="text-[11px] sm:text-xs text-[#6B7280] mt-1.5">
-                inclui outros responsáveis · clique para ver detalhes
-              </p>
+              </div>
+
+              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+
+              {/* Saldo Real + Estimado lado a lado */}
+              <div className="grid grid-cols-2 divide-x divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+                <UnifiedMetricTile
+                  title="Saldo Real"
+                  value={stats?.realBalance || 0}
+                  icon={Scale}
+                  subInfo="clique para ajustar"
+                  onClick={() => setAjustarSaldoOpen(true)}
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="Estimado"
+                  value={stats?.estimatedBalance || 0}
+                  icon={Info}
+                  subInfo={
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        {formatCurrency(
+                          (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
+                          - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
+                          - (stats?.faturaCartao || 0)
+                        )}{" "}
+                        <span className="text-muted-foreground/60">neste mês</span>
+                      </span>
+                      <span className="text-muted-foreground/60">real + a receber - a pagar</span>
+                    </div>
+                  }
+                  isLoading={isStatsFetching}
+                />
+              </div>
             </div>
 
-            {/* Divisor */}
-            <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+            {/* PAINEL 2 — Este Mês (3/5) */}
+            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                  Este Mês
+                </h3>
+              </div>
 
-            {/* GRID compacto de métricas secundárias */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a]">
-              <UnifiedMetricTile
-                title="Receitas"
-                value={stats?.completedIncome || 0}
-                icon={TrendingUp}
-                subInfo="recebidas"
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="Despesas"
-                value={stats?.completedExpenseWithFatura || 0}
-                icon={TrendingDown}
-                subInfo="total do mês (inclui fatura)"
-                valueColor="expense"
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="A Receber"
-                value={stats?.pendingIncome || 0}
-                icon={TrendingUp}
-                subInfo="pendentes"
-                prefix="+"
-                valueColor="income"
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="Total a Pagar"
-                value={stats?.pendingExpense || 0}
-                icon={TrendingDown}
-                subInfo="referente apenas a este mês"
-                prefix="-"
-                valueColor="expense"
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="Saldo Real"
-                value={stats?.realBalance || 0}
-                icon={Scale}
-                subInfo="clique para ajustar"
-                onClick={() => setAjustarSaldoOpen(true)}
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="Estimado"
-                value={stats?.estimatedBalance || 0}
-                icon={Info}
-                subInfo={
-                  <div className="flex flex-col gap-0.5">
-                    <span>
-                      {formatCurrency(
-                        (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-                        - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
-                        - (stats?.faturaCartao || 0)
-                      )}{" "}
-                      <span className="text-muted-foreground/60">neste mês</span>
-                    </span>
-                    <span className="text-muted-foreground/60">real + a receber - a pagar</span>
-                  </div>
-                }
-                isLoading={isStatsFetching}
-              />
-              <UnifiedMetricTile
-                title="Assinaturas"
-                value={totalMensalAssinaturas}
-                icon={Repeat}
-                valueColor="expense"
-                subInfo={
-                  <>
-                    {assinaturasAtivas.length} ativas
-                    {renovamEssaSemana > 0 && (
-                      <span className="text-amber-500 ml-1">
-                        · {renovamEssaSemana} renovam essa semana
-                      </span>
-                    )}
-                  </>
-                }
-                onClick={() => navigate('/assinaturas')}
-                isLoading={isStatsFetching || isAssinaturasLoading}
-              />
+              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+                <UnifiedMetricTile
+                  title="Receitas"
+                  value={stats?.completedIncome || 0}
+                  icon={TrendingUp}
+                  subInfo="recebidas"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="Despesas"
+                  value={stats?.completedExpenseWithFatura || 0}
+                  icon={TrendingDown}
+                  subInfo="total do mês (inclui fatura)"
+                  valueColor="expense"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="A Receber"
+                  value={stats?.pendingIncome || 0}
+                  icon={TrendingUp}
+                  subInfo="pendentes"
+                  prefix="+"
+                  valueColor="income"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="A Pagar"
+                  value={stats?.pendingExpense || 0}
+                  icon={TrendingDown}
+                  subInfo="referente apenas a este mês"
+                  prefix="-"
+                  valueColor="expense"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="Assinaturas"
+                  value={totalMensalAssinaturas}
+                  icon={Repeat}
+                  valueColor="expense"
+                  subInfo={
+                    <>
+                      {assinaturasAtivas.length} ativas
+                      {renovamEssaSemana > 0 && (
+                        <span className="text-amber-500 ml-1">
+                          · {renovamEssaSemana} renovam
+                        </span>
+                      )}
+                    </>
+                  }
+                  onClick={() => navigate('/assinaturas')}
+                  isLoading={isStatsFetching || isAssinaturasLoading}
+                />
+              </div>
             </div>
           </AnimatedSection>
         </AnimatedSection>
