@@ -1300,6 +1300,7 @@ export default function Transactions() {
               delay={0}
               isLoading={isStatsFetching}
               formatValue={(val) => showTotalGeral ? formatCurrency(val) : '••••••'}
+              onClick={() => setDetalhesDespesasOpen(true)}
               actions={
                 <Button 
                   variant="ghost" 
