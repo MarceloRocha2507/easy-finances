@@ -50,6 +50,7 @@ import {
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
+import { UnifiedMetricTile } from "@/components/dashboard/UnifiedMetricTile";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
 import { DetalhesDespesasDialog } from "@/components/dashboard/DetalhesDespesasDialog";
 import { Progress } from "@/components/ui/progress";
