@@ -1,45 +1,116 @@
-## Diagnóstico
+## Calendário Financeiro
 
-O código em `src/pages/Dashboard.tsx` **já contém o novo layout** (2 painéis: "Visão Geral" + "Este Mês"). A captura mostrando os 3 cards antigos (Saldo Disponível / Receitas / Despesas soltos) é a versão **em cache** sendo servida ao navegador.
+Nova página `/calendario` que consolida **todos os compromissos** do sistema em uma única visão temporal, no estilo premium fintech (light, #111827 / #6B7280, sem gradientes pesados).
 
-Causas identificadas:
+### Layout
 
-1. **Service Worker antigo persistente.** O projeto teve PWA habilitado anteriormente. Hoje o `src/main.tsx` tenta desregistrar SWs e limpar `caches`, mas isso só roda **depois** que o navegador já carregou o `index.html` cacheado pelo SW antigo — então na primeira visita após o deploy o usuário ainda vê o shell velho. O cleanup só tem efeito a partir do próximo refresh.
-2. **Sem versionamento/cache-busting no `index.html`.** Não há `<meta http-equiv="Cache-Control">`, então proxies/CDN/navegador podem reter o HTML antigo (que aponta para um bundle JS antigo).
-3. **`workbox-window` ainda nas dependências**, sem uso — apenas peso morto, mas reforça a narrativa de PWA legado.
-
-## O que vai ser feito
-
-### 1. Forçar limpeza síncrona e recarga única (`src/main.tsx`)
-- Detectar se há SW registrado **antes** de renderizar o app.
-- Se houver: desregistrar, limpar `caches`, e disparar **um único** `location.reload()` (com flag em `sessionStorage` para não criar loop).
-- Sem SW: render normal.
-
-Isso garante que qualquer usuário que abra o app com SW antigo recebe imediatamente o bundle novo, sem precisar de refresh manual.
-
-### 2. Adicionar meta tags de no-cache no `index.html`
-```html
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Calendário                              [Filtros ▾] [Hoje] │
+│  ◂  Novembro 2026  ▸                                        │
+├─────────────────────────────────────┬───────────────────────┤
+│  Dom  Seg  Ter  Qua  Qui  Sex  Sáb  │  AGENDA               │
+│  ┌──┬──┬──┬──┬──┬──┬──┐             │  ─────                │
+│  │  │  │ 1│ 2│ 3│ 4│ 5│             │  Hoje · 12 nov        │
+│  │  │  │••│• │  │ •│  │             │  • Netflix R$39,90    │
+│  ├──┼──┼──┼──┼──┼──┼──┤             │  • Salário R$5.000    │
+│  │ 6│ 7│ 8│ 9│10│11│12│             │                       │
+│  │  │ •│  │•••│ │  │••│ ← hoje      │  Amanhã · 13 nov      │
+│  ├──┴──┴──┴──┴──┴──┴──┤             │  • Fatura Nubank      │
+│  │  ...               │             │    R$1.234,00         │
+│  └────────────────────┘             │  ...                  │
+│                                     │                       │
+│  Legenda:                           │  [Ver mês inteiro]    │
+│  ● Receita ● Despesa ● Fatura       │                       │
+│  ● Assinatura ● Meta ● Investimento │                       │
+└─────────────────────────────────────┴───────────────────────┘
 ```
-O HTML deixa de ser cacheado; bundles JS/CSS continuam com hash do Vite (cacheáveis com segurança).
 
-### 3. Remover `workbox-window` do `package.json`
-Dependência não utilizada, removendo qualquer chance de reintrodução acidental de PWA.
+- **Desktop (≥lg)**: grid mensal 3/5 + agenda lateral 2/5 (sticky, scroll independente).
+- **Mobile**: grid mensal compacto no topo, agenda empilhada abaixo. Cada dia mostra até 3 pontinhos coloridos; clicar abre Sheet com lista do dia.
+- **Hoje** destacado com ring `#3B82F6`; dias com eventos têm pontos coloridos (máx 4 visíveis + “+N”).
 
-### 4. Verificação visual
-Após o deploy, navegar até `/dashboard` no preview e confirmar via screenshot que os 2 painéis "Visão Geral" + "Este Mês" são exibidos.
+### Tipos de evento agregados
 
-## Detalhes técnicos
+| Cor | Tipo | Origem | Data |
+|-----|------|--------|------|
+| `#22C55E` | Receita pendente | `transactions` (type=income, status=pending) | `due_date` |
+| `#DC2626` | Despesa pendente | `transactions` (type=expense, status=pending) | `due_date` |
+| `#8B5CF6` | Fatura cartão | `cartoes` (calc do mês ativo) | dia de vencimento |
+| `#F59E0B` | Fechamento cartão | `cartoes` | dia de fechamento |
+| `#EC4899` | Assinatura | `assinaturas` (status=ativa) | `proxima_cobranca` |
+| `#0EA5E9` | Meta (prazo) | `metas` (não concluída) | `data_limite` |
+| `#14B8A6` | Investimento (vencimento) | `investimentos` | `data_vencimento` |
+| `#6B7280` | Acerto fatura | `acertos_fatura` (status=pendente) | `mes_referencia` |
 
-**Arquivos alterados:**
-- `src/main.tsx` — guarda síncrona + reload único via `sessionStorage` flag (`__sw_cleanup_done`).
-- `index.html` — 3 metas de cache-control no `<head>`.
-- `package.json` — remover `workbox-window`.
+Receitas/despesas concluídas (paid_date) também aparecem, mas com bolinha vazada para diferenciar de pendentes.
 
-**Não alterado:** `Dashboard.tsx`, `Transactions.tsx`, `UnifiedMetricTile.tsx`, `DetalhesDespesasDialog.tsx` — o layout novo já está correto.
+### Filtros
 
-## Observação ao usuário
+Pill-shaped no header (estilo fintech do projeto):
+- **Tipos**: Todos · Receitas · Despesas · Cartões · Assinaturas · Metas · Investimentos
+- **Status**: Todos · Pendentes · Concluídos
+- Estado dos filtros em `useState` local (não precisa persistir).
 
-Se mesmo após o deploy você ainda vir o layout antigo em algum dispositivo específico, faça **um hard refresh** (Ctrl+Shift+R no desktop, ou desinstalar e reinstalar o atalho/PWA no celular) — após esse hard refresh único, todos os acessos seguintes virão sempre atualizados.
+### Interação
+
+- **Clique em evento** → abre o modal correspondente:
+  - Transação → `TransactionDetailsDialog` (já existe, permite marcar pago)
+  - Fatura → navega para `/cartoes/:id/despesas` no mês
+  - Assinatura → `DetalhesAssinaturaDialog`
+  - Meta → `GerenciarMetaDialog`
+  - Investimento → `DetalhesInvestimentoDialog`
+  - Acerto → navega para `/cartoes/responsaveis`
+- **Clique em dia vazio** → `Sheet` "Eventos do dia" + botão "Novo Registro" (link para `/transactions?date=YYYY-MM-DD`).
+- **Botão "Hoje"** volta o mês para o atual.
+- **Setas ◂ ▸** navegam entre meses (com animação `fade-in` suave).
+
+### Arquitetura técnica
+
+**Arquivos novos:**
+- `src/pages/Calendario.tsx` — página, layout grid+agenda, filtros, navegação de mês.
+- `src/components/calendario/CalendarioGrid.tsx` — grid 7×N com `date-fns` (`startOfMonth`, `endOfMonth`, `eachDayOfInterval`, ptBR).
+- `src/components/calendario/DiaCelula.tsx` — célula individual: número, pontos coloridos, ring de hoje.
+- `src/components/calendario/AgendaLateral.tsx` — lista cronológica dos próximos 30 dias agrupada por dia (ScrollArea).
+- `src/components/calendario/EventoItem.tsx` — linha de evento (cor, ícone, descrição, valor formatado).
+- `src/components/calendario/DiaDetalhesSheet.tsx` — Sheet mobile/desktop com eventos do dia clicado.
+- `src/components/calendario/FiltrosCalendario.tsx` — pills de filtro.
+- `src/components/calendario/index.ts` — barrel export.
+- `src/hooks/useCalendarioEventos.ts` — hook único que faz `useQuery` paralelo das 7 fontes (range = mês visível ± 7 dias) e devolve array unificado `CalendarioEvento[]` ordenado por data; respeta `user_id`, limite de 10.000 linhas, e filtragem `gte/lt` em formato `YYYY-MM-DD` (regra de timezone das memórias).
+
+**Tipo unificado:**
+```ts
+type CalendarioEvento = {
+  id: string;
+  data: Date;
+  tipo: "receita" | "despesa" | "fatura" | "fechamento"
+       | "assinatura" | "meta" | "investimento" | "acerto";
+  titulo: string;
+  valor?: number;
+  status?: "pendente" | "concluido";
+  cor: string;
+  origemId: string;       // id na tabela original
+  metadados?: Record<string, unknown>;  // ex: cartaoId
+};
+```
+
+**Rota e navegação:**
+- Adicionar rota `<Route path="/calendario" element={<Calendario />} />` em `src/App.tsx` (lazy + ProtectedRoute, seguindo padrão das outras páginas).
+- Adicionar item no `SidebarNav.tsx` `mainMenuItems`: `{ icon: CalendarDays, label: "Calendário", href: "/calendario" }`, posicionado entre "Dashboard" e "Bancos".
+
+### Performance
+- `useQueries`/`Promise.all` no hook para paralelizar as 7 leituras.
+- `staleTime: 60_000` para reduzir refetch ao trocar mês adjacente.
+- Memoização: `useMemo` para agrupar eventos por dia (`Map<YYYY-MM-DD, CalendarioEvento[]>`).
+
+### Estilo (alinhado às memórias Premium Fintech)
+- Container raiz: `bg-white border border-[#E5E7EB] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)]`.
+- Cabeçalho do dia da semana: `text-[11px] uppercase tracking-wider text-[#6B7280]`.
+- Células: `aspect-square` no desktop, `min-h-[64px]` no mobile, `border border-[#F3F4F6]`, hover sutil `bg-[#F9FAFB]`.
+- Tipografia tabular nos valores (`tabular-nums`).
+- Pills de filtro com `rounded-full px-3 py-1 text-xs`, ativos em `#3B82F6`/branco.
+
+### Fora de escopo (não incluso)
+- Drag-and-drop de eventos.
+- Vista semanal/diária separadas (apenas mês + agenda).
+- Sincronização com Google Calendar (pode ser feita depois com o connector).
