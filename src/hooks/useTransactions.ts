@@ -1263,14 +1263,16 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       // Calcular total da fatura do titular e de outros responsáveis
       let faturaCartaoTitular = 0;
-      let faturaCartaoOutros = 0;
-      let faturaViaParcelasPagas = 0;
+      let faturaCartaoOutros = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
+      let faturaViaParcelasPagas = 0; // titular pagas (para conciliação)
+      let faturaTitularTodas = 0; // titular pagas + pendentes (para totalGeralDespesas)
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
         const valor = Number(p.valor) || 0;
         
         if (isTitular) {
+          faturaTitularTodas += valor;
           if (!isPaga) {
             faturaCartaoTitular += valor;
           } else {
@@ -1337,7 +1339,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       const faturaTotalParcelas = faturaViaParcelasPagas;
       const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
-      stats.totalGeralDespesas = stats.completedExpenseWithFatura + faturaCartaoOutros + stats.pendingExpense;
+      // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis (titular pagas+pendentes + outros pagas+pendentes)
+      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
 
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
