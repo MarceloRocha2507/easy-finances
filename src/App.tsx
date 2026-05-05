@@ -44,6 +44,7 @@ const AssistentePage = lazy(() => import("./pages/Assistente"));
 
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
 const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
+const CalendarioPage = lazy(() => import("./pages/Calendario"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -352,6 +353,17 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingScreen />}>
                     <AssinaturasPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/calendario"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <CalendarioPage />
                   </Suspense>
                 </ProtectedRoute>
               }
