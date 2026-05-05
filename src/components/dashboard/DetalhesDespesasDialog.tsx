@@ -1,41 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  CreditCard, Receipt, Wallet, ExternalLink, ChevronRight,
-  Car, Utensils, Home, ShoppingCart, Heart, GraduationCap, 
-  Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, 
-  DollarSign, Briefcase, Tag, TrendingUp
-} from "lucide-react";
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  'dollar-sign': DollarSign,
-  'wallet': Wallet,
-  'briefcase': Briefcase,
-  'shopping-cart': ShoppingCart,
-  'home': Home,
-  'car': Car,
-  'utensils': Utensils,
-  'heart': Heart,
-  'graduation-cap': GraduationCap,
-  'gift': Gift,
-  'plane': Plane,
-  'gamepad': Gamepad2,
-  'shirt': Shirt,
-  'pill': Pill,
-  'book': Book,
-  'package': Package,
-  'zap': Zap,
-  'trending-up': TrendingUp,
-  'tag': Tag,
-  'credit-card': CreditCard,
-  'receipt': Receipt,
-};
-
-function getIconComponent(iconValue: string | null | undefined): React.ComponentType<{ className?: string; style?: React.CSSProperties }> {
-  if (!iconValue) return Package;
-  return ICON_MAP[iconValue] || Package;
-}
+import { ChevronRight, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -45,9 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,11 +28,6 @@ interface TransacaoPendente {
   description: string | null;
   amount: number;
   due_date: string | null;
-  category?: {
-    name: string;
-    icon: string | null;
-    color: string | null;
-  } | null;
 }
 
 interface ParcelaCartao {
@@ -92,8 +50,6 @@ export function DetalhesDespesasDialog({
   open,
   onOpenChange,
   mesReferencia,
-  pendingExpense,
-  faturaCartao,
 }: DetalhesDespesasDialogProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -107,62 +63,43 @@ export function DetalhesDespesasDialog({
     "yyyy-MM-dd"
   );
 
-  // Buscar transações pendentes
   const { data: transacoesPendentes = [] } = useQuery({
     queryKey: ["transacoes-pendentes", user?.id, inicioMes, fimMes],
     queryFn: async () => {
       if (!user) return [];
-
       const { data, error } = await supabase
         .from("transactions")
-        .select(`
-          id,
-          description,
-          amount,
-          due_date,
-          category:categories(name, icon, color)
-        `)
+        .select(`id, description, amount, due_date`)
         .eq("user_id", user.id)
         .eq("type", "expense")
         .eq("status", "pending")
         .gte("due_date", inicioMes)
         .lte("due_date", fimMes)
         .order("due_date", { ascending: true });
-
       if (error) throw error;
       return (data || []) as TransacaoPendente[];
     },
     enabled: open && !!user,
   });
 
-  // Buscar parcelas do cartão (titular)
   const { data: parcelasCartao = [] } = useQuery({
     queryKey: ["parcelas-cartao-titular", user?.id, inicioMes],
     queryFn: async () => {
       if (!user) return [];
-
-      // Primeiro, buscar o ID do titular
       const { data: titularData } = await supabase
         .from("responsaveis")
         .select("id")
         .eq("user_id", user.id)
         .eq("is_titular", true)
         .single();
-
       const titularId = titularData?.id;
 
-      // Buscar parcelas do mês
       const { data: parcelas, error } = await supabase
         .from("parcelas_cartao")
         .select(`
-          id,
-          valor,
-          numero_parcela,
-          total_parcelas,
+          id, valor, numero_parcela, total_parcelas,
           compra:compras_cartao!inner(
-            id,
-            descricao,
-            responsavel_id,
+            id, descricao, responsavel_id,
             cartao:cartoes!inner(id, nome, cor)
           )
         `)
@@ -172,18 +109,15 @@ export function DetalhesDespesasDialog({
 
       if (error) throw error;
 
-      // Filtrar apenas as parcelas do titular ou sem responsável
       const parcelasFiltradas = (parcelas || []).filter((p: any) => {
         const responsavelId = p.compra?.responsavel_id;
         return responsavelId === titularId || responsavelId === null;
       });
-
       return parcelasFiltradas as ParcelaCartao[];
     },
     enabled: open && !!user,
   });
 
-  // Agrupar parcelas por cartão
   const parcelasPorCartao = parcelasCartao.reduce((acc, parcela) => {
     const cartaoId = parcela.compra.cartao.id;
     if (!acc[cartaoId]) {
@@ -206,151 +140,131 @@ export function DetalhesDespesasDialog({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
-        <SheetHeader className="flex-shrink-0 mb-4 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <SheetTitle className="flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-red-600" />
-            Despesas a Pagar
+      <SheetContent className="w-full sm:max-w-md flex flex-col h-full p-0 bg-white">
+        {/* Header */}
+        <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-5 space-y-1 text-left">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+            Despesas a pagar
+          </p>
+          <SheetTitle className="text-2xl font-bold tabular-nums text-[#DC2626]">
+            {formatCurrency(totalGeral)}
           </SheetTitle>
-          <p className="text-sm text-muted-foreground capitalize">{mesFormatado}</p>
+          <p className="text-xs text-[#6B7280] capitalize">{mesFormatado}</p>
         </SheetHeader>
 
-        <div className="flex-1 min-h-0 relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          {/* Fade indicator no topo */}
-          <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
-          
-          <ScrollArea className="h-full -mr-4 pr-4">
-            <div className="space-y-6 pr-4 pt-2 pb-4">
-            {/* Seção: Contas Pendentes */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-amber-600" />
-                  <h3 className="font-medium text-sm">Contas Pendentes</h3>
-                </div>
-                <span className="text-sm font-semibold text-amber-600">
-                  {formatCurrency(totalContas)}
-                </span>
-              </div>
+        <div className="border-t border-[#F3F4F6]" />
 
-              {transacoesPendentes.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-3 text-center">
-                  Nenhuma conta pendente
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {transacoesPendentes.map((transacao) => (
-                    <div
-                      key={transacao.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+        {/* Content */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 py-4 space-y-6">
+            {/* Contas Pendentes */}
+            {transacoesPendentes.length > 0 && (
+              <section>
+                <header className="flex items-center justify-between pb-2 mb-1 border-b border-[#F3F4F6]">
+                  <h3 className="text-xs font-semibold text-[#374151]">
+                    Contas pendentes
+                  </h3>
+                  <span className="text-[13px] font-semibold tabular-nums text-[#111827]">
+                    {formatCurrency(totalContas)}
+                  </span>
+                </header>
+                <ul className="divide-y divide-[#F9FAFB]">
+                  {transacoesPendentes.map((t) => (
+                    <li
+                      key={t.id}
+                      className="flex items-center justify-between gap-3 py-3"
                     >
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const IconComp = getIconComponent(transacao.category?.icon);
-                          return (
-                            <div
-                              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                              style={{ 
-                                backgroundColor: transacao.category?.color 
-                                  ? `${transacao.category.color}20` 
-                                  : 'hsl(var(--muted))' 
-                              }}
-                            >
-                              <IconComp 
-                                className="w-4 h-4" 
-                                style={{ color: transacao.category?.color || 'hsl(var(--muted-foreground))' }} 
-                              />
-                            </div>
-                          );
-                        })()}
-                        <div>
-                          <p className="text-sm font-medium">
-                            {transacao.description || "Sem descrição"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {transacao.due_date
-                              ? `Vence em ${format(new Date(transacao.due_date + "T00:00:00"), "dd/MM")}`
-                              : "Sem vencimento"}
-                          </p>
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-[#111827] truncate">
+                          {t.description || "Sem descrição"}
+                        </p>
+                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                          {t.due_date
+                            ? `Vence ${format(new Date(t.due_date + "T00:00:00"), "dd/MM")}`
+                            : "Sem vencimento"}
+                        </p>
                       </div>
-                      <span className="text-sm font-semibold text-expense">
-                        {formatCurrency(transacao.amount)}
+                      <span className="text-sm font-semibold tabular-nums text-[#DC2626] whitespace-nowrap">
+                        {formatCurrency(t.amount)}
                       </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              )}
-            </div>
+                </ul>
+              </section>
+            )}
 
-            <Separator />
-
-            {/* Seção: Fatura do Cartão */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-purple-600" />
-                  <h3 className="font-medium text-sm">Fatura do Cartão (EU)</h3>
-                </div>
-                <span className="text-sm font-semibold text-purple-600">
-                  {formatCurrency(totalCartoes)}
-                </span>
-              </div>
-
-              {Object.keys(parcelasPorCartao).length === 0 ? (
-                <p className="text-sm text-muted-foreground py-3 text-center">
-                  Nenhuma parcela pendente
-                </p>
-              ) : (
-                <div className="space-y-2">
+            {/* Fatura do Cartão */}
+            {Object.keys(parcelasPorCartao).length > 0 && (
+              <section>
+                <header className="flex items-center justify-between pb-2 mb-1 border-b border-[#F3F4F6]">
+                  <h3 className="text-xs font-semibold text-[#374151]">
+                    Fatura do cartão · você
+                  </h3>
+                  <span className="text-[13px] font-semibold tabular-nums text-[#111827]">
+                    {formatCurrency(totalCartoes)}
+                  </span>
+                </header>
+                <ul className="divide-y divide-[#F9FAFB]">
                   {Object.values(parcelasPorCartao).map(({ cartao, total }) => (
-                    <div
-                      key={cartao.id}
-                      onClick={() => {
-                        onOpenChange(false);
-                        navigate(`/cartoes/${cartao.id}/despesas`);
-                      }}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: cartao.cor }}
-                        />
-                        <span className="text-sm font-medium">{cartao.nome}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">
-                          {formatCurrency(total)}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    </div>
+                    <li key={cartao.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onOpenChange(false);
+                          navigate(`/cartoes/${cartao.id}/despesas`);
+                        }}
+                        className="w-full flex items-center justify-between gap-3 py-3 group hover:bg-[#FAFAFA] -mx-2 px-2 rounded transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: cartao.cor }}
+                          />
+                          <span className="text-sm text-[#111827] truncate">
+                            {cartao.nome}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <span className="text-sm font-semibold tabular-nums text-[#111827]">
+                            {formatCurrency(total)}
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] group-hover:text-[#374151] transition-colors" />
+                        </div>
+                      </button>
+                    </li>
                   ))}
-                </div>
-              )}
-            </div>
+                </ul>
+              </section>
+            )}
+
+            {/* Empty state */}
+            {transacoesPendentes.length === 0 && Object.keys(parcelasPorCartao).length === 0 && (
+              <div className="py-12 text-center">
+                <p className="text-sm font-medium text-[#111827] mb-1">Tudo em dia</p>
+                <p className="text-xs text-[#9CA3AF]">
+                  Nenhuma conta ou fatura pendente neste mês.
+                </p>
+              </div>
+            )}
           </div>
         </ScrollArea>
-          
-          {/* Fade indicator na base */}
-          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
-        </div>
 
-        {/* Footer com total */}
-        <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-base font-semibold">Total a Pagar</span>
-            <span className="text-xl font-bold text-red-600">
+        {/* Footer */}
+        <div className="flex-shrink-0 px-6 py-4 border-t border-[#E5E7EB] flex items-center justify-between">
+          <Link
+            to="/transactions?status=pending"
+            onClick={() => onOpenChange(false)}
+            className="text-sm text-[#6B7280] hover:text-[#111827] transition-colors inline-flex items-center gap-1"
+          >
+            Ver pendentes
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs text-[#6B7280]">Total</span>
+            <span className="text-base font-bold tabular-nums text-[#DC2626]">
               {formatCurrency(totalGeral)}
             </span>
           </div>
-          <Link to="/transactions?status=pending" onClick={() => onOpenChange(false)}>
-            <Button variant="outline" className="w-full" size="sm">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Ver Transações Pendentes
-            </Button>
-          </Link>
         </div>
       </SheetContent>
     </Sheet>
