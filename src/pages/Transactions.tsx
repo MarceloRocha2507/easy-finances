@@ -9,8 +9,7 @@ import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useC
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
-import { TotalAPagarCard } from '@/components/dashboard/TotalAPagarCard';
-import { TotalAReceberCard } from '@/components/dashboard/TotalAReceberCard';
+import { TotalAPagarCard, TotalAReceberCard, DetalhesTotalDespesasDialog } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/formatters';
@@ -317,6 +316,7 @@ export default function Transactions() {
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
+  const [detalhesDespesasOpen, setDetalhesDespesasOpen] = useState(false);
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
@@ -1300,6 +1300,7 @@ export default function Transactions() {
               delay={0}
               isLoading={isStatsFetching}
               formatValue={(val) => showTotalGeral ? formatCurrency(val) : '••••••'}
+              onClick={() => setDetalhesDespesasOpen(true)}
               actions={
                 <Button 
                   variant="ghost" 
@@ -1640,6 +1641,11 @@ export default function Transactions() {
               });
             }
           }}
+        />
+        <DetalhesTotalDespesasDialog 
+          open={detalhesDespesasOpen} 
+          onOpenChange={setDetalhesDespesasOpen} 
+          mesReferencia={dataInicial || new Date()} 
         />
       </div>
     </Layout>
