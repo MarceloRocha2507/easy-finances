@@ -338,6 +338,14 @@ export default function Transactions() {
   const startDate = dataInicial ? format(dataInicial, 'yyyy-MM-dd') : undefined;
   const endDate = dataFinal ? format(dataFinal, 'yyyy-MM-dd') : undefined;
 
+  const toggleTotalGeralVisibility = () => {
+    setShowTotalGeral(prev => {
+      const next = !prev;
+      localStorage.setItem('show_total_geral_transacoes', String(next));
+      return next;
+    });
+  };
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
