@@ -9,6 +9,7 @@ import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useC
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
+import { UnifiedMetricTile } from '@/components/dashboard/UnifiedMetricTile';
 import { TotalAPagarCard, TotalAReceberCard, DetalhesTotalDespesasDialog } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
