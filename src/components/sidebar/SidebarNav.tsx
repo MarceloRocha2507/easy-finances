@@ -20,6 +20,7 @@ import {
   History,
   Building2,
   CalendarClock,
+  CalendarDays,
   Bot,
   Sparkles,
   
@@ -27,6 +28,7 @@ import {
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: CalendarDays, label: "Calendário", href: "/calendario" },
   { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
