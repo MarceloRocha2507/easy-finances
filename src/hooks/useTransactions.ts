@@ -1261,18 +1261,23 @@ export function useCompleteStats(mesReferencia?: Date) {
         .lte('mes_referencia', fimMes)
         .eq('ativo', true);
 
-      // Calcular total da fatura do titular (parcelas não pagas = pendente, pagas = já saiu do caixa)
+      // Calcular total da fatura do titular e de outros responsáveis
       let faturaCartaoTitular = 0;
+      let faturaCartaoOutros = 0;
       let faturaViaParcelasPagas = 0;
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
+        const valor = Number(p.valor) || 0;
+        
         if (isTitular) {
           if (!isPaga) {
-            faturaCartaoTitular += Number(p.valor) || 0;
+            faturaCartaoTitular += valor;
           } else {
-            faturaViaParcelasPagas += Number(p.valor) || 0;
+            faturaViaParcelasPagas += valor;
           }
+        } else {
+          faturaCartaoOutros += valor;
         }
       });
 
