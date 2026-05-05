@@ -50,6 +50,7 @@ import {
 } from "@/components/dashboard";
 
 import { NovaMetaDialog } from "@/components/dashboard/NovaMetaDialog";
+import { UnifiedMetricTile } from "@/components/dashboard/UnifiedMetricTile";
 import { GerenciarMetaDialog } from "@/components/dashboard/GerenciarMetaDialog";
 import { DetalhesDespesasDialog } from "@/components/dashboard/DetalhesDespesasDialog";
 import { Progress } from "@/components/ui/progress";
@@ -215,91 +216,141 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* Stats Cards - Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-        <StatCardMinimal
-          title="Saldo Disponível"
-          value={completeStats?.saldoDisponivel || 0}
-          icon={Wallet}
-          delay={0.05}
-          isLoading={isStatsFetching}
-          actions={
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6"
-              onClick={() => setEditarSaldoOpen(true)}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </Button>
-          }
-          subInfo={
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">
-                Estimado: {formatCurrency(completeStats?.estimatedBalance || 0)}
-              </span>
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="text-sm">Saldo real + receitas pendentes − despesas pendentes − fatura do cartão</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
-            </div>
-          }
-        />
-
-        <StatCardMinimal
-          title="Receitas"
-          value={completeStats?.completedIncome || 0}
-          icon={TrendingUp}
-          delay={0.1}
-          isLoading={isStatsFetching}
-          subInfo={<span className="hidden sm:inline">recebidas</span>}
-        />
-
-        <StatCardMinimal
-          title="Despesas"
-          value={completeStats?.completedExpenseWithFatura || 0}
-          icon={TrendingDown}
-          prefix="-"
-          delay={0.15}
-          isLoading={isStatsFetching}
-          subInfo={<span className="text-[11px]">Considerando apenas este mês</span>}
-        />
-      </div>
-
-      {/* Cards Pendentes (condicional) */}
+      {/* Dois painéis agrupados: Visão Geral + Este Mês */}
       {(() => {
         const pendingIncome = completeStats?.pendingIncome || 0;
         const pendingExpense = completeStats?.pendingExpense || 0;
         const faturaCartao = completeStats?.faturaCartao || 0;
         const totalAPagar = pendingExpense + faturaCartao;
-        const hasAnyPending = pendingIncome > 0 || totalAPagar > 0;
-
-        if (!hasAnyPending) return null;
+        const completedIncome = completeStats?.completedIncome || 0;
+        const completedExpense = completeStats?.completedExpenseWithFatura || 0;
 
         return (
-          <div className="flex flex-col md:flex-row items-stretch gap-3 mb-4">
-            {pendingIncome > 0 && (
-              <div className="flex-1">
-                <TotalAReceberCard mesReferencia={mesReferencia} isLoading={isStatsFetching} />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-4 animate-fade-in">
+            {/* PAINEL 1 — Visão Geral (2/5) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                  Visão Geral
+                </h3>
               </div>
-            )}
-            {totalAPagar > 0 && (
-              <div className="flex-1">
-                <TotalAPagarCard mesReferencia={mesReferencia} isLoading={isStatsFetching} />
+
+              {/* Hero - Saldo Disponível */}
+              <div className="relative px-5 py-4">
+                <div className="absolute top-4 right-5 flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setEditarSaldoOpen(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Wallet className="h-4 w-4 text-foreground/30" />
+                </div>
+                <p className="text-[#6B7280] text-xs mb-1.5">Saldo Disponível</p>
+                {isStatsFetching ? (
+                  <Skeleton className="h-8 w-44" />
+                ) : (
+                  <p className="text-2xl sm:text-[26px] font-bold tabular-nums text-[#111827]">
+                    {formatCurrency(completeStats?.saldoDisponivel || 0)}
+                  </p>
+                )}
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-[11px] text-[#6B7280]">
+                    Estimado: {formatCurrency(completeStats?.estimatedBalance || 0)}
+                  </span>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                          <HelpCircle className="w-3 h-3" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">Saldo real + receitas pendentes − despesas pendentes − fatura do cartão</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-            )}
+
+              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+
+              {/* Despesas (este mês) + clique para detalhes */}
+              <div className="grid grid-cols-1 flex-1">
+                <UnifiedMetricTile
+                  title="Despesas"
+                  value={completedExpense}
+                  icon={TrendingDown}
+                  prefix="-"
+                  valueColor="expense"
+                  subInfo="total do mês (inclui fatura) · clique para detalhes"
+                  onClick={() => setDespesasDialogOpen(true)}
+                  isLoading={isStatsFetching}
+                />
+              </div>
+            </div>
+
+            {/* PAINEL 2 — Este Mês (3/5) */}
+            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-2">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                  Este Mês
+                </h3>
+              </div>
+
+              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+
+              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+                <UnifiedMetricTile
+                  title="Receitas"
+                  value={completedIncome}
+                  icon={TrendingUp}
+                  subInfo="recebidas"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="A Receber"
+                  value={pendingIncome}
+                  icon={TrendingUp}
+                  prefix="+"
+                  valueColor="income"
+                  subInfo="pendentes"
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="A Pagar"
+                  value={totalAPagar}
+                  icon={TrendingDown}
+                  prefix="-"
+                  valueColor="expense"
+                  subInfo={
+                    faturaCartao > 0 ? (
+                      <>
+                        {formatCurrency(pendingExpense)} pendente
+                        <span className="text-muted-foreground/60"> + {formatCurrency(faturaCartao)} fatura</span>
+                      </>
+                    ) : (
+                      "referente a este mês"
+                    )
+                  }
+                  isLoading={isStatsFetching}
+                />
+                <UnifiedMetricTile
+                  title="Saldo do Mês"
+                  value={completedIncome - completedExpense}
+                  icon={Calculator}
+                  valueColor={completedIncome - completedExpense >= 0 ? "income" : "expense"}
+                  subInfo="receitas − despesas"
+                  isLoading={isStatsFetching}
+                />
+              </div>
+            </div>
           </div>
         );
       })()}
-  
+
 
 
 
