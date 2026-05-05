@@ -1642,6 +1642,11 @@ export default function Transactions() {
             }
           }}
         />
+        <DetalhesTotalDespesasDialog 
+          open={detalhesDespesasOpen} 
+          onOpenChange={setDetalhesDespesasOpen} 
+          mesReferencia={dataInicial || new Date()} 
+        />
       </div>
     </Layout>
   );
