@@ -1305,6 +1305,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         overdueCount: 0,
         pendingCount: 0,
         faturaCartao: faturaCartaoTitular,
+        faturaCartaoOutros,
+        totalGeralDespesas: 0, // Será calculado abaixo
         totalInvestido,
         // Valores acumulados para cálculo do saldo
         allCompletedIncome,
