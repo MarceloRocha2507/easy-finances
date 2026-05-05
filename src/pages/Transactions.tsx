@@ -1292,7 +1292,7 @@ export default function Transactions() {
           {/* Resumo - StatCards Minimalistas */}
           <AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <StatCardMinimal
-              title="Gasto Total (Todos)"
+              title="Total de Despesas"
               value={stats?.totalGeralDespesas || 0}
               icon={CreditCard}
               subInfo="inclui outros responsáveis"
