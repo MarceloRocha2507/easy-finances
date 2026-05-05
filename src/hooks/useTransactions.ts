@@ -1339,7 +1339,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       const faturaTotalParcelas = faturaViaParcelasPagas;
       const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
-      stats.totalGeralDespesas = stats.completedExpenseWithFatura + faturaCartaoOutros + stats.pendingExpense;
+      // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis (titular pagas+pendentes + outros pagas+pendentes)
+      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
 
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
