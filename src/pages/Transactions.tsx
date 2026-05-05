@@ -9,6 +9,7 @@ import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useC
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
+import { UnifiedMetricTile } from '@/components/dashboard/UnifiedMetricTile';
 import { TotalAPagarCard, TotalAReceberCard, DetalhesTotalDespesasDialog } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
@@ -1289,103 +1290,131 @@ export default function Transactions() {
             </div>
           </div>
 
-          {/* Resumo - StatCards Minimalistas */}
-          <AnimatedSection delay={0.1} className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <StatCardMinimal
-              title="Total de Despesas"
-              value={stats?.totalGeralDespesas || 0}
-              icon={CreditCard}
-              subInfo="inclui outros responsáveis"
-              valueColor="expense"
-              delay={0}
-              isLoading={isStatsFetching}
-              formatValue={(val) => showTotalGeral ? formatCurrency(val) : '••••••'}
+          {/* Painel unificado - Hero + grid compacto interno */}
+          <AnimatedSection
+            delay={0.1}
+            className="bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden"
+          >
+            {/* HERO - Total de Despesas */}
+            <div
+              className={cn(
+                "relative p-5 sm:p-6 transition-colors",
+                "cursor-pointer hover:bg-[#FAFAFA] dark:hover:bg-[#1f1f1f]"
+              )}
               onClick={() => setDetalhesDespesasOpen(true)}
-              actions={
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6" 
+            >
+              <div className="absolute top-5 right-5 flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleTotalGeralVisibility();
                   }}
                 >
-                  {showTotalGeral ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {showTotalGeral ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
-              }
-              className="col-span-2 lg:col-span-3"
-            />
-            <StatCardMinimal
-              title="Receitas"
-              value={stats?.completedIncome || 0}
-              icon={TrendingUp}
-              subInfo="recebidas"
-              delay={0}
-              isLoading={isStatsFetching}
-            />
-             <StatCardMinimal
-              title="Despesas"
-              value={stats?.completedExpenseWithFatura || 0}
-              icon={TrendingDown}
-              subInfo="total do mês (inclui fatura)"
-              valueColor="expense"
-              delay={0.05}
-              isLoading={isStatsFetching}
-            />
-            <TotalAReceberCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
-            <TotalAPagarCard mesReferencia={dataInicial || new Date()} isLoading={isStatsFetching} />
-            <StatCardMinimal
-              title="Saldo Real"
-              value={stats?.realBalance || 0}
-              icon={Scale}
-              subInfo="clique para ajustar"
-              onClick={() => setAjustarSaldoOpen(true)}
-              delay={0.2}
-              isLoading={isStatsFetching}
-              className="col-span-2 lg:col-span-1"
-            />
-            <StatCardMinimal
-              title="Estimado"
-              value={stats?.estimatedBalance || 0}
-              icon={Info}
-              subInfo={
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[11px] text-muted-foreground">
-                    {formatCurrency(
-                      (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-                      - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
-                      - (stats?.faturaCartao || 0)
-                    )}{" "}
-                    <span className="text-muted-foreground/60">referente apenas a este mês</span>
-                  </span>
-                  <span>real + a receber - a pagar</span>
-                </div>
-              }
-              delay={0.25}
-              isLoading={isStatsFetching}
-              className="col-span-2 lg:col-span-1"
-            />
-            <StatCardMinimal
-              title="Assinaturas"
-              value={totalMensalAssinaturas}
-              icon={Repeat}
-              subInfo={
-                <>
-                  {assinaturasAtivas.length} ativas
-                  {renovamEssaSemana > 0 && (
-                    <span className="text-amber-500 ml-1">
-                      · {renovamEssaSemana} renovam essa semana
+                <CreditCard className="h-4 w-4 text-foreground/30" />
+              </div>
+
+              <p className="text-[#6B7280] text-xs sm:text-sm mb-1.5">Total de Despesas</p>
+              {isStatsFetching ? (
+                <Skeleton className="h-9 w-48 bg-gray-200/60 dark:bg-gray-700/40" />
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-[#DC2626]">
+                  {showTotalGeral ? formatCurrency(stats?.totalGeralDespesas || 0) : '••••••'}
+                </p>
+              )}
+              <p className="text-[11px] sm:text-xs text-[#6B7280] mt-1.5">
+                inclui outros responsáveis · clique para ver detalhes
+              </p>
+            </div>
+
+            {/* Divisor */}
+            <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+
+            {/* GRID compacto de métricas secundárias */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a]">
+              <UnifiedMetricTile
+                title="Receitas"
+                value={stats?.completedIncome || 0}
+                icon={TrendingUp}
+                subInfo="recebidas"
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="Despesas"
+                value={stats?.completedExpenseWithFatura || 0}
+                icon={TrendingDown}
+                subInfo="total do mês (inclui fatura)"
+                valueColor="expense"
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="A Receber"
+                value={stats?.pendingIncome || 0}
+                icon={TrendingUp}
+                subInfo="pendentes"
+                prefix="+"
+                valueColor="income"
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="Total a Pagar"
+                value={stats?.pendingExpense || 0}
+                icon={TrendingDown}
+                subInfo="referente apenas a este mês"
+                prefix="-"
+                valueColor="expense"
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="Saldo Real"
+                value={stats?.realBalance || 0}
+                icon={Scale}
+                subInfo="clique para ajustar"
+                onClick={() => setAjustarSaldoOpen(true)}
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="Estimado"
+                value={stats?.estimatedBalance || 0}
+                icon={Info}
+                subInfo={
+                  <div className="flex flex-col gap-0.5">
+                    <span>
+                      {formatCurrency(
+                        (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
+                        - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
+                        - (stats?.faturaCartao || 0)
+                      )}{" "}
+                      <span className="text-muted-foreground/60">neste mês</span>
                     </span>
-                  )}
-                </>
-              }
-              onClick={() => navigate('/assinaturas')}
-              delay={0.3}
-              isLoading={isStatsFetching || isAssinaturasLoading}
-              valueColor="expense"
-              className="col-span-2 lg:col-span-1"
-            />
+                    <span className="text-muted-foreground/60">real + a receber - a pagar</span>
+                  </div>
+                }
+                isLoading={isStatsFetching}
+              />
+              <UnifiedMetricTile
+                title="Assinaturas"
+                value={totalMensalAssinaturas}
+                icon={Repeat}
+                valueColor="expense"
+                subInfo={
+                  <>
+                    {assinaturasAtivas.length} ativas
+                    {renovamEssaSemana > 0 && (
+                      <span className="text-amber-500 ml-1">
+                        · {renovamEssaSemana} renovam essa semana
+                      </span>
+                    )}
+                  </>
+                }
+                onClick={() => navigate('/assinaturas')}
+                isLoading={isStatsFetching || isAssinaturasLoading}
+              />
+            </div>
           </AnimatedSection>
         </AnimatedSection>
 
