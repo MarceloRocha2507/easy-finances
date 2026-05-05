@@ -1261,18 +1261,23 @@ export function useCompleteStats(mesReferencia?: Date) {
         .lte('mes_referencia', fimMes)
         .eq('ativo', true);
 
-      // Calcular total da fatura do titular (parcelas não pagas = pendente, pagas = já saiu do caixa)
+      // Calcular total da fatura do titular e de outros responsáveis
       let faturaCartaoTitular = 0;
+      let faturaCartaoOutros = 0;
       let faturaViaParcelasPagas = 0;
       (parcelasCartao || []).forEach((p: any) => {
         const isTitular = p.compra?.responsavel?.is_titular === true;
         const isPaga = p.paga === true;
+        const valor = Number(p.valor) || 0;
+        
         if (isTitular) {
           if (!isPaga) {
-            faturaCartaoTitular += Number(p.valor) || 0;
+            faturaCartaoTitular += valor;
           } else {
-            faturaViaParcelasPagas += Number(p.valor) || 0;
+            faturaViaParcelasPagas += valor;
           }
+        } else {
+          faturaCartaoOutros += valor;
         }
       });
 
@@ -1300,6 +1305,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         overdueCount: 0,
         pendingCount: 0,
         faturaCartao: faturaCartaoTitular,
+        faturaCartaoOutros,
+        totalGeralDespesas: 0, // Será calculado abaixo
         totalInvestido,
         // Valores acumulados para cálculo do saldo
         allCompletedIncome,
@@ -1330,6 +1337,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const faturaTotalParcelas = faturaViaParcelasPagas;
       const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
+      stats.totalGeralDespesas = stats.completedExpenseWithFatura + faturaCartaoOutros;
 
       // Pendentes do mês
       (pendingDoMes || []).forEach((t) => {
@@ -1372,6 +1380,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         totalMetas,
         totalInvestido,
         totalGuardado,
+        totalGeralDespesas: stats.totalGeralDespesas,
+        faturaCartaoOutros: stats.faturaCartaoOutros,
       };
      } catch (error) {
         console.error('Erro ao calcular estatísticas completas:', error);
@@ -1381,7 +1391,7 @@ export function useCompleteStats(mesReferencia?: Date) {
           pendingIncome: 0, pendingExpense: 0, overdueCount: 0, pendingCount: 0,
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
           realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
-          totalMetas: 0, totalGuardado: 0,
+          totalMetas: 0, totalGuardado: 0, totalGeralDespesas: 0, faturaCartaoOutros: 0,
         };
       }
     },
