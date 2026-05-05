@@ -316,6 +316,7 @@ export default function Transactions() {
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
+  const [detalhesDespesasOpen, setDetalhesDespesasOpen] = useState(false);
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
