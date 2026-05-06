@@ -34,22 +34,53 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="AppFinance - Gestão Financeira">
     <meta name="twitter:description" content="Gerencie suas finanças pessoais de forma simples e eficiente.">
-    <meta name="app-version" content="1.1.2_20260506" />
+    <meta name="app-version" content="1.1.3_20260506_b" />
     <script>
-      // Force kill service workers at the earliest possible moment
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          if (registrations.length > 0) {
-            for (let registration of registrations) {
-              registration.unregister();
-            }
-            if (!sessionStorage.getItem('__force_reload')) {
-              sessionStorage.setItem('__force_reload', '1');
-              window.location.reload();
+      // Kill-switch agressivo: desregistra SWs antigos, limpa caches e
+      // força reload uma única vez por sessão com cache-buster para
+      // garantir que o navegador busque o bundle JS novo da rede.
+      (function () {
+        try {
+          var APP_VERSION = "1.1.3_20260506_b";
+          var storedVersion = localStorage.getItem("__app_v");
+
+          function maybeReload(hadSW) {
+            var versionChanged = storedVersion !== APP_VERSION;
+            var alreadyForced = sessionStorage.getItem("__force_reload_v3") === "1";
+
+            if ((hadSW || versionChanged) && !alreadyForced) {
+              sessionStorage.setItem("__force_reload_v3", "1");
+              localStorage.setItem("__app_v", APP_VERSION);
+              var u = new URL(window.location.href);
+              u.searchParams.set("__v", APP_VERSION + "_" + Date.now());
+              window.location.replace(u.toString());
+            } else {
+              localStorage.setItem("__app_v", APP_VERSION);
             }
           }
-        });
-      }
+
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              var hadSW = regs.length > 0;
+              Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+                if ("caches" in window) {
+                  caches.keys().then(function (names) {
+                    Promise.all(names.map(function (n) { return caches.delete(n); })).then(function () {
+                      maybeReload(hadSW);
+                    });
+                  });
+                } else {
+                  maybeReload(hadSW);
+                }
+              });
+            }).catch(function () { maybeReload(false); });
+          } else {
+            maybeReload(false);
+          }
+        } catch (e) {
+          console.error("[kill-switch]", e);
+        }
+      })();
     </script>
   </head>
 
