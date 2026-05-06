@@ -212,6 +212,10 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         <Bot className={cn("h-4 w-4 transition-opacity duration-150", isActive("/assistente") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
         Fina IA
       </Link>
+      
+      <div className="mt-auto pt-4 px-4 pb-2 text-[10px] text-muted-foreground/40 font-mono text-center">
+        v1.1.2_20260506
+      </div>
     </nav>
   );
 });
