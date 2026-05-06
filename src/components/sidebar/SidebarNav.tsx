@@ -214,7 +214,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       </Link>
       
       <div className="mt-auto pt-4 px-4 pb-2 text-[10px] text-muted-foreground/40 font-mono text-center">
-        v1.1.2_20260506
+        v1.1.3_20260506_b
       </div>
     </nav>
   );
