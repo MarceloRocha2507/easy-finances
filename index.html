@@ -35,6 +35,22 @@
     <meta name="twitter:title" content="AppFinance - Gestão Financeira">
     <meta name="twitter:description" content="Gerencie suas finanças pessoais de forma simples e eficiente.">
     <meta name="app-version" content="1.1.2_20260506" />
+    <script>
+      // Force kill service workers at the earliest possible moment
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          if (registrations.length > 0) {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+            if (!sessionStorage.getItem('__force_reload')) {
+              sessionStorage.setItem('__force_reload', '1');
+              window.location.reload();
+            }
+          }
+        });
+      }
+    </script>
   </head>
 
   <body>
