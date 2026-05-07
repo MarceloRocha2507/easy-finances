@@ -30,6 +30,7 @@ import { NovoCartaoDialog } from "@/components/cartoes/NovoCartaoDialog";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { DesfazerAlteracaoDialog } from "@/components/cartoes/DesfazerAlteracaoDialog";
 import { GerarMensagensLoteDialog } from "@/components/cartoes/GerarMensagensLoteDialog";
+import { ResumoResponsaveisMes } from "@/components/cartoes/ResumoResponsaveisMes";
 import { cn } from "@/lib/utils";
 import {
   calcularProximaOcorrenciaDia,
@@ -263,6 +264,9 @@ export default function Cartoes() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Resumo por responsável (mês selecionado) */}
+        <ResumoResponsaveisMes mesReferencia={mesReferencia} />
 
         {/* Lista de Cartões */}
         {cartoes.length === 0 ? (
