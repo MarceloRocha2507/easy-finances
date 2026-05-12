@@ -39,7 +39,7 @@ export const CHANGELOG: VersionEntry[] = [
       { type: "feature", description: "Relatórios e exportações" },
       { type: "feature", description: "Assistente financeiro com IA" },
       { type: "feature", description: "Notificações e alertas inteligentes" },
-      { type: "feature", description: "Suporte a PWA para uso offline" },
+      
     ],
   },
 ];
