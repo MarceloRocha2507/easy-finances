@@ -465,6 +465,7 @@ export function useOrcamentos(mesReferencia?: Date) {
         .from("transactions")
         .select("amount, category_id")
         .eq("type", "expense")
+        .eq("desconsiderada", false)
         .gte("date", inicioMes)
         .lte("date", fimMes);
 
