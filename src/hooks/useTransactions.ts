@@ -1321,6 +1321,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       let faturaViaTransacao = 0;
       let despesasBase = 0;
       (completedDoMes || []).forEach((t) => {
+        if ((t as any).desconsiderada === true) return;
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
