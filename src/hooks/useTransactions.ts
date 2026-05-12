@@ -1288,12 +1288,12 @@ export function useCompleteStats(mesReferencia?: Date) {
       const today = new Date().toISOString().split('T')[0];
       
       // Calcular saldo acumulado usando TODAS as transações completed
+      // Despesas/receitas marcadas como "desconsiderada" são ignoradas do caixa
       let allCompletedIncome = 0;
       let allCompletedExpense = 0;
       (allCompleted || []).forEach((t) => {
+        if ((t as any).desconsiderada === true) return;
         const amount = Number(t.amount);
-        // Para saldo real, toda transação completed impacta o caixa
-        // (inclusive pagamentos de fatura, que saem da conta bancária)
         if (t.type === 'income') allCompletedIncome += amount;
         else allCompletedExpense += amount;
       });
