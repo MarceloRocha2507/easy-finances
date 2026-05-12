@@ -926,9 +926,16 @@ export function useToggleDesconsiderada() {
 
   return useMutation({
     mutationFn: async ({ id, desconsiderada }: { id: string; desconsiderada: boolean }) => {
+      // Ao desconsiderar, marcar também como pendente para que o usuário
+      // possa efetivar (marcar como paga) novamente depois.
+      const updatePayload: any = { desconsiderada };
+      if (desconsiderada) {
+        updatePayload.status = 'pending';
+      }
+
       const { data, error } = await supabase
         .from('transactions')
-        .update({ desconsiderada } as any)
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
@@ -939,10 +946,10 @@ export function useToggleDesconsiderada() {
     onSuccess: (_, variables) => {
       invalidateTransactionCaches(queryClient);
       toast({
-        title: variables.desconsiderada ? 'Despesa desconsiderada' : 'Despesa reconsiderada',
+        title: variables.desconsiderada ? 'Transação desconsiderada' : 'Transação reconsiderada',
         description: variables.desconsiderada 
-          ? 'Esta despesa não será contabilizada no saldo estimado.'
-          : 'Esta despesa voltou a ser contabilizada no saldo estimado.',
+          ? 'Movida para pendente e removida dos cálculos. Você pode efetivá-la depois.'
+          : 'Voltou a ser contabilizada nos totais.',
       });
     },
     onError: () => {
