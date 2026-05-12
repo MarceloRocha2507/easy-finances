@@ -218,6 +218,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
           id, amount, type, date, category_id,
           category:categories(id, name, icon, color)
         `)
+        .eq("desconsiderada", false)
         .gte("date", inicioMes)
         .lte("date", fimMes);
 
@@ -227,6 +228,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
       const { data: transacoesAnteriores } = await supabase
         .from("transactions")
         .select("amount, type")
+        .eq("desconsiderada", false)
         .gte("date", inicioMesAnterior)
         .lte("date", fimMesAnterior);
 
