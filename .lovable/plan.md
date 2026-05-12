@@ -1,54 +1,45 @@
-# Plano para corrigir a exibição recorrente da versão antiga
+# Plano: corrigir o "Desconsiderar despesa" em todo o sistema
 
 ## Diagnóstico
-Encontrei sinais claros de que o problema não está no HTML publicado em si, e sim em resíduos de instalação/cache no navegador:
+A funcionalidade "Desconsiderar do saldo" **já existe** na lista de transações (menu de cada despesa), e o campo `desconsiderada` já está no banco. O problema é que ela **só está sendo respeitada parcialmente**:
 
-- O snapshot do navegador do usuário ainda mostra `Service Worker registrado: {}` duas vezes.
-- O código atual já não contém registro ativo de service worker no app principal.
-- Isso indica que alguns dispositivos/abas continuam presos a um bundle antigo previamente instalado em modo PWA ou controlado por um service worker antigo.
-- O kill-switch atual em `/sw.js` e `/service-worker.js` é incompleto para esse cenário: ele limpa cache e se desregistra, mas não força as janelas controladas a navegar novamente antes do unregister.
-- O projeto ainda mantém superfície de PWA/instalação (`/instalar`, textos de uso offline, tipos e assets relacionados), o que mantém o fluxo vivo e favorece reinstalações com comportamento antigo.
+- ✅ Saldo Estimado, "A Pagar" e "A Receber" hoje **excluem** desconsideradas.
+- ❌ **Saldo Disponível** (saldo final atual) **não exclui** — soma todas as despesas com status `completed`, mesmo as desconsideradas. É exatamente isso que produz o erro que você descreveu: marcar despesa como paga + lançar receita logo depois deixa o saldo errado, porque a despesa "ignorada" continua afetando o caixa.
+- ❌ Gráfico **"Receitas vs Despesas"** do dashboard inclui desconsideradas.
+- ❌ Gráfico **"Despesas por Categoria"** inclui desconsideradas.
+- ❌ Receitas/Despesas exibidas do mês no dashboard incluem desconsideradas.
+- ❌ Possivelmente: Comparativo Mensal, Gastos Diários, alertas e calendário (preciso conferir cada um).
 
 ## O que vou implementar
 
-### 1) Reforçar a remoção definitiva de service workers antigos
-- Substituir os workers de limpeza por uma versão robusta que:
-  - assume controle imediato,
-  - apaga todos os caches,
-  - reenfileira navegação de todas as janelas abertas com um parâmetro de limpeza,
-  - só depois se desregistra.
-- Adicionar limpeza defensiva no bootstrap do app para desregistrar qualquer service worker residual e limpar caches do navegador quando o app abrir.
-- Garantir que isso funcione tanto em preview quanto na versão publicada.
+### 1) Tornar "Desconsiderar" verdadeiramente global
+Despesa marcada como desconsiderada passa a ser ignorada **em todos** os cálculos e gráficos financeiros, sem alterar `status` no banco (mantemos a flag, sem efeito colateral em "paga/pendente").
 
-### 2) Remover completamente o legado de PWA do produto
-Como você escolheu remover PWA, vou eliminar os pontos que mantêm esse comportamento vivo:
+Pontos que serão corrigidos:
+- Saldo Disponível / Saldo Real (corrige o bug do saldo final).
+- Receitas e Despesas do mês exibidas no dashboard.
+- Gráfico "Receitas vs Despesas" (anual).
+- Gráfico "Despesas por Categoria".
+- Comparativo Mensal.
+- Gastos Diários, Calendário e alertas — auditarei e ajustarei se incluírem desconsideradas.
+- "Total Geral de Despesas" do mês.
 
-- remover a página/fluxo de instalação do app,
-- remover textos e promessas de uso offline,
-- limpar declarações/tipos legados ligados a `virtual:pwa-register`,
-- revisar `index.html` e assets públicos para retirar o que induz instalação/PWA desnecessária,
-- manter apenas os ícones e metadados que fizerem sentido para a web normal.
+### 2) Tornar a opção mais visível e clara
+Hoje a opção fica só no menu de três pontinhos da linha. Vou:
+- Manter o toggle existente, mas garantir o rótulo claro: "Desconsiderar do saldo" / "Reconsiderar no saldo".
+- Adicionar um indicador visual mais explícito na própria linha quando a transação estiver desconsiderada (badge "Desconsiderada" + opacidade reduzida — parte já existe).
+- Mostrar a opção também no modal de detalhes da transação, para não depender só do menu.
 
-### 3) Unificar a identificação de versão
-Hoje há sinais de versão em mais de um lugar e de formas diferentes.
-Vou padronizar isso para evitar falsa percepção de “versões misturadas”:
+### 3) Garantir consistência também para receitas
+A opção hoje aparece em despesas e receitas. Ela continuará funcionando para os dois, e ambas serão removidas dos cálculos quando marcadas.
 
-- remover versão hardcoded no menu lateral,
-- usar uma única fonte de verdade para versão/build,
-- atualizar o controle do “o que há de novo” para refletir a versão real atual.
-
-### 4) Validação final
-Vou validar com foco no sintoma real:
-
-- confirmar que não há mais registro de service worker no app carregado,
-- confirmar que `/sw.js` e `/service-worker.js` atuam só como limpeza e não mantêm cache ativo,
-- verificar que preview e publicado carregam o bundle atual,
-- checar que a interface exibe a mesma versão de forma consistente.
+### 4) Validação
+- Criar uma despesa, marcar como paga, depois marcar como "Desconsiderar": Saldo Disponível volta ao valor anterior.
+- Lançar uma receita logo em seguida: Saldo Disponível reflete só a receita.
+- Conferir gráficos: a despesa desconsiderada some das barras e do donut.
 
 ## Detalhes técnicos
-- Não haverá mudança de banco de dados.
-- O objetivo é transformar o app em web app normal, sem modo offline/installável.
-- O problema principal é cliente legado controlado por service worker antigo, não cache do HTML do deploy atual.
-- A correção será focada em limpeza compatível com dispositivos que já ficaram “contaminados” por versões anteriores.
-
-Se você aprovar, eu implemento essa limpeza completa agora.
+- Sem migração de banco: a coluna `transactions.desconsiderada` já existe.
+- Mudanças concentradas em `src/hooks/useTransactions.ts` (queries do dashboard, gráficos e categoria) e nos componentes de dashboard/calendário/alertas que somam transações.
+- Não vou trocar `status='completed'` para `pending` ao desconsiderar — manter a flag desacoplada evita efeitos colaterais em parcelamentos, recorrência, faturas e relatórios.
+- Memória do projeto será atualizada para refletir que `desconsiderada` agora afeta **todos** os totais (não só o estimado).
