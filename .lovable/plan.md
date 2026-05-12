@@ -1,49 +1,54 @@
-# Cards de Total por Responsável na aba Cartões
+# Plano para corrigir a exibição recorrente da versão antiga
 
-## Objetivo
-Adicionar uma seção de cards na página `/cartoes` mostrando o total de despesas (parcelas) por responsável no mês selecionado, usando o filtro de mês já existente na página.
+## Diagnóstico
+Encontrei sinais claros de que o problema não está no HTML publicado em si, e sim em resíduos de instalação/cache no navegador:
 
-## O que será feito
+- O snapshot do navegador do usuário ainda mostra `Service Worker registrado: {}` duas vezes.
+- O código atual já não contém registro ativo de service worker no app principal.
+- Isso indica que alguns dispositivos/abas continuam presos a um bundle antigo previamente instalado em modo PWA ou controlado por um service worker antigo.
+- O kill-switch atual em `/sw.js` e `/service-worker.js` é incompleto para esse cenário: ele limpa cache e se desregistra, mas não força as janelas controladas a navegar novamente antes do unregister.
+- O projeto ainda mantém superfície de PWA/instalação (`/instalar`, textos de uso offline, tipos e assets relacionados), o que mantém o fluxo vivo e favorece reinstalações com comportamento antigo.
 
-### 1. Novo componente: `src/components/cartoes/ResumoResponsaveisMes.tsx`
-- Recebe `mesReferencia: Date` como prop.
-- Busca via Supabase todas as `parcelas_cartao` (ativas) com `mes_referencia` dentro do mês selecionado, fazendo join com `compras_cartao` (para obter `responsavel_id`, `user_id`) e `responsaveis` (para nome/apelido/is_titular).
-- Agrupa o total absoluto (`Math.abs(valor)`) por responsável. Compras sem `responsavel_id` são consideradas do titular (igual à lógica já existente em `ResumoPorResponsavel`).
-- Renderiza um grid responsivo (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`) de cards minimalistas — seguindo o estilo fintech premium do projeto (rounded-xl, border, shadow leve, ícone Crown para titular / User para demais), exibindo:
-  - Nome (apelido se existir) + badge "Eu" para titular
-  - Valor total em `formatCurrency`
-  - Quantidade de lançamentos
-  - Percentual sobre o total geral
-- Estado de loading com Skeletons; estado vazio escondendo a seção.
+## O que vou implementar
 
-### 2. Integração em `src/pages/Cartoes.tsx`
-- Importar e renderizar `<ResumoResponsaveisMes mesReferencia={mesReferencia} />` logo após a navegação de mês (linha ~265) e antes da lista de cartões.
-- O componente reage automaticamente ao mês selecionado pelos botões de navegação já existentes (`irMesAnterior` / `irProximoMes`).
+### 1) Reforçar a remoção definitiva de service workers antigos
+- Substituir os workers de limpeza por uma versão robusta que:
+  - assume controle imediato,
+  - apaga todos os caches,
+  - reenfileira navegação de todas as janelas abertas com um parâmetro de limpeza,
+  - só depois se desregistra.
+- Adicionar limpeza defensiva no bootstrap do app para desregistrar qualquer service worker residual e limpar caches do navegador quando o app abrir.
+- Garantir que isso funcione tanto em preview quanto na versão publicada.
 
-### 3. Hook de dados
-- Criar `useTotaisPorResponsavelMes(mesReferencia)` dentro do próprio componente (ou em `src/services/cartoes.ts` se preferível — usar `useQuery` com queryKey `["totais-responsavel-mes", userId, "yyyy-MM"]`, staleTime 2min).
-- Filtrar por `user_id` do usuário autenticado e `ativo = true` nas parcelas.
+### 2) Remover completamente o legado de PWA do produto
+Como você escolheu remover PWA, vou eliminar os pontos que mantêm esse comportamento vivo:
+
+- remover a página/fluxo de instalação do app,
+- remover textos e promessas de uso offline,
+- limpar declarações/tipos legados ligados a `virtual:pwa-register`,
+- revisar `index.html` e assets públicos para retirar o que induz instalação/PWA desnecessária,
+- manter apenas os ícones e metadados que fizerem sentido para a web normal.
+
+### 3) Unificar a identificação de versão
+Hoje há sinais de versão em mais de um lugar e de formas diferentes.
+Vou padronizar isso para evitar falsa percepção de “versões misturadas”:
+
+- remover versão hardcoded no menu lateral,
+- usar uma única fonte de verdade para versão/build,
+- atualizar o controle do “o que há de novo” para refletir a versão real atual.
+
+### 4) Validação final
+Vou validar com foco no sintoma real:
+
+- confirmar que não há mais registro de service worker no app carregado,
+- confirmar que `/sw.js` e `/service-worker.js` atuam só como limpeza e não mantêm cache ativo,
+- verificar que preview e publicado carregam o bundle atual,
+- checar que a interface exibe a mesma versão de forma consistente.
 
 ## Detalhes técnicos
+- Não haverá mudança de banco de dados.
+- O objetivo é transformar o app em web app normal, sem modo offline/installável.
+- O problema principal é cliente legado controlado por service worker antigo, não cache do HTML do deploy atual.
+- A correção será focada em limpeza compatível com dispositivos que já ficaram “contaminados” por versões anteriores.
 
-```text
-Layout final da página:
-  Header
-  Previsão de Faturas (existente)
-  Navegação de Mês (existente)
-  → [NOVO] Resumo por Responsável (mês atual)  ← cards
-  Lista de Cartões (existente)
-```
-
-Query principal (pseudo-SQL via supabase-js):
-```
-parcelas_cartao
-  .select("valor, compra:compras_cartao!inner(user_id, responsavel_id, responsavel:responsaveis(nome, apelido, is_titular))")
-  .eq("ativo", true)
-  .gte("mes_referencia", "YYYY-MM-01")
-  .lt("mes_referencia", "YYYY-(MM+1)-01")
-  .filter user_id == auth.uid()
-```
-
-## Resultado
-Usuário vê, para cada mês navegado, quanto cada pessoa (titular e demais responsáveis) consumiu somando todos os cartões — totalizando a visão de despesas por responsável já no topo da página.
+Se você aprovar, eu implemento essa limpeza completa agora.

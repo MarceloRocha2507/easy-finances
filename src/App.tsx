@@ -39,7 +39,7 @@ const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
 const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
-const InstalarPage = lazy(() => import("./pages/Instalar"));
+
 const AssistentePage = lazy(() => import("./pages/Assistente"));
 
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
@@ -376,15 +376,6 @@ const App = () => (
                 <AdminRoute>
                   <Admin />
                 </AdminRoute>
-              }
-            />
-
-            <Route
-              path="/instalar"
-              element={
-                <Suspense fallback={<LoadingScreen />}>
-                  <InstalarPage />
-                </Suspense>
               }
             />
 

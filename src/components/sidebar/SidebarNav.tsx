@@ -213,9 +213,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         Fina IA
       </Link>
       
-      <div className="mt-auto pt-4 px-4 pb-2 text-[10px] text-muted-foreground/40 font-mono text-center">
-        v1.2.0_clean
-      </div>
     </nav>
   );
 });
