@@ -83,6 +83,7 @@ export function DetalhesTotalDespesasDialog({
         .eq("user_id", user.id)
         .eq("type", "expense")
         .is("deleted_at", null)
+        .eq("desconsiderada", false)
         .or(`and(status.eq.completed,date.gte.${inicioMes},date.lte.${fimMes}),and(status.eq.pending,due_date.gte.${inicioMes},due_date.lte.${fimMes})`);
 
       if (transError) throw transError;

@@ -283,7 +283,8 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         .eq('user_id', user!.id)
         .eq('type', 'expense')
         .in('status', ['completed', 'pending'])
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .eq('desconsiderada', false);
 
       if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -424,10 +425,11 @@ export function useMonthlyData(year: number) {
 
       const { data, error } = await supabase
         .from('transactions')
-        .select('type, amount, date')
+        .select('type, amount, date, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
+        .eq('desconsiderada', false)
         .gte('date', startDate)
         .lte('date', endDate);
 
@@ -1286,12 +1288,12 @@ export function useCompleteStats(mesReferencia?: Date) {
       const today = new Date().toISOString().split('T')[0];
       
       // Calcular saldo acumulado usando TODAS as transações completed
+      // Despesas/receitas marcadas como "desconsiderada" são ignoradas do caixa
       let allCompletedIncome = 0;
       let allCompletedExpense = 0;
       (allCompleted || []).forEach((t) => {
+        if ((t as any).desconsiderada === true) return;
         const amount = Number(t.amount);
-        // Para saldo real, toda transação completed impacta o caixa
-        // (inclusive pagamentos de fatura, que saem da conta bancária)
         if (t.type === 'income') allCompletedIncome += amount;
         else allCompletedExpense += amount;
       });
@@ -1319,6 +1321,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       let faturaViaTransacao = 0;
       let despesasBase = 0;
       (completedDoMes || []).forEach((t) => {
+        if ((t as any).desconsiderada === true) return;
         const amount = Number(t.amount);
         const isMetaCategory = t.category_id && metaCategoryIds.has(t.category_id);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
