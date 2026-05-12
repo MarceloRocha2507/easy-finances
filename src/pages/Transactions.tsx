@@ -1718,7 +1718,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
-    <div className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors", transaction.desconsiderada && "opacity-50")}>
+    <div className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors")}>
       {/* Ícone da categoria */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
