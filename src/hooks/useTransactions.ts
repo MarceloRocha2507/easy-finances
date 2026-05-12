@@ -424,10 +424,11 @@ export function useMonthlyData(year: number) {
 
       const { data, error } = await supabase
         .from('transactions')
-        .select('type, amount, date')
+        .select('type, amount, date, desconsiderada')
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .is('deleted_at', null)
+        .eq('desconsiderada', false)
         .gte('date', startDate)
         .lte('date', endDate);
 
