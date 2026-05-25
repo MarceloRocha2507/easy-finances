@@ -475,6 +475,22 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
+                {l.riscadaSemCredito && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#FEF3C7",
+                      color: "#92400E",
+                      fontWeight: 700,
+                    }}
+                    title="Aparece riscada na fatura mas ainda não tem crédito de estorno. O valor cheio continua sendo cobrado."
+                  >
+                    RISCADA SEM CRÉDITO
+                  </span>
+                )}
+
                 {l.creditoParcelamentoGenerico && !l.estornoParcelamento && (
                   <span
                     style={{
