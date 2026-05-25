@@ -259,6 +259,39 @@ export default function DespesasCartao() {
     }
   }, [id, mesRef]);
 
+  const handleExcluirLote = useCallback(async () => {
+    if (selecionadas.size === 0) return;
+    setExcluindoLote(true);
+    const ids = Array.from(selecionadas);
+    const mapa = new Map(parcelas.map((p) => [p.id, p]));
+    let ok = 0;
+    let fail = 0;
+    for (const pid of ids) {
+      const p = mapa.get(pid);
+      if (!p) { fail++; continue; }
+      try {
+        await excluirParcelas({
+          compraId: p.compra_id,
+          parcelaId: p.id,
+          numeroParcela: p.numero_parcela,
+          escopo: "parcela",
+        });
+        ok++;
+      } catch (e) {
+        console.error(e);
+        fail++;
+      }
+    }
+    setExcluindoLote(false);
+    setConfirmarExcluirLoteOpen(false);
+    setSelecionadas(new Set());
+    setModoSelecao(false);
+    if (ok > 0) toast.success(`${ok} parcela(s) excluída(s)`);
+    if (fail > 0) toast.error(`${fail} falha(s) ao excluir`);
+    carregarFatura();
+  }, [selecionadas, parcelas]);
+
+
   useEffect(() => {
     if (!id) return;
     carregarFatura();
