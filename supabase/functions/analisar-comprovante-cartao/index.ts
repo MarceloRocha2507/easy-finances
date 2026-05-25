@@ -104,19 +104,17 @@ Regras importantes:
                 properties: {
                   compras: {
                     type: "array",
-                    maxItems: 30,
                     items: {
                       type: "object",
                       properties: {
-                        valor: { type: ["number", "null"], description: "Valor absoluto em reais" },
-                        estabelecimento: { type: ["string", "null"], description: "Nome ou descrição" },
-                        tipo: { type: "string", enum: ["compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "outro"] },
-                        sinal: { type: "string", enum: ["debito", "credito"] },
-                        data: { type: ["string", "null"], description: "Data YYYY-MM-DD" },
-                        parcelas: { type: "integer", minimum: 1, maximum: 24, description: "Nº de parcelas (1 = à vista)" },
+                        valor: { type: "number", description: "Valor absoluto em reais" },
+                        estabelecimento: { type: "string", description: "Nome ou descrição" },
+                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno ou outro" },
+                        sinal: { type: "string", description: "debito ou credito" },
+                        data: { type: "string", description: "Data YYYY-MM-DD" },
+                        parcelas: { type: "integer", description: "Nº de parcelas, 1 a 24 (1 = à vista)" },
                       },
                       required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas"],
-                      additionalProperties: false,
                     },
                   },
                   confianca: { type: "string", enum: ["alta", "media", "baixa"] },
