@@ -140,6 +140,70 @@ export function NovaCompraCartaoDialog({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [analisandoImagem, setAnalisandoImagem] = useState(false);
+  const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+
+  async function handleImagemComprovante(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande", description: "Máximo 5MB.", variant: "destructive" });
+      return;
+    }
+    setAnalisandoImagem(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setImagemPreview(dataUrl);
+      const base64 = dataUrl.split(",")[1];
+
+      const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
+        body: { imageBase64: base64, mimeType: file.type },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const updates: Partial<typeof form> = {};
+      if (typeof data.valor === "number" && data.valor > 0) {
+        updates.valor = data.valor.toFixed(2).replace(".", ",");
+      }
+      if (typeof data.estabelecimento === "string" && data.estabelecimento.trim()) {
+        updates.descricao = data.estabelecimento.trim();
+        updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
+      }
+      if (typeof data.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.data)) {
+        updates.dataCompra = data.data;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        toast({
+          title: "Não foi possível identificar os dados",
+          description: "Preencha manualmente.",
+          variant: "destructive",
+        });
+      } else {
+        setForm((f) => ({ ...f, ...updates }));
+        toast({
+          title: "Dados preenchidos!",
+          description: `Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
+        });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        title: "Erro ao analisar imagem",
+        description: e?.message || "Tente novamente.",
+        variant: "destructive",
+      });
+      setImagemPreview(null);
+    } finally {
+      setAnalisandoImagem(false);
+    }
+  }
 
   const opcoesMesFatura = useMemo(() => {
     const hoje = new Date();
