@@ -15,7 +15,8 @@ export interface CompraExtraida {
   data: string | null;
   parcelas: number;
   parcela_atual?: number;
-  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "outro";
+  valor_eh_parcela?: boolean;
+  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
 }
 
@@ -38,6 +39,7 @@ type LinhaCompra = {
   parcelaAtual: string;
   tipo: string;
   sinal: "debito" | "credito";
+  valorEhParcela: boolean;
   possivelDuplicada?: boolean;
 };
 
