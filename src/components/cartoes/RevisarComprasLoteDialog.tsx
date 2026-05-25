@@ -35,6 +35,7 @@ type LinhaCompra = {
   valor: string;
   data: string;
   parcelas: string;
+  parcelaAtual: string;
   tipo: string;
   sinal: "debito" | "credito";
   possivelDuplicada?: boolean;
