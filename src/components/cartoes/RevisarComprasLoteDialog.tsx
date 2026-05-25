@@ -489,7 +489,7 @@ export function RevisarComprasLoteDialog({
               {selecionadas.length} selecionada(s)
             </span>
             <span style={{ color: "#111827", fontWeight: 600 }}>
-              Líquido: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
+              Total fatura deste mês: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
             </span>
           </div>
           {(totalDebitos > 0 || totalCreditos > 0) && (
