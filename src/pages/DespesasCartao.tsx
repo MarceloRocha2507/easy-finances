@@ -72,6 +72,7 @@ import {
   calcularResumoPorResponsavel,
   ResumoResponsavel,
   desmarcarTodasParcelas,
+  excluirParcelas,
 } from "@/services/compras-cartao";
 import { useResponsaveis } from "@/services/responsaveis";
 import { Cartao } from "@/services/cartoes";
