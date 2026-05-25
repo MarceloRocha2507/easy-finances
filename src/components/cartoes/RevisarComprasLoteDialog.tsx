@@ -460,14 +460,20 @@ export function RevisarComprasLoteDialog({
           )}
           style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
         >
-          <div className="flex items-center justify-between mb-2" style={{ fontSize: 13 }}>
+          <div className="flex items-center justify-between mb-1" style={{ fontSize: 13 }}>
             <span style={{ color: "#6B7280" }}>
               {selecionadas.length} selecionada(s)
             </span>
             <span style={{ color: "#111827", fontWeight: 600 }}>
-              Total: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
+              Líquido: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
             </span>
           </div>
+          {(totalDebitos > 0 || totalCreditos > 0) && (
+            <div className="flex items-center justify-end gap-3 mb-2" style={{ fontSize: 11, color: "#6B7280" }}>
+              <span>Débitos: R$ {totalDebitos.toFixed(2).replace(".", ",")}</span>
+              <span style={{ color: "#059669" }}>Créditos: −R$ {totalCreditos.toFixed(2).replace(".", ",")}</span>
+            </div>
+          )}
           <button
             type="button"
             onClick={handleSalvarTudo}
