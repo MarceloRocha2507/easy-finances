@@ -359,6 +359,22 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
+                {l.valorEhParcela && parseInt(l.parcelas) > 1 && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#EEF2FF",
+                      color: "#4338CA",
+                      fontWeight: 600,
+                    }}
+                    title="Valor mostrado é de UMA parcela. Total da compra será calculado automaticamente."
+                  >
+                    VALOR DA PARCELA
+                  </span>
+                )}
+
                 {l.possivelDuplicada && (
                   <span
                     style={{
