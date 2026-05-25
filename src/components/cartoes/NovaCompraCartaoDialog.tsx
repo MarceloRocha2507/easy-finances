@@ -146,6 +146,41 @@ export function NovaCompraCartaoDialog({
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
   const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
+  const [imagensPendentes, setImagensPendentes] = useState<Array<{ file: File; preview: string }>>([]);
+
+  const MAX_IMAGENS = 5;
+  const MAX_TAMANHO = 5 * 1024 * 1024;
+
+  function adicionarImagensPendentes(files: File[]) {
+    if (files.length === 0) return;
+    setImagensPendentes((prev) => {
+      const restante = MAX_IMAGENS - prev.length;
+      if (restante <= 0) {
+        toast({ title: `Máximo ${MAX_IMAGENS} imagens`, variant: "destructive" });
+        return prev;
+      }
+      const aceitos: Array<{ file: File; preview: string }> = [];
+      for (const f of files.slice(0, restante)) {
+        if (f.size > MAX_TAMANHO) {
+          toast({ title: `"${f.name}" muito grande`, description: "Máximo 5MB.", variant: "destructive" });
+          continue;
+        }
+        aceitos.push({ file: f, preview: URL.createObjectURL(f) });
+      }
+      if (files.length > restante) {
+        toast({ title: `${files.length - restante} imagem(ns) ignorada(s)`, description: `Limite de ${MAX_IMAGENS}.` });
+      }
+      return [...prev, ...aceitos];
+    });
+  }
+
+  function removerImagemPendente(index: number) {
+    setImagensPendentes((prev) => {
+      const item = prev[index];
+      if (item) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
