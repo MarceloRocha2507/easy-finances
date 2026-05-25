@@ -191,9 +191,8 @@ export function NovaCompraCartaoDialog({
         updates.descricao = data.estabelecimento.trim();
         updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
       }
-      if (typeof data.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.data)) {
-        updates.dataCompra = data.data;
-      }
+      // Data da IA é ignorada propositalmente: a data atual já está preenchida no formulário
+      // para evitar que datas antigas extraídas do comprovante bagunçem o mês da fatura.
       const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
       if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
         updates.tipoLancamento = "parcelada";
