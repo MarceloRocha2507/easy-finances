@@ -189,7 +189,7 @@ export function RevisarComprasLoteDialog({
       crePend += valorEsteMes(l);
     }
     return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre, totalCreditosPendentes: crePend };
-  }, [selecionadas]);
+  }, [selecionadas, linhas]);
 
 
   async function handleSalvarTudo() {
