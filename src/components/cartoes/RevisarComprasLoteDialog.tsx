@@ -191,6 +191,7 @@ export function RevisarComprasLoteDialog({
           let valor = parseFloat(l.valor.replace(",", "."));
           if (l.sinal === "credito") valor = -valor;
           const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
+          const parcelaInicial = Math.min(Math.max(parseInt(l.parcelaAtual) || 1, 1), numParcelas);
           const dataCompra = new Date(l.data + "T12:00:00");
           const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
@@ -200,7 +201,7 @@ export function RevisarComprasLoteDialog({
             descricao: l.descricao.trim(),
             valorTotal: valor,
             parcelas: numParcelas,
-            parcelaInicial: 1,
+            parcelaInicial,
             mesFatura: new Date(ano, mes - 1, 1),
             tipoLancamento: numParcelas > 1 ? "parcelada" : "unica",
             dataCompra,
