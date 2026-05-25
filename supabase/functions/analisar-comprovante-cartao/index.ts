@@ -303,6 +303,7 @@ Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fa
         parcelas,
         parcela_atual: parcelaAtual,
         valor_eh_parcela: valorEhParcela,
+        riscada: c?.riscada === true,
         ignorar: c?.ignorar === true,
       };
     }).filter((c: any) =>
@@ -310,6 +311,76 @@ Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fa
       c.valor > 0 &&
       c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
     );
+
+    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" ==============
+    // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
+    // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
+    // marcar riscada_sem_credito=true (regra 4).
+    function normalizeName(s: string | null | undefined): string {
+      return (s || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+    }
+    function nomesParecidos(a: string, b: string): boolean {
+      if (!a || !b) return false;
+      if (a === b) return true;
+      const min = Math.min(a.length, b.length);
+      if (min < 3) return false;
+      return a.startsWith(b.substring(0, min)) || b.startsWith(a.substring(0, min));
+    }
+
+    const finPrimeiras = compras.filter((c: any) =>
+      c.tipo === "compra" &&
+      c.valor_eh_parcela === true &&
+      c.parcela_atual === 1 &&
+      typeof c.linha_original === "string" &&
+      /\bfin\b/i.test(c.linha_original)
+    );
+
+    for (const fin of finPrimeiras) {
+      const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
+      const nomeFin = normalizeName(fin.estabelecimento);
+
+      // Tenta achar crédito de parcelamento com valor ≈ totalCompra
+      const credito = compras.find((c: any) =>
+        c !== fin &&
+        c.sinal === "credito" &&
+        (c.tipo === "estorno_parcelamento" || /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
+        Math.abs((c.valor || 0) - totalCompra) < 0.02
+      );
+
+      // Tenta achar raiz: mesma similaridade de nome E (valor ≈ totalCompra OU está riscada)
+      const raiz = compras.find((c: any) =>
+        c !== fin &&
+        c.tipo !== "iof" &&
+        c.tipo !== "estorno_parcelamento" &&
+        c.sinal !== "credito" &&
+        !c.valor_eh_parcela &&
+        nomesParecidos(normalizeName(c.estabelecimento), nomeFin) &&
+        Math.abs((c.valor || 0) - totalCompra) < 0.02
+      );
+
+      if (raiz && credito) {
+        raiz.ignorar = true;
+        raiz.tipo = "compra_substituida";
+        credito.ignorar = true;
+        credito.tipo = "estorno_parcelamento";
+      }
+    }
+
+    // Regra 4: marcar compras riscadas que NÃO têm crédito de mesmo valor
+    for (const c of compras) {
+      if (!c.riscada || c.ignorar) continue;
+      const temCredito = compras.some((o: any) =>
+        o !== c &&
+        o.sinal === "credito" &&
+        Math.abs((o.valor || 0) - (c.valor || 0)) < 0.02
+      );
+      (c as any).riscada_sem_credito = !temCredito;
+    }
+
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
