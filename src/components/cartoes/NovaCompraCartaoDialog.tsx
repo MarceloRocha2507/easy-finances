@@ -609,7 +609,6 @@ export function NovaCompraCartaoDialog({
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   disabled={analisandoImagem}
                   style={{ display: "none" }}
                   onChange={(e) => {
