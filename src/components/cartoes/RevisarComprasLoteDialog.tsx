@@ -89,19 +89,30 @@ export function RevisarComprasLoteDialog({
     return compras.map((c) => {
       const total = Math.min(Math.max(c.parcelas || 1, 1), 24);
       const atual = Math.min(Math.max(c.parcela_atual || 1, 1), total);
-      const creditoParcelamentoGenerico = isCreditoParcelamentoGenerico(c.estabelecimento, c.tipo, c.sinal || "debito");
+      const sinal = c.sinal || "debito";
+      const tipo = c.tipo || "compra";
+      const estornoParcelamento = sinal === "credito" && tipo === "estorno_parcelamento";
+      const compraSubstituida = c.ignorar === true || tipo === "compra_substituida";
+      const creditoParcelamentoGenerico = !estornoParcelamento && isCreditoParcelamentoGenerico(c.estabelecimento, tipo, sinal);
+
+      // Padrão: incluir tudo exceto compras substituídas e créditos genéricos legados sem match
+      let incluir = true;
+      if (compraSubstituida) incluir = false;
+      else if (creditoParcelamentoGenerico) incluir = false;
 
       return {
-        incluir: !creditoParcelamentoGenerico,
+        incluir,
         descricao: c.estabelecimento?.trim() || "",
         valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
         data: hoje,
         parcelas: String(total),
         parcelaAtual: String(atual),
-        tipo: c.tipo || "compra",
-        sinal: c.sinal || "debito",
+        tipo,
+        sinal,
         valorEhParcela: c.valor_eh_parcela === true,
         creditoParcelamentoGenerico,
+        estornoParcelamento,
+        compraSubstituida,
       };
     });
   });
