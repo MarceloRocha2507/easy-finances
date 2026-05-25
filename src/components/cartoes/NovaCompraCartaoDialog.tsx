@@ -196,7 +196,7 @@ export function NovaCompraCartaoDialog({
     return /nu\s*bank|\bnu\b/.test(txt);
   }
 
-  async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
+  async function analisarUmaImagem(file: File): Promise<{ compras: CompraExtraida[]; saldoAnterior: number | null; lancamentosResumo: number | null }> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -210,7 +210,11 @@ export function NovaCompraCartaoDialog({
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
     const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
-    return comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento);
+    return {
+      compras: comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento),
+      saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
+      lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
+    };
   }
 
   async function handleAnalisarPendentes() {
