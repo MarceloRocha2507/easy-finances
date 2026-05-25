@@ -352,7 +352,7 @@ export function RevisarComprasLoteDialog({
                       color: "#92400E",
                       fontWeight: 700,
                       display: "flex",
-                      itemsCenter: "center",
+                      alignItems: "center",
                       gap: 3
                     }}
                   >
