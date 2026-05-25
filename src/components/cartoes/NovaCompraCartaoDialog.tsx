@@ -255,10 +255,10 @@ export function NovaCompraCartaoDialog({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
         description: `De ${sucessos.length} imagem(ns)${falhas > 0 ? ` · ${falhas} falharam` : ""}. Revise antes de salvar.`,
       });
-      // limpa fila após sucesso
+    } finally {
+      // Privacidade: revoga previews e limpa a fila independente de sucesso/falha.
       imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
       setImagensPendentes([]);
-    } finally {
       setAnalisandoImagem(false);
       setProgressoAnalise(null);
     }
@@ -405,8 +405,9 @@ export function NovaCompraCartaoDialog({
         description: e?.message || "Tente novamente.",
         variant: "destructive",
       });
-      setImagemPreview(null);
     } finally {
+      // Privacidade: descarta a imagem da UI/memória imediatamente após a análise.
+      setImagemPreview(null);
       setAnalisandoImagem(false);
     }
   }
@@ -788,6 +789,9 @@ export function NovaCompraCartaoDialog({
                     </p>
                     <p style={{ fontSize: 11, color: "#6B7280" }}>
                       Adicione fotos · cole com Ctrl+V · clique em Analisar
+                    </p>
+                    <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
+                      A imagem é analisada em memória e descartada após o processamento. Nada fica armazenado.
                     </p>
                   </div>
                   <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
