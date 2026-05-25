@@ -58,19 +58,21 @@ Deno.serve(async (req) => {
 
     const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil.
 
-A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura, lista de transações). Extraia TODAS as compras visíveis e retorne no array "compras".
+A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura, lista de transações). Extraia TODAS as linhas de transação visíveis (compras, taxas, impostos, estornos) e retorne no array "compras".
 
-Para cada compra, extraia:
-1. valor: valor TOTAL da compra (número em reais, ponto decimal). Se for parcelado ("3x de R$ 50,00"), retorne o total (R$ 150,00).
-2. estabelecimento: nome curto e limpo (ex: "Pão de Açúcar", "Uber", "Amazon"). Sem CNPJ nem endereço.
-3. data: data da compra no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
-4. parcelas: inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M", "N x". À vista ou sem indicação = 1. Ignore parcelamentos cancelados/recusados.
+Para cada item, extraia:
+1. valor: valor absoluto do item (número em reais, ponto decimal). Se for parcelado ("3x de R$ 50,00"), retorne o total (R$ 150,00).
+2. estabelecimento: nome ou descrição do item (ex: "Pão de Açúcar", "IOF", "Anuidade", "Estorno Uber").
+3. tipo: categorize em: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno" ou "outro".
+4. sinal: "debito" (para compras e taxas) ou "credito" (para estornos, pagamentos e créditos).
+5. data: data da transação no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
+6. parcelas: inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M", "N x". À vista ou sem indicação = 1.
 
 Regras importantes:
-- IGNORE linhas de pagamento de fatura, estornos, créditos, ajustes e taxas (não são compras).
+- NÃO ignore IOF, taxas ou estornos. Registre TUDO que represente uma transação na fatura.
 - IGNORE totais/subtotais da fatura — só as transações individuais.
-- Se a imagem for ilegível ou não contiver compras, retorne compras: [] e confianca: "baixa".
-- Máximo 30 compras por imagem.`;
+- Se a imagem for ilegível ou não contiver transações, retorne compras: [] e confianca: "baixa".
+- Máximo 30 itens por imagem.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -105,12 +107,14 @@ Regras importantes:
                     items: {
                       type: "object",
                       properties: {
-                        valor: { type: ["number", "null"], description: "Valor TOTAL em reais" },
-                        estabelecimento: { type: ["string", "null"], description: "Nome do estabelecimento" },
+                        valor: { type: ["number", "null"], description: "Valor absoluto em reais" },
+                        estabelecimento: { type: ["string", "null"], description: "Nome ou descrição" },
+                        tipo: { type: "string", enum: ["compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "outro"] },
+                        sinal: { type: "string", enum: ["debito", "credito"] },
                         data: { type: ["string", "null"], description: "Data YYYY-MM-DD" },
                         parcelas: { type: "integer", minimum: 1, maximum: 24, description: "Nº de parcelas (1 = à vista)" },
                       },
-                      required: ["valor", "estabelecimento", "data", "parcelas"],
+                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas"],
                       additionalProperties: false,
                     },
                   },
@@ -157,7 +161,7 @@ Regras importantes:
     }
 
     let parsed: {
-      compras: Array<{ valor: number | null; estabelecimento: string | null; data: string | null; parcelas: number }>;
+      compras: Array<{ valor: number | null; estabelecimento: string | null; data: string | null; parcelas: number; tipo?: string; sinal?: "debito" | "credito" }>;
       confianca: string;
     };
     try {
@@ -179,8 +183,10 @@ Regras importantes:
           estabelecimento: first.estabelecimento,
           data: first.data,
           parcelas: first.parcelas ?? 1,
+          tipo: first.tipo,
+          sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1 };
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1, tipo: "compra", sinal: "debito" };
 
     return new Response(
       JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),
