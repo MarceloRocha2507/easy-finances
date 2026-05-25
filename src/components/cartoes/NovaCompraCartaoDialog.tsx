@@ -255,10 +255,10 @@ export function NovaCompraCartaoDialog({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
         description: `De ${sucessos.length} imagem(ns)${falhas > 0 ? ` · ${falhas} falharam` : ""}. Revise antes de salvar.`,
       });
-      // limpa fila após sucesso
+    } finally {
+      // Privacidade: revoga previews e limpa a fila independente de sucesso/falha.
       imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
       setImagensPendentes([]);
-    } finally {
       setAnalisandoImagem(false);
       setProgressoAnalise(null);
     }
