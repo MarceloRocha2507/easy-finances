@@ -8,6 +8,7 @@ import { criarCompraCartao } from "@/services/compras-cartao";
 import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
 import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { FaturaPicpayBreakdown } from "./FaturaPicpayBreakdown";
 
 export interface CompraExtraida {
   valor: number | null;
