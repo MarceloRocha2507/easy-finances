@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
     }
 
     const { imageBase64, mimeType } = body as { imageBase64: string; mimeType: string };
+    const isPicpay = body?.picpay === true;
 
     if (imageBase64.length > MAX_BASE64_SIZE) {
       return new Response(
@@ -63,11 +64,9 @@ Deno.serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, PicPay, etc).
+    const picpayRules = `
 
-A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras". NÃO descarte linhas riscadas — marque-as com riscada=true.
-
-## COMPOSIÇÃO DA FATURA (5 categorias)
+## COMPOSIÇÃO DA FATURA PICPAY (5 categorias)
 
 Fatura final = (1) compras à vista + (2) parcelas de meses anteriores + (3) 1ª parcela Fin + IOF + (4) compras riscadas SEM crédito ainda − (5) pagamento parcial recebido.
 
@@ -89,22 +88,43 @@ Quando o usuário parcela uma compra já lançada, aparecem 3 movimentos na MESM
 Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. → tipo="compra", riscada=true, ignorar=false, valor_eh_parcela=false. Valor cheio permanece.
 
 ### 5) Pagamento de Fatura
-Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.
+Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
+
+    const genericRules = `
+
+## REGRAS DE EXTRAÇÃO
+
+### Compras à vista
+Sem indicação de parcela. → tipo="compra", parcelas=1, parcela_atual=1, valor_eh_parcela=false. Valor cheio.
+
+### Parcelas
+"Parcela X de Y", "X/Y", "parc XX/YY". → tipo="compra", parcelas=Y, parcela_atual=X, valor_eh_parcela=true. Valor mostrado JÁ É a parcela (NÃO multiplique).
+
+### Encargos / IOF / Anuidade
+Use o tipo correspondente ("iof", "anuidade", "juros", "encargo", "seguro").
+
+### Pagamento de Fatura
+Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
+
+    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, PicPay, etc).
+
+A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".${isPicpay ? " NÃO descarte linhas riscadas — marque-as com riscada=true." : ""}
+${isPicpay ? picpayRules : genericRules}
 
 ## CAMPOS
 
 1. valor (number): valor absoluto em REAIS. "R$ 1.234,56" → 1234.56. NUNCA inverta vírgula/ponto.
-2. estabelecimento (string): nome como aparece. "Fin <Nome> parcXX/YY" → use só <Nome>.
-3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro".
+2. estabelecimento (string): nome como aparece.${isPicpay ? ' "Fin <Nome> parcXX/YY" → use só <Nome>.' : ""}
+3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${isPicpay ? ' | "estorno_parcelamento" | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
 4. sinal: "debito" ou "credito".
 5. data: YYYY-MM-DD. Sem data, use hoje.
 6. parcelas (int 1-24).
 7. parcela_atual (int): "6/10" → 6.
-8. valor_eh_parcela (bool): true para regras 2 e 3c.
+8. valor_eh_parcela (bool): true quando o valor é de UMA parcela (extrato de fatura).
 9. linha_original (string): copie a linha exata. Não invente.
 10. valor_texto (string|null): valor exatamente como aparece (ex: "R$ 14,09").
 11. riscada (bool): true se o texto da linha está tachado/riscado na imagem. Default false.
-12. ignorar (bool): true para regras 3a e 3b. Default false.
+12. ignorar (bool): ${isPicpay ? "true para regras 3a e 3b (raiz substituída e crédito de parcelamento Fin). " : ""}Default false.
 
 ## REGRAS GERAIS
 
@@ -312,7 +332,8 @@ Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fa
       c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
     );
 
-    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" ==============
+    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
+    if (isPicpay) {
     // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
     // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
     // marcar riscada_sem_credito=true (regra 4).
@@ -380,6 +401,9 @@ Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fa
       );
       (c as any).riscada_sem_credito = !temCredito;
     }
+    } // fim if (isPicpay)
+
+
 
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
