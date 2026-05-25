@@ -243,7 +243,7 @@ export function NovaCompraCartaoDialog({
         .then((res) => {
           concluidas++;
           setProgressoAnalise({ atual: concluidas, total: lista.length });
-          return { ok: true as const, compras: res };
+          return { ok: true as const, ...res };
         })
         .catch((e) => {
           concluidas++;
@@ -255,7 +255,9 @@ export function NovaCompraCartaoDialog({
 
     try {
       const resultados = await Promise.all(promessas);
-      const sucessos = resultados.filter((r) => r.ok) as Array<{ ok: true; compras: CompraExtraida[] }>;
+      const sucessos = resultados.filter(
+        (r): r is { ok: true; compras: CompraExtraida[]; saldoAnterior: number | null; lancamentosResumo: number | null } => r.ok,
+      );
       const falhas = resultados.length - sucessos.length;
       const todasCompras = sucessos.flatMap((r) => r.compras);
 
@@ -268,6 +270,14 @@ export function NovaCompraCartaoDialog({
         return;
       }
 
+      // Para PicPay, usa o resumo da primeira imagem (cenário típico: 1 print por fatura).
+      const primeiroResumo = sucessos[0];
+      setLoteEhPicpay(isPicpay());
+      setResumoLotePicpay(
+        isPicpay() && primeiroResumo
+          ? { saldoAnterior: primeiroResumo.saldoAnterior, lancamentosResumo: primeiroResumo.lancamentosResumo }
+          : null,
+      );
       setComprasLote(todasCompras);
       toast({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
