@@ -169,6 +169,20 @@ export function NovaCompraCartaoDialog({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Detecção de múltiplas compras → abrir revisão em lote
+      const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
+      const comprasValidas = comprasArr.filter(
+        (c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento,
+      );
+      if (comprasValidas.length > 1) {
+        setComprasLote(comprasValidas);
+        toast({
+          title: `${comprasValidas.length} compras detectadas`,
+          description: "Revise e selecione as que deseja salvar.",
+        });
+        return;
+      }
+
       const updates: Partial<typeof form> = {};
       if (typeof data.valor === "number" && data.valor > 0) {
         updates.valor = data.valor.toFixed(2).replace(".", ",");
