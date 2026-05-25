@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon } from "lucide-react";
+import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon, Camera, Loader2, Sparkles } from "lucide-react";
 import { CalculatorPopover } from "@/components/ui/calculator-popover";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
