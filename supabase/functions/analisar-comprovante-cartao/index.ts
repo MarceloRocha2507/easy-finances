@@ -1,5 +1,12 @@
 // Edge function: analisar-comprovante-cartao
 // Recebe uma imagem (base64) e usa Lovable AI Gateway para extrair UMA OU MAIS compras.
+//
+// POLÍTICA DE PRIVACIDADE DA IMAGEM:
+// - A imagem trafega APENAS em memória durante esta requisição.
+// - NÃO é gravada em storage, bucket, tabela, cache ou disco.
+// - NUNCA logue `imageBase64`, `dataUrl` ou `body` em console.log/console.error.
+//   Apenas metadados seguros (mimeType, tamanho em bytes, status HTTP).
+// - As referências são liberadas explicitamente antes do return.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
