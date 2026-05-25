@@ -152,13 +152,17 @@ export function RevisarComprasLoteDialog({
 
   const selecionadas = useMemo(() => linhas.filter((l) => l.incluir), [linhas]);
 
-  const totalSelecionado = useMemo(
-    () => selecionadas.reduce((s, l) => {
+  const { totalSelecionado, totalDebitos, totalCreditos } = useMemo(() => {
+    let deb = 0;
+    let cre = 0;
+    for (const l of selecionadas) {
       const v = parseFloat(l.valor.replace(",", ".")) || 0;
-      return s + (l.sinal === "credito" ? -v : v);
-    }, 0),
-    [selecionadas],
-  );
+      if (l.sinal === "credito") cre += v;
+      else deb += v;
+    }
+    return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre };
+  }, [selecionadas]);
+
 
   async function handleSalvarTudo() {
     if (salvando) return;
