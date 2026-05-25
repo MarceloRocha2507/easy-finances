@@ -265,7 +265,7 @@ export function RevisarComprasLoteDialog({
                 Revisar compras detectadas
               </h2>
               <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>
-                {compras.length} compra(s) na imagem · Cartão {cartao.nome}
+                {compras.length} transação(ões) detectada(s) · Cartão {cartao.nome}
               </p>
             </div>
           </div>

@@ -145,6 +145,123 @@ export function NovaCompraCartaoDialog({
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
+  const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
+
+  async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const base64 = dataUrl.split(",")[1];
+    const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
+      body: { imageBase64: base64, mimeType: file.type },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
+    return comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento);
+  }
+
+  async function handleMultiplasImagens(files: File[]) {
+    if (files.length === 0) return;
+    if (analisandoImagem) return;
+
+    const MAX_IMAGENS = 5;
+    const MAX_TAMANHO = 5 * 1024 * 1024;
+
+    let lista = files.slice(0, MAX_IMAGENS);
+    if (files.length > MAX_IMAGENS) {
+      toast({ title: `Máximo ${MAX_IMAGENS} imagens por envio`, description: `As ${files.length - MAX_IMAGENS} imagens excedentes foram ignoradas.` });
+    }
+    lista = lista.filter((f) => {
+      if (f.size > MAX_TAMANHO) {
+        toast({ title: `Imagem "${f.name}" muito grande`, description: "Máximo 5MB por imagem.", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    if (lista.length === 0) return;
+
+    // Fluxo single: usa handler antigo para preencher form direto
+    if (lista.length === 1) {
+      handleImagemComprovante(lista[0]);
+      return;
+    }
+
+    setAnalisandoImagem(true);
+    setProgressoAnalise({ atual: 0, total: lista.length });
+    setImagemPreview(null);
+
+    let concluidas = 0;
+    const promessas = lista.map((file) =>
+      analisarUmaImagem(file)
+        .then((res) => {
+          concluidas++;
+          setProgressoAnalise({ atual: concluidas, total: lista.length });
+          return { ok: true as const, compras: res };
+        })
+        .catch((e) => {
+          concluidas++;
+          setProgressoAnalise({ atual: concluidas, total: lista.length });
+          console.error("Falha em uma imagem:", e);
+          return { ok: false as const, error: e };
+        }),
+    );
+
+    try {
+      const resultados = await Promise.all(promessas);
+      const sucessos = resultados.filter((r) => r.ok) as Array<{ ok: true; compras: CompraExtraida[] }>;
+      const falhas = resultados.length - sucessos.length;
+      const todasCompras = sucessos.flatMap((r) => r.compras);
+
+      if (todasCompras.length === 0) {
+        toast({
+          title: "Nenhuma transação detectada",
+          description: falhas > 0 ? `${falhas} imagem(ns) falharam ao processar.` : "Tente imagens mais nítidas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setComprasLote(todasCompras);
+      toast({
+        title: `${todasCompras.length} transação(ões) detectada(s)`,
+        description: `De ${sucessos.length} imagem(ns)${falhas > 0 ? ` · ${falhas} falharam` : ""}. Revise antes de salvar.`,
+      });
+    } finally {
+      setAnalisandoImagem(false);
+      setProgressoAnalise(null);
+    }
+  }
+
+  // Permitir colar imagem (Ctrl+V) enquanto o diálogo está aberto
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: ClipboardEvent) => {
+      if (analisandoImagem) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith("image/")) {
+          const f = item.getAsFile();
+          if (f) imageFiles.push(f);
+        }
+      }
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        toast({ title: imageFiles.length > 1 ? `${imageFiles.length} imagens coladas` : "Imagem colada", description: "Analisando..." });
+        handleMultiplasImagens(imageFiles);
+      }
+    };
+    window.addEventListener("paste", handler);
+    return () => window.removeEventListener("paste", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, analisandoImagem]);
+
 
   async function handleImagemComprovante(file: File) {
     if (!file) return;
@@ -633,21 +750,22 @@ export function NovaCompraCartaoDialog({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-                    Ler comprovante com IA
+                    {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
                   </p>
                   <p style={{ fontSize: 11, color: "#6B7280" }}>
-                    Envie uma foto e preencha valor, loja e data automaticamente
+                    Envie uma ou mais fotos · ou cole com Ctrl+V
                   </p>
                 </div>
                 <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   disabled={analisandoImagem}
                   style={{ display: "none" }}
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImagemComprovante(file);
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) handleMultiplasImagens(files);
                     e.target.value = "";
                   }}
                 />
