@@ -203,7 +203,7 @@ export function NovaCompraCartaoDialog({
     });
     const base64 = dataUrl.split(",")[1];
     const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
-      body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay() },
+      body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay(), nubank: isNubank() },
     });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
@@ -321,7 +321,7 @@ export function NovaCompraCartaoDialog({
       const base64 = dataUrl.split(",")[1];
 
       const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
-        body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay() },
+        body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay(), nubank: isNubank() },
       });
 
       if (error) throw error;
