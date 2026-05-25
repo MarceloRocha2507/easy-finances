@@ -1,57 +1,32 @@
-# Leitura automática de comprovantes do cartão
+## Detecção automática de parcelamento na leitura de comprovantes
 
-Adicionar um fluxo opcional dentro do dialog "Nova Compra no Cartão" onde o usuário envia uma imagem do comprovante e a IA extrai automaticamente valor, estabelecimento e data, preenchendo os campos antes de salvar.
+Estender a função de IA já existente (`analisar-comprovante-cartao`) para identificar parcelamentos do tipo "3x de R$ 50,00", "em 3x sem juros", "parcelado em 6x", etc., e preencher automaticamente o campo de parcelas no `NovaCompraCartaoDialog`.
 
-## Fluxo do usuário
+### 1. Edge function `supabase/functions/analisar-comprovante-cartao/index.ts`
 
-1. Em `NovaCompraCartaoDialog`, no topo do formulário, adicionar um botão/área "📸 Ler comprovante (IA)".
-2. O usuário:
-   - Seleciona o **cartão** (já pré-selecionado pelo contexto do dialog).
-   - Seleciona o **responsável** (campo existente).
-   - Faz upload da imagem (JPG/PNG, até ~5 MB) — via input file ou drag-and-drop.
-3. Ao enviar, mostramos um estado "Analisando comprovante..." (spinner).
-4. A IA retorna: `valor_total`, `descricao` (estabelecimento) e `data_compra`.
-5. Os campos do formulário são preenchidos automaticamente; o usuário revisa, ajusta categoria/parcelas se quiser e clica **Salvar** normalmente. Nenhum dado é persistido até o submit manual.
-6. Se a IA falhar ou não identificar campos, mostramos toast amigável e mantemos o formulário em branco para preenchimento manual.
+- Adicionar campo `parcelas` ao JSON schema da tool `registrar_dados_comprovante`:
+  - `parcelas`: integer entre 1 e 24, default 1.
+- Atualizar o system prompt em PT-BR para instruir a IA a:
+  - Procurar padrões como "Nx de R$ Y", "em N vezes", "parcelado em N", "N parcelas".
+  - Quando encontrar, retornar `parcelas = N` e `valor = valor total` (N × Y, ou o total exibido no comprovante se já vier somado).
+  - Se não houver indicação de parcelamento, retornar `parcelas = 1` (compra à vista).
+  - Ignorar parcelamentos cancelados/recusados.
 
-## Implementação técnica
+### 2. Frontend `src/components/cartoes/NovaCompraCartaoDialog.tsx`
 
-### 1. Edge Function `analisar-comprovante-cartao`
-- Nova função em `supabase/functions/analisar-comprovante-cartao/index.ts`.
-- Recebe `{ imageBase64: string, mimeType: string }`.
-- Valida JWT, CORS, tamanho da imagem.
-- Chama Lovable AI Gateway com `google/gemini-2.5-flash` (multimodal, suporta imagem + texto, custo baixo).
-- Usa structured output (JSON schema) para garantir resposta no formato:
-  ```json
-  { "valor": number, "estabelecimento": string, "data": "YYYY-MM-DD", "confianca": "alta"|"media"|"baixa" }
-  ```
-- System prompt em PT-BR instruindo a extrair dados de comprovantes/recibos/notas de cartão de crédito brasileiros (formato R$, datas DD/MM/AAAA).
-- Trata erros 429 (rate limit) e 402 (créditos) com mensagens claras.
+- Em `handleImagemComprovante`, após receber a resposta da edge function:
+  - Preencher o campo de parcelas existente do formulário com `data.parcelas` quando vier > 1.
+  - Manter o comportamento atual de preencher valor, descrição, nomeFatura e dataCompra.
+- Quando `parcelas > 1`, exibir no toast de sucesso uma menção explícita ("Detectado: 3x — revise antes de salvar").
+- Não alterar a UI do bloco de upload nem o fluxo manual.
 
-### 2. Frontend — `NovaCompraCartaoDialog.tsx`
-- Novo bloco no topo do form: card discreto com ícone de câmera, texto "Ler comprovante automaticamente" e input `type="file" accept="image/*"`.
-- Estado local: `analisando`, `imagemPreview`.
-- Ao selecionar arquivo:
-  - Converte para base64 (FileReader).
-  - Chama `supabase.functions.invoke('analisar-comprovante-cartao', { body: { imageBase64, mimeType } })`.
-  - Preenche `valor`, `descricao` e `dataCompra` com os dados retornados.
-  - Mostra toast de sucesso ("Dados preenchidos — revise antes de salvar") ou erro.
-- Mostra miniatura da imagem enviada com botão X para remover.
-- Não bloqueia o fluxo manual: usuário pode ignorar a área de upload.
+### Fora de escopo
 
-### 3. Configuração
-- `supabase/config.toml` já gerencia `verify_jwt`. Função será deploy automático.
-- Sem necessidade de novos secrets (LOVABLE_API_KEY já existe).
-- Sem migrations de banco — não persistimos a imagem nem o histórico de análises.
+- Detectar juros embutidos ou valor de parcela individual além do total.
+- Suporte a parcelamentos > 24x.
+- Mudanças no schema do banco — apenas leitura efêmera.
 
-## Fora de escopo
+### Arquivos afetados
 
-- Persistir a imagem do comprovante (apenas leitura efêmera em memória).
-- Categorização automática via IA (será preenchida manualmente; auto-categorização por keywords existente continua funcionando ao digitar descrição).
-- Bulk upload de várias imagens.
-- OCR de faturas inteiras (já existe fluxo separado em `ImportarCompras`).
-
-## Arquivos afetados
-
-- **Criado**: `supabase/functions/analisar-comprovante-cartao/index.ts`
+- **Editado**: `supabase/functions/analisar-comprovante-cartao/index.ts`
 - **Editado**: `src/components/cartoes/NovaCompraCartaoDialog.tsx`

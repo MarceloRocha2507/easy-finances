@@ -178,6 +178,12 @@ export function NovaCompraCartaoDialog({
       if (typeof data.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.data)) {
         updates.dataCompra = data.data;
       }
+      const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
+      if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
+        updates.tipoLancamento = "parcelada";
+        updates.parcelas = String(parcelasDetectadas);
+        updates.parcelaInicial = "1";
+      }
 
       if (Object.keys(updates).length === 0) {
         toast({
@@ -187,9 +193,10 @@ export function NovaCompraCartaoDialog({
         });
       } else {
         setForm((f) => ({ ...f, ...updates }));
+        const parcelaMsg = parcelasDetectadas > 1 ? `Detectado ${parcelasDetectadas}x. ` : "";
         toast({
           title: "Dados preenchidos!",
-          description: `Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
+          description: `${parcelaMsg}Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
         });
       }
     } catch (e: any) {
