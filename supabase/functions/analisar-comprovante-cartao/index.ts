@@ -71,7 +71,12 @@ Para cada item, extraia:
 3. tipo: categorize em: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno" ou "outro".
 4. sinal: "debito" (para compras e taxas) ou "credito" (para estornos, pagamentos e créditos).
 5. data: data da transação no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
-6. parcelas: inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M", "N x". À vista ou sem indicação = 1.
+6. parcelas: número TOTAL de parcelas da compra, inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M" (aqui M é o total), "N x". À vista ou sem indicação = 1.
+7. parcela_atual: número da parcela ATUAL mostrada na fatura, inteiro entre 1 e o valor de "parcelas". MUITO IMPORTANTE:
+   - Se aparecer "6/10", "Parcela 6 de 10", "6 de 10", "06/10" → parcela_atual = 6 e parcelas = 10.
+   - Se aparecer "3x de R$ 50,00" sem indicar qual parcela, assuma parcela_atual = 1.
+   - À vista ou parcela única → parcela_atual = 1.
+   - NUNCA assuma 1 quando a fatura mostra claramente que já está em uma parcela posterior.
 
 Regras importantes:
 - NÃO ignore IOF, taxas ou estornos. Registre TUDO que represente uma transação na fatura.
