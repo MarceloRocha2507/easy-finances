@@ -87,7 +87,7 @@ REGRAS CRÍTICAS:
 - **IGNORE transações com texto RISCADO/TACHADO** (canceladas) — NÃO retorne essas linhas no array.
 - NÃO ignore IOF mesmo de centavos. Registre TUDO.
 - IGNORE totais/subtotais/headers — só transações individuais.
-- O campo `valor` precisa bater com o valor monetário realmente visível na linha. Se `linha_original` tiver um único valor, `valor` deve ser exatamente esse número.
+- O campo "valor" precisa bater com o valor monetário realmente visível na linha. Se "linha_original" tiver um único valor, "valor" deve ser exatamente esse número.
 
 **REGRAS ESPECÍFICAS PARA PICPAY**:
 - Linhas começando com "Fin <Nome> parcNN/MM" (ex: "Fin Espetinhos parc01/02 R$ 11,48"): o valor JÁ É A PARCELA DO MÊS. Use valor_eh_parcela=true, parcelas=MM, parcela_atual=NN, tipo="compra", estabelecimento=<Nome>.
