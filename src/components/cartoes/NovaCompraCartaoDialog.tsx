@@ -143,6 +143,7 @@ export function NovaCompraCartaoDialog({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [analisandoImagem, setAnalisandoImagem] = useState(false);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+  const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
 
   async function handleImagemComprovante(file: File) {
     if (!file) return;
