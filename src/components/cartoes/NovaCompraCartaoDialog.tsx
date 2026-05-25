@@ -748,56 +748,130 @@ export function NovaCompraCartaoDialog({
                 </button>
               </div>
             ) : (
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: analisandoImagem ? "not-allowed" : "pointer",
-                  opacity: analisandoImagem ? 0.6 : 1,
-                }}
-              >
-                <div
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    background: "#EEF2FF",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    color: "#4F46E5",
-                    flexShrink: 0,
+                    gap: 10,
+                    cursor: analisandoImagem ? "not-allowed" : "pointer",
+                    opacity: analisandoImagem ? 0.6 : 1,
                   }}
                 >
-                  {analisandoImagem ? (
-                    <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" />
-                  ) : (
-                    <Sparkles style={{ width: 18, height: 18 }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-                    {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
-                  </p>
-                  <p style={{ fontSize: 11, color: "#6B7280" }}>
-                    Envie uma ou mais fotos · ou cole com Ctrl+V
-                  </p>
-                </div>
-                <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  disabled={analisandoImagem}
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) handleMultiplasImagens(files);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: "#EEF2FF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#4F46E5",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {analisandoImagem ? (
+                      <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" />
+                    ) : (
+                      <Sparkles style={{ width: 18, height: 18 }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+                      {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#6B7280" }}>
+                      Adicione fotos · cole com Ctrl+V · clique em Analisar
+                    </p>
+                  </div>
+                  <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={analisandoImagem}
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) adicionarImagensPendentes(files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {imagensPendentes.length > 0 && (
+                  <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {imagensPendentes.map((img, i) => (
+                        <div key={i} style={{ position: "relative", width: 56, height: 56 }}>
+                          <img
+                            src={img.preview}
+                            alt={`Imagem ${i + 1}`}
+                            style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #E5E7EB" }}
+                          />
+                          {!analisandoImagem && (
+                            <button
+                              type="button"
+                              onClick={() => removerImagemPendente(i)}
+                              style={{
+                                position: "absolute",
+                                top: -6,
+                                right: -6,
+                                width: 18,
+                                height: 18,
+                                borderRadius: "50%",
+                                background: "#111827",
+                                color: "#fff",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: 0,
+                              }}
+                            >
+                              <X style={{ width: 11, height: 11 }} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAnalisarPendentes}
+                      disabled={analisandoImagem}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: analisandoImagem ? "#9CA3AF" : "#111827",
+                        color: "#fff",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: analisandoImagem ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                      }}
+                    >
+                      {analisandoImagem ? (
+                        <>
+                          <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" />
+                          Analisando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles style={{ width: 14, height: 14 }} />
+                          Analisar {imagensPendentes.length} {imagensPendentes.length === 1 ? "imagem" : "imagens"}
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
