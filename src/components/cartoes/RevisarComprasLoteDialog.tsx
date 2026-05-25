@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { Cartao } from "@/services/cartoes";
 import { criarCompraCartao } from "@/services/compras-cartao";
 import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
-import { CheckCircle2, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CompraExtraida {
   valor: number | null;
@@ -35,6 +36,7 @@ type LinhaCompra = {
   parcelas: string;
   tipo: string;
   sinal: "debito" | "credito";
+  possivelDuplicada?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -61,6 +63,7 @@ export function RevisarComprasLoteDialog({
   const { toast } = useToast();
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
+  const [buscandoDuplicadas, setBuscandoDuplicadas] = useState(true);
 
   const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
     const hoje = new Date().toISOString().split("T")[0];
@@ -74,6 +77,62 @@ export function RevisarComprasLoteDialog({
       sinal: c.sinal || "debito",
     }));
   });
+
+  // Verificar duplicatas no banco ao abrir
+  useEffect(() => {
+    async function verificarDuplicatas() {
+      if (!open || compras.length === 0) return;
+      
+      setBuscandoDuplicadas(true);
+      try {
+        const hoje = new Date().toISOString().split("T")[0];
+        
+        // Buscar compras recentes deste cartão (últimos 3 dias para evitar redundância excessiva)
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - 3);
+        const dataLimiteStr = dataLimite.toISOString().split("T")[0];
+
+        const { data: existentes, error } = await supabase
+          .from("compras_cartao")
+          .select("valor_total, descricao, data_compra")
+          .eq("cartao_id", cartao.id)
+          .gte("data_compra", dataLimiteStr);
+
+        if (error) throw error;
+
+        if (existentes && existentes.length > 0) {
+          setLinhas(prev => prev.map(l => {
+            const valorNum = parseFloat(l.valor.replace(",", "."));
+            let valorBusca = valorNum;
+            if (l.sinal === "credito") valorBusca = -valorNum;
+
+            // Critério de duplicidade: mesmo valor e descrição parecida OU mesmo valor e mesma data
+            const ehDuplicada = existentes.some(ex => {
+              const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.01;
+              const mesmaDescricao = ex.descricao?.toLowerCase().includes(l.descricao.toLowerCase()) || 
+                                   l.descricao.toLowerCase().includes(ex.descricao?.toLowerCase() || "");
+              const mesmaData = ex.data_compra === l.data;
+              
+              return mesmoValor && (mesmaDescricao || mesmaData);
+            });
+
+            return { 
+              ...l, 
+              possivelDuplicada: ehDuplicada,
+              // Desmarcar por padrão se for duplicada
+              incluir: ehDuplicada ? false : l.incluir 
+            };
+          }));
+        }
+      } catch (err) {
+        console.error("Erro ao verificar duplicatas:", err);
+      } finally {
+        setBuscandoDuplicadas(false);
+      }
+    }
+
+    verificarDuplicatas();
+  }, [open, cartao.id]);
 
   const atualizar = (i: number, patch: Partial<LinhaCompra>) =>
     setLinhas((arr) => arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -280,6 +339,25 @@ export function RevisarComprasLoteDialog({
                     }}
                   >
                     CRÉDITO
+                  </span>
+                )}
+
+                {l.possivelDuplicada && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#FEF3C7",
+                      color: "#92400E",
+                      fontWeight: 700,
+                      display: "flex",
+                      itemsCenter: "center",
+                      gap: 3
+                    }}
+                  >
+                    <AlertTriangle style={{ width: 10, height: 10 }} />
+                    JÁ EXISTE?
                   </span>
                 )}
 
