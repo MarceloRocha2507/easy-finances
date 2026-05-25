@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon, Camera, Loader2, Sparkles } from "lucide-react";
+import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon, Camera, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { CalculatorPopover } from "@/components/ui/calculator-popover";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -144,6 +144,7 @@ export function NovaCompraCartaoDialog({
   const [analisandoImagem, setAnalisandoImagem] = useState(false);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
+  const [possivelDuplicada, setPossivelDuplicada] = useState(false);
 
   async function handleImagemComprovante(file: File) {
     if (!file) return;
@@ -187,6 +188,33 @@ export function NovaCompraCartaoDialog({
           description: "Revise os detalhes antes de salvar.",
         });
         return;
+      }
+
+      // Se for uma única compra, verificar duplicatas no banco
+      if (comprasValidas.length === 1) {
+        const c = comprasValidas[0];
+        try {
+          const dataLimite = new Date();
+          dataLimite.setDate(dataLimite.getDate() - 3);
+          const dataLimiteStr = dataLimite.toISOString().split("T")[0];
+
+          const { data: existentes } = await supabase
+            .from("compras_cartao")
+            .select("valor_total, descricao")
+            .eq("cartao_id", cartao.id)
+            .gte("data_compra", dataLimiteStr);
+
+          const dupe = existentes?.some(ex => {
+            const valorBusca = c.sinal === "credito" ? -Number(c.valor) : Number(c.valor);
+            const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.01;
+            const mesmaDescricao = ex.descricao?.toLowerCase().includes(c.estabelecimento?.toLowerCase() || "") || 
+                                 c.estabelecimento?.toLowerCase().includes(ex.descricao?.toLowerCase() || "");
+            return mesmoValor && mesmaDescricao;
+          });
+          setPossivelDuplicada(!!dupe);
+        } catch (err) {
+          console.error("Erro ao verificar duplicatas:", err);
+        }
       }
 
       const updates: Partial<typeof form> = {};
@@ -302,6 +330,7 @@ export function NovaCompraCartaoDialog({
         responsavelId: titularData?.id || "",
       });
       setImagemPreview(null);
+      setPossivelDuplicada(false);
     }
   }, [open, titularData, cartao.dia_fechamento]);
 
@@ -650,6 +679,23 @@ export function NovaCompraCartaoDialog({
               Como aparece na fatura do cartão
             </p>
           </div>
+
+          {possivelDuplicada && (
+            <div 
+              className="p-3 rounded-lg border flex items-start gap-3 mb-4"
+              style={{ background: "#FEF3C7", borderColor: "#FDE68A" }}
+            >
+              <AlertTriangle className="shrink-0 mt-0.5" style={{ width: 16, height: 16, color: "#92400E" }} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#92400E", marginBottom: 2 }}>
+                  Essa compra já existe?
+                </p>
+                <p style={{ fontSize: 12, color: "#B45309", lineHeight: "16px" }}>
+                  Encontramos um registro recente com o mesmo valor e descrição similar. Verifique se não está duplicando.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Valor */}
           <div>
