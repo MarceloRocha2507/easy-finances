@@ -356,6 +356,14 @@ export function RevisarComprasLoteDialog({
             isMobile ? "px-5 pt-2 pb-2" : "px-6 pt-4 pb-4",
           )}
         >
+          {isPicpay && compras.length > 0 && (
+            <FaturaPicpayBreakdown
+              compras={compras}
+              saldoAnteriorInicial={resumoPicpay?.saldoAnterior ?? null}
+              lancamentosResumoInicial={resumoPicpay?.lancamentosResumo ?? null}
+            />
+          )}
+
           {linhas.length === 0 && (
             <p style={{ fontSize: 13, color: "#6B7280", textAlign: "center", padding: 24 }}>
               Nenhuma compra restante.
