@@ -190,6 +190,33 @@ export function NovaCompraCartaoDialog({
         return;
       }
 
+      // Se for uma única compra, verificar duplicatas no banco
+      if (comprasValidas.length === 1) {
+        const c = comprasValidas[0];
+        try {
+          const dataLimite = new Date();
+          dataLimite.setDate(dataLimite.getDate() - 3);
+          const dataLimiteStr = dataLimite.toISOString().split("T")[0];
+
+          const { data: existentes } = await supabase
+            .from("compras_cartao")
+            .select("valor_total, descricao")
+            .eq("cartao_id", cartao.id)
+            .gte("data_compra", dataLimiteStr);
+
+          const dupe = existentes?.some(ex => {
+            const valorBusca = c.sinal === "credito" ? -Number(c.valor) : Number(c.valor);
+            const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.01;
+            const mesmaDescricao = ex.descricao?.toLowerCase().includes(c.estabelecimento?.toLowerCase() || "") || 
+                                 c.estabelecimento?.toLowerCase().includes(ex.descricao?.toLowerCase() || "");
+            return mesmoValor && mesmaDescricao;
+          });
+          setPossivelDuplicada(!!dupe);
+        } catch (err) {
+          console.error("Erro ao verificar duplicatas:", err);
+        }
+      }
+
       const updates: Partial<typeof form> = {};
       if (typeof data.valor === "number" && data.valor > 0) {
         updates.valor = data.valor.toFixed(2).replace(".", ",");
