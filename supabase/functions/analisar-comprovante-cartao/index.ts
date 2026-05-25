@@ -218,6 +218,7 @@ REGRAS CRÍTICAS:
         parcelas,
         parcela_atual: parcelaAtual,
         valor_eh_parcela: c?.valor_eh_parcela === true,
+        ignorar: c?.ignorar === true,
       };
     }).filter((c: any) =>
       c.valor !== null &&
