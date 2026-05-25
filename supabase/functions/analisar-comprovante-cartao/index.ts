@@ -204,11 +204,17 @@ Regras importantes:
       return isFinite(n) ? Math.abs(n) : null;
     }
 
-    const compras = rawCompras.map((c: any) => ({
-      ...c,
-      valor: coerceValor(c?.valor),
-      parcelas: Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24),
-    })).filter((c: any) => c.valor !== null && c.valor > 0);
+    const compras = rawCompras.map((c: any) => {
+      const parcelas = Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24);
+      let parcelaAtual = parseInt(String(c?.parcela_atual ?? 1)) || 1;
+      parcelaAtual = Math.min(Math.max(parcelaAtual, 1), parcelas);
+      return {
+        ...c,
+        valor: coerceValor(c?.valor),
+        parcelas,
+        parcela_atual: parcelaAtual,
+      };
+    }).filter((c: any) => c.valor !== null && c.valor > 0);
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
@@ -218,10 +224,11 @@ Regras importantes:
           estabelecimento: first.estabelecimento,
           data: first.data,
           parcelas: first.parcelas ?? 1,
+          parcela_atual: first.parcela_atual ?? 1,
           tipo: first.tipo,
           sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1, tipo: "compra", sinal: "debito" };
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, tipo: "compra", sinal: "debito" };
 
     return new Response(
       JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),
