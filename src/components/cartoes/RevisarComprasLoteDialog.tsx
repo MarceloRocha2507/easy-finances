@@ -83,6 +83,7 @@ export function RevisarComprasLoteDialog({
         parcelaAtual: String(atual),
         tipo: c.tipo || "compra",
         sinal: c.sinal || "debito",
+        valorEhParcela: c.valor_eh_parcela === true,
       };
     });
   });
