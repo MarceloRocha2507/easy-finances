@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
 
     const { imageBase64, mimeType } = body as { imageBase64: string; mimeType: string };
     const isPicpay = body?.picpay === true;
+    const isNubank = body?.nubank === true;
 
     if (imageBase64.length > MAX_BASE64_SIZE) {
       return new Response(
@@ -90,6 +91,30 @@ Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. 
 ### 5) Pagamento de Fatura
 Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
 
+    const nubankRules = `
+
+## REGRAS NUBANK — TELA DE DETALHE DE UMA COMPRA
+
+A imagem normalmente é a tela de DETALHE de UMA ÚNICA compra do app Nubank. Características:
+- Título grande = nome do estabelecimento (ex.: "Pg *Even3 Ixhq").
+- Linha "R$ X,XX" em destaque = VALOR TOTAL DA COMPRA.
+- Linha "em Nx de R$ Y,YY" (logo abaixo) = parcelamento (N parcelas de Y).
+- Badge "Compra parcelada" e bloco "Parcelas: Nx de R$ Y,YY" / "0 de N pagas".
+- Pode aparecer data por extenso (ex.: "Segunda-feira, 25 de Maio de 2026, 18:59").
+
+### Como extrair:
+- Registre UMA única compra: tipo="compra", sinal="debito".
+- valor = VALOR TOTAL (R$ X,XX em destaque, NÃO o valor da parcela).
+- parcelas = N (de "em Nx de R$ Y").
+- parcela_atual = 1.
+- valor_eh_parcela = FALSE (o valor é o total da compra inteira).
+- estabelecimento = título grande no topo.
+- data = converta a data por extenso para YYYY-MM-DD se visível; senão use hoje.
+- linha_original = inclua AS DUAS LINHAS exatas: "R$ X,XX" e "em Nx de R$ Y,YY" para validação.
+- valor_texto = "R$ X,XX" (o valor TOTAL, não o da parcela).
+
+Se for um EXTRATO de fatura Nubank (lista com várias linhas), use regras genéricas: cada linha "Parcela X de Y" → valor_eh_parcela=true.`;
+
     const genericRules = `
 
 ## REGRAS DE EXTRAÇÃO
@@ -106,10 +131,12 @@ Use o tipo correspondente ("iof", "anuidade", "juros", "encargo", "seguro").
 ### Pagamento de Fatura
 Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
 
+    const bankRules = isPicpay ? picpayRules : isNubank ? nubankRules : genericRules;
+
     const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, PicPay, etc).
 
-A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".${isPicpay ? " NÃO descarte linhas riscadas — marque-as com riscada=true." : ""}
-${isPicpay ? picpayRules : genericRules}
+A imagem pode conter UMA ÚNICA compra (recibo simples / tela de detalhe) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".${isPicpay ? " NÃO descarte linhas riscadas — marque-as com riscada=true." : ""}
+${bankRules}
 
 ## CAMPOS
 

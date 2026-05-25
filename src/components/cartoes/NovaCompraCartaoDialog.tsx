@@ -188,6 +188,12 @@ export function NovaCompraCartaoDialog({
     return /pic\s*pay/.test(txt);
   }
 
+  function isNubank(): boolean {
+    const txt = `${cartao?.nome || ""} ${cartao?.bandeira || ""}`
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return /nu\s*bank|\bnu\b/.test(txt);
+  }
+
   async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -197,7 +203,7 @@ export function NovaCompraCartaoDialog({
     });
     const base64 = dataUrl.split(",")[1];
     const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
-      body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay() },
+      body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay(), nubank: isNubank() },
     });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
@@ -315,7 +321,7 @@ export function NovaCompraCartaoDialog({
       const base64 = dataUrl.split(",")[1];
 
       const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
-        body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay() },
+        body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay(), nubank: isNubank() },
       });
 
       if (error) throw error;
