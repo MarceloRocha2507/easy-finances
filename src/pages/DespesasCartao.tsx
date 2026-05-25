@@ -41,6 +41,7 @@ import {
   Pencil,
   Search,
   Trash2,
+  CheckSquare,
   User,
   Tag,
   X,
@@ -72,6 +73,7 @@ import {
   calcularResumoPorResponsavel,
   ResumoResponsavel,
   desmarcarTodasParcelas,
+  excluirParcelas,
 } from "@/services/compras-cartao";
 import { useResponsaveis } from "@/services/responsaveis";
 import { Cartao } from "@/services/cartoes";
@@ -186,6 +188,10 @@ export default function DespesasCartao() {
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
+  const [modoSelecao, setModoSelecao] = useState(false);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [excluindoLote, setExcluindoLote] = useState(false);
+  const [confirmarExcluirLoteOpen, setConfirmarExcluirLoteOpen] = useState(false);
   const actionClickedRef = useRef(0);
 
   // Hooks
@@ -252,6 +258,39 @@ export default function DespesasCartao() {
       setDesmarcarPagasOpen(false);
     }
   }, [id, mesRef]);
+
+  const handleExcluirLote = useCallback(async () => {
+    if (selecionadas.size === 0) return;
+    setExcluindoLote(true);
+    const ids = Array.from(selecionadas);
+    const mapa = new Map(parcelas.map((p) => [p.id, p]));
+    let ok = 0;
+    let fail = 0;
+    for (const pid of ids) {
+      const p = mapa.get(pid);
+      if (!p) { fail++; continue; }
+      try {
+        await excluirParcelas({
+          compraId: p.compra_id,
+          parcelaId: p.id,
+          numeroParcela: p.numero_parcela,
+          escopo: "parcela",
+        });
+        ok++;
+      } catch (e) {
+        console.error(e);
+        fail++;
+      }
+    }
+    setExcluindoLote(false);
+    setConfirmarExcluirLoteOpen(false);
+    setSelecionadas(new Set());
+    setModoSelecao(false);
+    if (ok > 0) toast.success(`${ok} parcela(s) excluída(s)`);
+    if (fail > 0) toast.error(`${fail} falha(s) ao excluir`);
+    carregarFatura();
+  }, [selecionadas, parcelas]);
+
 
   useEffect(() => {
     if (!id) return;
@@ -747,6 +786,71 @@ export default function DespesasCartao() {
           </div>
         )}
 
+        {/* Toolbar de seleção em lote */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {!modoSelecao ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                setModoSelecao(true);
+                setSelecionadas(new Set());
+              }}
+              disabled={parcelasFiltradas.length === 0}
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              Selecionar
+            </Button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (selecionadas.size === parcelasFiltradas.length) {
+                    setSelecionadas(new Set());
+                  } else {
+                    setSelecionadas(new Set(parcelasFiltradas.map((p) => p.id)));
+                  }
+                }}
+              >
+                {selecionadas.size === parcelasFiltradas.length && parcelasFiltradas.length > 0
+                  ? "Desmarcar tudo"
+                  : "Selecionar tudo"}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {selecionadas.size} selecionada(s)
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {
+                    setModoSelecao(false);
+                    setSelecionadas(new Set());
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  disabled={selecionadas.size === 0 || excluindoLote}
+                  onClick={() => setConfirmarExcluirLoteOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir{selecionadas.size > 0 ? ` (${selecionadas.size})` : ""}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+
         {/* Tabela de despesas */}
         <div className="rounded-lg border bg-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -830,13 +934,27 @@ export default function DespesasCartao() {
                       }}
                     >
                       <TableCell>
-                        <Checkbox
-                          checked={!!p.paga}
-                          onCheckedChange={async () => {
-                            await marcarParcelaComoPaga(p.id, !p.paga);
-                            carregarFatura();
-                          }}
-                        />
+                        {modoSelecao ? (
+                          <Checkbox
+                            checked={selecionadas.has(p.id)}
+                            onCheckedChange={() => {
+                              setSelecionadas((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(p.id)) next.delete(p.id);
+                                else next.add(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        ) : (
+                          <Checkbox
+                            checked={!!p.paga}
+                            onCheckedChange={async () => {
+                              await marcarParcelaComoPaga(p.id, !p.paga);
+                              carregarFatura();
+                            }}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -1094,6 +1212,27 @@ export default function DespesasCartao() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDesmarcarPagas}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmarExcluirLoteOpen} onOpenChange={setConfirmarExcluirLoteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selecionadas.size} parcela(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cada item selecionado terá apenas a parcela correspondente excluída. As demais parcelas da mesma compra serão mantidas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindoLote}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleExcluirLote(); }}
+              disabled={excluindoLote}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindoLote ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
