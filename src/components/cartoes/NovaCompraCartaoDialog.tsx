@@ -373,10 +373,13 @@ export function NovaCompraCartaoDialog({
       // Data da IA é ignorada propositalmente: a data atual já está preenchida no formulário
       // para evitar que datas antigas extraídas do comprovante bagunçem o mês da fatura.
       const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
+      let parcelaAtualDetectada = Number.isInteger(data?.parcela_atual) ? data.parcela_atual : 1;
+      if (parcelaAtualDetectada < 1) parcelaAtualDetectada = 1;
+      if (parcelaAtualDetectada > parcelasDetectadas) parcelaAtualDetectada = parcelasDetectadas;
       if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
         updates.tipoLancamento = "parcelada";
         updates.parcelas = String(parcelasDetectadas);
-        updates.parcelaInicial = "1";
+        updates.parcelaInicial = String(parcelaAtualDetectada);
       }
 
       if (Object.keys(updates).length === 0) {
@@ -387,7 +390,9 @@ export function NovaCompraCartaoDialog({
         });
       } else {
         setForm((f) => ({ ...f, ...updates }));
-        const parcelaMsg = parcelasDetectadas > 1 ? `Detectado ${parcelasDetectadas}x. ` : "";
+        const parcelaMsg = parcelasDetectadas > 1
+          ? `Detectado ${parcelaAtualDetectada}/${parcelasDetectadas}. `
+          : "";
         toast({
           title: "Dados preenchidos!",
           description: `${parcelaMsg}Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,

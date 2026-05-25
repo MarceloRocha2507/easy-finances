@@ -71,7 +71,12 @@ Para cada item, extraia:
 3. tipo: categorize em: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno" ou "outro".
 4. sinal: "debito" (para compras e taxas) ou "credito" (para estornos, pagamentos e créditos).
 5. data: data da transação no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
-6. parcelas: inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M", "N x". À vista ou sem indicação = 1.
+6. parcelas: número TOTAL de parcelas da compra, inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M" (aqui M é o total), "N x". À vista ou sem indicação = 1.
+7. parcela_atual: número da parcela ATUAL mostrada na fatura, inteiro entre 1 e o valor de "parcelas". MUITO IMPORTANTE:
+   - Se aparecer "6/10", "Parcela 6 de 10", "6 de 10", "06/10" → parcela_atual = 6 e parcelas = 10.
+   - Se aparecer "3x de R$ 50,00" sem indicar qual parcela, assuma parcela_atual = 1.
+   - À vista ou parcela única → parcela_atual = 1.
+   - NUNCA assuma 1 quando a fatura mostra claramente que já está em uma parcela posterior.
 
 Regras importantes:
 - NÃO ignore IOF, taxas ou estornos. Registre TUDO que represente uma transação na fatura.
@@ -117,9 +122,10 @@ Regras importantes:
                         tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno ou outro" },
                         sinal: { type: "string", description: "debito ou credito" },
                         data: { type: "string", description: "Data YYYY-MM-DD" },
-                        parcelas: { type: "integer", description: "Nº de parcelas, 1 a 24 (1 = à vista)" },
+                        parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
+                        parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
                       },
-                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas"],
+                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual"],
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
@@ -198,11 +204,17 @@ Regras importantes:
       return isFinite(n) ? Math.abs(n) : null;
     }
 
-    const compras = rawCompras.map((c: any) => ({
-      ...c,
-      valor: coerceValor(c?.valor),
-      parcelas: Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24),
-    })).filter((c: any) => c.valor !== null && c.valor > 0);
+    const compras = rawCompras.map((c: any) => {
+      const parcelas = Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24);
+      let parcelaAtual = parseInt(String(c?.parcela_atual ?? 1)) || 1;
+      parcelaAtual = Math.min(Math.max(parcelaAtual, 1), parcelas);
+      return {
+        ...c,
+        valor: coerceValor(c?.valor),
+        parcelas,
+        parcela_atual: parcelaAtual,
+      };
+    }).filter((c: any) => c.valor !== null && c.valor > 0);
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
@@ -212,10 +224,11 @@ Regras importantes:
           estabelecimento: first.estabelecimento,
           data: first.data,
           parcelas: first.parcelas ?? 1,
+          parcela_atual: first.parcela_atual ?? 1,
           tipo: first.tipo,
           sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1, tipo: "compra", sinal: "debito" };
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, tipo: "compra", sinal: "debito" };
 
     return new Response(
       JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),

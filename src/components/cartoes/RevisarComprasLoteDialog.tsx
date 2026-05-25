@@ -14,6 +14,7 @@ export interface CompraExtraida {
   estabelecimento: string | null;
   data: string | null;
   parcelas: number;
+  parcela_atual?: number;
   tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "outro";
   sinal?: "debito" | "credito";
 }
@@ -34,6 +35,7 @@ type LinhaCompra = {
   valor: string;
   data: string;
   parcelas: string;
+  parcelaAtual: string;
   tipo: string;
   sinal: "debito" | "credito";
   possivelDuplicada?: boolean;
@@ -67,15 +69,20 @@ export function RevisarComprasLoteDialog({
 
   const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
     const hoje = new Date().toISOString().split("T")[0];
-    return compras.map((c) => ({
-      incluir: true,
-      descricao: c.estabelecimento?.trim() || "",
-      valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
-      data: hoje,
-      parcelas: String(Math.min(Math.max(c.parcelas || 1, 1), 24)),
-      tipo: c.tipo || "compra",
-      sinal: c.sinal || "debito",
-    }));
+    return compras.map((c) => {
+      const total = Math.min(Math.max(c.parcelas || 1, 1), 24);
+      const atual = Math.min(Math.max(c.parcela_atual || 1, 1), total);
+      return {
+        incluir: true,
+        descricao: c.estabelecimento?.trim() || "",
+        valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
+        data: hoje,
+        parcelas: String(total),
+        parcelaAtual: String(atual),
+        tipo: c.tipo || "compra",
+        sinal: c.sinal || "debito",
+      };
+    });
   });
 
   // Verificar duplicatas no banco ao abrir
@@ -184,6 +191,7 @@ export function RevisarComprasLoteDialog({
           let valor = parseFloat(l.valor.replace(",", "."));
           if (l.sinal === "credito") valor = -valor;
           const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
+          const parcelaInicial = Math.min(Math.max(parseInt(l.parcelaAtual) || 1, 1), numParcelas);
           const dataCompra = new Date(l.data + "T12:00:00");
           const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
@@ -193,7 +201,7 @@ export function RevisarComprasLoteDialog({
             descricao: l.descricao.trim(),
             valorTotal: valor,
             parcelas: numParcelas,
-            parcelaInicial: 1,
+            parcelaInicial,
             mesFatura: new Date(ano, mes - 1, 1),
             tipoLancamento: numParcelas > 1 ? "parcelada" : "unica",
             dataCompra,
@@ -378,7 +386,7 @@ export function RevisarComprasLoteDialog({
                 onChange={(e) => atualizar(i, { descricao: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 6, fontWeight: 500 }}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Valor (R$)</label>
                   <input
@@ -394,7 +402,18 @@ export function RevisarComprasLoteDialog({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Parcelas</label>
+                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Parc. atual</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={parseInt(l.parcelas) || 1}
+                    value={l.parcelaAtual}
+                    onChange={(e) => atualizar(i, { parcelaAtual: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Total parc.</label>
                   <input
                     type="number"
                     min={1}
