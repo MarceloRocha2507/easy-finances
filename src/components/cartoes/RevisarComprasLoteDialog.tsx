@@ -152,11 +152,20 @@ export function RevisarComprasLoteDialog({
 
   const selecionadas = useMemo(() => linhas.filter((l) => l.incluir), [linhas]);
 
+  // Quanto cada linha vai pesar na FATURA DESTE MÊS (igual ao total mostrado pelo banco)
+  const valorEsteMes = (l: LinhaCompra): number => {
+    const v = parseFloat(l.valor.replace(",", ".")) || 0;
+    const p = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
+    if (l.valorEhParcela) return v; // valor já é da parcela do mês
+    if (p > 1) return v / p; // valor é total da compra → divide
+    return v;
+  };
+
   const { totalSelecionado, totalDebitos, totalCreditos } = useMemo(() => {
     let deb = 0;
     let cre = 0;
     for (const l of selecionadas) {
-      const v = parseFloat(l.valor.replace(",", ".")) || 0;
+      const v = valorEsteMes(l);
       if (l.sinal === "credito") cre += v;
       else deb += v;
     }
