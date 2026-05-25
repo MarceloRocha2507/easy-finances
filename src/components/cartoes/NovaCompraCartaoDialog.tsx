@@ -31,6 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { RevisarComprasLoteDialog, type CompraExtraida } from "./RevisarComprasLoteDialog";
 
 type Categoria = {
   id: string;
@@ -142,6 +143,7 @@ export function NovaCompraCartaoDialog({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [analisandoImagem, setAnalisandoImagem] = useState(false);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+  const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
 
   async function handleImagemComprovante(file: File) {
     if (!file) return;
@@ -166,6 +168,20 @@ export function NovaCompraCartaoDialog({
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // Detecção de múltiplas compras → abrir revisão em lote
+      const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
+      const comprasValidas = comprasArr.filter(
+        (c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento,
+      );
+      if (comprasValidas.length > 1) {
+        setComprasLote(comprasValidas);
+        toast({
+          title: `${comprasValidas.length} compras detectadas`,
+          description: "Revise e selecione as que deseja salvar.",
+        });
+        return;
+      }
 
       const updates: Partial<typeof form> = {};
       if (typeof data.valor === "number" && data.valor > 0) {
@@ -957,6 +973,22 @@ export function NovaCompraCartaoDialog({
           queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
         }}
       />
+
+      {comprasLote && (
+        <RevisarComprasLoteDialog
+          open={!!comprasLote}
+          onOpenChange={(o) => !o && setComprasLote(null)}
+          cartao={cartao}
+          responsavelId={form.responsavelId || titularData?.id || ""}
+          categoriaId={form.categoriaId}
+          compras={comprasLote}
+          onSaved={() => {
+            setComprasLote(null);
+            setImagemPreview(null);
+            onSaved();
+          }}
+        />
+      )}
     </Dialog>
   );
 }

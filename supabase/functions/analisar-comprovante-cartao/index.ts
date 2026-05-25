@@ -1,5 +1,5 @@
 // Edge function: analisar-comprovante-cartao
-// Recebe uma imagem (base64) e usa Lovable AI Gateway para extrair valor, estabelecimento e data.
+// Recebe uma imagem (base64) e usa Lovable AI Gateway para extrair UMA OU MAIS compras.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +14,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validação básica de JWT (presença)
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autenticado" }), {
@@ -57,14 +56,21 @@ Deno.serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos e notas fiscais de compras feitas com cartão de crédito no Brasil.
-Extraia EXATAMENTE estas informações do comprovante na imagem:
-1. valor: valor TOTAL da compra (número, em reais, ponto como separador decimal). Se houver parcelamento (ex: "3x de R$ 50,00"), retorne o total (R$ 150,00), nunca o valor de uma parcela isolada. Prefira o total impresso quando disponível.
-2. estabelecimento: nome curto e limpo do estabelecimento/loja (ex: "Pão de Açúcar", "Uber", "Amazon"). Sem CNPJ, sem endereço.
-3. data: data da compra/transação no formato YYYY-MM-DD. Se houver apenas DD/MM/AAAA, converta. Se não encontrar, use a data de hoje.
-4. parcelas: número de parcelas (inteiro entre 1 e 24). Procure padrões como "Nx de R$ Y", "em N vezes", "parcelado em N", "N parcelas", "N/M", "N x". Compras à vista ou sem indicação explícita = 1. Ignore parcelamentos cancelados/recusados.
+    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil.
 
-Se algum campo não for legível, retorne null para esse campo (exceto parcelas, que deve ser 1 por padrão) e marque confianca como "baixa".`;
+A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura, lista de transações). Extraia TODAS as compras visíveis e retorne no array "compras".
+
+Para cada compra, extraia:
+1. valor: valor TOTAL da compra (número em reais, ponto decimal). Se for parcelado ("3x de R$ 50,00"), retorne o total (R$ 150,00).
+2. estabelecimento: nome curto e limpo (ex: "Pão de Açúcar", "Uber", "Amazon"). Sem CNPJ nem endereço.
+3. data: data da compra no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
+4. parcelas: inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M", "N x". À vista ou sem indicação = 1. Ignore parcelamentos cancelados/recusados.
+
+Regras importantes:
+- IGNORE linhas de pagamento de fatura, estornos, créditos, ajustes e taxas (não são compras).
+- IGNORE totais/subtotais da fatura — só as transações individuais.
+- Se a imagem for ilegível ou não contiver compras, retorne compras: [] e confianca: "baixa".
+- Máximo 30 compras por imagem.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -79,7 +85,7 @@ Se algum campo não for legível, retorne null para esse campo (exceto parcelas,
           {
             role: "user",
             content: [
-              { type: "text", text: "Extraia os dados deste comprovante." },
+              { type: "text", text: "Extraia TODAS as compras visíveis nesta imagem." },
               { type: "image_url", image_url: { url: dataUrl } },
             ],
           },
@@ -88,24 +94,35 @@ Se algum campo não for legível, retorne null para esse campo (exceto parcelas,
           {
             type: "function",
             function: {
-              name: "registrar_dados_comprovante",
-              description: "Registra os dados extraídos do comprovante",
+              name: "registrar_compras_comprovante",
+              description: "Registra uma ou mais compras extraídas da imagem",
               parameters: {
                 type: "object",
                 properties: {
-                  valor: { type: ["number", "null"], description: "Valor TOTAL em reais" },
-                  estabelecimento: { type: ["string", "null"], description: "Nome do estabelecimento" },
-                  data: { type: ["string", "null"], description: "Data da compra YYYY-MM-DD" },
-                  parcelas: { type: "integer", minimum: 1, maximum: 24, description: "Número de parcelas (1 = à vista)" },
+                  compras: {
+                    type: "array",
+                    maxItems: 30,
+                    items: {
+                      type: "object",
+                      properties: {
+                        valor: { type: ["number", "null"], description: "Valor TOTAL em reais" },
+                        estabelecimento: { type: ["string", "null"], description: "Nome do estabelecimento" },
+                        data: { type: ["string", "null"], description: "Data YYYY-MM-DD" },
+                        parcelas: { type: "integer", minimum: 1, maximum: 24, description: "Nº de parcelas (1 = à vista)" },
+                      },
+                      required: ["valor", "estabelecimento", "data", "parcelas"],
+                      additionalProperties: false,
+                    },
+                  },
                   confianca: { type: "string", enum: ["alta", "media", "baixa"] },
                 },
-                required: ["valor", "estabelecimento", "data", "parcelas", "confianca"],
+                required: ["compras", "confianca"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "registrar_dados_comprovante" } },
+        tool_choice: { type: "function", function: { name: "registrar_compras_comprovante" } },
       }),
     });
 
@@ -139,7 +156,10 @@ Se algum campo não for legível, retorne null para esse campo (exceto parcelas,
       );
     }
 
-    let parsed: { valor: number | null; estabelecimento: string | null; data: string | null; confianca: string };
+    let parsed: {
+      compras: Array<{ valor: number | null; estabelecimento: string | null; data: string | null; parcelas: number }>;
+      confianca: string;
+    };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch {
@@ -149,10 +169,23 @@ Se algum campo não for legível, retorne null para esse campo (exceto parcelas,
       );
     }
 
-    return new Response(JSON.stringify(parsed), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const compras = Array.isArray(parsed.compras) ? parsed.compras : [];
+
+    // Retrocompat: também devolve os campos da primeira compra no nível raiz
+    const first = compras[0];
+    const legacy = first
+      ? {
+          valor: first.valor,
+          estabelecimento: first.estabelecimento,
+          data: first.data,
+          parcelas: first.parcelas ?? 1,
+        }
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1 };
+
+    return new Response(
+      JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e) {
     console.error("Erro analisar-comprovante-cartao:", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
