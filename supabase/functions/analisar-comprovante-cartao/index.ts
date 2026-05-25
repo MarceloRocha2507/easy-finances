@@ -459,7 +459,13 @@ ${bankRules}
         }
       : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
 
-    const responseBody = JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" });
+    const responseBody = JSON.stringify({
+      ...legacy,
+      compras,
+      confianca: parsed.confianca || "media",
+      saldo_fatura_anterior: typeof parsed.saldo_fatura_anterior === "number" ? parsed.saldo_fatura_anterior : null,
+      lancamentos_resumo: typeof parsed.lancamentos_resumo === "number" ? parsed.lancamentos_resumo : null,
+    });
 
     return new Response(
       responseBody,
