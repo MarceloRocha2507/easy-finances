@@ -16,6 +16,8 @@ export interface CompraExtraida {
   parcelas: number;
   parcela_atual?: number;
   valor_eh_parcela?: boolean;
+  linha_original?: string | null;
+  valor_texto?: string | null;
   tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
   ignorar?: boolean;
