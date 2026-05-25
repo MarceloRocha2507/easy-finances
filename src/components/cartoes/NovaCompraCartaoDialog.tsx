@@ -31,6 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { RevisarComprasLoteDialog, type CompraExtraida } from "./RevisarComprasLoteDialog";
 
 type Categoria = {
   id: string;
