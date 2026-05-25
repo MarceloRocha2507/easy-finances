@@ -248,9 +248,18 @@ REGRAS CRÍTICAS:
         }
       : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
 
+    const responseBody = JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" });
+
     return new Response(
-      JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      responseBody,
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      },
     );
   } catch (e) {
     console.error("Erro analisar-comprovante-cartao:", e);
