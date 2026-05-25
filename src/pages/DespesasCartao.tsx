@@ -41,6 +41,7 @@ import {
   Pencil,
   Search,
   Trash2,
+  CheckSquare,
   User,
   Tag,
   X,
