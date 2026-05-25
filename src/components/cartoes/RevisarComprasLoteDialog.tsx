@@ -20,6 +20,8 @@ export interface CompraExtraida {
   valor_texto?: string | null;
   tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
+  riscada?: boolean;
+  riscada_sem_credito?: boolean;
   ignorar?: boolean;
 }
 
