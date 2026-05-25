@@ -174,11 +174,17 @@ export function NovaCompraCartaoDialog({
       const comprasValidas = comprasArr.filter(
         (c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento,
       );
-      if (comprasValidas.length > 1) {
+
+      // Se houver múltiplas transações OU se for apenas uma mas não for uma 'compra' padrão (ex: IOF, Estorno)
+      // abrimos o modal de revisão em lote para dar contexto ao usuário.
+      if (comprasValidas.length > 1 || (comprasValidas.length === 1 && comprasValidas[0].tipo !== 'compra')) {
         setComprasLote(comprasValidas);
+        const msg = comprasValidas.length > 1 
+          ? `${comprasValidas.length} transações detectadas`
+          : `${comprasValidas[0].tipo?.toUpperCase()} detectado`;
         toast({
-          title: `${comprasValidas.length} compras detectadas`,
-          description: "Revise e selecione as que deseja salvar.",
+          title: msg,
+          description: "Revise os detalhes antes de salvar.",
         });
         return;
       }

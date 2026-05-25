@@ -13,6 +13,8 @@ export interface CompraExtraida {
   estabelecimento: string | null;
   data: string | null;
   parcelas: number;
+  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "outro";
+  sinal?: "debito" | "credito";
 }
 
 interface Props {
@@ -31,6 +33,8 @@ type LinhaCompra = {
   valor: string;
   data: string;
   parcelas: string;
+  tipo: string;
+  sinal: "debito" | "credito";
 };
 
 const inputStyle: React.CSSProperties = {
@@ -66,6 +70,8 @@ export function RevisarComprasLoteDialog({
       valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
       data: hoje,
       parcelas: String(Math.min(Math.max(c.parcelas || 1, 1), 24)),
+      tipo: c.tipo || "compra",
+      sinal: c.sinal || "debito",
     }));
   });
 
@@ -78,7 +84,10 @@ export function RevisarComprasLoteDialog({
   const selecionadas = useMemo(() => linhas.filter((l) => l.incluir), [linhas]);
 
   const totalSelecionado = useMemo(
-    () => selecionadas.reduce((s, l) => s + (parseFloat(l.valor.replace(",", ".")) || 0), 0),
+    () => selecionadas.reduce((s, l) => {
+      const v = parseFloat(l.valor.replace(",", ".")) || 0;
+      return s + (l.sinal === "credito" ? -v : v);
+    }, 0),
     [selecionadas],
   );
 
@@ -113,7 +122,8 @@ export function RevisarComprasLoteDialog({
         idx++;
         setProgresso({ atual: idx, total });
         try {
-          const valor = parseFloat(l.valor.replace(",", "."));
+          let valor = parseFloat(l.valor.replace(",", "."));
+          if (l.sinal === "credito") valor = -valor;
           const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
           const dataCompra = new Date(l.data + "T12:00:00");
           const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
@@ -241,6 +251,38 @@ export function RevisarComprasLoteDialog({
                   style={{ width: 16, height: 16, accentColor: "#111827" }}
                 />
                 <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 500 }}>#{i + 1}</span>
+                
+                {l.tipo && l.tipo !== "compra" && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: l.tipo === "estorno" ? "#DCFCE7" : "#F3F4F6",
+                      color: l.tipo === "estorno" ? "#166534" : "#4B5563",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {l.tipo}
+                  </span>
+                )}
+
+                {l.sinal === "credito" && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#ECFDF5",
+                      color: "#059669",
+                      fontWeight: 700,
+                    }}
+                  >
+                    CRÉDITO
+                  </span>
+                )}
+
                 <div style={{ flex: 1 }} />
                 <button
                   type="button"
@@ -266,7 +308,11 @@ export function RevisarComprasLoteDialog({
                     placeholder="0,00"
                     value={l.valor}
                     onChange={(e) => atualizar(i, { valor: e.target.value })}
-                    style={inputStyle}
+                    style={{
+                      ...inputStyle,
+                      color: l.sinal === "credito" ? "#059669" : "#111827",
+                      fontWeight: l.sinal === "credito" ? 600 : 400,
+                    }}
                   />
                 </div>
                 <div>
