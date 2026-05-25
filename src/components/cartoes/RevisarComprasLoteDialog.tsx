@@ -69,15 +69,20 @@ export function RevisarComprasLoteDialog({
 
   const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
     const hoje = new Date().toISOString().split("T")[0];
-    return compras.map((c) => ({
-      incluir: true,
-      descricao: c.estabelecimento?.trim() || "",
-      valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
-      data: hoje,
-      parcelas: String(Math.min(Math.max(c.parcelas || 1, 1), 24)),
-      tipo: c.tipo || "compra",
-      sinal: c.sinal || "debito",
-    }));
+    return compras.map((c) => {
+      const total = Math.min(Math.max(c.parcelas || 1, 1), 24);
+      const atual = Math.min(Math.max(c.parcela_atual || 1, 1), total);
+      return {
+        incluir: true,
+        descricao: c.estabelecimento?.trim() || "",
+        valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
+        data: hoje,
+        parcelas: String(total),
+        parcelaAtual: String(atual),
+        tipo: c.tipo || "compra",
+        sinal: c.sinal || "debito",
+      };
+    });
   });
 
   // Verificar duplicatas no banco ao abrir
