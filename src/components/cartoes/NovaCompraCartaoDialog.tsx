@@ -973,6 +973,22 @@ export function NovaCompraCartaoDialog({
           queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
         }}
       />
+
+      {comprasLote && (
+        <RevisarComprasLoteDialog
+          open={!!comprasLote}
+          onOpenChange={(o) => !o && setComprasLote(null)}
+          cartao={cartao}
+          responsavelId={form.responsavelId || titularData?.id || ""}
+          categoriaId={form.categoriaId}
+          compras={comprasLote}
+          onSaved={() => {
+            setComprasLote(null);
+            setImagemPreview(null);
+            onSaved();
+          }}
+        />
+      )}
     </Dialog>
   );
 }
