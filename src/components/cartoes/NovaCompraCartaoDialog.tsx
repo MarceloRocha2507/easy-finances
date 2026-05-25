@@ -145,7 +145,6 @@ export function NovaCompraCartaoDialog({
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
-  const [possivelDuplicada, setPossivelDuplicada] = useState(false);
 
   async function handleImagemComprovante(file: File) {
     if (!file) return;
