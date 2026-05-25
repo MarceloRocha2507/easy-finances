@@ -259,6 +259,26 @@ export default function DespesasCartao() {
     }
   }, [id, mesRef]);
 
+  const [escopoLote, setEscopoLote] = useState<"parcela" | "restantes">("parcela");
+
+  // Contagem de parcelas futuras (incluindo a atual) para as compras selecionadas
+  const previaExclusaoLote = useMemo(() => {
+    if (selecionadas.size === 0) return { selecionadas: 0, totalComFuturas: 0, temFuturas: false };
+    const mapa = new Map(parcelas.map((p) => [p.id, p]));
+    let totalComFuturas = 0;
+    let temFuturas = false;
+    for (const pid of selecionadas) {
+      const p = mapa.get(pid);
+      if (!p) continue;
+      const futurasDaCompra = parcelas.filter(
+        (x) => x.compra_id === p.compra_id && x.numero_parcela >= p.numero_parcela,
+      ).length;
+      totalComFuturas += futurasDaCompra;
+      if (futurasDaCompra > 1) temFuturas = true;
+    }
+    return { selecionadas: selecionadas.size, totalComFuturas, temFuturas };
+  }, [selecionadas, parcelas]);
+
   const handleExcluirLote = useCallback(async () => {
     if (selecionadas.size === 0) return;
     setExcluindoLote(true);
@@ -274,7 +294,7 @@ export default function DespesasCartao() {
           compraId: p.compra_id,
           parcelaId: p.id,
           numeroParcela: p.numero_parcela,
-          escopo: "parcela",
+          escopo: escopoLote,
         });
         ok++;
       } catch (e) {
@@ -286,10 +306,18 @@ export default function DespesasCartao() {
     setConfirmarExcluirLoteOpen(false);
     setSelecionadas(new Set());
     setModoSelecao(false);
-    if (ok > 0) toast.success(`${ok} parcela(s) excluída(s)`);
+    setEscopoLote("parcela");
+    if (ok > 0) {
+      toast.success(
+        escopoLote === "restantes"
+          ? `${ok} compra(s) — parcelas atuais e futuras excluídas`
+          : `${ok} parcela(s) excluída(s)`,
+      );
+    }
     if (fail > 0) toast.error(`${fail} falha(s) ao excluir`);
     carregarFatura();
-  }, [selecionadas, parcelas]);
+  }, [selecionadas, parcelas, escopoLote]);
+
 
 
   useEffect(() => {
