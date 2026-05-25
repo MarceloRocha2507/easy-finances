@@ -14,6 +14,7 @@ export interface CompraExtraida {
   estabelecimento: string | null;
   data: string | null;
   parcelas: number;
+  parcela_atual?: number;
   tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "outro";
   sinal?: "debito" | "credito";
 }
