@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ResponsavelSelector } from "@/components/ui/responsavel-selector";
 import { useResponsavelTitular } from "@/services/responsaveis";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon } from "lucide-react";
+import { CreditCard, Tag, Repeat, Hash, X, Calendar as CalendarIcon, Camera, Loader2, Sparkles } from "lucide-react";
 import { CalculatorPopover } from "@/components/ui/calculator-popover";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -140,6 +140,70 @@ export function NovaCompraCartaoDialog({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [novoResponsavelOpen, setNovoResponsavelOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [analisandoImagem, setAnalisandoImagem] = useState(false);
+  const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+
+  async function handleImagemComprovante(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande", description: "Máximo 5MB.", variant: "destructive" });
+      return;
+    }
+    setAnalisandoImagem(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setImagemPreview(dataUrl);
+      const base64 = dataUrl.split(",")[1];
+
+      const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
+        body: { imageBase64: base64, mimeType: file.type },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const updates: Partial<typeof form> = {};
+      if (typeof data.valor === "number" && data.valor > 0) {
+        updates.valor = data.valor.toFixed(2).replace(".", ",");
+      }
+      if (typeof data.estabelecimento === "string" && data.estabelecimento.trim()) {
+        updates.descricao = data.estabelecimento.trim();
+        updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
+      }
+      if (typeof data.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.data)) {
+        updates.dataCompra = data.data;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        toast({
+          title: "Não foi possível identificar os dados",
+          description: "Preencha manualmente.",
+          variant: "destructive",
+        });
+      } else {
+        setForm((f) => ({ ...f, ...updates }));
+        toast({
+          title: "Dados preenchidos!",
+          description: `Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
+        });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        title: "Erro ao analisar imagem",
+        description: e?.message || "Tente novamente.",
+        variant: "destructive",
+      });
+      setImagemPreview(null);
+    } finally {
+      setAnalisandoImagem(false);
+    }
+  }
 
   const opcoesMesFatura = useMemo(() => {
     const hoje = new Date();
@@ -209,6 +273,7 @@ export function NovaCompraCartaoDialog({
         categoriaId: "",
         responsavelId: titularData?.id || "",
       });
+      setImagemPreview(null);
     }
   }, [open, titularData, cartao.dia_fechamento]);
 
@@ -441,6 +506,99 @@ export function NovaCompraCartaoDialog({
           "flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col gap-3",
           isMobile ? "px-5 pt-2 pb-2" : "px-6 pt-5 pb-5"
         )}>
+          {/* Ler comprovante com IA */}
+          <div
+            style={{
+              border: "1px dashed #D1D5DB",
+              borderRadius: 10,
+              padding: 12,
+              background: "#FAFAFA",
+            }}
+          >
+            {imagemPreview ? (
+              <div className="flex items-center gap-3">
+                <img
+                  src={imagemPreview}
+                  alt="Comprovante"
+                  style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #E5E7EB" }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
+                    {analisandoImagem ? "Analisando comprovante..." : "Comprovante carregado"}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#6B7280" }}>
+                    {analisandoImagem ? "Aguarde a IA preencher os campos" : "Revise os campos abaixo antes de salvar"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImagemPreview(null)}
+                  disabled={analisandoImagem}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: analisandoImagem ? "not-allowed" : "pointer",
+                    color: "#9CA3AF",
+                    padding: 4,
+                  }}
+                >
+                  <X style={{ width: 16, height: 16 }} />
+                </button>
+              </div>
+            ) : (
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  cursor: analisandoImagem ? "not-allowed" : "pointer",
+                  opacity: analisandoImagem ? 0.6 : 1,
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    background: "#EEF2FF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#4F46E5",
+                    flexShrink: 0,
+                  }}
+                >
+                  {analisandoImagem ? (
+                    <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" />
+                  ) : (
+                    <Sparkles style={{ width: 18, height: 18 }} />
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+                    Ler comprovante com IA
+                  </p>
+                  <p style={{ fontSize: 11, color: "#6B7280" }}>
+                    Envie uma foto e preencha valor, loja e data automaticamente
+                  </p>
+                </div>
+                <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  disabled={analisandoImagem}
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImagemComprovante(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
           {/* Descrição */}
           <div>
             <PremiumLabel required htmlFor="descricao">Descrição</PremiumLabel>

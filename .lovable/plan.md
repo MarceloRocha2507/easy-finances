@@ -1,45 +1,57 @@
-# Plano: corrigir o "Desconsiderar despesa" em todo o sistema
+# Leitura automática de comprovantes do cartão
 
-## Diagnóstico
-A funcionalidade "Desconsiderar do saldo" **já existe** na lista de transações (menu de cada despesa), e o campo `desconsiderada` já está no banco. O problema é que ela **só está sendo respeitada parcialmente**:
+Adicionar um fluxo opcional dentro do dialog "Nova Compra no Cartão" onde o usuário envia uma imagem do comprovante e a IA extrai automaticamente valor, estabelecimento e data, preenchendo os campos antes de salvar.
 
-- ✅ Saldo Estimado, "A Pagar" e "A Receber" hoje **excluem** desconsideradas.
-- ❌ **Saldo Disponível** (saldo final atual) **não exclui** — soma todas as despesas com status `completed`, mesmo as desconsideradas. É exatamente isso que produz o erro que você descreveu: marcar despesa como paga + lançar receita logo depois deixa o saldo errado, porque a despesa "ignorada" continua afetando o caixa.
-- ❌ Gráfico **"Receitas vs Despesas"** do dashboard inclui desconsideradas.
-- ❌ Gráfico **"Despesas por Categoria"** inclui desconsideradas.
-- ❌ Receitas/Despesas exibidas do mês no dashboard incluem desconsideradas.
-- ❌ Possivelmente: Comparativo Mensal, Gastos Diários, alertas e calendário (preciso conferir cada um).
+## Fluxo do usuário
 
-## O que vou implementar
+1. Em `NovaCompraCartaoDialog`, no topo do formulário, adicionar um botão/área "📸 Ler comprovante (IA)".
+2. O usuário:
+   - Seleciona o **cartão** (já pré-selecionado pelo contexto do dialog).
+   - Seleciona o **responsável** (campo existente).
+   - Faz upload da imagem (JPG/PNG, até ~5 MB) — via input file ou drag-and-drop.
+3. Ao enviar, mostramos um estado "Analisando comprovante..." (spinner).
+4. A IA retorna: `valor_total`, `descricao` (estabelecimento) e `data_compra`.
+5. Os campos do formulário são preenchidos automaticamente; o usuário revisa, ajusta categoria/parcelas se quiser e clica **Salvar** normalmente. Nenhum dado é persistido até o submit manual.
+6. Se a IA falhar ou não identificar campos, mostramos toast amigável e mantemos o formulário em branco para preenchimento manual.
 
-### 1) Tornar "Desconsiderar" verdadeiramente global
-Despesa marcada como desconsiderada passa a ser ignorada **em todos** os cálculos e gráficos financeiros, sem alterar `status` no banco (mantemos a flag, sem efeito colateral em "paga/pendente").
+## Implementação técnica
 
-Pontos que serão corrigidos:
-- Saldo Disponível / Saldo Real (corrige o bug do saldo final).
-- Receitas e Despesas do mês exibidas no dashboard.
-- Gráfico "Receitas vs Despesas" (anual).
-- Gráfico "Despesas por Categoria".
-- Comparativo Mensal.
-- Gastos Diários, Calendário e alertas — auditarei e ajustarei se incluírem desconsideradas.
-- "Total Geral de Despesas" do mês.
+### 1. Edge Function `analisar-comprovante-cartao`
+- Nova função em `supabase/functions/analisar-comprovante-cartao/index.ts`.
+- Recebe `{ imageBase64: string, mimeType: string }`.
+- Valida JWT, CORS, tamanho da imagem.
+- Chama Lovable AI Gateway com `google/gemini-2.5-flash` (multimodal, suporta imagem + texto, custo baixo).
+- Usa structured output (JSON schema) para garantir resposta no formato:
+  ```json
+  { "valor": number, "estabelecimento": string, "data": "YYYY-MM-DD", "confianca": "alta"|"media"|"baixa" }
+  ```
+- System prompt em PT-BR instruindo a extrair dados de comprovantes/recibos/notas de cartão de crédito brasileiros (formato R$, datas DD/MM/AAAA).
+- Trata erros 429 (rate limit) e 402 (créditos) com mensagens claras.
 
-### 2) Tornar a opção mais visível e clara
-Hoje a opção fica só no menu de três pontinhos da linha. Vou:
-- Manter o toggle existente, mas garantir o rótulo claro: "Desconsiderar do saldo" / "Reconsiderar no saldo".
-- Adicionar um indicador visual mais explícito na própria linha quando a transação estiver desconsiderada (badge "Desconsiderada" + opacidade reduzida — parte já existe).
-- Mostrar a opção também no modal de detalhes da transação, para não depender só do menu.
+### 2. Frontend — `NovaCompraCartaoDialog.tsx`
+- Novo bloco no topo do form: card discreto com ícone de câmera, texto "Ler comprovante automaticamente" e input `type="file" accept="image/*"`.
+- Estado local: `analisando`, `imagemPreview`.
+- Ao selecionar arquivo:
+  - Converte para base64 (FileReader).
+  - Chama `supabase.functions.invoke('analisar-comprovante-cartao', { body: { imageBase64, mimeType } })`.
+  - Preenche `valor`, `descricao` e `dataCompra` com os dados retornados.
+  - Mostra toast de sucesso ("Dados preenchidos — revise antes de salvar") ou erro.
+- Mostra miniatura da imagem enviada com botão X para remover.
+- Não bloqueia o fluxo manual: usuário pode ignorar a área de upload.
 
-### 3) Garantir consistência também para receitas
-A opção hoje aparece em despesas e receitas. Ela continuará funcionando para os dois, e ambas serão removidas dos cálculos quando marcadas.
+### 3. Configuração
+- `supabase/config.toml` já gerencia `verify_jwt`. Função será deploy automático.
+- Sem necessidade de novos secrets (LOVABLE_API_KEY já existe).
+- Sem migrations de banco — não persistimos a imagem nem o histórico de análises.
 
-### 4) Validação
-- Criar uma despesa, marcar como paga, depois marcar como "Desconsiderar": Saldo Disponível volta ao valor anterior.
-- Lançar uma receita logo em seguida: Saldo Disponível reflete só a receita.
-- Conferir gráficos: a despesa desconsiderada some das barras e do donut.
+## Fora de escopo
 
-## Detalhes técnicos
-- Sem migração de banco: a coluna `transactions.desconsiderada` já existe.
-- Mudanças concentradas em `src/hooks/useTransactions.ts` (queries do dashboard, gráficos e categoria) e nos componentes de dashboard/calendário/alertas que somam transações.
-- Não vou trocar `status='completed'` para `pending` ao desconsiderar — manter a flag desacoplada evita efeitos colaterais em parcelamentos, recorrência, faturas e relatórios.
-- Memória do projeto será atualizada para refletir que `desconsiderada` agora afeta **todos** os totais (não só o estimado).
+- Persistir a imagem do comprovante (apenas leitura efêmera em memória).
+- Categorização automática via IA (será preenchida manualmente; auto-categorização por keywords existente continua funcionando ao digitar descrição).
+- Bulk upload de várias imagens.
+- OCR de faturas inteiras (já existe fluxo separado em `ImportarCompras`).
+
+## Arquivos afetados
+
+- **Criado**: `supabase/functions/analisar-comprovante-cartao/index.ts`
+- **Editado**: `src/components/cartoes/NovaCompraCartaoDialog.tsx`
