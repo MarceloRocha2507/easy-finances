@@ -260,6 +260,8 @@ ${bankRules}
     let parsed: {
       compras: Array<{ valor: number | string | null; estabelecimento: string | null; data: string | null; parcelas: number; parcela_atual?: number; valor_eh_parcela?: boolean; tipo?: string; sinal?: "debito" | "credito"; linha_original?: string | null; valor_texto?: string | null; ignorar?: boolean }>;
       confianca: string;
+      saldo_fatura_anterior?: number;
+      lancamentos_resumo?: number;
     };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
