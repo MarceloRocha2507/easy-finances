@@ -70,6 +70,7 @@ Para cada item, extraia:
 
 Regras importantes:
 - NÃO ignore IOF, taxas ou estornos. Registre TUDO que represente uma transação na fatura.
+- **IMPORTANTE**: Ignore transações que estejam com o texto **riscado ou tachado** na imagem. Elas geralmente indicam compras canceladas ou não processadas.
 - IGNORE totais/subtotais da fatura — só as transações individuais.
 - Se a imagem for ilegível ou não contiver transações, retorne compras: [] e confianca: "baixa".
 - Máximo 30 itens por imagem.`;
