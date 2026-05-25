@@ -1,52 +1,64 @@
+## Diagnóstico (com base nas imagens da fatura)
 
-## Diagnóstico
+A fatura do PicPay tem um padrão muito específico que está confundindo a IA:
 
-Olhando as imagens da fatura do Nubank que você enviou, identifiquei 4 padrões que estão sendo lidos errado pela IA hoje e que causam a divergência entre o total da fatura real e o total que o app registra:
+1. **Linhas "Fin <Nome> parcNN/MM"** (ex.: `Fin Espetinhos parc01/02` R$ 11,48): esse valor **já é o da parcela do mês**, não o total da compra. Cada uma dessas linhas vem acompanhada de duas linhas de IOF (Diario + Adicional) com centavos.
+2. **Linhas "Credito Parcelamento Compra"** (ex.: R$ 21,00, R$ 25,87, R$ 41,00): **não são créditos genéricos para ignorar** — eles existem porque a fatura também lista a **compra original riscada** (ex.: `Espetinhosbom R$ 21,00`) com valor cheio. O crédito anula a compra original e fica apenas a parcela "Fin ...".
+3. **Linhas riscadas** (strikethrough no app) representam a compra original substituída pelo parcelamento.
 
-### 1. Linhas "Fin <Estabelecimento> parc 01/N" — valor é da PARCELA, não da compra total
-No extrato do Nubank, quando você parcela uma compra, a linha aparece assim:
-- `Fin Espetinhos parc 01/02   R$ 11,43`
+Hoje o sistema:
+- Marca "Credito Parcelamento Compra" como **desmarcado por padrão** → tira R$ 189,67 do total que deveriam ser subtraídos.
+- Pode estar dividindo `Fin XYZ parc01/02` (que já é parcela) por 2 quando a IA não marcou `valor_eh_parcela=true`.
+- Não detecta as compras "raiz" riscadas — então conta o débito original **e** a parcela ao mesmo tempo.
 
-O `R$ 11,43` é o **valor da parcela daquele mês**, não o total da compra. O prompt atual instrui a IA a retornar "valor total" quando vê parcelamento (`3x de R$ 50,00 → 150,00`). Aplicado nessa linha, a IA faz `11,43 × 2 = 22,86` e cria uma compra de R$ 22,86 em 2x. Resultado: a parcela do mês continua R$ 11,43 (ok), mas a fatura do mês seguinte vai mostrar mais R$ 11,43 que **na verdade já vai aparecer de novo no próximo print** que você importar. Isso duplica valor ao longo dos meses.
+## O que vou mudar
 
-### 2. "Crédito Parcelamento Compra" sem nome do estabelecimento
-Quando o Nubank parcela uma compra, ele lança um **crédito** com o valor original da compra (ex: `Credito Parcelamento Compra R$ 28,90`) para "estornar" a compra à vista e remontá-la em parcelas. Hoje a IA detecta como crédito (ok), mas:
-- O texto é sempre genérico, dificultando associar ao "Fin X" correspondente.
-- Se a IA pular essa linha, a fatura fica **maior** que a do banco.
+### 1. Edge function `analisar-comprovante-cartao` — prompt PicPay-aware
 
-### 3. "Pagamento de Fatura" sendo capturado como crédito
-Linhas como `Pagamento de Fatura R$ 26,03` aparecem no extrato. Hoje a IA pode interpretar como crédito e reduzir a fatura — mas isso é pagamento de fatura anterior, **não deve entrar** como lançamento da fatura atual.
+Acrescentar regras explícitas no system prompt:
 
-### 4. IOF Diário/Adicional Parcelado
-Vários itens de R$ 0,02 / 0,04 aparecem. Se algum for ignorado ou capturado em duplicidade, gera divergência de centavos a reais.
+- Toda linha começando com `Fin ` e contendo `parcNN/MM` (ou `Parcela N de M` logo abaixo): `valor_eh_parcela = true`, `parcelas = MM`, `parcela_atual = NN`, `tipo = "compra"`.
+- Toda linha `IOF Diario Parcelado` ou `IOF Adicional Parcelado`: `tipo = "iof"`, `parcelas = 1`, valor inteiro.
+- Toda linha `Credito Parcelamento Compra`: `tipo = "estorno_parcelamento"` (novo tipo dedicado), `sinal = "credito"`, **com a instrução de que este crédito DEVE ser incluído** porque compensa a compra original.
+- Toda linha visualmente riscada (strikethrough) ou marcada como substituída por parcelamento: `tipo = "compra_substituida"` e `ignorar = true` (novo campo) — não devem ser importadas pois já viraram parcelas `Fin ...`.
+- `Pagamento de Fatura`: continua excluído (`pagamento_fatura`).
 
----
+### 2. Dialog `RevisarComprasLoteDialog.tsx`
 
-## Correções propostas (apenas no fluxo de importação por IA)
+- Tratar `estorno_parcelamento` como crédito **marcado por padrão** (não desmarcado) e remover o aviso "REVISAR MANUALMENTE" dele.
+- Manter a flag `creditoParcelamentoGenerico` só para casos antigos/duvidosos, mas distinguir visualmente do `estorno_parcelamento` (este vem com badge "COMPENSA PARCELAMENTO" em verde, marcado).
+- Linhas `ignorar=true` (compras-raiz substituídas) entram na lista mas vêm **desmarcadas** com badge "JÁ VIROU PARCELAMENTO" e explicação curta.
+- No `valorEsteMes`, quando `valorEhParcela=true` retornar o valor cru (já está assim) — garantir que toda linha `Fin ... parcNN/MM` chegue com essa flag.
+- Total da fatura passa a ser: `Σ débitos incluídos − Σ créditos incluídos` (já é). Com os créditos de parcelamento marcados por padrão, a conta deve bater.
 
-**Arquivo:** `supabase/functions/analisar-comprovante-cartao/index.ts`
+### 3. Validação rápida
 
-1. **Detectar contexto "extrato de fatura"** no system prompt e ajustar a regra de valor:
-   - Quando a linha já indica a parcela atual (`parc 01/02`, `Parcela 1 de N`, `01/12`), o valor mostrado é da **parcela**, não da compra. Nesse caso retornar `valor = valor_da_parcela × N` apenas se for explicitamente "à vista parcelada em X" sem indicação de parcela atual. **Para linhas de fatura com parcela atual visível, retornar `valor = valor_mostrado` (parcela) e marcar com um novo campo `valor_eh_parcela: true`.**
+Após salvar, mostrar no toast a comparação:
+- "Total selecionado: R$ X,XX"  
+para o usuário comparar com o app do banco antes de fechar o dialog.
 
-2. **Frontend (`RevisarComprasLoteDialog.tsx`)**: quando `valor_eh_parcela = true`, calcular automaticamente `valor_total = valor_parcela × parcelas` antes de salvar via `criarCompraCartao`, e ajustar `parcelaInicial` (já existe) para a parcela atual detectada. Isso garante que o app vai gerar as parcelas restantes corretamente, sem duplicar com os próximos prints.
+## Arquivos afetados
 
-3. **Ignorar explicitamente "Pagamento de Fatura"** no prompt (tratar como linha a ser pulada, não como crédito).
+- `supabase/functions/analisar-comprovante-cartao/index.ts` — prompt, schema (`tipo` ampliado, novo campo `ignorar`), mapeamento.
+- `src/components/cartoes/RevisarComprasLoteDialog.tsx` — interface, lógica de seleção padrão, badges, totais.
 
-4. **Marcar "Crédito Parcelamento Compra"** com `tipo: "estorno"` e deixar visível no diálogo de revisão com um aviso ("este crédito normalmente acompanha um 'Fin X' — confirme se quer manter"). Assim você decide caso a caso.
+## Detalhes técnicos
 
-5. **Validação visual no diálogo de revisão**: mostrar abaixo do total um resumo do tipo:
-   ```
-   Débitos: R$ X,XX   Créditos: −R$ Y,YY   Líquido: R$ Z,ZZ
-   ```
-   para você comparar diretamente com o total da fatura do banco antes de salvar.
+```text
+Schema CompraExtraida (adições):
+  tipo: ... | "estorno_parcelamento" | "compra_substituida"
+  ignorar?: boolean   // sugestão da IA de não importar
 
----
+LinhaCompra (adições):
+  estornoParcelamento: boolean
+  ignorarSugerido: boolean
 
-## Antes de eu implementar — uma confirmação
+Seleção inicial (incluir):
+  - ignorarSugerido → false
+  - tipo === pagamento_fatura → linha não entra (já filtrado)
+  - estornoParcelamento → true  (compensa raiz)
+  - creditoParcelamentoGenerico (legado, sem match) → false
+  - default → true
+```
 
-Você consegue me dizer, para uma dessas faturas das imagens:
-- Qual o **total real** que o Nubank mostrou (valor da fatura fechada)?
-- Qual o total que o app está mostrando hoje para a mesma fatura?
-
-Com esses dois números eu valido se o diagnóstico acima realmente fecha a diferença, ou se há um 5º caso que ainda não vi.
+Sem mudanças em DB, RLS ou outras telas.

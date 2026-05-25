@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, etc).
+    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, PicPay, etc).
 
 A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".
 
@@ -65,20 +65,27 @@ Para cada item:
    - **REGRA CRÍTICA PARA EXTRATOS DE FATURA**: Se a linha indica a parcela ATUAL (ex: "parc 01/03", "Parcela 6 de 10", "01/12", "Fin X parc02/05"), o valor mostrado É O VALOR DA PARCELA daquele mês, NÃO o total. Retorne EXATAMENTE o valor mostrado e marque "valor_eh_parcela": true.
    - Em RECIBO simples (não fatura) dizendo "3x de R$ 50,00" sem indicar qual parcela, retorne o TOTAL (150.00) e "valor_eh_parcela": false.
 2. estabelecimento: nome como aparece. Para "Fin <Nome> parcXX/YY" use só o nome (ex: "Fin Espetinhos parc01/02" → "Espetinhos").
-3. tipo: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "pagamento_fatura" ou "outro".
-4. sinal: "debito" (compras/taxas) ou "credito" (estornos e créditos como "Crédito Parcelamento Compra").
+3. tipo: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "estorno_parcelamento", "compra_substituida", "pagamento_fatura" ou "outro".
+4. sinal: "debito" (compras/taxas) ou "credito" (estornos e créditos).
 5. data: YYYY-MM-DD. Converta de DD/MM/AAAA. Sem data, use hoje.
 6. parcelas: nº TOTAL de parcelas (1 a 24). "N/M" → M é o total. À vista = 1.
 7. parcela_atual: nº da parcela ATUAL mostrada (1 a parcelas). "6/10" → 6. NUNCA assuma 1 quando há indicação clara de outra parcela.
 8. valor_eh_parcela: boolean. true = valor é de UMA parcela (extrato com parcela atual visível). false = valor TOTAL da compra.
+9. ignorar: boolean. true se a linha NÃO deve ser importada (compra original substituída por parcelamento — ver regra PicPay abaixo). Default false.
 
 REGRAS CRÍTICAS:
 - **NUNCA inclua "Pagamento de Fatura"** — pule essas linhas. São pagamentos da fatura anterior, NÃO lançamentos.
-- **IGNORE transações com texto RISCADO/TACHADO** (canceladas).
-- "Crédito Parcelamento Compra" é legítimo (estorno do valor à vista quando você parcelou depois): inclua com tipo "estorno" e sinal "credito".
+- **IGNORE transações com texto RISCADO/TACHADO** (canceladas) — NÃO retorne essas linhas no array.
 - NÃO ignore IOF mesmo de centavos. Registre TUDO.
 - IGNORE totais/subtotais/headers — só transações individuais.
-- Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 30 itens.`;
+
+**REGRAS ESPECÍFICAS PARA PICPAY**:
+- Linhas começando com "Fin <Nome> parcNN/MM" (ex: "Fin Espetinhos parc01/02 R$ 11,48"): o valor JÁ É A PARCELA DO MÊS. Use valor_eh_parcela=true, parcelas=MM, parcela_atual=NN, tipo="compra", estabelecimento=<Nome>.
+- "IOF Diario Parcelado" e "IOF Adicional Parcelado": tipo="iof", parcelas=1, valor_eh_parcela=false.
+- "Credito Parcelamento Compra" (geralmente em verde com seta ←): tipo="estorno_parcelamento", sinal="credito", parcelas=1, valor_eh_parcela=false. Este crédito COMPENSA a compra original "raiz" que aparece em outro lugar da fatura — DEVE ser importado (não é crédito espúrio para ignorar).
+- Se você ver uma compra "raiz" original (ex: "Espetinhosbom R$ 21,00") E TAMBÉM linhas "Fin Espetinhos parcXX/YY" da mesma compra na mesma fatura, a raiz já está sendo cobrada pelas parcelas: marque a raiz com ignorar=true e tipo="compra_substituida". Se a raiz já estiver visualmente riscada, simplesmente NÃO a inclua no array.
+
+- Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 60 itens.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -114,12 +121,13 @@ REGRAS CRÍTICAS:
                       properties: {
                         valor: { type: "number", description: "Valor absoluto em reais" },
                         estabelecimento: { type: "string", description: "Nome ou descrição" },
-                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, pagamento_fatura ou outro" },
+                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro" },
                         sinal: { type: "string", description: "debito ou credito" },
                         data: { type: "string", description: "Data YYYY-MM-DD" },
                         parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
                         parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
                         valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
+                        ignorar: { type: "boolean", description: "true se a linha não deve ser importada (compra raiz substituída por parcelamento). Default false." },
                       },
                       required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela"],
                     },
@@ -210,6 +218,7 @@ REGRAS CRÍTICAS:
         parcelas,
         parcela_atual: parcelaAtual,
         valor_eh_parcela: c?.valor_eh_parcela === true,
+        ignorar: c?.ignorar === true,
       };
     }).filter((c: any) =>
       c.valor !== null &&

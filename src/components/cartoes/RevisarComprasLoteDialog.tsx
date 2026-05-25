@@ -16,8 +16,9 @@ export interface CompraExtraida {
   parcelas: number;
   parcela_atual?: number;
   valor_eh_parcela?: boolean;
-  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "pagamento_fatura" | "outro";
+  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
+  ignorar?: boolean;
 }
 
 interface Props {
@@ -42,6 +43,8 @@ type LinhaCompra = {
   valorEhParcela: boolean;
   possivelDuplicada?: boolean;
   creditoParcelamentoGenerico?: boolean;
+  estornoParcelamento?: boolean;
+  compraSubstituida?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -62,6 +65,7 @@ const isCreditoParcelamentoGenerico = (descricao?: string | null, tipo?: string,
     .toLowerCase()
     .trim();
 
+  // Legado: só vale para "estorno" genérico (sem o novo tipo dedicado)
   return sinal === "credito" && tipo === "estorno" && texto.includes("credito parcelamento compra");
 };
 
@@ -85,19 +89,30 @@ export function RevisarComprasLoteDialog({
     return compras.map((c) => {
       const total = Math.min(Math.max(c.parcelas || 1, 1), 24);
       const atual = Math.min(Math.max(c.parcela_atual || 1, 1), total);
-      const creditoParcelamentoGenerico = isCreditoParcelamentoGenerico(c.estabelecimento, c.tipo, c.sinal || "debito");
+      const sinal = c.sinal || "debito";
+      const tipo = c.tipo || "compra";
+      const estornoParcelamento = sinal === "credito" && tipo === "estorno_parcelamento";
+      const compraSubstituida = c.ignorar === true || tipo === "compra_substituida";
+      const creditoParcelamentoGenerico = !estornoParcelamento && isCreditoParcelamentoGenerico(c.estabelecimento, tipo, sinal);
+
+      // Padrão: incluir tudo exceto compras substituídas e créditos genéricos legados sem match
+      let incluir = true;
+      if (compraSubstituida) incluir = false;
+      else if (creditoParcelamentoGenerico) incluir = false;
 
       return {
-        incluir: !creditoParcelamentoGenerico,
+        incluir,
         descricao: c.estabelecimento?.trim() || "",
         valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
         data: hoje,
         parcelas: String(total),
         parcelaAtual: String(atual),
-        tipo: c.tipo || "compra",
-        sinal: c.sinal || "debito",
+        tipo,
+        sinal,
         valorEhParcela: c.valor_eh_parcela === true,
         creditoParcelamentoGenerico,
+        estornoParcelamento,
+        compraSubstituida,
       };
     });
   });
@@ -356,7 +371,7 @@ export function RevisarComprasLoteDialog({
                 />
                 <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 500 }}>#{i + 1}</span>
                 
-                {l.tipo && l.tipo !== "compra" && (
+                {l.tipo && l.tipo !== "compra" && l.tipo !== "estorno_parcelamento" && l.tipo !== "compra_substituida" && (
                   <span
                     style={{
                       fontSize: 10,
@@ -422,7 +437,39 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
-                {l.creditoParcelamentoGenerico && (
+                {l.estornoParcelamento && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#DCFCE7",
+                      color: "#166534",
+                      fontWeight: 700,
+                    }}
+                    title="Crédito que compensa a compra original já lançada como parcelamento. Deve ser incluído."
+                  >
+                    COMPENSA PARCELAMENTO
+                  </span>
+                )}
+
+                {l.compraSubstituida && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#F3F4F6",
+                      color: "#6B7280",
+                      fontWeight: 700,
+                    }}
+                    title="Esta compra já foi substituída pelas parcelas 'Fin ...'. Não importar."
+                  >
+                    JÁ VIROU PARCELAMENTO
+                  </span>
+                )}
+
+                {l.creditoParcelamentoGenerico && !l.estornoParcelamento && (
                   <span
                     style={{
                       fontSize: 10,
@@ -507,7 +554,17 @@ export function RevisarComprasLoteDialog({
                   Valor digitado é de UMA parcela (não o total da compra)
                 </label>
               )}
-              {l.creditoParcelamentoGenerico && (
+              {l.estornoParcelamento && (
+                <p style={{ fontSize: 11, color: "#166534", marginTop: 8 }}>
+                  Crédito que compensa a compra original (PicPay): incluído por padrão para a soma bater com a fatura.
+                </p>
+              )}
+              {l.compraSubstituida && (
+                <p style={{ fontSize: 11, color: "#6B7280", marginTop: 8 }}>
+                  Esta compra original já foi convertida em parcelas (Fin ...). Desmarcada por padrão.
+                </p>
+              )}
+              {l.creditoParcelamentoGenerico && !l.estornoParcelamento && (
                 <p style={{ fontSize: 11, color: "#92400E", marginTop: 8 }}>
                   Crédito genérico de parcelamento foi desmarcado por padrão para não reduzir a fatura indevidamente.
                 </p>
