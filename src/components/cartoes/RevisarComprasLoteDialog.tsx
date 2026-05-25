@@ -33,6 +33,8 @@ interface Props {
   categoriaId?: string;
   compras: CompraExtraida[];
   onSaved: () => void;
+  isPicpay?: boolean;
+  resumoPicpay?: { saldoAnterior: number | null; lancamentosResumo: number | null };
 }
 
 type LinhaCompra = {
