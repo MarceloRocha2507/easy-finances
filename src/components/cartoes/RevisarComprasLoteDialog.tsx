@@ -16,8 +16,9 @@ export interface CompraExtraida {
   parcelas: number;
   parcela_atual?: number;
   valor_eh_parcela?: boolean;
-  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "pagamento_fatura" | "outro";
+  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
+  ignorar?: boolean;
 }
 
 interface Props {
@@ -42,6 +43,8 @@ type LinhaCompra = {
   valorEhParcela: boolean;
   possivelDuplicada?: boolean;
   creditoParcelamentoGenerico?: boolean;
+  estornoParcelamento?: boolean;
+  compraSubstituida?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -62,6 +65,7 @@ const isCreditoParcelamentoGenerico = (descricao?: string | null, tipo?: string,
     .toLowerCase()
     .trim();
 
+  // Legado: só vale para "estorno" genérico (sem o novo tipo dedicado)
   return sinal === "credito" && tipo === "estorno" && texto.includes("credito parcelamento compra");
 };
 
