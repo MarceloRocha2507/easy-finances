@@ -1,64 +1,43 @@
-## Diagnóstico (com base nas imagens da fatura)
+## Situação atual (já é assim hoje)
 
-A fatura do PicPay tem um padrão muito específico que está confundindo a IA:
+A imagem do comprovante **nunca é salva** no projeto:
 
-1. **Linhas "Fin <Nome> parcNN/MM"** (ex.: `Fin Espetinhos parc01/02` R$ 11,48): esse valor **já é o da parcela do mês**, não o total da compra. Cada uma dessas linhas vem acompanhada de duas linhas de IOF (Diario + Adicional) com centavos.
-2. **Linhas "Credito Parcelamento Compra"** (ex.: R$ 21,00, R$ 25,87, R$ 41,00): **não são créditos genéricos para ignorar** — eles existem porque a fatura também lista a **compra original riscada** (ex.: `Espetinhosbom R$ 21,00`) com valor cheio. O crédito anula a compra original e fica apenas a parcela "Fin ...".
-3. **Linhas riscadas** (strikethrough no app) representam a compra original substituída pelo parcelamento.
+- O frontend (`NovaCompraCartaoDialog.tsx`) lê o arquivo, converte para base64 **em memória** e envia direto no body da requisição `supabase.functions.invoke("analisar-comprovante-cartao")`. Nada é gravado em Supabase Storage, bucket, tabela ou cache.
+- A edge function `analisar-comprovante-cartao` recebe o base64, repassa como `data:` URL para o Lovable AI Gateway (Gemini) e **descarta** ao retornar a resposta. Não há `INSERT`, upload, nem persistência da imagem.
+- Os logs da edge function hoje só registram erros (status code da API e mensagens), nunca a imagem em si.
 
-Hoje o sistema:
-- Marca "Credito Parcelamento Compra" como **desmarcado por padrão** → tira R$ 189,67 do total que deveriam ser subtraídos.
-- Pode estar dividindo `Fin XYZ parc01/02` (que já é parcela) por 2 quando a IA não marcou `valor_eh_parcela=true`.
-- Não detecta as compras "raiz" riscadas — então conta o débito original **e** a parcela ao mesmo tempo.
+Ou seja: na prática a imagem só vive em memória durante a chamada e some assim que a função retorna.
 
-## O que vou mudar
+## O que vou reforçar (hardening defensivo)
 
-### 1. Edge function `analisar-comprovante-cartao` — prompt PicPay-aware
+Para deixar isso explícito e à prova de regressões futuras:
 
-Acrescentar regras explícitas no system prompt:
+### 1. Edge function `analisar-comprovante-cartao`
 
-- Toda linha começando com `Fin ` e contendo `parcNN/MM` (ou `Parcela N de M` logo abaixo): `valor_eh_parcela = true`, `parcelas = MM`, `parcela_atual = NN`, `tipo = "compra"`.
-- Toda linha `IOF Diario Parcelado` ou `IOF Adicional Parcelado`: `tipo = "iof"`, `parcelas = 1`, valor inteiro.
-- Toda linha `Credito Parcelamento Compra`: `tipo = "estorno_parcelamento"` (novo tipo dedicado), `sinal = "credito"`, **com a instrução de que este crédito DEVE ser incluído** porque compensa a compra original.
-- Toda linha visualmente riscada (strikethrough) ou marcada como substituída por parcelamento: `tipo = "compra_substituida"` e `ignorar = true` (novo campo) — não devem ser importadas pois já viraram parcelas `Fin ...`.
-- `Pagamento de Fatura`: continua excluído (`pagamento_fatura`).
+- Adicionar comentário de cabeçalho explicitando a política: "Imagem em memória apenas — nenhuma persistência, nenhum log do conteúdo."
+- Garantir que **nenhum** `console.log` ou `console.error` jamais inclua `dataUrl`, `imageBase64` ou `body`. Só metadados seguros (mimeType, tamanho em bytes, status).
+- Logo após receber a resposta da AI, liberar a referência: `imageBase64 = ""` e `dataUrl = ""` antes do `return` (ajuda o GC e blinda contra refactor futuro).
+- Adicionar header `Cache-Control: no-store` na resposta.
 
-### 2. Dialog `RevisarComprasLoteDialog.tsx`
+### 2. Frontend `NovaCompraCartaoDialog.tsx`
 
-- Tratar `estorno_parcelamento` como crédito **marcado por padrão** (não desmarcado) e remover o aviso "REVISAR MANUALMENTE" dele.
-- Manter a flag `creditoParcelamentoGenerico` só para casos antigos/duvidosos, mas distinguir visualmente do `estorno_parcelamento` (este vem com badge "COMPENSA PARCELAMENTO" em verde, marcado).
-- Linhas `ignorar=true` (compras-raiz substituídas) entram na lista mas vêm **desmarcadas** com badge "JÁ VIROU PARCELAMENTO" e explicação curta.
-- No `valorEsteMes`, quando `valorEhParcela=true` retornar o valor cru (já está assim) — garantir que toda linha `Fin ... parcNN/MM` chegue com essa flag.
-- Total da fatura passa a ser: `Σ débitos incluídos − Σ créditos incluídos` (já é). Com os créditos de parcelamento marcados por padrão, a conta deve bater.
+- Após a chamada, zerar a variável `base64` (`base64 = ""`) e limpar o `File` selecionado / preview (`setArquivo(null)`, `setPreviewUrl(null)`) assim que a análise terminar — sucesso ou erro.
+- Revogar qualquer `URL.createObjectURL` com `URL.revokeObjectURL` no cleanup.
 
-### 3. Validação rápida
+### 3. Aviso visual no dialog
 
-Após salvar, mostrar no toast a comparação:
-- "Total selecionado: R$ X,XX"  
-para o usuário comparar com o app do banco antes de fechar o dialog.
+- No dialog de upload de comprovante, adicionar uma microcopy discreta abaixo do botão:  
+  *"A imagem é analisada em memória e descartada imediatamente. Nada fica armazenado."*
+
+### Sem mudanças em DB, storage ou RLS
+
+Não é preciso migration, bucket nem policy — não havia armazenamento para remover.
+
+### Observação sobre o provedor de IA
+
+A imagem é enviada para o Lovable AI Gateway → Google Gemini. A retenção lá segue as políticas do provedor (não temos controle por código). Isso é normal para qualquer chamada a LLM externa; vou mencionar isso na microcopy se você quiser ser 100% transparente — confirme se deseja incluir essa frase ou não.
 
 ## Arquivos afetados
 
-- `supabase/functions/analisar-comprovante-cartao/index.ts` — prompt, schema (`tipo` ampliado, novo campo `ignorar`), mapeamento.
-- `src/components/cartoes/RevisarComprasLoteDialog.tsx` — interface, lógica de seleção padrão, badges, totais.
-
-## Detalhes técnicos
-
-```text
-Schema CompraExtraida (adições):
-  tipo: ... | "estorno_parcelamento" | "compra_substituida"
-  ignorar?: boolean   // sugestão da IA de não importar
-
-LinhaCompra (adições):
-  estornoParcelamento: boolean
-  ignorarSugerido: boolean
-
-Seleção inicial (incluir):
-  - ignorarSugerido → false
-  - tipo === pagamento_fatura → linha não entra (já filtrado)
-  - estornoParcelamento → true  (compensa raiz)
-  - creditoParcelamentoGenerico (legado, sem match) → false
-  - default → true
-```
-
-Sem mudanças em DB, RLS ou outras telas.
+- `supabase/functions/analisar-comprovante-cartao/index.ts` — comentário, sanitização de logs, limpeza de refs, header `no-store`.
+- `src/components/cartoes/NovaCompraCartaoDialog.tsx` — limpar `base64` / `File` / `objectURL` no `finally`, microcopy.
