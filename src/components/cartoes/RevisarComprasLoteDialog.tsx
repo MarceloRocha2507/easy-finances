@@ -437,7 +437,39 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
-                {l.creditoParcelamentoGenerico && (
+                {l.estornoParcelamento && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#DCFCE7",
+                      color: "#166534",
+                      fontWeight: 700,
+                    }}
+                    title="Crédito que compensa a compra original já lançada como parcelamento. Deve ser incluído."
+                  >
+                    COMPENSA PARCELAMENTO
+                  </span>
+                )}
+
+                {l.compraSubstituida && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#F3F4F6",
+                      color: "#6B7280",
+                      fontWeight: 700,
+                    }}
+                    title="Esta compra já foi substituída pelas parcelas 'Fin ...'. Não importar."
+                  >
+                    JÁ VIROU PARCELAMENTO
+                  </span>
+                )}
+
+                {l.creditoParcelamentoGenerico && !l.estornoParcelamento && (
                   <span
                     style={{
                       fontSize: 10,
