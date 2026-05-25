@@ -144,6 +144,8 @@ export function NovaCompraCartaoDialog({
   const [analisandoImagem, setAnalisandoImagem] = useState(false);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
+  const [resumoLotePicpay, setResumoLotePicpay] = useState<{ saldoAnterior: number | null; lancamentosResumo: number | null } | null>(null);
+  const [loteEhPicpay, setLoteEhPicpay] = useState(false);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
   const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
   const [imagensPendentes, setImagensPendentes] = useState<Array<{ file: File; preview: string }>>([]);
