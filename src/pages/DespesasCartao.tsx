@@ -1215,6 +1215,27 @@ export default function DespesasCartao() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmarExcluirLoteOpen} onOpenChange={setConfirmarExcluirLoteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selecionadas.size} parcela(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cada item selecionado terá apenas a parcela correspondente excluída. As demais parcelas da mesma compra serão mantidas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindoLote}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleExcluirLote(); }}
+              disabled={excluindoLote}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindoLote ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
