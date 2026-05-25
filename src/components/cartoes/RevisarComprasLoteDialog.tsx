@@ -49,6 +49,7 @@ type LinhaCompra = {
   creditoParcelamentoGenerico?: boolean;
   estornoParcelamento?: boolean;
   compraSubstituida?: boolean;
+  riscadaSemCredito?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
