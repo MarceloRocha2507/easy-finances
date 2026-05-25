@@ -215,6 +215,8 @@ ${bankRules}
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
+                  saldo_fatura_anterior: { type: "number", description: "Apenas PicPay: valor do 'Saldo da fatura anterior' visível no bloco Resumo. Omita se ausente." },
+                  lancamentos_resumo: { type: "number", description: "Apenas PicPay: valor do campo 'Lançamentos' do bloco Resumo (total mostrado pelo banco). Omita se ausente." },
                 },
                 required: ["compras", "confianca"],
               },
