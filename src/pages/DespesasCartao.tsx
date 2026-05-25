@@ -752,6 +752,71 @@ export default function DespesasCartao() {
           </div>
         )}
 
+        {/* Toolbar de seleção em lote */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {!modoSelecao ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                setModoSelecao(true);
+                setSelecionadas(new Set());
+              }}
+              disabled={parcelasFiltradas.length === 0}
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              Selecionar
+            </Button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  if (selecionadas.size === parcelasFiltradas.length) {
+                    setSelecionadas(new Set());
+                  } else {
+                    setSelecionadas(new Set(parcelasFiltradas.map((p) => p.id)));
+                  }
+                }}
+              >
+                {selecionadas.size === parcelasFiltradas.length && parcelasFiltradas.length > 0
+                  ? "Desmarcar tudo"
+                  : "Selecionar tudo"}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {selecionadas.size} selecionada(s)
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {
+                    setModoSelecao(false);
+                    setSelecionadas(new Set());
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  disabled={selecionadas.size === 0 || excluindoLote}
+                  onClick={() => setConfirmarExcluirLoteOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir{selecionadas.size > 0 ? ` (${selecionadas.size})` : ""}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+
         {/* Tabela de despesas */}
         <div className="rounded-lg border bg-card overflow-hidden">
           <div className="overflow-x-auto">
