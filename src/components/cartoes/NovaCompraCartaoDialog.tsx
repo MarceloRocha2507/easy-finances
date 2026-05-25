@@ -144,6 +144,8 @@ export function NovaCompraCartaoDialog({
   const [analisandoImagem, setAnalisandoImagem] = useState(false);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
+  const [resumoLotePicpay, setResumoLotePicpay] = useState<{ saldoAnterior: number | null; lancamentosResumo: number | null } | null>(null);
+  const [loteEhPicpay, setLoteEhPicpay] = useState(false);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
   const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
   const [imagensPendentes, setImagensPendentes] = useState<Array<{ file: File; preview: string }>>([]);
@@ -194,7 +196,7 @@ export function NovaCompraCartaoDialog({
     return /nu\s*bank|\bnu\b/.test(txt);
   }
 
-  async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
+  async function analisarUmaImagem(file: File): Promise<{ compras: CompraExtraida[]; saldoAnterior: number | null; lancamentosResumo: number | null }> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -208,7 +210,11 @@ export function NovaCompraCartaoDialog({
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
     const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
-    return comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento);
+    return {
+      compras: comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento),
+      saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
+      lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
+    };
   }
 
   async function handleAnalisarPendentes() {
@@ -237,7 +243,7 @@ export function NovaCompraCartaoDialog({
         .then((res) => {
           concluidas++;
           setProgressoAnalise({ atual: concluidas, total: lista.length });
-          return { ok: true as const, compras: res };
+          return { ok: true as const, ...res };
         })
         .catch((e) => {
           concluidas++;
@@ -249,7 +255,9 @@ export function NovaCompraCartaoDialog({
 
     try {
       const resultados = await Promise.all(promessas);
-      const sucessos = resultados.filter((r) => r.ok) as Array<{ ok: true; compras: CompraExtraida[] }>;
+      const sucessos = resultados.filter(
+        (r): r is { ok: true; compras: CompraExtraida[]; saldoAnterior: number | null; lancamentosResumo: number | null } => r.ok,
+      );
       const falhas = resultados.length - sucessos.length;
       const todasCompras = sucessos.flatMap((r) => r.compras);
 
@@ -262,6 +270,14 @@ export function NovaCompraCartaoDialog({
         return;
       }
 
+      // Para PicPay, usa o resumo da primeira imagem (cenário típico: 1 print por fatura).
+      const primeiroResumo = sucessos[0];
+      setLoteEhPicpay(isPicpay());
+      setResumoLotePicpay(
+        isPicpay() && primeiroResumo
+          ? { saldoAnterior: primeiroResumo.saldoAnterior, lancamentosResumo: primeiroResumo.lancamentosResumo }
+          : null,
+      );
       setComprasLote(todasCompras);
       toast({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
@@ -336,6 +352,15 @@ export function NovaCompraCartaoDialog({
       // Se houver múltiplas transações OU se for apenas uma mas não for uma 'compra' padrão (ex: IOF, Estorno)
       // abrimos o modal de revisão em lote para dar contexto ao usuário.
       if (comprasValidas.length > 1 || (comprasValidas.length === 1 && comprasValidas[0].tipo !== 'compra')) {
+        setLoteEhPicpay(isPicpay());
+        setResumoLotePicpay(
+          isPicpay()
+            ? {
+                saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
+                lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
+              }
+            : null,
+        );
         setComprasLote(comprasValidas);
         const msg = comprasValidas.length > 1 
           ? `${comprasValidas.length} transações detectadas`
@@ -1268,11 +1293,19 @@ export function NovaCompraCartaoDialog({
       {comprasLote && (
         <RevisarComprasLoteDialog
           open={!!comprasLote}
-          onOpenChange={(o) => !o && setComprasLote(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              setComprasLote(null);
+              setResumoLotePicpay(null);
+              setLoteEhPicpay(false);
+            }
+          }}
           cartao={cartao}
           responsavelId={form.responsavelId || titularData?.id || ""}
           categoriaId={form.categoriaId}
           compras={comprasLote}
+          isPicpay={loteEhPicpay}
+          resumoPicpay={resumoLotePicpay ?? undefined}
           onSaved={() => {
             setComprasLote(null);
             setImagemPreview(null);

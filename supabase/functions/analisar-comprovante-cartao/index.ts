@@ -89,7 +89,13 @@ Quando o usuário parcela uma compra já lançada, aparecem 3 movimentos na MESM
 Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. → tipo="compra", riscada=true, ignorar=false, valor_eh_parcela=false. Valor cheio permanece.
 
 ### 5) Pagamento de Fatura
-Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
+Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura", sinal="credito". INCLUA no array (o frontend aplica a Regra 5 baseada no saldo da fatura anterior).
+
+### Resumo da fatura (campos extras no nível raiz)
+Procure o bloco "Resumo" da fatura e preencha (se visíveis):
+- saldo_fatura_anterior: valor numérico do "Saldo da fatura anterior" (ex.: "R$ 0,00" → 0).
+- lancamentos_resumo: valor numérico do campo "Lançamentos" do Resumo.
+Se algum não estiver visível, omita o campo.`;
 
     const nubankRules = `
 
@@ -209,6 +215,8 @@ ${bankRules}
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
+                  saldo_fatura_anterior: { type: "number", description: "Apenas PicPay: valor do 'Saldo da fatura anterior' visível no bloco Resumo. Omita se ausente." },
+                  lancamentos_resumo: { type: "number", description: "Apenas PicPay: valor do campo 'Lançamentos' do bloco Resumo (total mostrado pelo banco). Omita se ausente." },
                 },
                 required: ["compras", "confianca"],
               },
@@ -252,6 +260,8 @@ ${bankRules}
     let parsed: {
       compras: Array<{ valor: number | string | null; estabelecimento: string | null; data: string | null; parcelas: number; parcela_atual?: number; valor_eh_parcela?: boolean; tipo?: string; sinal?: "debito" | "credito"; linha_original?: string | null; valor_texto?: string | null; ignorar?: boolean }>;
       confianca: string;
+      saldo_fatura_anterior?: number;
+      lancamentos_resumo?: number;
     };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
@@ -356,7 +366,8 @@ ${bankRules}
     }).filter((c: any) =>
       c.valor !== null &&
       c.valor > 0 &&
-      c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
+      // PicPay precisa dos pagamentos para a Regra 5 do breakdown.
+      (isPicpay ? true : c.tipo !== "pagamento_fatura")
     );
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
@@ -448,7 +459,13 @@ ${bankRules}
         }
       : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
 
-    const responseBody = JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" });
+    const responseBody = JSON.stringify({
+      ...legacy,
+      compras,
+      confianca: parsed.confianca || "media",
+      saldo_fatura_anterior: typeof parsed.saldo_fatura_anterior === "number" ? parsed.saldo_fatura_anterior : null,
+      lancamentos_resumo: typeof parsed.lancamentos_resumo === "number" ? parsed.lancamentos_resumo : null,
+    });
 
     return new Response(
       responseBody,

@@ -8,6 +8,7 @@ import { criarCompraCartao } from "@/services/compras-cartao";
 import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
 import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { FaturaPicpayBreakdown } from "./FaturaPicpayBreakdown";
 
 export interface CompraExtraida {
   valor: number | null;
@@ -33,6 +34,8 @@ interface Props {
   categoriaId?: string;
   compras: CompraExtraida[];
   onSaved: () => void;
+  isPicpay?: boolean;
+  resumoPicpay?: { saldoAnterior: number | null; lancamentosResumo: number | null };
 }
 
 type LinhaCompra = {
@@ -82,6 +85,8 @@ export function RevisarComprasLoteDialog({
   categoriaId,
   compras,
   onSaved,
+  isPicpay = false,
+  resumoPicpay,
 }: Props) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -351,6 +356,14 @@ export function RevisarComprasLoteDialog({
             isMobile ? "px-5 pt-2 pb-2" : "px-6 pt-4 pb-4",
           )}
         >
+          {isPicpay && compras.length > 0 && (
+            <FaturaPicpayBreakdown
+              compras={compras}
+              saldoAnteriorInicial={resumoPicpay?.saldoAnterior ?? null}
+              lancamentosResumoInicial={resumoPicpay?.lancamentosResumo ?? null}
+            />
+          )}
+
           {linhas.length === 0 && (
             <p style={{ fontSize: 13, color: "#6B7280", textAlign: "center", padding: 24 }}>
               Nenhuma compra restante.
