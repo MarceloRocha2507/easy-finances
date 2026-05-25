@@ -58,12 +58,13 @@ Deno.serve(async (req) => {
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
     const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos e notas fiscais de compras feitas com cartão de crédito no Brasil.
-Extraia EXATAMENTE três informações do comprovante na imagem:
-1. valor: valor total da compra (número, em reais, ponto como separador decimal). Use o valor total/final, não subtotais.
+Extraia EXATAMENTE estas informações do comprovante na imagem:
+1. valor: valor TOTAL da compra (número, em reais, ponto como separador decimal). Se houver parcelamento (ex: "3x de R$ 50,00"), retorne o total (R$ 150,00), nunca o valor de uma parcela isolada. Prefira o total impresso quando disponível.
 2. estabelecimento: nome curto e limpo do estabelecimento/loja (ex: "Pão de Açúcar", "Uber", "Amazon"). Sem CNPJ, sem endereço.
 3. data: data da compra/transação no formato YYYY-MM-DD. Se houver apenas DD/MM/AAAA, converta. Se não encontrar, use a data de hoje.
+4. parcelas: número de parcelas (inteiro entre 1 e 24). Procure padrões como "Nx de R$ Y", "em N vezes", "parcelado em N", "N parcelas", "N/M", "N x". Compras à vista ou sem indicação explícita = 1. Ignore parcelamentos cancelados/recusados.
 
-Se algum campo não for legível, retorne null para esse campo e marque confianca como "baixa".`;
+Se algum campo não for legível, retorne null para esse campo (exceto parcelas, que deve ser 1 por padrão) e marque confianca como "baixa".`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
