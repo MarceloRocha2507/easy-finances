@@ -41,6 +41,7 @@ type LinhaCompra = {
   sinal: "debito" | "credito";
   valorEhParcela: boolean;
   possivelDuplicada?: boolean;
+  creditoParcelamentoGenerico?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -52,6 +53,16 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
   outline: "none",
   width: "100%",
+};
+
+const isCreditoParcelamentoGenerico = (descricao?: string | null, tipo?: string, sinal?: "debito" | "credito") => {
+  const texto = (descricao || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  return sinal === "credito" && tipo === "estorno" && texto.includes("credito parcelamento compra");
 };
 
 export function RevisarComprasLoteDialog({
@@ -74,8 +85,10 @@ export function RevisarComprasLoteDialog({
     return compras.map((c) => {
       const total = Math.min(Math.max(c.parcelas || 1, 1), 24);
       const atual = Math.min(Math.max(c.parcela_atual || 1, 1), total);
+      const creditoParcelamentoGenerico = isCreditoParcelamentoGenerico(c.estabelecimento, c.tipo, c.sinal || "debito");
+
       return {
-        incluir: true,
+        incluir: !creditoParcelamentoGenerico,
         descricao: c.estabelecimento?.trim() || "",
         valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
         data: hoje,
@@ -84,6 +97,7 @@ export function RevisarComprasLoteDialog({
         tipo: c.tipo || "compra",
         sinal: c.sinal || "debito",
         valorEhParcela: c.valor_eh_parcela === true,
+        creditoParcelamentoGenerico,
       };
     });
   });
@@ -161,15 +175,20 @@ export function RevisarComprasLoteDialog({
     return v;
   };
 
-  const { totalSelecionado, totalDebitos, totalCreditos } = useMemo(() => {
+  const { totalSelecionado, totalDebitos, totalCreditos, totalCreditosPendentes } = useMemo(() => {
     let deb = 0;
     let cre = 0;
+    let crePend = 0;
     for (const l of selecionadas) {
       const v = valorEsteMes(l);
       if (l.sinal === "credito") cre += v;
       else deb += v;
     }
-    return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre };
+    for (const l of linhas) {
+      if (!l.creditoParcelamentoGenerico || l.incluir) continue;
+      crePend += valorEsteMes(l);
+    }
+    return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre, totalCreditosPendentes: crePend };
   }, [selecionadas]);
 
 
@@ -403,6 +422,21 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
+                {l.creditoParcelamentoGenerico && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#FEF3C7",
+                      color: "#92400E",
+                      fontWeight: 700,
+                    }}
+                  >
+                    REVISAR MANUALMENTE
+                  </span>
+                )}
+
                 <div style={{ flex: 1 }} />
                 <button
                   type="button"
@@ -473,6 +507,11 @@ export function RevisarComprasLoteDialog({
                   Valor digitado é de UMA parcela (não o total da compra)
                 </label>
               )}
+              {l.creditoParcelamentoGenerico && (
+                <p style={{ fontSize: 11, color: "#92400E", marginTop: 8 }}>
+                  Crédito genérico de parcelamento foi desmarcado por padrão para não reduzir a fatura indevidamente.
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -497,6 +536,11 @@ export function RevisarComprasLoteDialog({
               <span>Débitos: R$ {totalDebitos.toFixed(2).replace(".", ",")}</span>
               <span style={{ color: "#059669" }}>Créditos: −R$ {totalCreditos.toFixed(2).replace(".", ",")}</span>
             </div>
+          )}
+          {totalCreditosPendentes > 0 && (
+            <p style={{ fontSize: 11, color: "#92400E", marginBottom: 8, textAlign: "right" }}>
+              Créditos genéricos de parcelamento fora do total: R$ {totalCreditosPendentes.toFixed(2).replace(".", ",")}
+            </p>
           )}
           <button
             type="button"
