@@ -118,6 +118,7 @@ export function RevisarComprasLoteDialog({
         creditoParcelamentoGenerico,
         estornoParcelamento,
         compraSubstituida,
+        riscadaSemCredito: c.riscada_sem_credito === true,
       };
     });
   });
