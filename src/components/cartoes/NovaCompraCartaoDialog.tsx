@@ -188,6 +188,12 @@ export function NovaCompraCartaoDialog({
     return /pic\s*pay/.test(txt);
   }
 
+  function isNubank(): boolean {
+    const txt = `${cartao?.nome || ""} ${cartao?.bandeira || ""}`
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return /nu\s*bank|\bnu\b/.test(txt);
+  }
+
   async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
