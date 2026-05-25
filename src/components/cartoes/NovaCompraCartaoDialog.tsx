@@ -146,6 +146,41 @@ export function NovaCompraCartaoDialog({
   const [comprasLote, setComprasLote] = useState<CompraExtraida[] | null>(null);
   const [possivelDuplicada, setPossivelDuplicada] = useState(false);
   const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
+  const [imagensPendentes, setImagensPendentes] = useState<Array<{ file: File; preview: string }>>([]);
+
+  const MAX_IMAGENS = 5;
+  const MAX_TAMANHO = 5 * 1024 * 1024;
+
+  function adicionarImagensPendentes(files: File[]) {
+    if (files.length === 0) return;
+    setImagensPendentes((prev) => {
+      const restante = MAX_IMAGENS - prev.length;
+      if (restante <= 0) {
+        toast({ title: `Máximo ${MAX_IMAGENS} imagens`, variant: "destructive" });
+        return prev;
+      }
+      const aceitos: Array<{ file: File; preview: string }> = [];
+      for (const f of files.slice(0, restante)) {
+        if (f.size > MAX_TAMANHO) {
+          toast({ title: `"${f.name}" muito grande`, description: "Máximo 5MB.", variant: "destructive" });
+          continue;
+        }
+        aceitos.push({ file: f, preview: URL.createObjectURL(f) });
+      }
+      if (files.length > restante) {
+        toast({ title: `${files.length - restante} imagem(ns) ignorada(s)`, description: `Limite de ${MAX_IMAGENS}.` });
+      }
+      return [...prev, ...aceitos];
+    });
+  }
+
+  function removerImagemPendente(index: number) {
+    setImagensPendentes((prev) => {
+      const item = prev[index];
+      if (item) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   async function analisarUmaImagem(file: File): Promise<CompraExtraida[]> {
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -164,29 +199,19 @@ export function NovaCompraCartaoDialog({
     return comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento);
   }
 
-  async function handleMultiplasImagens(files: File[]) {
-    if (files.length === 0) return;
+  async function handleAnalisarPendentes() {
     if (analisandoImagem) return;
+    if (imagensPendentes.length === 0) return;
 
-    const MAX_IMAGENS = 5;
-    const MAX_TAMANHO = 5 * 1024 * 1024;
+    const lista = imagensPendentes.map((p) => p.file);
 
-    let lista = files.slice(0, MAX_IMAGENS);
-    if (files.length > MAX_IMAGENS) {
-      toast({ title: `Máximo ${MAX_IMAGENS} imagens por envio`, description: `As ${files.length - MAX_IMAGENS} imagens excedentes foram ignoradas.` });
-    }
-    lista = lista.filter((f) => {
-      if (f.size > MAX_TAMANHO) {
-        toast({ title: `Imagem "${f.name}" muito grande`, description: "Máximo 5MB por imagem.", variant: "destructive" });
-        return false;
-      }
-      return true;
-    });
-    if (lista.length === 0) return;
-
-    // Fluxo single: usa handler antigo para preencher form direto
+    // 1 imagem → fluxo direto de preenchimento do form
     if (lista.length === 1) {
-      handleImagemComprovante(lista[0]);
+      const file = lista[0];
+      // limpa fila antes do fluxo single
+      imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
+      setImagensPendentes([]);
+      handleImagemComprovante(file);
       return;
     }
 
@@ -230,13 +255,16 @@ export function NovaCompraCartaoDialog({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
         description: `De ${sucessos.length} imagem(ns)${falhas > 0 ? ` · ${falhas} falharam` : ""}. Revise antes de salvar.`,
       });
+      // limpa fila após sucesso
+      imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
+      setImagensPendentes([]);
     } finally {
       setAnalisandoImagem(false);
       setProgressoAnalise(null);
     }
   }
 
-  // Permitir colar imagem (Ctrl+V) enquanto o diálogo está aberto
+  // Permitir colar imagem (Ctrl+V) enquanto o diálogo está aberto — adiciona à fila
   useEffect(() => {
     if (!open) return;
     const handler = (e: ClipboardEvent) => {
@@ -253,8 +281,8 @@ export function NovaCompraCartaoDialog({
       }
       if (imageFiles.length > 0) {
         e.preventDefault();
-        toast({ title: imageFiles.length > 1 ? `${imageFiles.length} imagens coladas` : "Imagem colada", description: "Analisando..." });
-        handleMultiplasImagens(imageFiles);
+        adicionarImagensPendentes(imageFiles);
+        toast({ title: imageFiles.length > 1 ? `${imageFiles.length} imagens adicionadas` : "Imagem adicionada", description: "Clique em Analisar quando terminar." });
       }
     };
     window.addEventListener("paste", handler);
@@ -720,56 +748,130 @@ export function NovaCompraCartaoDialog({
                 </button>
               </div>
             ) : (
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: analisandoImagem ? "not-allowed" : "pointer",
-                  opacity: analisandoImagem ? 0.6 : 1,
-                }}
-              >
-                <div
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    background: "#EEF2FF",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    color: "#4F46E5",
-                    flexShrink: 0,
+                    gap: 10,
+                    cursor: analisandoImagem ? "not-allowed" : "pointer",
+                    opacity: analisandoImagem ? 0.6 : 1,
                   }}
                 >
-                  {analisandoImagem ? (
-                    <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" />
-                  ) : (
-                    <Sparkles style={{ width: 18, height: 18 }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-                    {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
-                  </p>
-                  <p style={{ fontSize: 11, color: "#6B7280" }}>
-                    Envie uma ou mais fotos · ou cole com Ctrl+V
-                  </p>
-                </div>
-                <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  disabled={analisandoImagem}
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) handleMultiplasImagens(files);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: "#EEF2FF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#4F46E5",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {analisandoImagem ? (
+                      <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" />
+                    ) : (
+                      <Sparkles style={{ width: 18, height: 18 }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+                      {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#6B7280" }}>
+                      Adicione fotos · cole com Ctrl+V · clique em Analisar
+                    </p>
+                  </div>
+                  <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={analisandoImagem}
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) adicionarImagensPendentes(files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {imagensPendentes.length > 0 && (
+                  <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {imagensPendentes.map((img, i) => (
+                        <div key={i} style={{ position: "relative", width: 56, height: 56 }}>
+                          <img
+                            src={img.preview}
+                            alt={`Imagem ${i + 1}`}
+                            style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #E5E7EB" }}
+                          />
+                          {!analisandoImagem && (
+                            <button
+                              type="button"
+                              onClick={() => removerImagemPendente(i)}
+                              style={{
+                                position: "absolute",
+                                top: -6,
+                                right: -6,
+                                width: 18,
+                                height: 18,
+                                borderRadius: "50%",
+                                background: "#111827",
+                                color: "#fff",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: 0,
+                              }}
+                            >
+                              <X style={{ width: 11, height: 11 }} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAnalisarPendentes}
+                      disabled={analisandoImagem}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: analisandoImagem ? "#9CA3AF" : "#111827",
+                        color: "#fff",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: analisandoImagem ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                      }}
+                    >
+                      {analisandoImagem ? (
+                        <>
+                          <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" />
+                          Analisando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles style={{ width: 14, height: 14 }} />
+                          Analisar {imagensPendentes.length} {imagensPendentes.length === 1 ? "imagem" : "imagens"}
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
