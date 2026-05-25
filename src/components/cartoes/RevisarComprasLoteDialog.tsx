@@ -58,15 +58,16 @@ export function RevisarComprasLoteDialog({
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
 
-  const [linhas, setLinhas] = useState<LinhaCompra[]>(() =>
-    compras.map((c) => ({
+  const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
+    const hoje = new Date().toISOString().split("T")[0];
+    return compras.map((c) => ({
       incluir: true,
       descricao: c.estabelecimento?.trim() || "",
       valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
-      data: c.data && /^\d{4}-\d{2}-\d{2}$/.test(c.data) ? c.data : new Date().toISOString().split("T")[0],
+      data: hoje,
       parcelas: String(Math.min(Math.max(c.parcelas || 1, 1), 24)),
-    })),
-  );
+    }));
+  });
 
   const atualizar = (i: number, patch: Partial<LinhaCompra>) =>
     setLinhas((arr) => arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
