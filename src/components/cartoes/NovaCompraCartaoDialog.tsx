@@ -352,6 +352,15 @@ export function NovaCompraCartaoDialog({
       // Se houver múltiplas transações OU se for apenas uma mas não for uma 'compra' padrão (ex: IOF, Estorno)
       // abrimos o modal de revisão em lote para dar contexto ao usuário.
       if (comprasValidas.length > 1 || (comprasValidas.length === 1 && comprasValidas[0].tipo !== 'compra')) {
+        setLoteEhPicpay(isPicpay());
+        setResumoLotePicpay(
+          isPicpay()
+            ? {
+                saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
+                lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
+              }
+            : null,
+        );
         setComprasLote(comprasValidas);
         const msg = comprasValidas.length > 1 
           ? `${comprasValidas.length} transações detectadas`
