@@ -187,6 +187,10 @@ export default function DespesasCartao() {
   const [detalhesCompraOpen, setDetalhesCompraOpen] = useState(false);
   const [desmarcarPagasOpen, setDesmarcarPagasOpen] = useState(false);
   const [parcelaSelecionada, setParcelaSelecionada] = useState<ParcelaFatura | null>(null);
+  const [modoSelecao, setModoSelecao] = useState(false);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [excluindoLote, setExcluindoLote] = useState(false);
+  const [confirmarExcluirLoteOpen, setConfirmarExcluirLoteOpen] = useState(false);
   const actionClickedRef = useRef(0);
 
   // Hooks
