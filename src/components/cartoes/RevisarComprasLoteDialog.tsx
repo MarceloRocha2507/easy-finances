@@ -386,7 +386,7 @@ export function RevisarComprasLoteDialog({
                 onChange={(e) => atualizar(i, { descricao: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 6, fontWeight: 500 }}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Valor (R$)</label>
                   <input
@@ -402,7 +402,18 @@ export function RevisarComprasLoteDialog({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Parcelas</label>
+                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Parc. atual</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={parseInt(l.parcelas) || 1}
+                    value={l.parcelaAtual}
+                    onChange={(e) => atualizar(i, { parcelaAtual: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Total parc.</label>
                   <input
                     type="number"
                     min={1}
