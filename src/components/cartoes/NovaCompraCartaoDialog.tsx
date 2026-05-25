@@ -405,8 +405,9 @@ export function NovaCompraCartaoDialog({
         description: e?.message || "Tente novamente.",
         variant: "destructive",
       });
-      setImagemPreview(null);
     } finally {
+      // Privacidade: descarta a imagem da UI/memória imediatamente após a análise.
+      setImagemPreview(null);
       setAnalisandoImagem(false);
     }
   }
