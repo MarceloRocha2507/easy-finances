@@ -679,6 +679,23 @@ export function NovaCompraCartaoDialog({
             </p>
           </div>
 
+          {possivelDuplicada && (
+            <div 
+              className="p-3 rounded-lg border flex items-start gap-3 mb-4"
+              style={{ background: "#FEF3C7", borderColor: "#FDE68A" }}
+            >
+              <AlertTriangle className="shrink-0 mt-0.5" style={{ width: 16, height: 16, color: "#92400E" }} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#92400E", marginBottom: 2 }}>
+                  Essa compra já existe?
+                </p>
+                <p style={{ fontSize: 12, color: "#B45309", lineHeight: "16px" }}>
+                  Encontramos um registro recente com o mesmo valor e descrição similar. Verifique se não está duplicando.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Valor */}
           <div>
             <PremiumLabel required htmlFor="valor">Valor total (R$)</PremiumLabel>
