@@ -371,7 +371,7 @@ export function RevisarComprasLoteDialog({
                 />
                 <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 500 }}>#{i + 1}</span>
                 
-                {l.tipo && l.tipo !== "compra" && (
+                {l.tipo && l.tipo !== "compra" && l.tipo !== "estorno_parcelamento" && l.tipo !== "compra_substituida" && (
                   <span
                     style={{
                       fontSize: 10,
