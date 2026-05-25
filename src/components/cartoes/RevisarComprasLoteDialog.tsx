@@ -258,7 +258,7 @@ export function RevisarComprasLoteDialog({
                 onChange={(e) => atualizar(i, { descricao: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 6, fontWeight: 500 }}
               />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Valor (R$)</label>
                   <input
@@ -266,15 +266,6 @@ export function RevisarComprasLoteDialog({
                     placeholder="0,00"
                     value={l.valor}
                     onChange={(e) => atualizar(i, { valor: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Data</label>
-                  <input
-                    type="date"
-                    value={l.data}
-                    onChange={(e) => atualizar(i, { data: e.target.value })}
                     style={inputStyle}
                   />
                 </div>
