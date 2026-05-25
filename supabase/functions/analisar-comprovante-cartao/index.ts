@@ -366,7 +366,8 @@ ${bankRules}
     }).filter((c: any) =>
       c.valor !== null &&
       c.valor > 0 &&
-      c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
+      // PicPay precisa dos pagamentos para a Regra 5 do breakdown.
+      (isPicpay ? true : c.tipo !== "pagamento_fatura")
     );
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
