@@ -89,7 +89,13 @@ Quando o usuário parcela uma compra já lançada, aparecem 3 movimentos na MESM
 Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. → tipo="compra", riscada=true, ignorar=false, valor_eh_parcela=false. Valor cheio permanece.
 
 ### 5) Pagamento de Fatura
-Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.`;
+Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura", sinal="credito". INCLUA no array (o frontend aplica a Regra 5 baseada no saldo da fatura anterior).
+
+### Resumo da fatura (campos extras no nível raiz)
+Procure o bloco "Resumo" da fatura e preencha (se visíveis):
+- saldo_fatura_anterior: valor numérico do "Saldo da fatura anterior" (ex.: "R$ 0,00" → 0).
+- lancamentos_resumo: valor numérico do campo "Lançamentos" do Resumo.
+Se algum não estiver visível, omita o campo.`;
 
     const nubankRules = `
 
