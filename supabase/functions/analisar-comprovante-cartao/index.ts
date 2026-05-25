@@ -209,8 +209,13 @@ REGRAS CRÍTICAS:
         valor: coerceValor(c?.valor),
         parcelas,
         parcela_atual: parcelaAtual,
+        valor_eh_parcela: c?.valor_eh_parcela === true,
       };
-    }).filter((c: any) => c.valor !== null && c.valor > 0);
+    }).filter((c: any) =>
+      c.valor !== null &&
+      c.valor > 0 &&
+      c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
+    );
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
@@ -221,10 +226,11 @@ REGRAS CRÍTICAS:
           data: first.data,
           parcelas: first.parcelas ?? 1,
           parcela_atual: first.parcela_atual ?? 1,
+          valor_eh_parcela: first.valor_eh_parcela ?? false,
           tipo: first.tipo,
           sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, tipo: "compra", sinal: "debito" };
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
 
     return new Response(
       JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),
