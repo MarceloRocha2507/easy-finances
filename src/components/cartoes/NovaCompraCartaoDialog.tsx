@@ -273,6 +273,7 @@ export function NovaCompraCartaoDialog({
         categoriaId: "",
         responsavelId: titularData?.id || "",
       });
+      setImagemPreview(null);
     }
   }, [open, titularData, cartao.dia_fechamento]);
 
