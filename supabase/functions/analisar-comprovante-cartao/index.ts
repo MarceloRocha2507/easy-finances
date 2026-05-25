@@ -332,7 +332,8 @@ ${isPicpay ? picpayRules : genericRules}
       c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
     );
 
-    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" ==============
+    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
+    if (isPicpay) {
     // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
     // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
     // marcar riscada_sem_credito=true (regra 4).
