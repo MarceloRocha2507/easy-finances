@@ -1293,11 +1293,19 @@ export function NovaCompraCartaoDialog({
       {comprasLote && (
         <RevisarComprasLoteDialog
           open={!!comprasLote}
-          onOpenChange={(o) => !o && setComprasLote(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              setComprasLote(null);
+              setResumoLotePicpay(null);
+              setLoteEhPicpay(false);
+            }
+          }}
           cartao={cartao}
           responsavelId={form.responsavelId || titularData?.id || ""}
           categoriaId={form.categoriaId}
           compras={comprasLote}
+          isPicpay={loteEhPicpay}
+          resumoPicpay={resumoLotePicpay ?? undefined}
           onSaved={() => {
             setComprasLote(null);
             setImagemPreview(null);
