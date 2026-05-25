@@ -195,10 +195,12 @@ export function RevisarComprasLoteDialog({
         idx++;
         setProgresso({ atual: idx, total });
         try {
-          let valor = parseFloat(l.valor.replace(",", "."));
-          if (l.sinal === "credito") valor = -valor;
+          const valorInformado = parseFloat(l.valor.replace(",", "."));
           const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
           const parcelaInicial = Math.min(Math.max(parseInt(l.parcelaAtual) || 1, 1), numParcelas);
+          // Se o valor extraído é de UMA parcela (extrato de fatura), converte para total
+          let valor = l.valorEhParcela ? valorInformado * numParcelas : valorInformado;
+          if (l.sinal === "credito") valor = -valor;
           const dataCompra = new Date(l.data + "T12:00:00");
           const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
