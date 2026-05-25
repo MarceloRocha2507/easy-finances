@@ -20,6 +20,8 @@ export interface CompraExtraida {
   valor_texto?: string | null;
   tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
+  riscada?: boolean;
+  riscada_sem_credito?: boolean;
   ignorar?: boolean;
 }
 
@@ -47,6 +49,7 @@ type LinhaCompra = {
   creditoParcelamentoGenerico?: boolean;
   estornoParcelamento?: boolean;
   compraSubstituida?: boolean;
+  riscadaSemCredito?: boolean;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -115,6 +118,7 @@ export function RevisarComprasLoteDialog({
         creditoParcelamentoGenerico,
         estornoParcelamento,
         compraSubstituida,
+        riscadaSemCredito: c.riscada_sem_credito === true,
       };
     });
   });
@@ -468,6 +472,22 @@ export function RevisarComprasLoteDialog({
                     title="Esta compra já foi substituída pelas parcelas 'Fin ...'. Não importar."
                   >
                     JÁ VIROU PARCELAMENTO
+                  </span>
+                )}
+
+                {l.riscadaSemCredito && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#FEF3C7",
+                      color: "#92400E",
+                      fontWeight: 700,
+                    }}
+                    title="Aparece riscada na fatura mas ainda não tem crédito de estorno. O valor cheio continua sendo cobrado."
+                  >
+                    RISCADA SEM CRÉDITO
                   </span>
                 )}
 

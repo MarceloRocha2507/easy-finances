@@ -65,36 +65,52 @@ Deno.serve(async (req) => {
 
     const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, PicPay, etc).
 
-A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".
+A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras". NÃO descarte linhas riscadas — marque-as com riscada=true.
 
-Para cada item:
-1. valor: valor absoluto em REAIS como NÚMERO (ponto decimal). "R$ 1.234,56" → 1234.56. "R$ 49,90" → 49.90. NUNCA inverta vírgula/ponto.
-   - **REGRA CRÍTICA PARA EXTRATOS DE FATURA**: Se a linha indica a parcela ATUAL (ex: "parc 01/03", "Parcela 6 de 10", "01/12", "Fin X parc02/05"), o valor mostrado É O VALOR DA PARCELA daquele mês, NÃO o total. Retorne EXATAMENTE o valor mostrado e marque "valor_eh_parcela": true.
-   - Em RECIBO simples (não fatura) dizendo "3x de R$ 50,00" sem indicar qual parcela, retorne o TOTAL (150.00) e "valor_eh_parcela": false.
-2. estabelecimento: nome como aparece. Para "Fin <Nome> parcXX/YY" use só o nome (ex: "Fin Espetinhos parc01/02" → "Espetinhos").
-3. tipo: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "estorno_parcelamento", "compra_substituida", "pagamento_fatura" ou "outro".
-4. sinal: "debito" (compras/taxas) ou "credito" (estornos e créditos).
-5. data: YYYY-MM-DD. Converta de DD/MM/AAAA. Sem data, use hoje.
-6. parcelas: nº TOTAL de parcelas (1 a 24). "N/M" → M é o total. À vista = 1.
-7. parcela_atual: nº da parcela ATUAL mostrada (1 a parcelas). "6/10" → 6. NUNCA assuma 1 quando há indicação clara de outra parcela.
-8. valor_eh_parcela: boolean. true = valor é de UMA parcela (extrato com parcela atual visível). false = valor TOTAL da compra.
-9. linha_original: copie a linha/texto visível que originou a extração, incluindo padrão de parcelas e valor quando existirem. Não invente nem resuma.
-10. valor_texto: copie exatamente o valor monetário visto na linha (ex: "R$ 14,09"). Se não estiver claro, use null.
-11. ignorar: boolean. true se a linha NÃO deve ser importada (compra original substituída por parcelamento — ver regra PicPay abaixo). Default false.
+## COMPOSIÇÃO DA FATURA (5 categorias)
 
-REGRAS CRÍTICAS:
-- **NUNCA inclua "Pagamento de Fatura"** — pule essas linhas. São pagamentos da fatura anterior, NÃO lançamentos.
-- **IGNORE transações com texto RISCADO/TACHADO** (canceladas) — NÃO retorne essas linhas no array.
-- NÃO ignore IOF mesmo de centavos. Registre TUDO.
-- IGNORE totais/subtotais/headers — só transações individuais.
-- O campo "valor" precisa bater com o valor monetário realmente visível na linha. Se "linha_original" tiver um único valor, "valor" deve ser exatamente esse número.
+Fatura final = (1) compras à vista + (2) parcelas de meses anteriores + (3) 1ª parcela Fin + IOF + (4) compras riscadas SEM crédito ainda − (5) pagamento parcial recebido.
 
-**REGRAS ESPECÍFICAS PARA PICPAY**:
-- Linhas começando com "Fin <Nome> parcNN/MM" (ex: "Fin Espetinhos parc01/02 R$ 11,48"): o valor JÁ É A PARCELA DO MÊS. Use valor_eh_parcela=true, parcelas=MM, parcela_atual=NN, tipo="compra", estabelecimento=<Nome>.
-- "IOF Diario Parcelado" e "IOF Adicional Parcelado": tipo="iof", parcelas=1, valor_eh_parcela=false.
-- "Credito Parcelamento Compra" (geralmente em verde com seta ←): tipo="estorno_parcelamento", sinal="credito", parcelas=1, valor_eh_parcela=false. Este crédito COMPENSA a compra original "raiz" que aparece em outro lugar da fatura — DEVE ser importado (não é crédito espúrio para ignorar).
-- Se você ver uma compra "raiz" original (ex: "Espetinhosbom R$ 21,00") E TAMBÉM linhas "Fin Espetinhos parcXX/YY" da mesma compra na mesma fatura, a raiz já está sendo cobrada pelas parcelas: marque a raiz com ignorar=true e tipo="compra_substituida". Se a raiz já estiver visualmente riscada, simplesmente NÃO a inclua no array.
+### 1) Compras à vista
+Sem indicação de parcela. → tipo="compra", parcelas=1, parcela_atual=1, valor_eh_parcela=false. Valor cheio.
 
+### 2) Parcelas de compras anteriores
+"Parcela X de Y", "X/Y", "parc XX/YY" SEM prefixo "Fin". → tipo="compra", parcelas=Y, parcela_atual=X, valor_eh_parcela=true. Valor mostrado JÁ É a parcela (NÃO multiplique).
+
+### 3) Parcelamentos novos PicPay (trio "Fin")
+Quando o usuário parcela uma compra já lançada, aparecem 3 movimentos na MESMA fatura:
+  (a) Compra raiz original (normalmente RISCADA) → tipo="compra_substituida", ignorar=true, riscada=true.
+  (b) "Credito Parcelamento Compra" (verde, com seta ←) → tipo="estorno_parcelamento", sinal="credito", ignorar=true. NÃO entra (já compensa a raiz).
+  (c) "Fin <Nome> parcNN/MM" + "IOF Diario Parcelado" / "IOF Adicional Parcelado" → ENTRAM normalmente.
+     - Fin: tipo="compra", estabelecimento=<Nome>, parcelas=MM, parcela_atual=NN, valor_eh_parcela=true, ignorar=false.
+     - IOF: tipo="iof", parcelas=1, valor_eh_parcela=false, ignorar=false.
+
+### 4) Compras RISCADAS SEM crédito correspondente
+Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. → tipo="compra", riscada=true, ignorar=false, valor_eh_parcela=false. Valor cheio permanece.
+
+### 5) Pagamento de Fatura
+Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura". NÃO inclua no array.
+
+## CAMPOS
+
+1. valor (number): valor absoluto em REAIS. "R$ 1.234,56" → 1234.56. NUNCA inverta vírgula/ponto.
+2. estabelecimento (string): nome como aparece. "Fin <Nome> parcXX/YY" → use só <Nome>.
+3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "estorno_parcelamento" | "compra_substituida" | "pagamento_fatura" | "outro".
+4. sinal: "debito" ou "credito".
+5. data: YYYY-MM-DD. Sem data, use hoje.
+6. parcelas (int 1-24).
+7. parcela_atual (int): "6/10" → 6.
+8. valor_eh_parcela (bool): true para regras 2 e 3c.
+9. linha_original (string): copie a linha exata. Não invente.
+10. valor_texto (string|null): valor exatamente como aparece (ex: "R$ 14,09").
+11. riscada (bool): true se o texto da linha está tachado/riscado na imagem. Default false.
+12. ignorar (bool): true para regras 3a e 3b. Default false.
+
+## REGRAS GERAIS
+
+- NÃO ignore IOF mesmo de centavos.
+- IGNORE totais/subtotais/headers/"Saldo da fatura anterior".
+- O campo "valor" precisa bater com o valor visível na linha. Se "linha_original" tiver UM único valor, "valor" deve ser exatamente ele.
 - Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 60 itens.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -139,7 +155,8 @@ REGRAS CRÍTICAS:
                         valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
                         linha_original: { type: "string", description: "Linha ou texto exato visível que originou a extração." },
                         valor_texto: { type: "string", description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'." },
-                        ignorar: { type: "boolean", description: "true se a linha não deve ser importada (compra raiz substituída por parcelamento). Default false." },
+                        riscada: { type: "boolean", description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false." },
+                        ignorar: { type: "boolean", description: "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false." },
                       },
                       required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
                     },
@@ -286,6 +303,7 @@ REGRAS CRÍTICAS:
         parcelas,
         parcela_atual: parcelaAtual,
         valor_eh_parcela: valorEhParcela,
+        riscada: c?.riscada === true,
         ignorar: c?.ignorar === true,
       };
     }).filter((c: any) =>
@@ -293,6 +311,76 @@ REGRAS CRÍTICAS:
       c.valor > 0 &&
       c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
     );
+
+    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" ==============
+    // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
+    // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
+    // marcar riscada_sem_credito=true (regra 4).
+    function normalizeName(s: string | null | undefined): string {
+      return (s || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+    }
+    function nomesParecidos(a: string, b: string): boolean {
+      if (!a || !b) return false;
+      if (a === b) return true;
+      const min = Math.min(a.length, b.length);
+      if (min < 3) return false;
+      return a.startsWith(b.substring(0, min)) || b.startsWith(a.substring(0, min));
+    }
+
+    const finPrimeiras = compras.filter((c: any) =>
+      c.tipo === "compra" &&
+      c.valor_eh_parcela === true &&
+      c.parcela_atual === 1 &&
+      typeof c.linha_original === "string" &&
+      /\bfin\b/i.test(c.linha_original)
+    );
+
+    for (const fin of finPrimeiras) {
+      const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
+      const nomeFin = normalizeName(fin.estabelecimento);
+
+      // Tenta achar crédito de parcelamento com valor ≈ totalCompra
+      const credito = compras.find((c: any) =>
+        c !== fin &&
+        c.sinal === "credito" &&
+        (c.tipo === "estorno_parcelamento" || /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
+        Math.abs((c.valor || 0) - totalCompra) < 0.02
+      );
+
+      // Tenta achar raiz: mesma similaridade de nome E (valor ≈ totalCompra OU está riscada)
+      const raiz = compras.find((c: any) =>
+        c !== fin &&
+        c.tipo !== "iof" &&
+        c.tipo !== "estorno_parcelamento" &&
+        c.sinal !== "credito" &&
+        !c.valor_eh_parcela &&
+        nomesParecidos(normalizeName(c.estabelecimento), nomeFin) &&
+        Math.abs((c.valor || 0) - totalCompra) < 0.02
+      );
+
+      if (raiz && credito) {
+        raiz.ignorar = true;
+        raiz.tipo = "compra_substituida";
+        credito.ignorar = true;
+        credito.tipo = "estorno_parcelamento";
+      }
+    }
+
+    // Regra 4: marcar compras riscadas que NÃO têm crédito de mesmo valor
+    for (const c of compras) {
+      if (!c.riscada || c.ignorar) continue;
+      const temCredito = compras.some((o: any) =>
+        o !== c &&
+        o.sinal === "credito" &&
+        Math.abs((o.valor || 0) - (c.valor || 0)) < 0.02
+      );
+      (c as any).riscada_sem_credito = !temCredito;
+    }
+
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];

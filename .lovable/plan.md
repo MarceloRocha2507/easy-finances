@@ -1,43 +1,67 @@
-## Situação atual (já é assim hoje)
+# Plano: alinhar análise de fatura às 5 regras de composição
 
-A imagem do comprovante **nunca é salva** no projeto:
+Vou reescrever o prompt da edge function `analisar-comprovante-cartao` e ajustar a validação local para refletir exatamente a fórmula da fatura que você descreveu.
 
-- O frontend (`NovaCompraCartaoDialog.tsx`) lê o arquivo, converte para base64 **em memória** e envia direto no body da requisição `supabase.functions.invoke("analisar-comprovante-cartao")`. Nada é gravado em Supabase Storage, bucket, tabela ou cache.
-- A edge function `analisar-comprovante-cartao` recebe o base64, repassa como `data:` URL para o Lovable AI Gateway (Gemini) e **descarta** ao retornar a resposta. Não há `INSERT`, upload, nem persistência da imagem.
-- Os logs da edge function hoje só registram erros (status code da API e mensagens), nunca a imagem em si.
+## O que muda
 
-Ou seja: na prática a imagem só vive em memória durante a chamada e some assim que a função retorna.
+### 1. `supabase/functions/analisar-comprovante-cartao/index.ts` — systemPrompt
 
-## O que vou reforçar (hardening defensivo)
+Substituir o bloco de regras atual por uma seção estruturada nas **5 categorias** da fatura:
 
-Para deixar isso explícito e à prova de regressões futuras:
+1. **Compras à vista** → `tipo: "compra"`, `parcelas: 1`, `valor_eh_parcela: false`, valor cheio.
+2. **Parcelas de meses anteriores** ("Parcela X de Y", "X/Y") → `tipo: "compra"`, `parcelas: Y`, `parcela_atual: X`, `valor_eh_parcela: true`, valor da linha = valor da parcela.
+3. **Parcelamentos novos PicPay (trio Fin)** — quando aparece o trio na mesma fatura:
+   - (a) Compra raiz original → marcar `ignorar: true`, `tipo: "compra_substituida"` (ou omitir se já estiver visivelmente riscada).
+   - (b) "Credito Parcelamento Compra" → marcar `ignorar: true`, `tipo: "estorno_parcelamento"` (líquido já está coberto por a+c, não precisa entrar).
+   - (c) "Fin <Nome> parc01/MM" + IOF → entram normalmente (`valor_eh_parcela: true` para o Fin, `tipo: "iof"` para os IOF).
+4. **Compras riscadas SEM crédito correspondente na mesma fatura** → entram pelo valor cheio (`tipo: "compra"`, `ignorar: false`). Novo campo `riscada_sem_credito: true` para sinalizar na revisão.
+5. **Pagamento de Fatura** (verde, dentro do ciclo) → sempre filtrar (já filtrado). Adicionar campo `eh_pagamento_parcial: true` opcional para que o frontend possa exibir/subtrair se quiser; por padrão NÃO entra no array de compras.
 
-### 1. Edge function `analisar-comprovante-cartao`
+### 2. Detecção do "trio Fin" no backend
 
-- Adicionar comentário de cabeçalho explicitando a política: "Imagem em memória apenas — nenhuma persistência, nenhum log do conteúdo."
-- Garantir que **nenhum** `console.log` ou `console.error` jamais inclua `dataUrl`, `imageBase64` ou `body`. Só metadados seguros (mimeType, tamanho em bytes, status).
-- Logo após receber a resposta da AI, liberar a referência: `imageBase64 = ""` e `dataUrl = ""` antes do `return` (ajuda o GC e blinda contra refactor futuro).
-- Adicionar header `Cache-Control: no-store` na resposta.
+Hoje a regra depende 100% da IA marcar `ignorar` certo. Vou adicionar uma **pós-validação determinística** em JS:
 
-### 2. Frontend `NovaCompraCartaoDialog.tsx`
+- Agrupar itens por nome base (ex.: "Espetinhos" de "Fin Espetinhos parc01/02" bate com raiz "Espetinhosbom" via prefixo normalizado).
+- Se existir simultaneamente: raiz (`tipo: compra`, valor V) + `estorno_parcelamento` de valor ≈ V + `Fin` com parc 01/N → forçar `ignorar=true` na raiz e no crédito, manter apenas Fin + IOF.
+- Se existir raiz riscada SEM crédito de mesmo valor → manter raiz (regra 4), marcar `riscada_sem_credito=true`.
 
-- Após a chamada, zerar a variável `base64` (`base64 = ""`) e limpar o `File` selecionado / preview (`setArquivo(null)`, `setPreviewUrl(null)`) assim que a análise terminar — sucesso ou erro.
-- Revogar qualquer `URL.createObjectURL` com `URL.revokeObjectURL` no cleanup.
+A IA continua extraindo tudo; a regra de composição vira responsabilidade do backend, mais confiável.
 
-### 3. Aviso visual no dialog
+### 3. Novos campos no schema da tool call
 
-- No dialog de upload de comprovante, adicionar uma microcopy discreta abaixo do botão:  
-  *"A imagem é analisada em memória e descartada imediatamente. Nada fica armazenado."*
+Adicionar em `parameters.properties.compras.items.properties`:
+- `riscada` (boolean) — texto visualmente tachado.
+- `riscada_sem_credito` (boolean, preenchido pela pós-validação).
+- `eh_pagamento_parcial` (boolean).
 
-### Sem mudanças em DB, storage ou RLS
+E em `required`, manter apenas o que a IA precisa retornar (`riscada` opcional).
 
-Não é preciso migration, bucket nem policy — não havia armazenamento para remover.
+### 4. `src/components/cartoes/RevisarComprasLoteDialog.tsx`
 
-### Observação sobre o provedor de IA
+- Estender a interface `CompraExtraida` com `riscada`, `riscada_sem_credito`, `tipo: "estorno_parcelamento" | "compra_substituida" | ...`.
+- Exibir badge "Riscada sem crédito ainda" quando `riscada_sem_credito=true` para o usuário decidir se mantém.
+- Itens com `ignorar=true` já vêm desmarcados por padrão, mostrando o motivo ("Substituída por parcelamento Fin").
 
-A imagem é enviada para o Lovable AI Gateway → Google Gemini. A retenção lá segue as políticas do provedor (não temos controle por código). Isso é normal para qualquer chamada a LLM externa; vou mencionar isso na microcopy se você quiser ser 100% transparente — confirme se deseja incluir essa frase ou não.
+## O que NÃO muda
 
-## Arquivos afetados
+- Não mexo na regra de coerção de valor / `chooseMostReliableValue` — ela continua válida.
+- Frontend `NovaCompraCartaoDialog` (single image) não muda — fluxo de lote (`RevisarComprasLoteDialog`) é o que precisa dos novos campos.
+- Política de privacidade da imagem (zero-persistência) permanece.
 
-- `supabase/functions/analisar-comprovante-cartao/index.ts` — comentário, sanitização de logs, limpeza de refs, header `no-store`.
-- `src/components/cartoes/NovaCompraCartaoDialog.tsx` — limpar `base64` / `File` / `objectURL` no `finally`, microcopy.
+## Detalhes técnicos
+
+```text
+Fórmula validada no backend após extração:
+
+  válidos = compras.filter(c => !c.ignorar && c.tipo !== "pagamento_fatura")
+
+  Total esperado = Σ válidos.valor_efetivo
+    onde valor_efetivo:
+      - compra à vista        → valor
+      - parcela anterior      → valor (já é da parcela)
+      - Fin parc 01/N         → valor (1ª parcela)
+      - IOF                   → valor
+      - riscada sem crédito   → valor
+```
+
+Pergunta antes de eu começar: você quer que eu **mostre na tela de revisão** uma linha somatória conferindo "Total esperado da fatura"? Isso ajudaria a bater o número antes do import, mas adiciona uma seção nova ao dialog. Se preferir manter enxuto, deixo só os badges por item.
