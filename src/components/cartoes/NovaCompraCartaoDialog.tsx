@@ -315,7 +315,7 @@ export function NovaCompraCartaoDialog({
       const base64 = dataUrl.split(",")[1];
 
       const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
-        body: { imageBase64: base64, mimeType: file.type },
+        body: { imageBase64: base64, mimeType: file.type, picpay: isPicpay() },
       });
 
       if (error) throw error;
