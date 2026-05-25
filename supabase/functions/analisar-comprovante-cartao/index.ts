@@ -176,7 +176,33 @@ Regras importantes:
       );
     }
 
-    const compras = Array.isArray(parsed.compras) ? parsed.compras : [];
+    const rawCompras = Array.isArray(parsed.compras) ? parsed.compras : [];
+
+    // Coerção defensiva: a IA às vezes retorna valor como string ("1.234,56", "R$ 49,90").
+    // Convertemos sempre para number no formato JS (ponto decimal).
+    function coerceValor(v: unknown): number | null {
+      if (typeof v === "number" && isFinite(v)) return Math.abs(v);
+      if (typeof v !== "string") return null;
+      let s = v.trim().replace(/r\$\s*/i, "").replace(/\s/g, "");
+      if (!s) return null;
+      const temVirgula = s.includes(",");
+      const temPonto = s.includes(".");
+      if (temVirgula && temPonto) {
+        // formato BR: ponto = milhar, vírgula = decimal
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else if (temVirgula) {
+        s = s.replace(",", ".");
+      }
+      // se só tem ponto, mantém como está (assume decimal)
+      const n = parseFloat(s);
+      return isFinite(n) ? Math.abs(n) : null;
+    }
+
+    const compras = rawCompras.map((c: any) => ({
+      ...c,
+      valor: coerceValor(c?.valor),
+      parcelas: Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24),
+    })).filter((c: any) => c.valor !== null && c.valor > 0);
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
