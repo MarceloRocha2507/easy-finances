@@ -78,13 +78,16 @@ Para cada item:
 6. parcelas: nº TOTAL de parcelas (1 a 24). "N/M" → M é o total. À vista = 1.
 7. parcela_atual: nº da parcela ATUAL mostrada (1 a parcelas). "6/10" → 6. NUNCA assuma 1 quando há indicação clara de outra parcela.
 8. valor_eh_parcela: boolean. true = valor é de UMA parcela (extrato com parcela atual visível). false = valor TOTAL da compra.
-9. ignorar: boolean. true se a linha NÃO deve ser importada (compra original substituída por parcelamento — ver regra PicPay abaixo). Default false.
+9. linha_original: copie a linha/texto visível que originou a extração, incluindo padrão de parcelas e valor quando existirem. Não invente nem resuma.
+10. valor_texto: copie exatamente o valor monetário visto na linha (ex: "R$ 14,09"). Se não estiver claro, use null.
+11. ignorar: boolean. true se a linha NÃO deve ser importada (compra original substituída por parcelamento — ver regra PicPay abaixo). Default false.
 
 REGRAS CRÍTICAS:
 - **NUNCA inclua "Pagamento de Fatura"** — pule essas linhas. São pagamentos da fatura anterior, NÃO lançamentos.
 - **IGNORE transações com texto RISCADO/TACHADO** (canceladas) — NÃO retorne essas linhas no array.
 - NÃO ignore IOF mesmo de centavos. Registre TUDO.
 - IGNORE totais/subtotais/headers — só transações individuais.
+- O campo `valor` precisa bater com o valor monetário realmente visível na linha. Se `linha_original` tiver um único valor, `valor` deve ser exatamente esse número.
 
 **REGRAS ESPECÍFICAS PARA PICPAY**:
 - Linhas começando com "Fin <Nome> parcNN/MM" (ex: "Fin Espetinhos parc01/02 R$ 11,48"): o valor JÁ É A PARCELA DO MÊS. Use valor_eh_parcela=true, parcelas=MM, parcela_atual=NN, tipo="compra", estabelecimento=<Nome>.
@@ -134,9 +137,11 @@ REGRAS CRÍTICAS:
                         parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
                         parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
                         valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
+                        linha_original: { type: "string", description: "Linha ou texto exato visível que originou a extração." },
+                        valor_texto: { type: "string", description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'." },
                         ignorar: { type: "boolean", description: "true se a linha não deve ser importada (compra raiz substituída por parcelamento). Default false." },
                       },
-                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela"],
+                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
@@ -181,7 +186,7 @@ REGRAS CRÍTICAS:
     }
 
     let parsed: {
-      compras: Array<{ valor: number | null; estabelecimento: string | null; data: string | null; parcelas: number; tipo?: string; sinal?: "debito" | "credito" }>;
+      compras: Array<{ valor: number | string | null; estabelecimento: string | null; data: string | null; parcelas: number; parcela_atual?: number; valor_eh_parcela?: boolean; tipo?: string; sinal?: "debito" | "credito"; linha_original?: string | null; valor_texto?: string | null; ignorar?: boolean }>;
       confianca: string;
     };
     try {
@@ -215,16 +220,72 @@ REGRAS CRÍTICAS:
       return isFinite(n) ? Math.abs(n) : null;
     }
 
+    function extractCurrencyCandidates(text: unknown): number[] {
+      if (typeof text !== "string") return [];
+      const matches = text.match(/(?:R\$\s*)?-?\d{1,3}(?:\.\d{3})*,\d{2}|(?:R\$\s*)?-?\d+,\d{2}|(?:R\$\s*)?-?\d+\.\d{2}/gi) ?? [];
+      const values = matches
+        .map((match) => coerceValor(match))
+        .filter((value): value is number => value !== null);
+
+      return values.filter((value, index) => values.findIndex((candidate) => Math.abs(candidate - value) < 0.01) === index);
+    }
+
+    function chooseMostReliableValue(params: {
+      aiValue: number | null;
+      rawValueText?: string | null;
+      sourceLine?: string | null;
+      parcelas: number;
+      valorEhParcela: boolean;
+    }): number | null {
+      const { aiValue, rawValueText, sourceLine, parcelas, valorEhParcela } = params;
+      const valueFromText = coerceValor(rawValueText);
+      if (valueFromText !== null) return valueFromText;
+
+      const candidates = extractCurrencyCandidates(sourceLine);
+      if (candidates.length === 0) return aiValue;
+      if (candidates.length === 1) return candidates[0];
+
+      if (aiValue !== null) {
+        const exact = candidates.find((candidate) => Math.abs(candidate - aiValue) < 0.01);
+        if (exact !== undefined) return exact;
+
+        const parcelCandidate = candidates.find((candidate) => Math.abs(candidate * parcelas - aiValue) < 0.02);
+        const totalCandidate = candidates.find((candidate) => Math.abs(candidate - aiValue * parcelas) < 0.02);
+
+        if (valorEhParcela && parcelCandidate !== undefined) return parcelCandidate;
+        if (!valorEhParcela && totalCandidate !== undefined) return totalCandidate;
+      }
+
+      const line = typeof sourceLine === "string" ? sourceLine : "";
+      const hasCurrentInstallmentPattern = /(?:parc(?:ela)?\s*\d{1,2}\s*\/\s*\d{1,2}|\b\d{1,2}\s*\/\s*\d{1,2}\b)/i.test(line);
+      if (valorEhParcela || hasCurrentInstallmentPattern) return Math.min(...candidates);
+
+      const multipliedTotal = candidates.find((candidate) =>
+        candidates.some((other) => Math.abs(candidate - other * parcelas) < 0.02),
+      );
+      if (multipliedTotal !== undefined) return multipliedTotal;
+
+      return aiValue ?? candidates[candidates.length - 1];
+    }
+
     const compras = rawCompras.map((c: any) => {
       const parcelas = Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24);
       let parcelaAtual = parseInt(String(c?.parcela_atual ?? 1)) || 1;
       parcelaAtual = Math.min(Math.max(parcelaAtual, 1), parcelas);
+      const valorEhParcela = c?.valor_eh_parcela === true;
+      const valor = chooseMostReliableValue({
+        aiValue: coerceValor(c?.valor),
+        rawValueText: typeof c?.valor_texto === "string" ? c.valor_texto : null,
+        sourceLine: typeof c?.linha_original === "string" ? c.linha_original : null,
+        parcelas,
+        valorEhParcela,
+      });
       return {
         ...c,
-        valor: coerceValor(c?.valor),
+        valor,
         parcelas,
         parcela_atual: parcelaAtual,
-        valor_eh_parcela: c?.valor_eh_parcela === true,
+        valor_eh_parcela: valorEhParcela,
         ignorar: c?.ignorar === true,
       };
     }).filter((c: any) =>
