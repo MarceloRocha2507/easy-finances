@@ -458,6 +458,21 @@ export function RevisarComprasLoteDialog({
                   />
                 </div>
               </div>
+              {parseInt(l.parcelas) > 1 && (
+                <label
+                  className="flex items-center gap-1.5 mt-2 cursor-pointer select-none"
+                  style={{ fontSize: 11, color: "#6B7280" }}
+                  title="Marque se o valor digitado é o de UMA parcela (extrato de fatura). Desmarque se é o valor TOTAL da compra."
+                >
+                  <input
+                    type="checkbox"
+                    checked={l.valorEhParcela}
+                    onChange={(e) => atualizar(i, { valorEhParcela: e.target.checked })}
+                    style={{ width: 13, height: 13, accentColor: "#4338CA" }}
+                  />
+                  Valor digitado é de UMA parcela (não o total da compra)
+                </label>
+              )}
             </div>
           ))}
         </div>
