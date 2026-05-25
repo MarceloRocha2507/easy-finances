@@ -401,6 +401,9 @@ ${isPicpay ? picpayRules : genericRules}
       );
       (c as any).riscada_sem_credito = !temCredito;
     }
+    } // fim if (isPicpay)
+
+
 
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
