@@ -61,8 +61,13 @@ Deno.serve(async (req) => {
 A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura, lista de transações). Extraia TODAS as linhas de transação visíveis (compras, taxas, impostos, estornos) e retorne no array "compras".
 
 Para cada item, extraia:
-1. valor: valor absoluto do item (número em reais, ponto decimal). Se for parcelado ("3x de R$ 50,00"), retorne o total (R$ 150,00).
-2. estabelecimento: nome ou descrição do item (ex: "Pão de Açúcar", "IOF", "Anuidade", "Estorno Uber").
+1. valor: valor absoluto da transação em REAIS, como NÚMERO (não string), usando PONTO como separador decimal.
+   - ATENÇÃO AO FORMATO BRASILEIRO: "R$ 1.234,56" significa mil duzentos e trinta e quatro reais e cinquenta e seis centavos → retorne 1234.56 (ponto = milhar, vírgula = decimal).
+   - "R$ 49,90" → 49.90. "R$ 1.299,00" → 1299.00. "R$ 12,5" → 12.50. NUNCA inverta vírgula e ponto.
+   - Se for PARCELADO ("3x de R$ 50,00" ou "3x R$ 50,00"), retorne o VALOR TOTAL da compra (3 × 50,00 = 150.00), NÃO o valor da parcela.
+   - Se aparecer só o valor total da compra parcelada (ex: "R$ 150,00 em 3x"), retorne 150.00.
+   - Confira sempre se o valor extraído bate visualmente com o que está escrito; não invente dígitos.
+2. estabelecimento: nome ou descrição do item exatamente como aparece (ex: "Pão de Açúcar", "IOF", "Anuidade", "Estorno Uber").
 3. tipo: categorize em: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno" ou "outro".
 4. sinal: "debito" (para compras e taxas) ou "credito" (para estornos, pagamentos e créditos).
 5. data: data da transação no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
@@ -171,7 +176,33 @@ Regras importantes:
       );
     }
 
-    const compras = Array.isArray(parsed.compras) ? parsed.compras : [];
+    const rawCompras = Array.isArray(parsed.compras) ? parsed.compras : [];
+
+    // Coerção defensiva: a IA às vezes retorna valor como string ("1.234,56", "R$ 49,90").
+    // Convertemos sempre para number no formato JS (ponto decimal).
+    function coerceValor(v: unknown): number | null {
+      if (typeof v === "number" && isFinite(v)) return Math.abs(v);
+      if (typeof v !== "string") return null;
+      let s = v.trim().replace(/r\$\s*/i, "").replace(/\s/g, "");
+      if (!s) return null;
+      const temVirgula = s.includes(",");
+      const temPonto = s.includes(".");
+      if (temVirgula && temPonto) {
+        // formato BR: ponto = milhar, vírgula = decimal
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else if (temVirgula) {
+        s = s.replace(",", ".");
+      }
+      // se só tem ponto, mantém como está (assume decimal)
+      const n = parseFloat(s);
+      return isFinite(n) ? Math.abs(n) : null;
+    }
+
+    const compras = rawCompras.map((c: any) => ({
+      ...c,
+      valor: coerceValor(c?.valor),
+      parcelas: Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24),
+    })).filter((c: any) => c.valor !== null && c.valor > 0);
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
