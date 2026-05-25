@@ -58,15 +58,16 @@ export function RevisarComprasLoteDialog({
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
 
-  const [linhas, setLinhas] = useState<LinhaCompra[]>(() =>
-    compras.map((c) => ({
+  const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
+    const hoje = new Date().toISOString().split("T")[0];
+    return compras.map((c) => ({
       incluir: true,
       descricao: c.estabelecimento?.trim() || "",
       valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
-      data: c.data && /^\d{4}-\d{2}-\d{2}$/.test(c.data) ? c.data : new Date().toISOString().split("T")[0],
+      data: hoje,
       parcelas: String(Math.min(Math.max(c.parcelas || 1, 1), 24)),
-    })),
-  );
+    }));
+  });
 
   const atualizar = (i: number, patch: Partial<LinhaCompra>) =>
     setLinhas((arr) => arr.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -257,7 +258,7 @@ export function RevisarComprasLoteDialog({
                 onChange={(e) => atualizar(i, { descricao: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 6, fontWeight: 500 }}
               />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Valor (R$)</label>
                   <input
@@ -265,15 +266,6 @@ export function RevisarComprasLoteDialog({
                     placeholder="0,00"
                     value={l.valor}
                     onChange={(e) => atualizar(i, { valor: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Data</label>
-                  <input
-                    type="date"
-                    value={l.data}
-                    onChange={(e) => atualizar(i, { data: e.target.value })}
                     style={inputStyle}
                   />
                 </div>
