@@ -330,6 +330,7 @@ export function NovaCompraCartaoDialog({
         responsavelId: titularData?.id || "",
       });
       setImagemPreview(null);
+      setPossivelDuplicada(false);
     }
   }, [open, titularData, cartao.dia_fechamento]);
 
