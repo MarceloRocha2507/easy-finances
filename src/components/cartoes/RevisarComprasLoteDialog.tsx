@@ -554,7 +554,17 @@ export function RevisarComprasLoteDialog({
                   Valor digitado é de UMA parcela (não o total da compra)
                 </label>
               )}
-              {l.creditoParcelamentoGenerico && (
+              {l.estornoParcelamento && (
+                <p style={{ fontSize: 11, color: "#166534", marginTop: 8 }}>
+                  Crédito que compensa a compra original (PicPay): incluído por padrão para a soma bater com a fatura.
+                </p>
+              )}
+              {l.compraSubstituida && (
+                <p style={{ fontSize: 11, color: "#6B7280", marginTop: 8 }}>
+                  Esta compra original já foi convertida em parcelas (Fin ...). Desmarcada por padrão.
+                </p>
+              )}
+              {l.creditoParcelamentoGenerico && !l.estornoParcelamento && (
                 <p style={{ fontSize: 11, color: "#92400E", marginTop: 8 }}>
                   Crédito genérico de parcelamento foi desmarcado por padrão para não reduzir a fatura indevidamente.
                 </p>
