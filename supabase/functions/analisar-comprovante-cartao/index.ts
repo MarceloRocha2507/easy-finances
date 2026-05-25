@@ -56,34 +56,29 @@ Deno.serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil.
+    const systemPrompt = `Você é um assistente especializado em ler comprovantes, recibos, notas fiscais e EXTRATOS DE FATURA de cartão de crédito no Brasil (Nubank, Itaú, Bradesco, etc).
 
-A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura, lista de transações). Extraia TODAS as linhas de transação visíveis (compras, taxas, impostos, estornos) e retorne no array "compras".
+A imagem pode conter UMA ÚNICA compra (recibo simples) ou MÚLTIPLAS compras (print do app do banco, extrato da fatura). Extraia TODAS as linhas de transação visíveis no array "compras".
 
-Para cada item, extraia:
-1. valor: valor absoluto da transação em REAIS, como NÚMERO (não string), usando PONTO como separador decimal.
-   - ATENÇÃO AO FORMATO BRASILEIRO: "R$ 1.234,56" significa mil duzentos e trinta e quatro reais e cinquenta e seis centavos → retorne 1234.56 (ponto = milhar, vírgula = decimal).
-   - "R$ 49,90" → 49.90. "R$ 1.299,00" → 1299.00. "R$ 12,5" → 12.50. NUNCA inverta vírgula e ponto.
-   - Se for PARCELADO ("3x de R$ 50,00" ou "3x R$ 50,00"), retorne o VALOR TOTAL da compra (3 × 50,00 = 150.00), NÃO o valor da parcela.
-   - Se aparecer só o valor total da compra parcelada (ex: "R$ 150,00 em 3x"), retorne 150.00.
-   - Confira sempre se o valor extraído bate visualmente com o que está escrito; não invente dígitos.
-2. estabelecimento: nome ou descrição do item exatamente como aparece (ex: "Pão de Açúcar", "IOF", "Anuidade", "Estorno Uber").
-3. tipo: categorize em: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno" ou "outro".
-4. sinal: "debito" (para compras e taxas) ou "credito" (para estornos, pagamentos e créditos).
-5. data: data da transação no formato YYYY-MM-DD. Converta de DD/MM/AAAA se necessário. Se não houver, use a data de hoje.
-6. parcelas: número TOTAL de parcelas da compra, inteiro entre 1 e 24. Procure "Nx de R$ Y", "em N vezes", "parcelado em N", "N/M" (aqui M é o total), "N x". À vista ou sem indicação = 1.
-7. parcela_atual: número da parcela ATUAL mostrada na fatura, inteiro entre 1 e o valor de "parcelas". MUITO IMPORTANTE:
-   - Se aparecer "6/10", "Parcela 6 de 10", "6 de 10", "06/10" → parcela_atual = 6 e parcelas = 10.
-   - Se aparecer "3x de R$ 50,00" sem indicar qual parcela, assuma parcela_atual = 1.
-   - À vista ou parcela única → parcela_atual = 1.
-   - NUNCA assuma 1 quando a fatura mostra claramente que já está em uma parcela posterior.
+Para cada item:
+1. valor: valor absoluto em REAIS como NÚMERO (ponto decimal). "R$ 1.234,56" → 1234.56. "R$ 49,90" → 49.90. NUNCA inverta vírgula/ponto.
+   - **REGRA CRÍTICA PARA EXTRATOS DE FATURA**: Se a linha indica a parcela ATUAL (ex: "parc 01/03", "Parcela 6 de 10", "01/12", "Fin X parc02/05"), o valor mostrado É O VALOR DA PARCELA daquele mês, NÃO o total. Retorne EXATAMENTE o valor mostrado e marque "valor_eh_parcela": true.
+   - Em RECIBO simples (não fatura) dizendo "3x de R$ 50,00" sem indicar qual parcela, retorne o TOTAL (150.00) e "valor_eh_parcela": false.
+2. estabelecimento: nome como aparece. Para "Fin <Nome> parcXX/YY" use só o nome (ex: "Fin Espetinhos parc01/02" → "Espetinhos").
+3. tipo: "compra", "iof", "encargo", "anuidade", "juros", "seguro", "estorno", "pagamento_fatura" ou "outro".
+4. sinal: "debito" (compras/taxas) ou "credito" (estornos e créditos como "Crédito Parcelamento Compra").
+5. data: YYYY-MM-DD. Converta de DD/MM/AAAA. Sem data, use hoje.
+6. parcelas: nº TOTAL de parcelas (1 a 24). "N/M" → M é o total. À vista = 1.
+7. parcela_atual: nº da parcela ATUAL mostrada (1 a parcelas). "6/10" → 6. NUNCA assuma 1 quando há indicação clara de outra parcela.
+8. valor_eh_parcela: boolean. true = valor é de UMA parcela (extrato com parcela atual visível). false = valor TOTAL da compra.
 
-Regras importantes:
-- NÃO ignore IOF, taxas ou estornos. Registre TUDO que represente uma transação na fatura.
-- **IMPORTANTE**: Ignore transações que estejam com o texto **riscado ou tachado** na imagem. Elas geralmente indicam compras canceladas ou não processadas.
-- IGNORE totais/subtotais da fatura — só as transações individuais.
-- Se a imagem for ilegível ou não contiver transações, retorne compras: [] e confianca: "baixa".
-- Máximo 30 itens por imagem.`;
+REGRAS CRÍTICAS:
+- **NUNCA inclua "Pagamento de Fatura"** — pule essas linhas. São pagamentos da fatura anterior, NÃO lançamentos.
+- **IGNORE transações com texto RISCADO/TACHADO** (canceladas).
+- "Crédito Parcelamento Compra" é legítimo (estorno do valor à vista quando você parcelou depois): inclua com tipo "estorno" e sinal "credito".
+- NÃO ignore IOF mesmo de centavos. Registre TUDO.
+- IGNORE totais/subtotais/headers — só transações individuais.
+- Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 30 itens.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -119,13 +114,14 @@ Regras importantes:
                       properties: {
                         valor: { type: "number", description: "Valor absoluto em reais" },
                         estabelecimento: { type: "string", description: "Nome ou descrição" },
-                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno ou outro" },
+                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, pagamento_fatura ou outro" },
                         sinal: { type: "string", description: "debito ou credito" },
                         data: { type: "string", description: "Data YYYY-MM-DD" },
                         parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
                         parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
+                        valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
                       },
-                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual"],
+                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela"],
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
@@ -213,8 +209,13 @@ Regras importantes:
         valor: coerceValor(c?.valor),
         parcelas,
         parcela_atual: parcelaAtual,
+        valor_eh_parcela: c?.valor_eh_parcela === true,
       };
-    }).filter((c: any) => c.valor !== null && c.valor > 0);
+    }).filter((c: any) =>
+      c.valor !== null &&
+      c.valor > 0 &&
+      c.tipo !== "pagamento_fatura" // pagamentos de fatura nunca entram
+    );
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
@@ -225,10 +226,11 @@ Regras importantes:
           data: first.data,
           parcelas: first.parcelas ?? 1,
           parcela_atual: first.parcela_atual ?? 1,
+          valor_eh_parcela: first.valor_eh_parcela ?? false,
           tipo: first.tipo,
           sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, tipo: "compra", sinal: "debito" };
+      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
 
     return new Response(
       JSON.stringify({ ...legacy, compras, confianca: parsed.confianca || "media" }),

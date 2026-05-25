@@ -15,7 +15,8 @@ export interface CompraExtraida {
   data: string | null;
   parcelas: number;
   parcela_atual?: number;
-  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "outro";
+  valor_eh_parcela?: boolean;
+  tipo?: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno" | "pagamento_fatura" | "outro";
   sinal?: "debito" | "credito";
 }
 
@@ -38,6 +39,7 @@ type LinhaCompra = {
   parcelaAtual: string;
   tipo: string;
   sinal: "debito" | "credito";
+  valorEhParcela: boolean;
   possivelDuplicada?: boolean;
 };
 
@@ -81,6 +83,7 @@ export function RevisarComprasLoteDialog({
         parcelaAtual: String(atual),
         tipo: c.tipo || "compra",
         sinal: c.sinal || "debito",
+        valorEhParcela: c.valor_eh_parcela === true,
       };
     });
   });
@@ -149,13 +152,17 @@ export function RevisarComprasLoteDialog({
 
   const selecionadas = useMemo(() => linhas.filter((l) => l.incluir), [linhas]);
 
-  const totalSelecionado = useMemo(
-    () => selecionadas.reduce((s, l) => {
+  const { totalSelecionado, totalDebitos, totalCreditos } = useMemo(() => {
+    let deb = 0;
+    let cre = 0;
+    for (const l of selecionadas) {
       const v = parseFloat(l.valor.replace(",", ".")) || 0;
-      return s + (l.sinal === "credito" ? -v : v);
-    }, 0),
-    [selecionadas],
-  );
+      if (l.sinal === "credito") cre += v;
+      else deb += v;
+    }
+    return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre };
+  }, [selecionadas]);
+
 
   async function handleSalvarTudo() {
     if (salvando) return;
@@ -188,10 +195,12 @@ export function RevisarComprasLoteDialog({
         idx++;
         setProgresso({ atual: idx, total });
         try {
-          let valor = parseFloat(l.valor.replace(",", "."));
-          if (l.sinal === "credito") valor = -valor;
+          const valorInformado = parseFloat(l.valor.replace(",", "."));
           const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
           const parcelaInicial = Math.min(Math.max(parseInt(l.parcelaAtual) || 1, 1), numParcelas);
+          // Se o valor extraído é de UMA parcela (extrato de fatura), converte para total
+          let valor = l.valorEhParcela ? valorInformado * numParcelas : valorInformado;
+          if (l.sinal === "credito") valor = -valor;
           const dataCompra = new Date(l.data + "T12:00:00");
           const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
@@ -350,6 +359,22 @@ export function RevisarComprasLoteDialog({
                   </span>
                 )}
 
+                {l.valorEhParcela && parseInt(l.parcelas) > 1 && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "#EEF2FF",
+                      color: "#4338CA",
+                      fontWeight: 600,
+                    }}
+                    title="Valor mostrado é de UMA parcela. Total da compra será calculado automaticamente."
+                  >
+                    VALOR DA PARCELA
+                  </span>
+                )}
+
                 {l.possivelDuplicada && (
                   <span
                     style={{
@@ -435,14 +460,20 @@ export function RevisarComprasLoteDialog({
           )}
           style={isMobile ? { paddingBottom: "max(12px, env(safe-area-inset-bottom))" } : undefined}
         >
-          <div className="flex items-center justify-between mb-2" style={{ fontSize: 13 }}>
+          <div className="flex items-center justify-between mb-1" style={{ fontSize: 13 }}>
             <span style={{ color: "#6B7280" }}>
               {selecionadas.length} selecionada(s)
             </span>
             <span style={{ color: "#111827", fontWeight: 600 }}>
-              Total: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
+              Líquido: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
             </span>
           </div>
+          {(totalDebitos > 0 || totalCreditos > 0) && (
+            <div className="flex items-center justify-end gap-3 mb-2" style={{ fontSize: 11, color: "#6B7280" }}>
+              <span>Débitos: R$ {totalDebitos.toFixed(2).replace(".", ",")}</span>
+              <span style={{ color: "#059669" }}>Créditos: −R$ {totalCreditos.toFixed(2).replace(".", ",")}</span>
+            </div>
+          )}
           <button
             type="button"
             onClick={handleSalvarTudo}
