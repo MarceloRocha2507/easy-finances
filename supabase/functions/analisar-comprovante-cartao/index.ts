@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
     }
 
     const { imageBase64, mimeType } = body as { imageBase64: string; mimeType: string };
+    const isPicpay = body?.picpay === true;
 
     if (imageBase64.length > MAX_BASE64_SIZE) {
       return new Response(
