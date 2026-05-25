@@ -1244,14 +1244,83 @@ export default function DespesasCartao() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmarExcluirLoteOpen} onOpenChange={setConfirmarExcluirLoteOpen}>
+      <AlertDialog
+        open={confirmarExcluirLoteOpen}
+        onOpenChange={(v) => {
+          setConfirmarExcluirLoteOpen(v);
+          if (!v) setEscopoLote("parcela");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir {selecionadas.size} parcela(s)?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir {selecionadas.size} compra(s)?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cada item selecionado terá apenas a parcela correspondente excluída. As demais parcelas da mesma compra serão mantidas. Esta ação não pode ser desfeita.
+              Escolha o que deseja excluir. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="flex flex-col gap-2 py-2">
+            <button
+              type="button"
+              onClick={() => setEscopoLote("parcela")}
+              className="flex items-start gap-3 rounded-lg p-3 text-left transition-colors"
+              style={{
+                background: escopoLote === "parcela" ? "#F9FAFB" : "transparent",
+                border: escopoLote === "parcela" ? "1.5px solid #111827" : "1px solid #E5E7EB",
+              }}
+            >
+              <div
+                className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                style={{
+                  border: escopoLote === "parcela" ? "1.5px solid #111827" : "1.5px solid #D1D5DB",
+                }}
+              >
+                {escopoLote === "parcela" && (
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#111827" }} />
+                )}
+              </div>
+              <div className="flex-1">
+                <p style={{ color: "#111827", fontWeight: 600, fontSize: 14 }}>
+                  Apenas as parcelas deste mês
+                </p>
+                <p style={{ color: "#6B7280", fontSize: 13 }}>
+                  {previaExclusaoLote.selecionadas} parcela(s) deste mês
+                </p>
+              </div>
+            </button>
+
+            {previaExclusaoLote.temFuturas && (
+              <button
+                type="button"
+                onClick={() => setEscopoLote("restantes")}
+                className="flex items-start gap-3 rounded-lg p-3 text-left transition-colors"
+                style={{
+                  background: escopoLote === "restantes" ? "#F9FAFB" : "transparent",
+                  border: escopoLote === "restantes" ? "1.5px solid #111827" : "1px solid #E5E7EB",
+                }}
+              >
+                <div
+                  className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    border: escopoLote === "restantes" ? "1.5px solid #111827" : "1.5px solid #D1D5DB",
+                  }}
+                >
+                  {escopoLote === "restantes" && (
+                    <div className="h-2 w-2 rounded-full" style={{ background: "#111827" }} />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p style={{ color: "#111827", fontWeight: 600, fontSize: 14 }}>
+                    Estas e todas as parcelas futuras
+                  </p>
+                  <p style={{ color: "#6B7280", fontSize: 13 }}>
+                    {previaExclusaoLote.selecionadas} compra(s) • {previaExclusaoLote.totalComFuturas} parcela(s) no total
+                  </p>
+                </div>
+              </button>
+            )}
+          </div>
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={excluindoLote}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
