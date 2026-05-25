@@ -148,7 +148,7 @@ export function NovaCompraCartaoDialog({
   const [progressoAnalise, setProgressoAnalise] = useState<{ atual: number; total: number } | null>(null);
   const [imagensPendentes, setImagensPendentes] = useState<Array<{ file: File; preview: string }>>([]);
 
-  const MAX_IMAGENS = 5;
+  const MAX_IMAGENS = 20;
   const MAX_TAMANHO = 5 * 1024 * 1024;
 
   function adicionarImagensPendentes(files: File[]) {
