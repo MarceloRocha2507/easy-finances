@@ -199,29 +199,19 @@ export function NovaCompraCartaoDialog({
     return comprasArr.filter((c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento);
   }
 
-  async function handleMultiplasImagens(files: File[]) {
-    if (files.length === 0) return;
+  async function handleAnalisarPendentes() {
     if (analisandoImagem) return;
+    if (imagensPendentes.length === 0) return;
 
-    const MAX_IMAGENS = 5;
-    const MAX_TAMANHO = 5 * 1024 * 1024;
+    const lista = imagensPendentes.map((p) => p.file);
 
-    let lista = files.slice(0, MAX_IMAGENS);
-    if (files.length > MAX_IMAGENS) {
-      toast({ title: `Máximo ${MAX_IMAGENS} imagens por envio`, description: `As ${files.length - MAX_IMAGENS} imagens excedentes foram ignoradas.` });
-    }
-    lista = lista.filter((f) => {
-      if (f.size > MAX_TAMANHO) {
-        toast({ title: `Imagem "${f.name}" muito grande`, description: "Máximo 5MB por imagem.", variant: "destructive" });
-        return false;
-      }
-      return true;
-    });
-    if (lista.length === 0) return;
-
-    // Fluxo single: usa handler antigo para preencher form direto
+    // 1 imagem → fluxo direto de preenchimento do form
     if (lista.length === 1) {
-      handleImagemComprovante(lista[0]);
+      const file = lista[0];
+      // limpa fila antes do fluxo single
+      imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
+      setImagensPendentes([]);
+      handleImagemComprovante(file);
       return;
     }
 
@@ -265,13 +255,16 @@ export function NovaCompraCartaoDialog({
         title: `${todasCompras.length} transação(ões) detectada(s)`,
         description: `De ${sucessos.length} imagem(ns)${falhas > 0 ? ` · ${falhas} falharam` : ""}. Revise antes de salvar.`,
       });
+      // limpa fila após sucesso
+      imagensPendentes.forEach((p) => URL.revokeObjectURL(p.preview));
+      setImagensPendentes([]);
     } finally {
       setAnalisandoImagem(false);
       setProgressoAnalise(null);
     }
   }
 
-  // Permitir colar imagem (Ctrl+V) enquanto o diálogo está aberto
+  // Permitir colar imagem (Ctrl+V) enquanto o diálogo está aberto — adiciona à fila
   useEffect(() => {
     if (!open) return;
     const handler = (e: ClipboardEvent) => {
@@ -288,8 +281,8 @@ export function NovaCompraCartaoDialog({
       }
       if (imageFiles.length > 0) {
         e.preventDefault();
-        toast({ title: imageFiles.length > 1 ? `${imageFiles.length} imagens coladas` : "Imagem colada", description: "Analisando..." });
-        handleMultiplasImagens(imageFiles);
+        adicionarImagensPendentes(imageFiles);
+        toast({ title: imageFiles.length > 1 ? `${imageFiles.length} imagens adicionadas` : "Imagem adicionada", description: "Clique em Analisar quando terminar." });
       }
     };
     window.addEventListener("paste", handler);
