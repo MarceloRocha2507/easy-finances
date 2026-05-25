@@ -152,11 +152,20 @@ export function RevisarComprasLoteDialog({
 
   const selecionadas = useMemo(() => linhas.filter((l) => l.incluir), [linhas]);
 
+  // Quanto cada linha vai pesar na FATURA DESTE MÊS (igual ao total mostrado pelo banco)
+  const valorEsteMes = (l: LinhaCompra): number => {
+    const v = parseFloat(l.valor.replace(",", ".")) || 0;
+    const p = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
+    if (l.valorEhParcela) return v; // valor já é da parcela do mês
+    if (p > 1) return v / p; // valor é total da compra → divide
+    return v;
+  };
+
   const { totalSelecionado, totalDebitos, totalCreditos } = useMemo(() => {
     let deb = 0;
     let cre = 0;
     for (const l of selecionadas) {
-      const v = parseFloat(l.valor.replace(",", ".")) || 0;
+      const v = valorEsteMes(l);
       if (l.sinal === "credito") cre += v;
       else deb += v;
     }
@@ -449,6 +458,21 @@ export function RevisarComprasLoteDialog({
                   />
                 </div>
               </div>
+              {parseInt(l.parcelas) > 1 && (
+                <label
+                  className="flex items-center gap-1.5 mt-2 cursor-pointer select-none"
+                  style={{ fontSize: 11, color: "#6B7280" }}
+                  title="Marque se o valor digitado é o de UMA parcela (extrato de fatura). Desmarque se é o valor TOTAL da compra."
+                >
+                  <input
+                    type="checkbox"
+                    checked={l.valorEhParcela}
+                    onChange={(e) => atualizar(i, { valorEhParcela: e.target.checked })}
+                    style={{ width: 13, height: 13, accentColor: "#4338CA" }}
+                  />
+                  Valor digitado é de UMA parcela (não o total da compra)
+                </label>
+              )}
             </div>
           ))}
         </div>
@@ -465,7 +489,7 @@ export function RevisarComprasLoteDialog({
               {selecionadas.length} selecionada(s)
             </span>
             <span style={{ color: "#111827", fontWeight: 600 }}>
-              Líquido: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
+              Total fatura deste mês: R$ {totalSelecionado.toFixed(2).replace(".", ",")}
             </span>
           </div>
           {(totalDebitos > 0 || totalCreditos > 0) && (
