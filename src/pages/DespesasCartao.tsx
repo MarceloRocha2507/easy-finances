@@ -835,13 +835,27 @@ export default function DespesasCartao() {
                       }}
                     >
                       <TableCell>
-                        <Checkbox
-                          checked={!!p.paga}
-                          onCheckedChange={async () => {
-                            await marcarParcelaComoPaga(p.id, !p.paga);
-                            carregarFatura();
-                          }}
-                        />
+                        {modoSelecao ? (
+                          <Checkbox
+                            checked={selecionadas.has(p.id)}
+                            onCheckedChange={() => {
+                              setSelecionadas((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(p.id)) next.delete(p.id);
+                                else next.add(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        ) : (
+                          <Checkbox
+                            checked={!!p.paga}
+                            onCheckedChange={async () => {
+                              await marcarParcelaComoPaga(p.id, !p.paga);
+                              carregarFatura();
+                            }}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell>
