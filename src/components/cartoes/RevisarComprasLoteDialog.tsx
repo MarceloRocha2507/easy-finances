@@ -85,6 +85,8 @@ export function RevisarComprasLoteDialog({
   categoriaId,
   compras,
   onSaved,
+  isPicpay = false,
+  resumoPicpay,
 }: Props) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
