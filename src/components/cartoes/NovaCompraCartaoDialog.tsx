@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { RevisarComprasLoteDialog, type CompraExtraida } from "./RevisarComprasLoteDialog";
+import { parseNubankCsv } from "@/lib/nubankCsvParser";
 
 type Categoria = {
   id: string;
@@ -318,6 +319,36 @@ export function NovaCompraCartaoDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, analisandoImagem]);
 
+
+  async function handleNubankCsvFiles(files: File[]) {
+    try {
+      const textos = await Promise.all(files.map((f) => f.text()));
+      const todas = textos.flatMap((t) => parseNubankCsv(t));
+      const validas = todas.filter((c) => typeof c.valor === "number" && (c.valor as number) > 0 && c.estabelecimento);
+      if (validas.length === 0) {
+        toast({
+          title: "Nenhuma transação encontrada",
+          description: "Verifique se o CSV é o oficial do Nubank (date,title,amount).",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLoteEhPicpay(false);
+      setResumoLotePicpay(null);
+      setComprasLote(validas);
+      toast({
+        title: `${validas.length} transação(ões) detectada(s)`,
+        description: `CSV do Nubank processado localmente. Revise antes de salvar.`,
+      });
+    } catch (e: any) {
+      console.error("Erro ao processar CSV Nubank:", e);
+      toast({
+        title: "Erro ao ler CSV",
+        description: e?.message || "Arquivo inválido.",
+        variant: "destructive",
+      });
+    }
+  }
 
   async function handleAnaliseTexto(texto: string) {
     if (!texto) return;
@@ -839,7 +870,9 @@ export function NovaCompraCartaoDialog({
                       {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
                     </p>
                     <p style={{ fontSize: 11, color: "#6B7280" }}>
-                      Adicione fotos · cole com Ctrl+V · clique em Analisar
+                      {isNubank()
+                        ? "Imagem, Ctrl+V ou CSV oficial da fatura"
+                        : "Adicione fotos · cole com Ctrl+V · clique em Analisar"}
                     </p>
                     <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
                       A imagem é analisada em memória e descartada após o processamento. Nada fica armazenado.
@@ -848,13 +881,22 @@ export function NovaCompraCartaoDialog({
                   <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
                   <input
                     type="file"
-                    accept="image/*"
+                    accept={isNubank() ? "image/*,.csv,text/csv" : "image/*"}
                     multiple
                     disabled={analisandoImagem}
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
-                      if (files.length > 0) adicionarImagensPendentes(files);
+                      if (files.length === 0) {
+                        e.target.value = "";
+                        return;
+                      }
+                      const csvFiles = files.filter((f) =>
+                        f.type === "text/csv" || /\.csv$/i.test(f.name),
+                      );
+                      const imageFiles = files.filter((f) => !csvFiles.includes(f));
+                      if (csvFiles.length > 0) handleNubankCsvFiles(csvFiles);
+                      if (imageFiles.length > 0) adicionarImagensPendentes(imageFiles);
                       e.target.value = "";
                     }}
                   />
