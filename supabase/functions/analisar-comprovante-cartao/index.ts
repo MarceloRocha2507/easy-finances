@@ -30,11 +30,16 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => null);
-    if (!body || (!body.imageBase64 && !body.text) || (body.imageBase64 && typeof body.imageBase64 !== "string") || (body.imageBase64 && typeof body.mimeType !== "string")) {
-      return new Response(
-        JSON.stringify({ error: "imageBase64 + mimeType OU text são obrigatórios" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    if (
+      !body ||
+      (!body.imageBase64 && !body.text) ||
+      (body.imageBase64 && typeof body.imageBase64 !== "string") ||
+      (body.imageBase64 && typeof body.mimeType !== "string")
+    ) {
+      return new Response(JSON.stringify({ error: "imageBase64 + mimeType OU text são obrigatórios" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { imageBase64, mimeType, text: rawText } = body as { imageBase64?: string; mimeType?: string; text?: string };
@@ -42,19 +47,18 @@ Deno.serve(async (req) => {
     const isNubank = body?.nubank === true;
 
     if (imageBase64 && imageBase64.length > MAX_BASE64_SIZE) {
-      return new Response(
-        JSON.stringify({ error: "Imagem muito grande (máx ~6MB)" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Imagem muito grande (máx ~6MB)" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (imageBase64 && !/^image\/(png|jpeg|jpg|webp|heic|heif)$/i.test(mimeType!)) {
-      return new Response(
-        JSON.stringify({ error: "Formato de imagem não suportado" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Formato de imagem não suportado" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
 
     // dataUrl remoted, we use conditionally in the fetch body
 
@@ -200,7 +204,6 @@ IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 c
 4. Atenção especial: linhas "Crédito de parcelamento de compra" frequentemente aparecem 2 ou 3 vezes seguidas no mesmo dia — extraia TODAS, uma por uma.
 5. NUNCA omita uma linha porque "parece técnica", "parece resumo" ou "parece duplicada" — extraia tudo o que estiver visível.`;
 
-
     const genericRules = `
 
 ## REGRAS DE EXTRAÇÃO
@@ -228,7 +231,7 @@ ${bankRules}
 
 1. valor (number): valor absoluto em REAIS. "R$ 1.234,56" → 1234.56. NUNCA inverta vírgula/ponto.
 2. estabelecimento (string): nome como aparece.${isPicpay ? ' "Fin <Nome> parcXX/YY" → use só <Nome>.' : ""}
-3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${(isPicpay || isNubank) ? ' | "estorno_parcelamento"' : ""}${isPicpay ? ' | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
+3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${isPicpay || isNubank ? ' | "estorno_parcelamento"' : ""}${isPicpay ? ' | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
 4. sinal: "debito" ou "credito".
 5. data: YYYY-MM-DD. Sem data, use hoje.
 6. parcelas (int 1-24).
@@ -246,7 +249,8 @@ ${bankRules}
 - O campo "valor" precisa bater com o valor visível na linha. Se "linha_original" tiver UM único valor, "valor" deve ser exatamente ele.
 - Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 60 itens.`;
 
-    const creditAuditPrompt = isNubank ? `Você vai fazer uma SEGUNDA PASSAGEM focada APENAS em CRÉDITOS da fatura Nubank.
+    const creditAuditPrompt = isNubank
+      ? `Você vai fazer uma SEGUNDA PASSAGEM focada APENAS em CRÉDITOS da fatura Nubank.
 
 Objetivo: localizar TODAS as linhas em verde / negativas / com sinal "-" ou "–" e retornar SOMENTE essas linhas no array "compras".
 
@@ -260,7 +264,8 @@ Regras obrigatórias:
   - estorno
 - NÃO retorne compras em débito, totais, resumo, cabeçalhos ou saldo da fatura.
 - Se existirem 4 linhas verdes visíveis, o array precisa ter 4 itens.
-` : "";
+`
+      : "";
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
@@ -271,20 +276,18 @@ Regras obrigatórias:
         "Content-Type": "application/json",
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
-        body: JSON.stringify({
+      body: JSON.stringify({
         model: isNubank && imageBase64 ? "gpt-4o" : "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: imageBase64 
+            content: imageBase64
               ? [
                   { type: "text", text: "Extraia TODAS as compras visíveis nesta imagem." },
                   { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
                 ]
-              : [
-                  { type: "text", text: `Extraia as compras deste texto:\n\n${rawText}` }
-                ],
+              : [{ type: "text", text: `Extraia as compras deste texto:\n\n${rawText}` }],
           },
         ],
         tools: [
@@ -303,23 +306,66 @@ Regras obrigatórias:
                       properties: {
                         valor: { type: "number", description: "Valor absoluto em reais" },
                         estabelecimento: { type: "string", description: "Nome ou descrição" },
-                        tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro" },
+                        tipo: {
+                          type: "string",
+                          description:
+                            "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro",
+                        },
                         sinal: { type: "string", description: "debito ou credito" },
                         data: { type: "string", description: "Data YYYY-MM-DD" },
                         parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
-                        parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
-                        valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
-                        linha_original: { type: "string", description: "Linha ou texto exato visível que originou a extração." },
-                        valor_texto: { type: "string", description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'." },
-                        riscada: { type: "boolean", description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false." },
-                        ignorar: { type: "boolean", description: "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false." },
+                        parcela_atual: {
+                          type: "integer",
+                          description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1.",
+                        },
+                        valor_eh_parcela: {
+                          type: "boolean",
+                          description:
+                            "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra.",
+                        },
+                        linha_original: {
+                          type: "string",
+                          description: "Linha ou texto exato visível que originou a extração.",
+                        },
+                        valor_texto: {
+                          type: "string",
+                          description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'.",
+                        },
+                        riscada: {
+                          type: "boolean",
+                          description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false.",
+                        },
+                        ignorar: {
+                          type: "boolean",
+                          description:
+                            "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false.",
+                        },
                       },
-                      required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
+                      required: [
+                        "valor",
+                        "estabelecimento",
+                        "tipo",
+                        "sinal",
+                        "data",
+                        "parcelas",
+                        "parcela_atual",
+                        "valor_eh_parcela",
+                        "linha_original",
+                        "valor_texto",
+                      ],
                     },
                   },
                   confianca: { type: "string", description: "alta, media ou baixa" },
-                  saldo_fatura_anterior: { type: "number", description: "Apenas PicPay: valor do 'Saldo da fatura anterior' visível no bloco Resumo. Omita se ausente." },
-                  lancamentos_resumo: { type: "number", description: "Apenas PicPay: valor do campo 'Lançamentos' do bloco Resumo (total mostrado pelo banco). Omita se ausente." },
+                  saldo_fatura_anterior: {
+                    type: "number",
+                    description:
+                      "Apenas PicPay: valor do 'Saldo da fatura anterior' visível no bloco Resumo. Omita se ausente.",
+                  },
+                  lancamentos_resumo: {
+                    type: "number",
+                    description:
+                      "Apenas PicPay: valor do campo 'Lançamentos' do bloco Resumo (total mostrado pelo banco). Omita se ausente.",
+                  },
                 },
                 required: ["compras", "confianca"],
               },
@@ -331,37 +377,49 @@ Regras obrigatórias:
     });
 
     if (aiResponse.status === 429) {
-      return new Response(
-        JSON.stringify({ error: "Muitas requisições. Tente novamente em instantes." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Muitas requisições. Tente novamente em instantes." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (aiResponse.status === 402) {
-      return new Response(
-        JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace." }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace." }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (!aiResponse.ok) {
       const txt = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, txt);
-      return new Response(
-        JSON.stringify({ error: "Falha ao analisar imagem" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Falha ao analisar imagem" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const aiJson = await aiResponse.json();
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
-      return new Response(
-        JSON.stringify({ error: "IA não retornou dados estruturados" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "IA não retornou dados estruturados" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let parsed: {
-      compras: Array<{ valor: number | string | null; estabelecimento: string | null; data: string | null; parcelas: number; parcela_atual?: number; valor_eh_parcela?: boolean; tipo?: string; sinal?: "debito" | "credito"; linha_original?: string | null; valor_texto?: string | null; ignorar?: boolean }>;
+      compras: Array<{
+        valor: number | string | null;
+        estabelecimento: string | null;
+        data: string | null;
+        parcelas: number;
+        parcela_atual?: number;
+        valor_eh_parcela?: boolean;
+        tipo?: string;
+        sinal?: "debito" | "credito";
+        linha_original?: string | null;
+        valor_texto?: string | null;
+        ignorar?: boolean;
+      }>;
       confianca: string;
       saldo_fatura_anterior?: number;
       lancamentos_resumo?: number;
@@ -369,10 +427,10 @@ Regras obrigatórias:
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch {
-      return new Response(
-        JSON.stringify({ error: "Resposta da IA inválida" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Resposta da IA inválida" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let rawCompras = Array.isArray(parsed.compras) ? parsed.compras : [];
@@ -391,7 +449,10 @@ Regras obrigatórias:
             {
               role: "user",
               content: [
-                { type: "text", text: "Faça uma segunda leitura e retorne SOMENTE os créditos/linhas verdes visíveis nesta imagem." },
+                {
+                  type: "text",
+                  text: "Faça uma segunda leitura e retorne SOMENTE os créditos/linhas verdes visíveis nesta imagem.",
+                },
                 { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
               ],
             },
@@ -412,18 +473,53 @@ Regras obrigatórias:
                         properties: {
                           valor: { type: "number", description: "Valor absoluto em reais" },
                           estabelecimento: { type: "string", description: "Nome ou descrição" },
-                          tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro" },
+                          tipo: {
+                            type: "string",
+                            description:
+                              "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro",
+                          },
                           sinal: { type: "string", description: "debito ou credito" },
                           data: { type: "string", description: "Data YYYY-MM-DD" },
                           parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
-                          parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
-                          valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
-                          linha_original: { type: "string", description: "Linha ou texto exato visível que originou a extração." },
-                          valor_texto: { type: "string", description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'." },
-                          riscada: { type: "boolean", description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false." },
-                          ignorar: { type: "boolean", description: "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false." },
+                          parcela_atual: {
+                            type: "integer",
+                            description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1.",
+                          },
+                          valor_eh_parcela: {
+                            type: "boolean",
+                            description:
+                              "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra.",
+                          },
+                          linha_original: {
+                            type: "string",
+                            description: "Linha ou texto exato visível que originou a extração.",
+                          },
+                          valor_texto: {
+                            type: "string",
+                            description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'.",
+                          },
+                          riscada: {
+                            type: "boolean",
+                            description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false.",
+                          },
+                          ignorar: {
+                            type: "boolean",
+                            description:
+                              "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false.",
+                          },
                         },
-                        required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
+                        required: [
+                          "valor",
+                          "estabelecimento",
+                          "tipo",
+                          "sinal",
+                          "data",
+                          "parcelas",
+                          "parcela_atual",
+                          "valor_eh_parcela",
+                          "linha_original",
+                          "valor_texto",
+                        ],
                       },
                     },
                     confianca: { type: "string", description: "alta, media ou baixa" },
@@ -490,7 +586,10 @@ Regras obrigatórias:
     function coerceValor(v: unknown): number | null {
       if (typeof v === "number" && isFinite(v)) return Math.abs(v);
       if (typeof v !== "string") return null;
-      let s = v.trim().replace(/r\$\s*/i, "").replace(/\s/g, "");
+      let s = v
+        .trim()
+        .replace(/r\$\s*/i, "")
+        .replace(/\s/g, "");
       if (!s) return null;
       const temVirgula = s.includes(",");
       const temPonto = s.includes(".");
@@ -507,12 +606,13 @@ Regras obrigatórias:
 
     function extractCurrencyCandidates(text: unknown): number[] {
       if (typeof text !== "string") return [];
-      const matches = text.match(/(?:R\$\s*)?-?\d{1,3}(?:\.\d{3})*,\d{2}|(?:R\$\s*)?-?\d+,\d{2}|(?:R\$\s*)?-?\d+\.\d{2}/gi) ?? [];
-      const values = matches
-        .map((match) => coerceValor(match))
-        .filter((value): value is number => value !== null);
+      const matches =
+        text.match(/(?:R\$\s*)?-?\d{1,3}(?:\.\d{3})*,\d{2}|(?:R\$\s*)?-?\d+,\d{2}|(?:R\$\s*)?-?\d+\.\d{2}/gi) ?? [];
+      const values = matches.map((match) => coerceValor(match)).filter((value): value is number => value !== null);
 
-      return values.filter((value, index) => values.findIndex((candidate) => Math.abs(candidate - value) < 0.01) === index);
+      return values.filter(
+        (value, index) => values.findIndex((candidate) => Math.abs(candidate - value) < 0.01) === index,
+      );
     }
 
     function chooseMostReliableValue(params: {
@@ -542,7 +642,9 @@ Regras obrigatórias:
       }
 
       const line = typeof sourceLine === "string" ? sourceLine : "";
-      const hasCurrentInstallmentPattern = /(?:parc(?:ela)?\s*\d{1,2}\s*\/\s*\d{1,2}|\b\d{1,2}\s*\/\s*\d{1,2}\b)/i.test(line);
+      const hasCurrentInstallmentPattern = /(?:parc(?:ela)?\s*\d{1,2}\s*\/\s*\d{1,2}|\b\d{1,2}\s*\/\s*\d{1,2}\b)/i.test(
+        line,
+      );
       if (valorEhParcela || hasCurrentInstallmentPattern) return Math.min(...candidates);
 
       const multipliedTotal = candidates.find((candidate) =>
@@ -553,43 +655,46 @@ Regras obrigatórias:
       return aiValue ?? candidates[candidates.length - 1];
     }
 
-    const compras = rawCompras.map((c: any) => {
-      const parcelas = Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24);
-      let parcelaAtual = parseInt(String(c?.parcela_atual ?? 1)) || 1;
-      parcelaAtual = Math.min(Math.max(parcelaAtual, 1), parcelas);
-      const valorEhParcela = c?.valor_eh_parcela === true;
-      const valor = chooseMostReliableValue({
-        aiValue: coerceValor(c?.valor),
-        rawValueText: typeof c?.valor_texto === "string" ? c.valor_texto : null,
-        sourceLine: typeof c?.linha_original === "string" ? c.linha_original : null,
-        parcelas,
-        valorEhParcela,
-      });
-      const descricaoNormalizada = String(c?.estabelecimento ?? c?.linha_original ?? "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
-      const isPixNoCredito = isNubank && /\bpix no credito\b/.test(descricaoNormalizada);
+    const compras = rawCompras
+      .map((c: any) => {
+        const parcelas = Math.min(Math.max(parseInt(String(c?.parcelas ?? 1)) || 1, 1), 24);
+        let parcelaAtual = parseInt(String(c?.parcela_atual ?? 1)) || 1;
+        parcelaAtual = Math.min(Math.max(parcelaAtual, 1), parcelas);
+        const valorEhParcela = c?.valor_eh_parcela === true;
+        const valor = chooseMostReliableValue({
+          aiValue: coerceValor(c?.valor),
+          rawValueText: typeof c?.valor_texto === "string" ? c.valor_texto : null,
+          sourceLine: typeof c?.linha_original === "string" ? c.linha_original : null,
+          parcelas,
+          valorEhParcela,
+        });
+        const descricaoNormalizada = String(c?.estabelecimento ?? c?.linha_original ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+        const isPixNoCredito = isNubank && /\bpix no credito\b/.test(descricaoNormalizada);
 
-      return {
-        ...c,
-        valor,
-        parcelas,
-        parcela_atual: parcelaAtual,
-        valor_eh_parcela: valorEhParcela,
-        tipo: isPixNoCredito ? "compra" : c?.tipo,
-        sinal: isPixNoCredito ? "debito" : c?.sinal,
-        riscada: c?.riscada === true,
-        ignorar: isPixNoCredito ? false : c?.ignorar === true,
-      };
-    }).filter((c: any) =>
-      c.valor !== null &&
-      c.valor > 0 &&
-      // PicPay e Nubank precisam dos pagamentos para a reconciliação correta da fatura.
-      ((isPicpay || isNubank) ? true : c.tipo !== "pagamento_fatura")
-    );
+        return {
+          ...c,
+          valor,
+          parcelas,
+          parcela_atual: parcelaAtual,
+          valor_eh_parcela: valorEhParcela,
+          tipo: isPixNoCredito ? "compra" : c?.tipo,
+          sinal: isPixNoCredito ? "debito" : c?.sinal,
+          riscada: c?.riscada === true,
+          ignorar: isPixNoCredito ? false : c?.ignorar === true,
+        };
+      })
+      .filter(
+        (c: any) =>
+          c.valor !== null &&
+          c.valor > 0 &&
+          // PicPay e Nubank precisam dos pagamentos para a reconciliação correta da fatura.
+          (isPicpay || isNubank ? true : c.tipo !== "pagamento_fatura"),
+      );
 
     // ============== PÓS-PROCESSAMENTO DETERMINÍSTICO NUBANK ==============
     // O AI nem sempre marca valor_eh_parcela=true para itens com notação "- X/Y" ou "Parcela X/Y".
@@ -603,22 +708,18 @@ Regras obrigatórias:
     //   1) Checar "estabelecimento" com $ (AI às vezes esquece de remover o sufixo)
     //   2) Checar "linha_original" SEM $ (captura o padrão em qualquer posição)
     if (isNubank) {
-      const parcelaRegexEnd    = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+      const parcelaRegexEnd = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
       const parcelaRegexInline = /[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})/i;
       for (const c of compras as any[]) {
         const estab = typeof c.estabelecimento === "string" ? c.estabelecimento : "";
-        const linha = typeof c.linha_original  === "string" ? c.linha_original  : "";
+        const linha = typeof c.linha_original === "string" ? c.linha_original : "";
         // Preferir match no estabelecimento (mais preciso); cair na linha_original se não encontrar
         const m = estab.match(parcelaRegexEnd) ?? linha.match(parcelaRegexInline);
         if (m) {
-          const parcelaAtualDetect  = parseInt(m[1], 10);
+          const parcelaAtualDetect = parseInt(m[1], 10);
           const totalParcelasDetect = parseInt(m[2], 10);
-          if (
-            parcelaAtualDetect >= 1 &&
-            totalParcelasDetect >= parcelaAtualDetect &&
-            totalParcelasDetect <= 99
-          ) {
-            c.parcelas      = totalParcelasDetect;
+          if (parcelaAtualDetect >= 1 && totalParcelasDetect >= parcelaAtualDetect && totalParcelasDetect <= 99) {
+            c.parcelas = totalParcelasDetect;
             c.parcela_atual = parcelaAtualDetect;
             c.valor_eh_parcela = true;
             // Remove o sufixo "- X/Y" ou "- Parcela X/Y" do nome do estabelecimento
@@ -632,77 +733,76 @@ Regras obrigatórias:
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {
-    // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
-    // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
-    // marcar riscada_sem_credito=true (regra 4).
-    function normalizeName(s: string | null | undefined): string {
-      return (s || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "");
-    }
-    function nomesParecidos(a: string, b: string): boolean {
-      if (!a || !b) return false;
-      if (a === b) return true;
-      const min = Math.min(a.length, b.length);
-      if (min < 3) return false;
-      return a.startsWith(b.substring(0, min)) || b.startsWith(a.substring(0, min));
-    }
-
-    const finPrimeiras = compras.filter((c: any) =>
-      c.tipo === "compra" &&
-      c.valor_eh_parcela === true &&
-      c.parcela_atual === 1 &&
-      typeof c.linha_original === "string" &&
-      /\bfin\b/i.test(c.linha_original)
-    );
-
-    for (const fin of finPrimeiras) {
-      const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
-      const nomeFin = normalizeName(fin.estabelecimento);
-
-      // Tenta achar crédito de parcelamento com valor ≈ totalCompra
-      const credito = compras.find((c: any) =>
-        c !== fin &&
-        c.sinal === "credito" &&
-        (c.tipo === "estorno_parcelamento" || /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
-        Math.abs((c.valor || 0) - totalCompra) < 0.02
-      );
-
-      // Tenta achar raiz: mesma similaridade de nome E (valor ≈ totalCompra OU está riscada)
-      const raiz = compras.find((c: any) =>
-        c !== fin &&
-        c.tipo !== "iof" &&
-        c.tipo !== "estorno_parcelamento" &&
-        c.sinal !== "credito" &&
-        !c.valor_eh_parcela &&
-        nomesParecidos(normalizeName(c.estabelecimento), nomeFin) &&
-        Math.abs((c.valor || 0) - totalCompra) < 0.02
-      );
-
-      if (raiz && credito) {
-        raiz.ignorar = true;
-        raiz.tipo = "compra_substituida";
-        credito.ignorar = true;
-        credito.tipo = "estorno_parcelamento";
+      // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
+      // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
+      // marcar riscada_sem_credito=true (regra 4).
+      function normalizeName(s: string | null | undefined): string {
+        return (s || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
       }
-    }
+      function nomesParecidos(a: string, b: string): boolean {
+        if (!a || !b) return false;
+        if (a === b) return true;
+        const min = Math.min(a.length, b.length);
+        if (min < 3) return false;
+        return a.startsWith(b.substring(0, min)) || b.startsWith(a.substring(0, min));
+      }
 
-    // Regra 4: marcar compras riscadas que NÃO têm crédito de mesmo valor
-    for (const c of compras) {
-      if (!c.riscada || c.ignorar) continue;
-      const temCredito = compras.some((o: any) =>
-        o !== c &&
-        o.sinal === "credito" &&
-        Math.abs((o.valor || 0) - (c.valor || 0)) < 0.02
+      const finPrimeiras = compras.filter(
+        (c: any) =>
+          c.tipo === "compra" &&
+          c.valor_eh_parcela === true &&
+          c.parcela_atual === 1 &&
+          typeof c.linha_original === "string" &&
+          /\bfin\b/i.test(c.linha_original),
       );
-      (c as any).riscada_sem_credito = !temCredito;
-    }
+
+      for (const fin of finPrimeiras) {
+        const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
+        const nomeFin = normalizeName(fin.estabelecimento);
+
+        // Tenta achar crédito de parcelamento com valor ≈ totalCompra
+        const credito = compras.find(
+          (c: any) =>
+            c !== fin &&
+            c.sinal === "credito" &&
+            (c.tipo === "estorno_parcelamento" ||
+              /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
+            Math.abs((c.valor || 0) - totalCompra) < 0.02,
+        );
+
+        // Tenta achar raiz: mesma similaridade de nome E (valor ≈ totalCompra OU está riscada)
+        const raiz = compras.find(
+          (c: any) =>
+            c !== fin &&
+            c.tipo !== "iof" &&
+            c.tipo !== "estorno_parcelamento" &&
+            c.sinal !== "credito" &&
+            !c.valor_eh_parcela &&
+            nomesParecidos(normalizeName(c.estabelecimento), nomeFin) &&
+            Math.abs((c.valor || 0) - totalCompra) < 0.02,
+        );
+
+        if (raiz && credito) {
+          raiz.ignorar = true;
+          raiz.tipo = "compra_substituida";
+          credito.ignorar = true;
+          credito.tipo = "estorno_parcelamento";
+        }
+      }
+
+      // Regra 4: marcar compras riscadas que NÃO têm crédito de mesmo valor
+      for (const c of compras) {
+        if (!c.riscada || c.ignorar) continue;
+        const temCredito = compras.some(
+          (o: any) => o !== c && o.sinal === "credito" && Math.abs((o.valor || 0) - (c.valor || 0)) < 0.02,
+        );
+        (c as any).riscada_sem_credito = !temCredito;
+      }
     } // fim if (isPicpay)
-
-
-
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
@@ -717,7 +817,16 @@ Regras obrigatórias:
           tipo: first.tipo,
           sinal: first.sinal,
         }
-      : { valor: null, estabelecimento: null, data: null, parcelas: 1, parcela_atual: 1, valor_eh_parcela: false, tipo: "compra", sinal: "debito" };
+      : {
+          valor: null,
+          estabelecimento: null,
+          data: null,
+          parcelas: 1,
+          parcela_atual: 1,
+          valor_eh_parcela: false,
+          tipo: "compra",
+          sinal: "debito",
+        };
 
     const responseBody = JSON.stringify({
       ...legacy,
@@ -727,17 +836,14 @@ Regras obrigatórias:
       lancamentos_resumo: typeof parsed.lancamentos_resumo === "number" ? parsed.lancamentos_resumo : null,
     });
 
-    return new Response(
-      responseBody,
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
+    return new Response(responseBody, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
       },
-    );
+    });
   } catch (e) {
     console.error("Erro analisar-comprovante-cartao:", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
