@@ -171,8 +171,8 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - Caso contrário: parcelas = 1, parcela_atual = 1, valor_eh_parcela = FALSE.
 
 **Classificação do tipo (use EXATAMENTE estes valores):**
-- "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura".
-- "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). NÃO classifique como "estorno" comum.
+- "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura". **SEMPRE extraia** — não filtre, não pule. O frontend decide o que fazer com elas.
+- "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). **SEMPRE extraia, mesmo que apareçam várias seguidas no mesmo dia.** NÃO classifique como "estorno" comum.
 - "estorno" + sinal="credito" → "Estorno", "Reembolso", "Crédito <Estabelecimento>" do comerciante.
 - "iof" → linhas "IOF".
 - "anuidade" → linhas "Anuidade".
@@ -187,7 +187,14 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
 - valor_texto = valor exatamente como aparece (ex.: "R$ 89,90", "-R$ 50,00").
 
-IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma. NÃO faça a matemática da fatura — apenas extraia.`;
+IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma. NÃO faça a matemática da fatura — apenas extraia.
+
+### ✅ CHECKLIST OBRIGATÓRIO ANTES DE FINALIZAR A RESPOSTA
+1. Releia a imagem de CIMA para BAIXO procurando QUALQUER texto em verde OU QUALQUER valor com prefixo "–" / "-" / "− R$".
+2. Para CADA ocorrência encontrada, confirme que existe um item no array "compras" com sinal="credito", valor positivo e a data correspondente do cabeçalho acima.
+3. CONTE: número de linhas verdes/negativas visíveis na imagem DEVE SER IGUAL ao número de itens com sinal="credito" no array. Se não bater, VOLTE e adicione as que faltam ANTES de responder.
+4. Atenção especial: linhas "Crédito de parcelamento de compra" frequentemente aparecem 2 ou 3 vezes seguidas no mesmo dia — extraia TODAS, uma por uma.
+5. NUNCA omita uma linha porque "parece técnica", "parece resumo" ou "parece duplicada" — extraia tudo o que estiver visível.`;
 
 
     const genericRules = `
