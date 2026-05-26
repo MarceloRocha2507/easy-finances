@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
     const isPicpay = body?.picpay === true;
     const isNubank = body?.nubank === true;
 
+    const anoAtual = new Date().getFullYear(); // ex.: 2026
+
     if (imageBase64 && imageBase64.length > MAX_BASE64_SIZE) {
       return new Response(JSON.stringify({ error: "Imagem muito grande (máx ~6MB)" }), {
         status: 413,
@@ -170,7 +172,7 @@ Características:
 Extração (UMA compra POR linha de transação — extraia TODAS):
 - estabelecimento = nome principal da linha (NÃO use a categoria/subtítulo).
 - valor = valor monetário daquela linha. Para "R$ 1.234,56" → 1234.56. SEMPRE positivo (o sinal vai em "sinal").
-- data = use o CABEÇALHO de data ACIMA daquela linha. Converta para YYYY-MM-DD do ano atual se só vier dia/mês. "Hoje" = hoje. "Ontem" = ontem.
+- data = use o CABEÇALHO de data ACIMA daquela linha. Converta para YYYY-MM-DD usando o ano ${anoAtual} quando o cabeçalho mostrar apenas dia/mês (ex.: "26 MAI" → ${anoAtual}-05-26). NUNCA use um ano anterior ao ${anoAtual} para datas sem ano explícito. "Hoje" = hoje. "Ontem" = ontem.
 - Se a linha contiver "Parcela X de Y", "Parcela X/Y" ou terminar com "- X/Y" (ex: "Pix no Crédito - NOME - 1/8", "Mercadolivre*Cartola - Parcela 1/10"):
   - parcelas = Y, parcela_atual = X, valor_eh_parcela = TRUE (valor mostrado é APENAS daquela parcela — NÃO multiplique).
   - estabelecimento = texto SEM o sufixo de parcela (ex: "Pix no Crédito - NOME" sem o "- 1/8").
@@ -233,7 +235,7 @@ ${bankRules}
 2. estabelecimento (string): nome como aparece.${isPicpay ? ' "Fin <Nome> parcXX/YY" → use só <Nome>.' : ""}
 3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${isPicpay || isNubank ? ' | "estorno_parcelamento"' : ""}${isPicpay ? ' | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
 4. sinal: "debito" ou "credito".
-5. data: YYYY-MM-DD. Sem data, use hoje.
+5. data: YYYY-MM-DD. Se só vier dia/mês sem ano, use ${anoAtual}. Sem data, use hoje.
 6. parcelas (int 1-24).
 7. parcela_atual (int): "6/10" → 6.
 8. valor_eh_parcela (bool): true quando o valor é de UMA parcela (extrato de fatura).
