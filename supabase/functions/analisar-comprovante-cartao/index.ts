@@ -167,8 +167,9 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - estabelecimento = nome principal da linha (NÃO use a categoria/subtítulo).
 - valor = valor monetário daquela linha. Para "R$ 1.234,56" → 1234.56. SEMPRE positivo (o sinal vai em "sinal").
 - data = use o CABEÇALHO de data ACIMA daquela linha. Converta para YYYY-MM-DD do ano atual se só vier dia/mês. "Hoje" = hoje. "Ontem" = ontem.
-- Se a linha contiver "Parcela X de Y" ou "X/Y":
-  - parcelas = Y, parcela_atual = X, valor_eh_parcela = TRUE (valor mostrado é APENAS daquela parcela).
+- Se a linha contiver "Parcela X de Y", "Parcela X/Y" ou terminar com "- X/Y" (ex: "Pix no Crédito - NOME - 1/8", "Mercadolivre*Cartola - Parcela 1/10"):
+  - parcelas = Y, parcela_atual = X, valor_eh_parcela = TRUE (valor mostrado é APENAS daquela parcela — NÃO multiplique).
+  - estabelecimento = texto SEM o sufixo de parcela (ex: "Pix no Crédito - NOME" sem o "- 1/8").
 - Caso contrário: parcelas = 1, parcela_atual = 1, valor_eh_parcela = FALSE.
 
 **Classificação do tipo (use EXATAMENTE estes valores):**
@@ -589,6 +590,35 @@ Regras obrigatórias:
       // PicPay e Nubank precisam dos pagamentos para a reconciliação correta da fatura.
       ((isPicpay || isNubank) ? true : c.tipo !== "pagamento_fatura")
     );
+
+    // ============== PÓS-PROCESSAMENTO DETERMINÍSTICO NUBANK ==============
+    // O AI nem sempre marca valor_eh_parcela=true para itens com notação "- X/Y" ou "Parcela X/Y".
+    // Quando isso falha, valorEsteMes divide o valor por parcelas (ex: 8,80 ÷ 8 = R$ 1,10)
+    // ao invés de retornar R$ 8,80. Aqui garantimos a extração correta independente do AI.
+    if (isNubank) {
+      const parcelaRegexNubank = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+      for (const c of compras as any[]) {
+        const linha = typeof c.linha_original === "string" ? c.linha_original : "";
+        const m = linha.match(parcelaRegexNubank);
+        if (m) {
+          const parcelaAtualDetect = parseInt(m[1], 10);
+          const totalParcelasDetect = parseInt(m[2], 10);
+          if (
+            parcelaAtualDetect >= 1 &&
+            totalParcelasDetect >= parcelaAtualDetect &&
+            totalParcelasDetect <= 99
+          ) {
+            c.parcelas = totalParcelasDetect;
+            c.parcela_atual = parcelaAtualDetect;
+            c.valor_eh_parcela = true;
+            // Remove o sufixo "- X/Y" ou "- Parcela X/Y" do nome do estabelecimento
+            if (typeof c.estabelecimento === "string") {
+              c.estabelecimento = c.estabelecimento.replace(parcelaRegexNubank, "").trim();
+            }
+          }
+        }
+      }
+    }
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {

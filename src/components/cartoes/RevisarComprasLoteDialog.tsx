@@ -206,10 +206,11 @@ export function RevisarComprasLoteDialog({
     return v;
   };
 
-  const { totalSelecionado, totalDebitos, totalCreditos, totalCreditosPendentes } = useMemo(() => {
+  const { totalSelecionado, totalDebitos, totalCreditos, totalCreditosPendentes, totalPagamentosExcluidos } = useMemo(() => {
     let deb = 0;
     let cre = 0;
     let crePend = 0;
+    let pagamentos = 0;
     for (const l of selecionadas) {
       const v = valorEsteMes(l);
       if (l.sinal === "credito") cre += v;
@@ -219,7 +220,19 @@ export function RevisarComprasLoteDialog({
       if (!l.creditoParcelamentoGenerico || l.incluir) continue;
       crePend += valorEsteMes(l);
     }
-    return { totalDebitos: deb, totalCreditos: cre, totalSelecionado: deb - cre, totalCreditosPendentes: crePend };
+    // Soma os pagamentos excluídos por padrão (pagamento_fatura)
+    for (const l of linhas) {
+      if (l.tipo === "pagamento_fatura" && !l.incluir) {
+        pagamentos += valorEsteMes(l);
+      }
+    }
+    return {
+      totalDebitos: deb,
+      totalCreditos: cre,
+      totalSelecionado: deb - cre,
+      totalCreditosPendentes: crePend,
+      totalPagamentosExcluidos: pagamentos,
+    };
   }, [selecionadas, linhas]);
 
 
@@ -635,8 +648,16 @@ export function RevisarComprasLoteDialog({
             </div>
           )}
           {totalCreditosPendentes > 0 && (
-            <p style={{ fontSize: 11, color: "#92400E", marginBottom: 8, textAlign: "right" }}>
+            <p style={{ fontSize: 11, color: "#92400E", marginBottom: 4, textAlign: "right" }}>
               Créditos genéricos de parcelamento fora do total: R$ {totalCreditosPendentes.toFixed(2).replace(".", ",")}
+            </p>
+          )}
+          {totalPagamentosExcluidos > 0 && (
+            <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 8, textAlign: "right" }}>
+              Pagamentos recebidos excluídos: −R$ {totalPagamentosExcluidos.toFixed(2).replace(".", ",")}
+              <span style={{ marginLeft: 4, color: "#9CA3AF" }}>
+                (saldo esperado no Nubank: R$ {Math.max(0, totalSelecionado - totalPagamentosExcluidos).toFixed(2).replace(".", ",")})
+              </span>
             </p>
           )}
           <button
