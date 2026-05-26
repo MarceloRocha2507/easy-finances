@@ -320,6 +320,36 @@ export function NovaCompraCartaoDialog({
   }, [open, analisandoImagem]);
 
 
+  async function handleNubankCsvFiles(files: File[]) {
+    try {
+      const textos = await Promise.all(files.map((f) => f.text()));
+      const todas = textos.flatMap((t) => parseNubankCsv(t));
+      const validas = todas.filter((c) => typeof c.valor === "number" && (c.valor as number) > 0 && c.estabelecimento);
+      if (validas.length === 0) {
+        toast({
+          title: "Nenhuma transação encontrada",
+          description: "Verifique se o CSV é o oficial do Nubank (date,title,amount).",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLoteEhPicpay(false);
+      setResumoLotePicpay(null);
+      setComprasLote(validas);
+      toast({
+        title: `${validas.length} transação(ões) detectada(s)`,
+        description: `CSV do Nubank processado localmente. Revise antes de salvar.`,
+      });
+    } catch (e: any) {
+      console.error("Erro ao processar CSV Nubank:", e);
+      toast({
+        title: "Erro ao ler CSV",
+        description: e?.message || "Arquivo inválido.",
+        variant: "destructive",
+      });
+    }
+  }
+
   async function handleAnaliseTexto(texto: string) {
     if (!texto) return;
     setAnalisandoImagem(true);
