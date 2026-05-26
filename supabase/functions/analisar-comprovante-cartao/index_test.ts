@@ -252,6 +252,42 @@ Deno.test("Nubank: estorno simples preserva sinal credito e valor positivo", asy
   }
 });
 
+Deno.test("Nubank: 'Pix no Crédito' deve ser reclassificado como compra em débito", async () => {
+  await loadHandlerOnce();
+  installFetchMock({
+    mainPass: {
+      compras: [
+        {
+          valor: 159.61, estabelecimento: "Pix no Crédito - Marcelo Rocha Fonseca Filho", tipo: "estorno",
+          sinal: "credito", data: "2026-05-26", parcelas: 1, parcela_atual: 1, valor_eh_parcela: false,
+          linha_original: "Pix no Crédito - Marcelo Rocha Fonseca Filho R$ 159,61", valor_texto: "R$ 159,61",
+        },
+        {
+          valor: 7.6, estabelecimento: "Pix no Crédito - MALU ESTANISLAU", tipo: "estorno",
+          sinal: "credito", data: "2026-05-26", parcelas: 1, parcela_atual: 1, valor_eh_parcela: false,
+          linha_original: "Pix no Crédito - MALU ESTANISLAU R$ 7,60", valor_texto: "R$ 7,60",
+        },
+      ],
+      confianca: "alta",
+    },
+    auditPass: { compras: [], confianca: "alta" },
+  });
+
+  try {
+    const { status, json } = await invoke({ imageBase64: tinyPngBase64, mimeType: "image/png", nubank: true });
+    assertEquals(status, 200);
+    assertEquals(json.compras.length, 2);
+    for (const compra of json.compras) {
+      assertEquals(compra.tipo, "compra");
+      assertEquals(compra.sinal, "debito");
+      assert(compra.valor > 0);
+      assert(String(compra.estabelecimento).toLowerCase().includes("pix no crédito".toLowerCase()));
+    }
+  } finally {
+    restoreFetch();
+  }
+});
+
 Deno.test("Sem authorization header → 401", async () => {
   await loadHandlerOnce();
   const req = new Request("http://localhost/x", {
