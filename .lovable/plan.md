@@ -1,51 +1,55 @@
-## Objetivo
+## Problema
 
-Permitir que, no diálogo "Nova Compra" de um cartão Nubank, o usuário envie o arquivo CSV oficial da fatura (`date,title,amount`) e veja as compras extraídas no fluxo de revisão em lote já existente — exatamente como acontece hoje com prints de fatura.
+Nas imagens da fatura Nubank, o modelo de visão está extraindo de forma inconsistente as linhas em **verde com sinal negativo**:
 
-## Por que não usar IA
+- Imagem 1: perdeu "Crédito de parcelamento de compra" de R$ 34,90 e R$ 30,00 (08 MAI).
+- Imagem 2: capturou corretamente "Crédito de parcelamento de compra" de R$ 114,20 (09 MAI).
+- Imagem 3: perdeu "Pagamento recebido" de R$ 74,67 (24 MAI).
+- Imagem 4: perdeu "Pagamento recebido" de R$ 20,00 (22 MAI).
 
-O CSV do Nubank já é estruturado (`date,title,amount`). Mandar para a IA seria desperdício de tokens, mais lento e introduziria risco de alucinação. O parser será 100% local (TypeScript), determinístico e instantâneo.
+Ou seja, o prompt já descreve corretamente os tipos, mas o modelo está "pulando" linhas — provavelmente porque o texto verde tem baixo contraste no fundo escuro e o modelo trata a linha como decorativa.
+
+Não há bug de código no frontend (o filtro `valor > 0 && estabelecimento` aceita perfeitamente esses tipos, pois `valor` vem positivo e `estabelecimento` é o próprio texto "Pagamento recebido" / "Crédito de parcelamento de compra"). A correção é no **prompt da Edge Function**.
 
 ## Mudanças
 
-### 1. Novo parser local: `src/lib/nubankCsvParser.ts`
-Função `parseNubankCsv(text: string): CompraExtraida[]` que:
+Arquivo único: `supabase/functions/analisar-comprovante-cartao/index.ts`, bloco `nubankRules`.
 
-- Lê o CSV (header `date,title,amount`).
-- Para cada linha:
-  - `date` (YYYY-MM-DD) → `data`.
-  - `amount` negativo → `sinal: "credito"`, valor absoluto. Positivo → `sinal: "debito"`.
-  - Detecta parcela no `title` usando o padrão `- Parcela X/Y` ou `- X/Y` no final (já existe lógica equivalente em `importar-compras-cartao.ts`, reaproveitar regex).
-    - Marca `valor_eh_parcela = true`, preenche `parcela_atual`, `parcelas`.
-  - Classifica `tipo`:
-    - "Pagamento recebido" → `tipo: "pagamento"`, `sinal: "credito"`.
-    - "Crédito de parcelamento de compra", "Estorno", "Reembolso" → `tipo: "estorno"`, `sinal: "credito"`.
-    - "IOF" → `tipo: "iof"`.
-    - "NuPay" / assinaturas recorrentes (Spotify, Claude, Adobe etc. — detectado por nome) → `tipo: "assinatura"` ou mantém "compra" (decidir manter "compra" para não inventar regra; o usuário já edita no lote).
-    - Default → `tipo: "compra"`.
-  - `estabelecimento` = título limpo (sem o sufixo "- Parcela X/Y", sem "Parcelamento de Compra - " inicial, sem "Pix no Crédito - " inicial — opcional, manter ou limpar? Decisão: **manter o título original** para fidelidade ao extrato, igual ao prompt do Tipo B atual).
-  - `linha_original` = a linha bruta do CSV.
+### 1. Adicionar bloco de instrução visual explícita no topo do bloco Nubank
 
-### 2. Aceitar CSV no `NovaCompraCartaoDialog.tsx`
+Antes de "COMO A FATURA DO NUBANK FUNCIONA", adicionar uma seção **"ATENÇÃO VISUAL — LINHAS VERDES"** explicando que:
 
-- No input de upload (linha ~851), quando `isNubank()`, ampliar `accept` para `"image/*,.csv,text/csv"`.
-- No handler do input, detectar `file.type === "text/csv"` ou extensão `.csv`:
-  - Ler como texto (`file.text()`).
-  - Chamar `parseNubankCsv(text)`.
-  - Alimentar o fluxo existente: `setComprasLote(compras)` + `setLoteEhPicpay(false)` + toast com a contagem.
-- Funciona tanto pelo botão "Ler comprovante" quanto pela área de "imagens pendentes" (se houver múltiplos arquivos, processar CSVs localmente e imagens via IA, depois mesclar em `comprasLote`).
+- No app do Nubank (tema escuro), TODAS as linhas com valor em **verde** OU com sinal `– R$` / `-R$` na frente são lançamentos válidos e DEVEM ser extraídas com `sinal="credito"`.
+- Essas linhas têm o mesmo peso visual que compras normais — não são cabeçalhos, não são decoração, NÃO PODEM ser ignoradas.
+- Tipos esperados em verde: `pagamento_fatura` ("Pagamento recebido", "Pagamento de fatura"), `estorno_parcelamento` ("Crédito de parcelamento de compra"), `estorno` ("Estorno X", "Reembolso X", "Crédito <Estab>").
+- A descrição "Crédito de parcelamento de compra" pode aparecer quebrada em até 3 linhas; trate sempre como UMA linha lógica.
 
-### 3. Texto auxiliar na UI
+### 2. Adicionar checklist de auto-verificação no final do bloco Nubank
 
-- No label/botão de upload, quando for Nubank, indicar: "Aceita imagem ou CSV da fatura".
+Bloco final obrigatório no prompt:
 
-## Não muda
+```
+ANTES DE FINALIZAR A RESPOSTA:
+1. Releia a imagem de cima para baixo procurando QUALQUER texto em verde ou QUALQUER valor com prefixo "–" / "-".
+2. Para cada um, confirme que existe um item no array "compras" com sinal="credito" e a data correspondente.
+3. Conte: número de linhas verdes na imagem == número de itens com sinal="credito" no array. Se não bater, REVISE antes de responder.
+4. NUNCA omita uma linha porque "parece técnica" ou "parece resumo" — extraia tudo.
+```
 
-- A edge function `analisar-comprovante-cartao` permanece intacta — CSV nunca chega lá.
-- O fluxo de revisão em lote (`RevisarComprasLoteDialog`) já cobre exibição/edição/salvamento — nenhuma alteração necessária.
-- Importador em massa de `/cartoes/.../importar` (que usa outro formato com responsável) não é afetado.
+### 3. Reforçar regra de classificação
 
-## Pontos a confirmar
+Na seção "Classificação do tipo", deixar explícito que `Pagamento recebido` e `Pagamento de fatura` SEMPRE são extraídos (não filtrados pelo modelo), pois o frontend é quem decide se vira "Adiantar Fatura" ou se é só informativo.
 
-1. Para linhas tipo `Pix no Crédito - Fulano - 1/3`, o valor positivo representa um débito do titular (você emprestou via Pix parcelado). Tratar como `tipo: "compra"` parcelada, mesmo padrão de qualquer compra. OK?
-2. Linhas "Crédito de parcelamento de compra" (negativas, sem descrição do estabelecimento original) devem entrar como `estorno`/crédito genérico no lote, para você associar manualmente. OK?
+## Fora de escopo
+
+- Não mexer no parser de CSV nem em `RevisarComprasLoteDialog`.
+- Não mexer no filtro do frontend.
+- Não trocar de modelo de IA — apenas reforçar o prompt.
+
+## Como validar
+
+Após a edição, reenviar as 4 imagens de exemplo. Cada uma deve agora trazer todas as linhas verdes:
+- Imagem 1: 2 itens com `tipo="estorno_parcelamento"` (34,90 e 30,00).
+- Imagem 2: 1 item `estorno_parcelamento` (114,20) + 1 item `iof` (4,00).
+- Imagem 3: 1 item `pagamento_fatura` (74,67).
+- Imagem 4: 1 item `pagamento_fatura` (20,00).

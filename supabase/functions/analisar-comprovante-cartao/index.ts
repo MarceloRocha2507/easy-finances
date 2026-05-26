@@ -96,7 +96,22 @@ Se algum não estiver visível, omita o campo.`;
 
 A entrada pode ser de DOIS tipos. Identifique antes de extrair:
 
+### ⚠️ ATENÇÃO VISUAL — LINHAS VERDES (LEIA ANTES DE TUDO)
+
+O app do Nubank usa TEMA ESCURO. Nele, TODA linha cujo valor está em **verde** OU cujo valor começa com sinal "–" / "-" / "− R$" é um LANÇAMENTO VÁLIDO e DEVE ser extraída no array "compras" com sinal="credito".
+
+Essas linhas têm o MESMO peso visual que compras normais (mesmo tamanho de fonte, mesma posição na lista) — NÃO são cabeçalho, NÃO são resumo, NÃO são decoração. NÃO PODEM ser ignoradas.
+
+Os textos típicos em verde no Nubank são:
+- "Pagamento recebido" / "Pagamento de fatura" → tipo="pagamento_fatura"
+- "Crédito de parcelamento de compra" → tipo="estorno_parcelamento" (a descrição costuma quebrar em 2 ou 3 linhas: "Crédito de" / "parcelamento de" / "compra" — trate sempre como UMA única linha lógica)
+- "Estorno X" / "Reembolso X" / "Crédito <Estabelecimento>" → tipo="estorno"
+
+Para TODAS essas: valor = número absoluto positivo, sinal = "credito", data = cabeçalho de data acima da linha.
+
 ### COMO A FATURA DO NUBANK FUNCIONA (contexto OBRIGATÓRIO)
+
+
 
 A fatura do Nubank tem 3 grandes grupos de lançamentos:
 
@@ -156,8 +171,8 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - Caso contrário: parcelas = 1, parcela_atual = 1, valor_eh_parcela = FALSE.
 
 **Classificação do tipo (use EXATAMENTE estes valores):**
-- "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura".
-- "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). NÃO classifique como "estorno" comum.
+- "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura". **SEMPRE extraia** — não filtre, não pule. O frontend decide o que fazer com elas.
+- "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). **SEMPRE extraia, mesmo que apareçam várias seguidas no mesmo dia.** NÃO classifique como "estorno" comum.
 - "estorno" + sinal="credito" → "Estorno", "Reembolso", "Crédito <Estabelecimento>" do comerciante.
 - "iof" → linhas "IOF".
 - "anuidade" → linhas "Anuidade".
@@ -172,7 +187,14 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
 - valor_texto = valor exatamente como aparece (ex.: "R$ 89,90", "-R$ 50,00").
 
-IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma. NÃO faça a matemática da fatura — apenas extraia.`;
+IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma. NÃO faça a matemática da fatura — apenas extraia.
+
+### ✅ CHECKLIST OBRIGATÓRIO ANTES DE FINALIZAR A RESPOSTA
+1. Releia a imagem de CIMA para BAIXO procurando QUALQUER texto em verde OU QUALQUER valor com prefixo "–" / "-" / "− R$".
+2. Para CADA ocorrência encontrada, confirme que existe um item no array "compras" com sinal="credito", valor positivo e a data correspondente do cabeçalho acima.
+3. CONTE: número de linhas verdes/negativas visíveis na imagem DEVE SER IGUAL ao número de itens com sinal="credito" no array. Se não bater, VOLTE e adicione as que faltam ANTES de responder.
+4. Atenção especial: linhas "Crédito de parcelamento de compra" frequentemente aparecem 2 ou 3 vezes seguidas no mesmo dia — extraia TODAS, uma por uma.
+5. NUNCA omita uma linha porque "parece técnica", "parece resumo" ou "parece duplicada" — extraia tudo o que estiver visível.`;
 
 
     const genericRules = `
