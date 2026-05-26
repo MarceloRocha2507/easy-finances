@@ -104,17 +104,22 @@ export function RevisarComprasLoteDialog({
       const estornoParcelamento = sinal === "credito" && tipo === "estorno_parcelamento";
       const compraSubstituida = c.ignorar === true || tipo === "compra_substituida";
       const creditoParcelamentoGenerico = !estornoParcelamento && isCreditoParcelamentoGenerico(c.estabelecimento, tipo, sinal);
+      const ehPagamento = tipo === "pagamento_fatura";
 
-      // Padrão: incluir tudo exceto compras substituídas e créditos genéricos legados sem match
+      // Padrão: incluir tudo exceto compras substituídas, créditos genéricos legados e pagamentos de fatura
       let incluir = true;
       if (compraSubstituida) incluir = false;
       else if (creditoParcelamentoGenerico) incluir = false;
+      else if (ehPagamento) incluir = false;
+
+      // Preferir a data vinda do extrato (CSV Nubank, etc.); fallback para hoje
+      const dataLinha = c.data && /^\d{4}-\d{2}-\d{2}$/.test(c.data) ? c.data : hoje;
 
       return {
         incluir,
         descricao: c.estabelecimento?.trim() || "",
         valor: typeof c.valor === "number" && c.valor > 0 ? c.valor.toFixed(2).replace(".", ",") : "",
-        data: hoje,
+        data: dataLinha,
         parcelas: String(total),
         parcelaAtual: String(atual),
         tipo,
