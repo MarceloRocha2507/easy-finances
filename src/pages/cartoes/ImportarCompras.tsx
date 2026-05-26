@@ -163,6 +163,8 @@ export default function ImportarCompras() {
 
   // Pagamentos detectados no CSV Nubank (adiantamentos e pagamento fatura anterior)
   const [nubankPagamentos, setNubankPagamentos] = useState<{ valor: number; data: string }[]>([]);
+  // Índices dos pagamentos marcados como adiantamento (reduzem o saldo da fatura)
+  const [adiantamentosIdx, setAdiantamentosIdx] = useState<Set<number>>(new Set());
 
   // Responsáveis
   const { data: responsaveis = [] } = useResponsaveis();
@@ -352,6 +354,15 @@ export default function ImportarCompras() {
     setStatus("idle");
     setResultado(null);
     setNubankPagamentos([]);
+    setAdiantamentosIdx(new Set());
+  }
+
+  function toggleAdiantamento(idx: number) {
+    setAdiantamentosIdx((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
   }
 
   // Importar
@@ -835,41 +846,13 @@ export default function ImportarCompras() {
                       )}
                     </div>
                   </div>
-                  <CardDescription className="space-y-1">
-                    <span>
-                      Total a importar: {formatCurrency(stats.totalCompras)}
-                      {stats.totalParcelas !== stats.totalCompras && (
-                        <span className="text-muted-foreground ml-2">
-                          (parcelas deste mês: {formatCurrency(stats.totalParcelas)})
-                        </span>
-                      )}
-                    </span>
-                    {modoImportacao === "nubank_csv" && nubankPagamentos.length > 0 && (() => {
-                      const totalPagamentos = nubankPagamentos.reduce((s, p) => s + p.valor, 0);
-                      const saldoLiquido = stats.totalParcelas - totalPagamentos;
-                      return (
-                        <span className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-border/50 text-xs">
-                          <span className="font-medium text-muted-foreground">Pagamentos detectados no CSV:</span>
-                          {nubankPagamentos.map((pg, i) => (
-                            <span key={i} className="flex justify-between items-center">
-                              <span className="text-muted-foreground">
-                                {format(new Date(pg.data + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
-                              </span>
-                              <span className="text-emerald-600 font-medium ml-4">
-                                − {formatCurrency(pg.valor)}
-                              </span>
-                            </span>
-                          ))}
-                          <span className="flex justify-between items-center pt-0.5 border-t border-border/40 font-medium">
-                            <span className="text-muted-foreground">Saldo líquido estimado:</span>
-                            <span className="ml-4">{formatCurrency(saldoLiquido)}</span>
-                          </span>
-                          <span className="text-muted-foreground/70 italic mt-0.5">
-                            ⓘ Adiantamentos reduzem o saldo da fatura. O valor exibido pelo Nubank já desconta esses pagamentos.
-                          </span>
-                        </span>
-                      );
-                    })()}
+                  <CardDescription>
+                    Total a importar: {formatCurrency(stats.totalCompras)}
+                    {stats.totalParcelas !== stats.totalCompras && (
+                      <span className="text-muted-foreground ml-2">
+                        (parcelas deste mês: {formatCurrency(stats.totalParcelas)})
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 
@@ -936,6 +919,58 @@ export default function ImportarCompras() {
                   </div>
                 </div>
                 
+                {/* Reconciliação Nubank: adiantamentos */}
+                {modoImportacao === "nubank_csv" && nubankPagamentos.length > 0 && (() => {
+                  const totalSelecionado = nubankPagamentos
+                    .filter((_, i) => adiantamentosIdx.has(i))
+                    .reduce((s, p) => s + p.valor, 0);
+                  const saldo = stats.totalParcelas - totalSelecionado;
+                  return (
+                    <div className="px-6 pb-3">
+                      <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Pagamentos no período</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Marque os adiantamentos para calcular o saldo
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {nubankPagamentos.map((pg, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`adiant-${i}`}
+                                  checked={adiantamentosIdx.has(i)}
+                                  onCheckedChange={() => toggleAdiantamento(i)}
+                                />
+                                <label htmlFor={`adiant-${i}`} className="text-sm cursor-pointer">
+                                  {format(new Date(pg.data + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                                </label>
+                                <span className="text-xs text-muted-foreground">
+                                  {adiantamentosIdx.has(i) ? "adiantamento" : "pagamento fatura anterior?"}
+                                </span>
+                              </div>
+                              <span className={`text-sm font-medium tabular-nums ${adiantamentosIdx.has(i) ? "text-emerald-600" : "text-muted-foreground"}`}>
+                                − {formatCurrency(pg.valor)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="pt-2 border-t flex items-center justify-between">
+                          <span className="text-sm font-medium">Saldo estimado da fatura:</span>
+                          <span className="text-sm font-bold tabular-nums">
+                            {formatCurrency(saldo)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Selecione os adiantamentos (pagamentos antecipados desta fatura) para calcular o saldo que deve bater com o valor exibido no app do Nubank.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Alerta de duplicatas */}
                 {stats.duplicatas > 0 && (
                   <div className="px-6 pb-3">
