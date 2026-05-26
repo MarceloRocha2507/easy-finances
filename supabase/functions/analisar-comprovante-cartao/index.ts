@@ -106,6 +106,7 @@ Os textos típicos em verde no Nubank são:
 - "Pagamento recebido" / "Pagamento de fatura" → tipo="pagamento_fatura"
 - "Crédito de parcelamento de compra" → tipo="estorno_parcelamento" (a descrição costuma quebrar em 2 ou 3 linhas: "Crédito de" / "parcelamento de" / "compra" — trate sempre como UMA única linha lógica)
 - "Estorno X" / "Reembolso X" / "Crédito <Estabelecimento>" → tipo="estorno"
+- "Pix no Crédito - <nome>" / "Pix no credito - <nome>" → isso é USO DO LIMITE DO CARTÃO, então classifique como tipo="compra", sinal="debito". A palavra "Crédito" aqui faz parte do nome do produto e NÃO indica estorno/crédito.
 
 Para TODAS essas: valor = número absoluto positivo, sinal = "credito", data = cabeçalho de data acima da linha.
 
@@ -174,6 +175,7 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 - "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura". **SEMPRE extraia** — não filtre, não pule. O frontend decide o que fazer com elas.
 - "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). **SEMPRE extraia, mesmo que apareçam várias seguidas no mesmo dia.** NÃO classifique como "estorno" comum.
 - "estorno" + sinal="credito" → "Estorno", "Reembolso", "Crédito <Estabelecimento>" do comerciante.
+- "compra" + sinal="debito" → linhas "Pix no Crédito - <nome>". Mesmo contendo a palavra "Crédito", isso é uma compra/cobrança usando o limite do cartão.
 - "iof" → linhas "IOF".
 - "anuidade" → linhas "Anuidade".
 - "juros" → linhas "Juros".
@@ -182,6 +184,7 @@ Extração (UMA compra POR linha de transação — extraia TODAS):
 
 **Regras de sinal:**
 - sinal="credito" SOMENTE se: texto contém "Estorno", "Pagamento recebido", "Pagamento de fatura", "Crédito de parcelamento", "Reembolso", "Crédito <Estab>", OU o valor tem sinal negativo / "+" / aparece em verde.
+- EXCEÇÃO OBRIGATÓRIA: "Pix no Crédito" NUNCA deve virar sinal="credito" só por conter a palavra "Crédito".
 - Caso contrário: sinal="debito".
 
 - linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
@@ -561,14 +564,24 @@ Regras obrigatórias:
         parcelas,
         valorEhParcela,
       });
+      const descricaoNormalizada = String(c?.estabelecimento ?? c?.linha_original ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+      const isPixNoCredito = isNubank && /\bpix no credito\b/.test(descricaoNormalizada);
+
       return {
         ...c,
         valor,
         parcelas,
         parcela_atual: parcelaAtual,
         valor_eh_parcela: valorEhParcela,
+        tipo: isPixNoCredito ? "compra" : c?.tipo,
+        sinal: isPixNoCredito ? "debito" : c?.sinal,
         riscada: c?.riscada === true,
-        ignorar: c?.ignorar === true,
+        ignorar: isPixNoCredito ? false : c?.ignorar === true,
       };
     }).filter((c: any) =>
       c.valor !== null &&
