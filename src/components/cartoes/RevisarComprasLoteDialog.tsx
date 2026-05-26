@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Cartao } from "@/services/cartoes";
 import { criarCompraCartao } from "@/services/compras-cartao";
 import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
-import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FaturaPicpayBreakdown } from "./FaturaPicpayBreakdown";
 
@@ -310,6 +310,40 @@ export function RevisarComprasLoteDialog({
       setSalvando(false);
       setProgresso(null);
     }
+  }
+
+  function handleExportarCsv() {
+    const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const header = [
+      "#", "incluir", "descricao", "data", "valor_original", "valor_parcela_mes",
+      "parcelas", "parcela_atual", "valor_eh_parcela", "tipo", "sinal",
+    ].join(",");
+
+    const rows = linhas.map((l, i) => {
+      const vMes = valorEsteMes(l).toFixed(2).replace(".", ",");
+      return [
+        i + 1,
+        l.incluir ? "sim" : "nao",
+        esc(l.descricao),
+        l.data,
+        l.valor,
+        vMes,
+        l.parcelas,
+        l.parcelaAtual,
+        l.valorEhParcela ? "sim" : "nao",
+        l.tipo,
+        l.sinal,
+      ].join(",");
+    });
+
+    const csv = [header, ...rows].join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analise-ia-${cartao.nome.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -660,34 +694,59 @@ export function RevisarComprasLoteDialog({
               </span>
             </p>
           )}
-          <button
-            type="button"
-            onClick={handleSalvarTudo}
-            disabled={salvando || selecionadas.length === 0}
-            className="w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-            style={{
-              height: 48,
-              borderRadius: 8,
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#fff",
-              background: "#111827",
-              border: "none",
-              cursor: salvando ? "not-allowed" : "pointer",
-            }}
-          >
-            {salvando ? (
-              <>
-                <Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />
-                Salvando {progresso ? `${progresso.atual}/${progresso.total}` : ""}
-              </>
-            ) : (
-              <>
-                <CheckCircle2 style={{ width: 16, height: 16 }} />
-                Salvar {selecionadas.length} compra(s)
-              </>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleExportarCsv}
+              disabled={salvando || linhas.length === 0}
+              title="Exportar todas as linhas detectadas como CSV para verificação"
+              className="flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 shrink-0"
+              style={{
+                height: 48,
+                paddingInline: 14,
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                background: "#F3F4F6",
+                border: "1px solid #E5E7EB",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Download style={{ width: 15, height: 15 }} />
+              Exportar CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSalvarTudo}
+              disabled={salvando || selecionadas.length === 0}
+              className="flex-1 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              style={{
+                height: 48,
+                borderRadius: 8,
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#fff",
+                background: "#111827",
+                border: "none",
+                cursor: salvando ? "not-allowed" : "pointer",
+              }}
+            >
+              {salvando ? (
+                <>
+                  <Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />
+                  Salvando {progresso ? `${progresso.atual}/${progresso.total}` : ""}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 style={{ width: 16, height: 16 }} />
+                  Salvar {selecionadas.length} compra(s)
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
