@@ -92,39 +92,58 @@ Se algum não estiver visível, omita o campo.`;
 
     const nubankRules = `
 
-## REGRAS NUBANK — TELA DE DETALHE DE UMA COMPRA
+## REGRAS NUBANK
 
-A imagem normalmente é a tela de DETALHE de UMA ÚNICA compra do app Nubank. Características:
-- Título grande = nome do estabelecimento (ex.: "Pg *Even3 Ixhq").
+A entrada pode ser de DOIS tipos. Identifique antes de extrair:
+
+### TIPO A — TELA DE DETALHE DE UMA ÚNICA COMPRA
+Características:
+- Título grande no topo = nome do estabelecimento (ex.: "Pg *Even3 Ixhq").
 - Linha "R$ X,XX" em destaque = VALOR TOTAL DA COMPRA.
-- Linha "em Nx de R$ Y,YY" (logo abaixo) = parcelamento (N parcelas de Y).
+- Linha "em Nx de R$ Y,YY" logo abaixo = parcelamento (N parcelas de Y).
 - Badge "Compra parcelada" e bloco "Parcelas: Nx de R$ Y,YY" / "0 de N pagas".
 - Pode aparecer data por extenso (ex.: "Segunda-feira, 25 de Maio de 2026, 18:59").
 
-### Como extrair:
-- Registre UMA única compra: tipo="compra", sinal="debito".
+Extração (UMA única compra):
+- tipo="compra", sinal="debito".
 - valor = VALOR TOTAL (R$ X,XX em destaque, NÃO o valor da parcela).
 - parcelas = N (de "em Nx de R$ Y").
 - parcela_atual = 1.
-- valor_eh_parcela = FALSE (o valor é o total da compra inteira).
+- valor_eh_parcela = FALSE.
 - estabelecimento = título grande no topo.
 - data = converta a data por extenso para YYYY-MM-DD se visível; senão use hoje.
-- linha_original = inclua AS DUAS LINHAS exatas: "R$ X,XX" e "em Nx de R$ Y,YY" para validação.
-- valor_texto = "R$ X,XX" (o valor TOTAL, não o da parcela).
+- linha_original = inclua AS DUAS LINHAS exatas: "R$ X,XX" e "em Nx de R$ Y,YY".
+- valor_texto = "R$ X,XX" (TOTAL).
 
-### LISTA DE COMPRAS (FATURA / EXTRATO) NUBANK:
-Se for uma lista com várias compras (fatura mensal):
-- Cada linha costuma ter: Data (às vezes no cabeçalho), Ícone da categoria, Nome do estabelecimento, Valor.
-- Se a linha disser "Parcela X de Y" ou "X/Y":
+### TIPO B — LISTA / EXTRATO DE FATURA (várias compras)
+Características:
+- Várias transações empilhadas verticalmente.
+- Datas aparecem como CABEÇALHO de grupo (ex.: "25 MAI", "26 MAI", "Hoje", "Ontem", "Segunda-feira").
+- Cada item tem: nome do estabelecimento, opcionalmente uma categoria/subtítulo, e o valor à direita ou abaixo.
+- Pode incluir linhas tipo "Parcela X de Y" ou "X/Y" abaixo do nome.
+- Valores negativos / verdes / com sinal "+" = créditos (estornos, pagamentos recebidos).
+
+Extração (UMA compra POR linha de transação — extraia TODAS):
+- estabelecimento = nome principal da linha (NÃO use a categoria/subtítulo).
+- valor = valor monetário daquela linha. Para "R$ 1.234,56" → 1234.56.
+- data = use o CABEÇALHO de data ACIMA daquela linha. Converta para YYYY-MM-DD do ano atual se só vier dia/mês. "Hoje" = hoje. "Ontem" = ontem.
+- Se a linha contiver "Parcela X de Y" ou "X/Y":
   - parcelas = Y
   - parcela_atual = X
-  - valor_eh_parcela = TRUE (o valor mostrado é apenas o daquela parcela).
-- Se não houver menção a parcelas:
+  - valor_eh_parcela = TRUE (o valor mostrado é APENAS daquela parcela).
+- Caso contrário:
   - parcelas = 1
   - parcela_atual = 1
   - valor_eh_parcela = FALSE.
-- sinal = normalmente "debito" (gastos), exceto se for "Pagamento recebido" ou "Estorno" (verde).
-- data = Use o cabeçalho de data acima da lista (ex: "25 MAI") ou a data da compra se visível.`;
+- sinal = "debito" por padrão. Use "credito" SOMENTE se:
+  - texto contém "Estorno", "Pagamento recebido", "Crédito", "Reembolso", OU
+  - valor mostrado tem sinal negativo / "+" / aparece em verde.
+- tipo = "compra" para gastos normais. Use "iof", "anuidade", "juros", "encargo" se o nome indicar.
+- linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
+- valor_texto = valor exatamente como aparece (ex.: "R$ 89,90").
+
+IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma.`;
+
 
     const genericRules = `
 
