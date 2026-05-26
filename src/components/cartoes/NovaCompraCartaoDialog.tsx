@@ -839,7 +839,9 @@ export function NovaCompraCartaoDialog({
                       {progressoAnalise ? `Analisando ${progressoAnalise.atual} de ${progressoAnalise.total}...` : "Ler comprovante com IA"}
                     </p>
                     <p style={{ fontSize: 11, color: "#6B7280" }}>
-                      Adicione fotos · cole com Ctrl+V · clique em Analisar
+                      {isNubank()
+                        ? "Imagem, Ctrl+V ou CSV oficial da fatura"
+                        : "Adicione fotos · cole com Ctrl+V · clique em Analisar"}
                     </p>
                     <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
                       A imagem é analisada em memória e descartada após o processamento. Nada fica armazenado.
@@ -848,13 +850,22 @@ export function NovaCompraCartaoDialog({
                   <Camera style={{ width: 18, height: 18, color: "#6B7280", flexShrink: 0 }} />
                   <input
                     type="file"
-                    accept="image/*"
+                    accept={isNubank() ? "image/*,.csv,text/csv" : "image/*"}
                     multiple
                     disabled={analisandoImagem}
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
-                      if (files.length > 0) adicionarImagensPendentes(files);
+                      if (files.length === 0) {
+                        e.target.value = "";
+                        return;
+                      }
+                      const csvFiles = files.filter((f) =>
+                        f.type === "text/csv" || /\.csv$/i.test(f.name),
+                      );
+                      const imageFiles = files.filter((f) => !csvFiles.includes(f));
+                      if (csvFiles.length > 0) handleNubankCsvFiles(csvFiles);
+                      if (imageFiles.length > 0) adicionarImagensPendentes(imageFiles);
                       e.target.value = "";
                     }}
                   />
