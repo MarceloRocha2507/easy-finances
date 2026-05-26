@@ -1,0 +1,5 @@
+{
+  "entry": ["src/main.tsx", "index.html", "supabase/functions/**/index.ts"],
+  "project": ["src/**/*.{ts,tsx}", "supabase/functions/**/*.ts"],
+  "ignore": ["playwright.config.ts", "playwright-fixture.ts"]
+}
