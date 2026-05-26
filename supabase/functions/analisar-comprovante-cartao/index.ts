@@ -96,7 +96,22 @@ Se algum não estiver visível, omita o campo.`;
 
 A entrada pode ser de DOIS tipos. Identifique antes de extrair:
 
+### ⚠️ ATENÇÃO VISUAL — LINHAS VERDES (LEIA ANTES DE TUDO)
+
+O app do Nubank usa TEMA ESCURO. Nele, TODA linha cujo valor está em **verde** OU cujo valor começa com sinal "–" / "-" / "− R$" é um LANÇAMENTO VÁLIDO e DEVE ser extraída no array "compras" com sinal="credito".
+
+Essas linhas têm o MESMO peso visual que compras normais (mesmo tamanho de fonte, mesma posição na lista) — NÃO são cabeçalho, NÃO são resumo, NÃO são decoração. NÃO PODEM ser ignoradas.
+
+Os textos típicos em verde no Nubank são:
+- "Pagamento recebido" / "Pagamento de fatura" → tipo="pagamento_fatura"
+- "Crédito de parcelamento de compra" → tipo="estorno_parcelamento" (a descrição costuma quebrar em 2 ou 3 linhas: "Crédito de" / "parcelamento de" / "compra" — trate sempre como UMA única linha lógica)
+- "Estorno X" / "Reembolso X" / "Crédito <Estabelecimento>" → tipo="estorno"
+
+Para TODAS essas: valor = número absoluto positivo, sinal = "credito", data = cabeçalho de data acima da linha.
+
 ### COMO A FATURA DO NUBANK FUNCIONA (contexto OBRIGATÓRIO)
+
+
 
 A fatura do Nubank tem 3 grandes grupos de lançamentos:
 
