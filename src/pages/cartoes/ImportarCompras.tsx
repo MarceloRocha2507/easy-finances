@@ -161,6 +161,9 @@ export default function ImportarCompras() {
   const [modoImportacao, setModoImportacao] = useState<ModoImportacao>("texto");
   const [responsavelNubankId, setResponsavelNubankId] = useState<string>("");
 
+  // Pagamentos detectados no CSV Nubank (adiantamentos e pagamento fatura anterior)
+  const [nubankPagamentos, setNubankPagamentos] = useState<{ valor: number; data: string }[]>([]);
+
   // Responsáveis
   const { data: responsaveis = [] } = useResponsaveis();
 
@@ -348,6 +351,7 @@ export default function ImportarCompras() {
     setPreviewData([]);
     setStatus("idle");
     setResultado(null);
+    setNubankPagamentos([]);
   }
 
   // Importar
@@ -438,6 +442,13 @@ export default function ImportarCompras() {
       setStatus("checking");
 
       const comprasExtraidas = parseNubankCsv(texto);
+
+      // Capturar pagamentos (adiantamentos e fatura anterior) para exibição informativa
+      const pagamentos = comprasExtraidas
+        .filter((c) => c.tipo === "pagamento_fatura" && c.valor != null)
+        .map((c) => ({ valor: c.valor as number, data: c.data || "" }));
+      setNubankPagamentos(pagamentos);
+
       const preview = converterNubankParaPreview(
         comprasExtraidas,
         resp.id,
@@ -824,13 +835,41 @@ export default function ImportarCompras() {
                       )}
                     </div>
                   </div>
-                  <CardDescription>
-                    Total a importar: {formatCurrency(stats.totalCompras)}
-                    {stats.totalParcelas !== stats.totalCompras && (
-                      <span className="text-muted-foreground ml-2">
-                        (parcelas deste mês: {formatCurrency(stats.totalParcelas)})
-                      </span>
-                    )}
+                  <CardDescription className="space-y-1">
+                    <span>
+                      Total a importar: {formatCurrency(stats.totalCompras)}
+                      {stats.totalParcelas !== stats.totalCompras && (
+                        <span className="text-muted-foreground ml-2">
+                          (parcelas deste mês: {formatCurrency(stats.totalParcelas)})
+                        </span>
+                      )}
+                    </span>
+                    {modoImportacao === "nubank_csv" && nubankPagamentos.length > 0 && (() => {
+                      const totalPagamentos = nubankPagamentos.reduce((s, p) => s + p.valor, 0);
+                      const saldoLiquido = stats.totalParcelas - totalPagamentos;
+                      return (
+                        <span className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-border/50 text-xs">
+                          <span className="font-medium text-muted-foreground">Pagamentos detectados no CSV:</span>
+                          {nubankPagamentos.map((pg, i) => (
+                            <span key={i} className="flex justify-between items-center">
+                              <span className="text-muted-foreground">
+                                {format(new Date(pg.data + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                              <span className="text-emerald-600 font-medium ml-4">
+                                − {formatCurrency(pg.valor)}
+                              </span>
+                            </span>
+                          ))}
+                          <span className="flex justify-between items-center pt-0.5 border-t border-border/40 font-medium">
+                            <span className="text-muted-foreground">Saldo líquido estimado:</span>
+                            <span className="ml-4">{formatCurrency(saldoLiquido)}</span>
+                          </span>
+                          <span className="text-muted-foreground/70 italic mt-0.5">
+                            ⓘ Adiantamentos reduzem o saldo da fatura. O valor exibido pelo Nubank já desconta esses pagamentos.
+                          </span>
+                        </span>
+                      );
+                    })()}
                   </CardDescription>
                 </CardHeader>
                 
