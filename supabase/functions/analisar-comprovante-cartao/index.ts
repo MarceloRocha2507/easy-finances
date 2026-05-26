@@ -224,7 +224,7 @@ ${bankRules}
 
 1. valor (number): valor absoluto em REAIS. "R$ 1.234,56" → 1234.56. NUNCA inverta vírgula/ponto.
 2. estabelecimento (string): nome como aparece.${isPicpay ? ' "Fin <Nome> parcXX/YY" → use só <Nome>.' : ""}
-3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${isPicpay ? ' | "estorno_parcelamento" | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
+3. tipo: "compra" | "iof" | "encargo" | "anuidade" | "juros" | "seguro" | "estorno"${(isPicpay || isNubank) ? ' | "estorno_parcelamento"' : ""}${isPicpay ? ' | "compra_substituida"' : ""} | "pagamento_fatura" | "outro".
 4. sinal: "debito" ou "credito".
 5. data: YYYY-MM-DD. Sem data, use hoje.
 6. parcelas (int 1-24).
@@ -242,6 +242,22 @@ ${bankRules}
 - O campo "valor" precisa bater com o valor visível na linha. Se "linha_original" tiver UM único valor, "valor" deve ser exatamente ele.
 - Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 60 itens.`;
 
+    const creditAuditPrompt = isNubank ? `Você vai fazer uma SEGUNDA PASSAGEM focada APENAS em CRÉDITOS da fatura Nubank.
+
+Objetivo: localizar TODAS as linhas em verde / negativas / com sinal "-" ou "–" e retornar SOMENTE essas linhas no array "compras".
+
+Regras obrigatórias:
+- Procure por: "Pagamento recebido", "Pagamento de fatura", "Crédito de parcelamento de compra", "Estorno", "Reembolso", "Crédito <estabelecimento>".
+- "Crédito de parcelamento de compra" pode estar quebrado em 2 ou 3 linhas. Mesmo assim, trate como UMA transação.
+- Retorne valor positivo e sinal="credito".
+- Classifique como:
+  - pagamento_fatura
+  - estorno_parcelamento
+  - estorno
+- NÃO retorne compras em débito, totais, resumo, cabeçalhos ou saldo da fatura.
+- Se existirem 4 linhas verdes visíveis, o array precisa ter 4 itens.
+` : "";
+
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
 
@@ -252,7 +268,7 @@ ${bankRules}
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
         body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: isNubank && imageBase64 ? "gpt-4o" : "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -355,7 +371,115 @@ ${bankRules}
       );
     }
 
-    const rawCompras = Array.isArray(parsed.compras) ? parsed.compras : [];
+    let rawCompras = Array.isArray(parsed.compras) ? parsed.compras : [];
+
+    if (isNubank && imageBase64) {
+      const creditAuditResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: `${systemPrompt}\n\n${creditAuditPrompt}` },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Faça uma segunda leitura e retorne SOMENTE os créditos/linhas verdes visíveis nesta imagem." },
+                { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+              ],
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "registrar_compras_comprovante",
+                description: "Registra uma ou mais compras extraídas da imagem",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    compras: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          valor: { type: "number", description: "Valor absoluto em reais" },
+                          estabelecimento: { type: "string", description: "Nome ou descrição" },
+                          tipo: { type: "string", description: "compra, iof, encargo, anuidade, juros, seguro, estorno, estorno_parcelamento, compra_substituida, pagamento_fatura ou outro" },
+                          sinal: { type: "string", description: "debito ou credito" },
+                          data: { type: "string", description: "Data YYYY-MM-DD" },
+                          parcelas: { type: "integer", description: "Nº TOTAL de parcelas, 1 a 24 (1 = à vista)" },
+                          parcela_atual: { type: "integer", description: "Nº da parcela ATUAL mostrada (ex: '6/10' = 6). Default 1." },
+                          valor_eh_parcela: { type: "boolean", description: "true se 'valor' é de UMA parcela (extrato de fatura). false se é o TOTAL da compra." },
+                          linha_original: { type: "string", description: "Linha ou texto exato visível que originou a extração." },
+                          valor_texto: { type: "string", description: "Valor monetário exatamente como aparece na linha, ex: 'R$ 14,09'." },
+                          riscada: { type: "boolean", description: "true se o texto da linha aparece TACHADO/RISCADO na imagem. Default false." },
+                          ignorar: { type: "boolean", description: "true se a linha não deve ser importada (regras 3a/3b: compra raiz substituída ou crédito de parcelamento Fin). Default false." },
+                        },
+                        required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
+                      },
+                    },
+                    confianca: { type: "string", description: "alta, media ou baixa" },
+                  },
+                  required: ["compras", "confianca"],
+                },
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "registrar_compras_comprovante" } },
+        }),
+      });
+
+      if (creditAuditResponse.ok) {
+        const creditAuditJson = await creditAuditResponse.json();
+        const creditAuditToolCall = creditAuditJson?.choices?.[0]?.message?.tool_calls?.[0];
+
+        if (creditAuditToolCall?.function?.arguments) {
+          try {
+            const creditAuditParsed = JSON.parse(creditAuditToolCall.function.arguments);
+            const creditOnly = Array.isArray(creditAuditParsed?.compras)
+              ? creditAuditParsed.compras.filter((item: any) => item?.sinal === "credito")
+              : [];
+
+            const normalizeText = (value: unknown) =>
+              String(value ?? "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const sameCompra = (a: any, b: any) => {
+              const valueA = typeof a?.valor === "number" ? Math.abs(a.valor) : coerceValor(a?.valor_texto ?? a?.valor);
+              const valueB = typeof b?.valor === "number" ? Math.abs(b.valor) : coerceValor(b?.valor_texto ?? b?.valor);
+              const textA = normalizeText(a?.estabelecimento || a?.linha_original);
+              const textB = normalizeText(b?.estabelecimento || b?.linha_original);
+
+              return (
+                a?.sinal === b?.sinal &&
+                a?.tipo === b?.tipo &&
+                a?.data === b?.data &&
+                valueA !== null &&
+                valueB !== null &&
+                Math.abs(valueA - valueB) < 0.01 &&
+                (textA.includes(textB) || textB.includes(textA))
+              );
+            };
+
+            for (const creditItem of creditOnly) {
+              if (!rawCompras.some((existing) => sameCompra(existing, creditItem))) {
+                rawCompras.push(creditItem);
+              }
+            }
+          } catch (creditAuditError) {
+            console.error("Falha ao processar auditoria de créditos Nubank:", creditAuditError);
+          }
+        }
+      }
+    }
 
     // Coerção defensiva: a IA às vezes retorna valor como string ("1.234,56", "R$ 49,90").
     // Convertemos sempre para number no formato JS (ponto decimal).
@@ -449,8 +573,8 @@ ${bankRules}
     }).filter((c: any) =>
       c.valor !== null &&
       c.valor > 0 &&
-      // PicPay precisa dos pagamentos para a Regra 5 do breakdown.
-      (isPicpay ? true : c.tipo !== "pagamento_fatura")
+      // PicPay e Nubank precisam dos pagamentos para a reconciliação correta da fatura.
+      ((isPicpay || isNubank) ? true : c.tipo !== "pagamento_fatura")
     );
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
