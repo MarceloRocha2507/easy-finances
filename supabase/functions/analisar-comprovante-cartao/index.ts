@@ -30,25 +30,25 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => null);
-    if (!body || typeof body.imageBase64 !== "string" || typeof body.mimeType !== "string") {
+    if (!body || (!body.imageBase64 && !body.text) || (body.imageBase64 && typeof body.imageBase64 !== "string") || (body.imageBase64 && typeof body.mimeType !== "string")) {
       return new Response(
-        JSON.stringify({ error: "imageBase64 e mimeType são obrigatórios" }),
+        JSON.stringify({ error: "imageBase64 + mimeType OU text são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const { imageBase64, mimeType } = body as { imageBase64: string; mimeType: string };
+    const { imageBase64, mimeType, text: rawText } = body as { imageBase64?: string; mimeType?: string; text?: string };
     const isPicpay = body?.picpay === true;
     const isNubank = body?.nubank === true;
 
-    if (imageBase64.length > MAX_BASE64_SIZE) {
+    if (imageBase64 && imageBase64.length > MAX_BASE64_SIZE) {
       return new Response(
         JSON.stringify({ error: "Imagem muito grande (máx ~6MB)" }),
         { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    if (!/^image\/(png|jpeg|jpg|webp|heic|heif)$/i.test(mimeType)) {
+    if (imageBase64 && !/^image\/(png|jpeg|jpg|webp|heic|heif)$/i.test(mimeType!)) {
       return new Response(
         JSON.stringify({ error: "Formato de imagem não suportado" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
 
-    const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+    // dataUrl remoted, we use conditionally in the fetch body
 
     const picpayRules = `
 
@@ -168,16 +168,20 @@ ${bankRules}
         "Content-Type": "application/json",
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: [
-              { type: "text", text: "Extraia TODAS as compras visíveis nesta imagem." },
-              { type: "image_url", image_url: { url: dataUrl } },
-            ],
+            content: imageBase64 
+              ? [
+                  { type: "text", text: "Extraia TODAS as compras visíveis nesta imagem." },
+                  { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+                ]
+              : [
+                  { type: "text", text: `Extraia as compras deste texto:\n\n${rawText}` }
+                ],
           },
         ],
         tools: [
