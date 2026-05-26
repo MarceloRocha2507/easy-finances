@@ -96,6 +96,30 @@ Se algum não estiver visível, omita o campo.`;
 
 A entrada pode ser de DOIS tipos. Identifique antes de extrair:
 
+### COMO A FATURA DO NUBANK FUNCIONA (contexto OBRIGATÓRIO)
+
+A fatura do Nubank tem 3 grandes grupos de lançamentos:
+
+1) **Débitos (gastos)**
+   - **Compra à vista:** entra pelo valor cheio em UM único lançamento.
+   - **Compra parcelada de origem:** entra parcela por parcela, UMA por mês. O valor da linha já é o da PARCELA.
+   - **Parcelamento interno do banco:** quando o usuário parcela DEPOIS uma compra que já estava à vista nesta fatura, o Nubank faz DOIS lançamentos:
+     a. **Estorna o valor original** com a descrição "Crédito de parcelamento de compra" (linha negativa/verde) → cancela a compra à vista.
+     b. **Cria as parcelas mensais** ("Parcelamento de Compra - <Estabelecimento> - Parcela X/Y") que passam a aparecer mês a mês.
+
+2) **Créditos / estornos** (linhas negativas ou verdes)
+   - "Estorno", "Reembolso", "Crédito" do comerciante → reduz a fatura.
+   - "Crédito de parcelamento de compra" → estorno técnico do item 1c acima. NÃO é estorno de comerciante.
+
+3) **Pagamentos** (linhas negativas verdes "Pagamento recebido" / "Pagamento de fatura")
+   - Pode ser o pagamento da fatura do mês ANTERIOR, ou
+   - Um ADIANTAMENTO da fatura atual (distinguível pela data: se for antes do fechamento e não houver fatura anterior em aberto, é adiantamento).
+   - NUNCA é uma compra. Sempre tipo="pagamento_fatura", sinal="credito".
+
+**Fórmula mental:** valor real da fatura = soma dos débitos − créditos de parcelamento − estornos − pagamentos/adiantamentos.
+
+Seu trabalho é apenas EXTRAIR fielmente cada linha com a classificação correta. O frontend faz a matemática.
+
 ### TIPO A — TELA DE DETALHE DE UMA ÚNICA COMPRA
 Características:
 - Título grande no topo = nome do estabelecimento (ex.: "Pg *Even3 Ixhq").
@@ -121,28 +145,34 @@ Características:
 - Datas aparecem como CABEÇALHO de grupo (ex.: "25 MAI", "26 MAI", "Hoje", "Ontem", "Segunda-feira").
 - Cada item tem: nome do estabelecimento, opcionalmente uma categoria/subtítulo, e o valor à direita ou abaixo.
 - Pode incluir linhas tipo "Parcela X de Y" ou "X/Y" abaixo do nome.
-- Valores negativos / verdes / com sinal "+" = créditos (estornos, pagamentos recebidos).
+- Valores negativos / verdes / com sinal "+" = créditos (estornos, pagamentos recebidos, créditos de parcelamento).
 
 Extração (UMA compra POR linha de transação — extraia TODAS):
 - estabelecimento = nome principal da linha (NÃO use a categoria/subtítulo).
-- valor = valor monetário daquela linha. Para "R$ 1.234,56" → 1234.56.
+- valor = valor monetário daquela linha. Para "R$ 1.234,56" → 1234.56. SEMPRE positivo (o sinal vai em "sinal").
 - data = use o CABEÇALHO de data ACIMA daquela linha. Converta para YYYY-MM-DD do ano atual se só vier dia/mês. "Hoje" = hoje. "Ontem" = ontem.
 - Se a linha contiver "Parcela X de Y" ou "X/Y":
-  - parcelas = Y
-  - parcela_atual = X
-  - valor_eh_parcela = TRUE (o valor mostrado é APENAS daquela parcela).
-- Caso contrário:
-  - parcelas = 1
-  - parcela_atual = 1
-  - valor_eh_parcela = FALSE.
-- sinal = "debito" por padrão. Use "credito" SOMENTE se:
-  - texto contém "Estorno", "Pagamento recebido", "Crédito", "Reembolso", OU
-  - valor mostrado tem sinal negativo / "+" / aparece em verde.
-- tipo = "compra" para gastos normais. Use "iof", "anuidade", "juros", "encargo" se o nome indicar.
-- linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
-- valor_texto = valor exatamente como aparece (ex.: "R$ 89,90").
+  - parcelas = Y, parcela_atual = X, valor_eh_parcela = TRUE (valor mostrado é APENAS daquela parcela).
+- Caso contrário: parcelas = 1, parcela_atual = 1, valor_eh_parcela = FALSE.
 
-IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma.`;
+**Classificação do tipo (use EXATAMENTE estes valores):**
+- "pagamento_fatura" + sinal="credito" → linhas "Pagamento recebido" / "Pagamento de fatura".
+- "estorno_parcelamento" + sinal="credito" → linhas "Crédito de parcelamento de compra" (estorno técnico quando o usuário parcelou depois). NÃO classifique como "estorno" comum.
+- "estorno" + sinal="credito" → "Estorno", "Reembolso", "Crédito <Estabelecimento>" do comerciante.
+- "iof" → linhas "IOF".
+- "anuidade" → linhas "Anuidade".
+- "juros" → linhas "Juros".
+- "encargo" → outros encargos.
+- "compra" → tudo o mais (incluindo "Parcelamento de Compra - <X> - Parcela N/M", que é uma compra parcelada normal).
+
+**Regras de sinal:**
+- sinal="credito" SOMENTE se: texto contém "Estorno", "Pagamento recebido", "Pagamento de fatura", "Crédito de parcelamento", "Reembolso", "Crédito <Estab>", OU o valor tem sinal negativo / "+" / aparece em verde.
+- Caso contrário: sinal="debito".
+
+- linha_original = copie o bloco de texto exato da transação (estabelecimento + parcela + valor).
+- valor_texto = valor exatamente como aparece (ex.: "R$ 89,90", "-R$ 50,00").
+
+IMPORTANTE: NUNCA invente compras. Se a imagem/texto tiver 3 linhas, retorne 3 compras. Se tiver 15, retorne 15. NÃO agrupe nem resuma. NÃO faça a matemática da fatura — apenas extraia.`;
 
 
     const genericRules = `
