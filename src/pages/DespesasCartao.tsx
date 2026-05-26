@@ -50,6 +50,7 @@ import {
   Scale,
   RotateCcw,
   MoreVertical,
+  Upload,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -424,6 +425,12 @@ export default function DespesasCartao() {
   const totalMes = totaisFatura.pendente;
   const totalPago = totaisFatura.pago;
 
+  // Detecta se o cartão é Nubank (para exibir opção de importar CSV)
+  const isNubank = useMemo(
+    () => !!cartao?.nome?.toLowerCase().includes("nubank"),
+    [cartao]
+  );
+
   // Verificar se há itens pagos escondidos pelo filtro
   const temItensPagosEscondidos = useMemo(() => {
     if (filtros.status !== "pendente") return false;
@@ -483,6 +490,12 @@ export default function DespesasCartao() {
                     <Banknote className="h-4 w-4 mr-2" />
                     Adiantar pagamento
                   </DropdownMenuItem>
+                  {isNubank && (
+                    <DropdownMenuItem onClick={() => navigate(`/cartoes/${id}/importar`)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importar CSV Nubank
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     onClick={() => setDesmarcarPagasOpen(true)} 
                     disabled={totalPago === 0}
@@ -566,6 +579,26 @@ export default function DespesasCartao() {
               </TooltipProvider>
             </div>
             
+            {/* Importar CSV Nubank (apenas cartões Nubank) */}
+            {isNubank && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/cartoes/${id}/importar`)}
+                      className="gap-1"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span className="hidden sm:inline">Importar CSV</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Importar fatura CSV do Nubank</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
             {/* Nova compra sempre visível */}
             <Button size="sm" onClick={() => setNovaCompraOpen(true)} className="gap-1">
               <Plus className="h-4 w-4" />
