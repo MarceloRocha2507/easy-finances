@@ -166,14 +166,17 @@ ${bankRules}
 - O campo "valor" precisa bater com o valor visível na linha. Se "linha_original" tiver UM único valor, "valor" deve ser exatamente ele.
 - Se ilegível, retorne compras: [] e confianca: "baixa". Máximo 60 itens.`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
+
+    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
           {
