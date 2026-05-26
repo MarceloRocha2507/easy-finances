@@ -314,19 +314,24 @@ export function RevisarComprasLoteDialog({
 
   function handleExportarCsv() {
     const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    // Converte valor BR "1.234,56" → número → string com ponto decimal para não quebrar o CSV
+    const fmtNum = (v: string) => {
+      const n = parseFloat(v.replace(/\./g, "").replace(",", "."));
+      return isFinite(n) ? n.toFixed(2) : v;
+    };
     const header = [
       "#", "incluir", "descricao", "data", "valor_original", "valor_parcela_mes",
       "parcelas", "parcela_atual", "valor_eh_parcela", "tipo", "sinal",
     ].join(",");
 
     const rows = linhas.map((l, i) => {
-      const vMes = valorEsteMes(l).toFixed(2).replace(".", ",");
+      const vMes = valorEsteMes(l).toFixed(2); // ponto decimal, não vírgula
       return [
         i + 1,
         l.incluir ? "sim" : "nao",
         esc(l.descricao),
         l.data,
-        l.valor,
+        fmtNum(l.valor),  // ponto decimal
         vMes,
         l.parcelas,
         l.parcelaAtual,
