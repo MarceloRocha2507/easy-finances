@@ -318,7 +318,7 @@ export default function ImportarCompras() {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([mes, dados]) => ({
         mes,
-        label: format(new Date(mes + "-01"), "MMM/yy", { locale: ptBR }),
+        label: format(new Date(mes + "-01T12:00:00"), "MMM/yy", { locale: ptBR }),
         ...dados
       }));
   }, [previewData]);
