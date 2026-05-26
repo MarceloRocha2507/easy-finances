@@ -420,17 +420,27 @@ export function NovaCompraCartaoDialog({
     }
 
     const updates: Partial<typeof form> = {};
+
+    // Extrai parcelas primeiro para poder calcular o valor total quando necessário
+    const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
+    let parcelaAtualDetectada = Number.isInteger(data?.parcela_atual) ? data.parcela_atual : 1;
+    if (parcelaAtualDetectada < 1) parcelaAtualDetectada = 1;
+    if (parcelaAtualDetectada > parcelasDetectadas) parcelaAtualDetectada = parcelasDetectadas;
+
     if (typeof data.valor === "number" && data.valor > 0) {
-      updates.valor = data.valor.toFixed(2).replace(".", ",");
+      // Se valor_eh_parcela=true, o valor retornado é por PARCELA (valor do extrato).
+      // O campo "valor" do formulário representa o VALOR TOTAL da compra,
+      // então precisamos multiplicar para evitar dupla divisão ao salvar.
+      const valorFinal =
+        data.valor_eh_parcela === true && parcelasDetectadas > 1
+          ? data.valor * parcelasDetectadas
+          : data.valor;
+      updates.valor = valorFinal.toFixed(2).replace(".", ",");
     }
     if (typeof data.estabelecimento === "string" && data.estabelecimento.trim()) {
       updates.descricao = data.estabelecimento.trim();
       updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
     }
-    const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
-    let parcelaAtualDetectada = Number.isInteger(data?.parcela_atual) ? data.parcela_atual : 1;
-    if (parcelaAtualDetectada < 1) parcelaAtualDetectada = 1;
-    if (parcelaAtualDetectada > parcelasDetectadas) parcelaAtualDetectada = parcelasDetectadas;
     if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
       updates.tipoLancamento = "parcelada";
       updates.parcelas = String(parcelasDetectadas);
