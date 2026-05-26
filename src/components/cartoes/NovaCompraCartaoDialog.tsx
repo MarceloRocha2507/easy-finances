@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { RevisarComprasLoteDialog, type CompraExtraida } from "./RevisarComprasLoteDialog";
+import { parseNubankCsv } from "@/lib/nubankCsvParser";
 
 type Categoria = {
   id: string;
