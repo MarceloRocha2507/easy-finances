@@ -262,6 +262,7 @@ export default function DespesasCartao() {
   const [escopoLote, setEscopoLote] = useState<"parcela" | "restantes">("parcela");
 
   // Contagem de parcelas futuras (incluindo a atual) para as compras selecionadas
+  // Usa numero_parcela/total_parcelas do próprio item para detectar futuras em outros meses
   const previaExclusaoLote = useMemo(() => {
     if (selecionadas.size === 0) return { selecionadas: 0, totalComFuturas: 0, temFuturas: false };
     const mapa = new Map(parcelas.map((p) => [p.id, p]));
@@ -270,11 +271,10 @@ export default function DespesasCartao() {
     for (const pid of selecionadas) {
       const p = mapa.get(pid);
       if (!p) continue;
-      const futurasDaCompra = parcelas.filter(
-        (x) => x.compra_id === p.compra_id && x.numero_parcela >= p.numero_parcela,
-      ).length;
-      totalComFuturas += futurasDaCompra;
-      if (futurasDaCompra > 1) temFuturas = true;
+      // Parcelas restantes = esta + todas as futuras (mesmo que em meses não carregados)
+      const parcelasRestantes = p.total_parcelas - p.numero_parcela + 1;
+      totalComFuturas += parcelasRestantes;
+      if (p.numero_parcela < p.total_parcelas) temFuturas = true;
     }
     return { selecionadas: selecionadas.size, totalComFuturas, temFuturas };
   }, [selecionadas, parcelas]);
@@ -1314,7 +1314,7 @@ export default function DespesasCartao() {
                     Estas e todas as parcelas futuras
                   </p>
                   <p style={{ color: "#6B7280", fontSize: 13 }}>
-                    {previaExclusaoLote.selecionadas} compra(s) • {previaExclusaoLote.totalComFuturas} parcela(s) no total
+                    {previaExclusaoLote.selecionadas} compra(s) selecionadas • {previaExclusaoLote.totalComFuturas} parcela(s) no total (incluindo meses futuros)
                   </p>
                 </div>
               </button>
