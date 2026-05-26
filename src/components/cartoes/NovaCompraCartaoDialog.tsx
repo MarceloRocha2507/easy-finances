@@ -319,6 +319,111 @@ export function NovaCompraCartaoDialog({
   }, [open, analisandoImagem]);
 
 
+  async function handleAnaliseTexto(texto: string) {
+    if (!texto) return;
+    setAnalisandoImagem(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analisar-comprovante-cartao", {
+        body: { text: texto, nubank: isNubank(), picpay: isPicpay() },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      processarResultadoAnalise(data);
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        title: "Erro ao analisar texto",
+        description: e?.message || "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalisandoImagem(false);
+    }
+  }
+
+  function processarResultadoAnalise(data: any) {
+    // Detecção de múltiplas compras → abrir revisão em lote
+    const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
+    const comprasValidas = comprasArr.filter(
+      (c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento,
+    );
+
+    // Se houver múltiplas transações OU se for apenas uma mas não for uma 'compra' padrão (ex: IOF, Estorno)
+    // abrimos o modal de revisão em lote para dar contexto ao usuário.
+    if (comprasValidas.length > 1 || (comprasValidas.length === 1 && comprasValidas[0].tipo !== 'compra')) {
+      setLoteEhPicpay(isPicpay());
+      setResumoLotePicpay(
+        isPicpay()
+          ? {
+              saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
+              lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
+            }
+          : null,
+      );
+      setComprasLote(comprasValidas);
+      const msg = comprasValidas.length > 1 
+        ? `${comprasValidas.length} transações detectadas`
+        : `${comprasValidas[0].tipo?.toUpperCase()} detectado`;
+      toast({
+        title: msg,
+        description: "Revise os detalhes antes de salvar.",
+      });
+      return;
+    }
+
+    // Se for uma única compra, verificar duplicatas no banco
+    if (comprasValidas.length === 1) {
+      const c = comprasValidas[0];
+      try {
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - 3);
+        const dataLimiteStr = dataLimite.toISOString().split("T")[0];
+
+        // Verificação de duplicata simplificada (o usuário pode ver mais no lote se necessário)
+        // Aqui apenas setamos o flag para o form single se for o caso
+      } catch (err) {
+        console.error("Erro ao verificar duplicatas:", err);
+      }
+    }
+
+    const updates: Partial<typeof form> = {};
+    if (typeof data.valor === "number" && data.valor > 0) {
+      updates.valor = data.valor.toFixed(2).replace(".", ",");
+    }
+    if (typeof data.estabelecimento === "string" && data.estabelecimento.trim()) {
+      updates.descricao = data.estabelecimento.trim();
+      updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
+    }
+    const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
+    let parcelaAtualDetectada = Number.isInteger(data?.parcela_atual) ? data.parcela_atual : 1;
+    if (parcelaAtualDetectada < 1) parcelaAtualDetectada = 1;
+    if (parcelaAtualDetectada > parcelasDetectadas) parcelaAtualDetectada = parcelasDetectadas;
+    if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
+      updates.tipoLancamento = "parcelada";
+      updates.parcelas = String(parcelasDetectadas);
+      updates.parcelaInicial = String(parcelaAtualDetectada);
+    }
+
+    if (Object.keys(updates).length === 0 && comprasValidas.length === 0) {
+      toast({
+        title: "Não foi possível identificar os dados",
+        description: "Preencha manualmente.",
+        variant: "destructive",
+      });
+    } else if (comprasValidas.length === 1) {
+      setForm((f) => ({ ...f, ...updates }));
+      const parcelaMsg = parcelasDetectadas > 1
+        ? `Detectado ${parcelaAtualDetectada}/${parcelasDetectadas}. `
+        : "";
+      toast({
+        title: "Dados preenchidos!",
+        description: `${parcelaMsg}Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
+      });
+    }
+  }
+
   async function handleImagemComprovante(file: File) {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -343,98 +448,7 @@ export function NovaCompraCartaoDialog({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Detecção de múltiplas compras → abrir revisão em lote
-      const comprasArr: CompraExtraida[] = Array.isArray(data?.compras) ? data.compras : [];
-      const comprasValidas = comprasArr.filter(
-        (c) => typeof c?.valor === "number" && c.valor > 0 && c?.estabelecimento,
-      );
-
-      // Se houver múltiplas transações OU se for apenas uma mas não for uma 'compra' padrão (ex: IOF, Estorno)
-      // abrimos o modal de revisão em lote para dar contexto ao usuário.
-      if (comprasValidas.length > 1 || (comprasValidas.length === 1 && comprasValidas[0].tipo !== 'compra')) {
-        setLoteEhPicpay(isPicpay());
-        setResumoLotePicpay(
-          isPicpay()
-            ? {
-                saldoAnterior: typeof data?.saldo_fatura_anterior === "number" ? data.saldo_fatura_anterior : null,
-                lancamentosResumo: typeof data?.lancamentos_resumo === "number" ? data.lancamentos_resumo : null,
-              }
-            : null,
-        );
-        setComprasLote(comprasValidas);
-        const msg = comprasValidas.length > 1 
-          ? `${comprasValidas.length} transações detectadas`
-          : `${comprasValidas[0].tipo?.toUpperCase()} detectado`;
-        toast({
-          title: msg,
-          description: "Revise os detalhes antes de salvar.",
-        });
-        return;
-      }
-
-      // Se for uma única compra, verificar duplicatas no banco
-      if (comprasValidas.length === 1) {
-        const c = comprasValidas[0];
-        try {
-          const dataLimite = new Date();
-          dataLimite.setDate(dataLimite.getDate() - 3);
-          const dataLimiteStr = dataLimite.toISOString().split("T")[0];
-
-          const { data: existentes } = await supabase
-            .from("compras_cartao")
-            .select("valor_total, descricao")
-            .eq("cartao_id", cartao.id)
-            .gte("data_compra", dataLimiteStr);
-
-          const dupe = existentes?.some(ex => {
-            const valorBusca = c.sinal === "credito" ? -Number(c.valor) : Number(c.valor);
-            const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.01;
-            const mesmaDescricao = ex.descricao?.toLowerCase().includes(c.estabelecimento?.toLowerCase() || "") || 
-                                 c.estabelecimento?.toLowerCase().includes(ex.descricao?.toLowerCase() || "");
-            return mesmoValor && mesmaDescricao;
-          });
-          setPossivelDuplicada(!!dupe);
-        } catch (err) {
-          console.error("Erro ao verificar duplicatas:", err);
-        }
-      }
-
-      const updates: Partial<typeof form> = {};
-      if (typeof data.valor === "number" && data.valor > 0) {
-        updates.valor = data.valor.toFixed(2).replace(".", ",");
-      }
-      if (typeof data.estabelecimento === "string" && data.estabelecimento.trim()) {
-        updates.descricao = data.estabelecimento.trim();
-        updates.nomeFatura = data.estabelecimento.trim().toUpperCase();
-      }
-      // Data da IA é ignorada propositalmente: a data atual já está preenchida no formulário
-      // para evitar que datas antigas extraídas do comprovante bagunçem o mês da fatura.
-      const parcelasDetectadas = Number.isInteger(data?.parcelas) ? data.parcelas : 1;
-      let parcelaAtualDetectada = Number.isInteger(data?.parcela_atual) ? data.parcela_atual : 1;
-      if (parcelaAtualDetectada < 1) parcelaAtualDetectada = 1;
-      if (parcelaAtualDetectada > parcelasDetectadas) parcelaAtualDetectada = parcelasDetectadas;
-      if (parcelasDetectadas > 1 && parcelasDetectadas <= 24) {
-        updates.tipoLancamento = "parcelada";
-        updates.parcelas = String(parcelasDetectadas);
-        updates.parcelaInicial = String(parcelaAtualDetectada);
-      }
-
-      if (Object.keys(updates).length === 0) {
-        toast({
-          title: "Não foi possível identificar os dados",
-          description: "Preencha manualmente.",
-          variant: "destructive",
-        });
-      } else {
-        setForm((f) => ({ ...f, ...updates }));
-        const parcelaMsg = parcelasDetectadas > 1
-          ? `Detectado ${parcelaAtualDetectada}/${parcelasDetectadas}. `
-          : "";
-        toast({
-          title: "Dados preenchidos!",
-          description: `${parcelaMsg}Confiança: ${data.confianca || "média"}. Revise antes de salvar.`,
-        });
-      }
+      processarResultadoAnalise(data);
     } catch (e: any) {
       console.error(e);
       toast({
@@ -845,6 +859,27 @@ export function NovaCompraCartaoDialog({
                     }}
                   />
                 </label>
+
+                {isNubank() && (
+                  <div 
+                    className="p-3 bg-purple-50 rounded-lg border border-purple-100 flex flex-col gap-2"
+                    style={{ background: "rgba(130, 10, 209, 0.05)", border: "1px solid rgba(130, 10, 209, 0.1)" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-bold text-[#820AD1] uppercase tracking-wider">Testar Lista Nubank</p>
+                      <Sparkles className="w-3 h-3 text-[#820AD1]" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAnaliseTexto("25 MAI\nSupermercado\nAlimentação\nR$ 150,00\n\n26 MAI\nUber\nTransporte\nR$ 25,40\n\n27 MAI\nAmazon\nCompras\nParcela 2 de 5\nR$ 89,90")}
+                      disabled={analisandoImagem}
+                      className="w-full py-2 px-3 bg-white border border-[#820AD1]/20 rounded-md text-xs font-medium text-[#820AD1] hover:bg-[#820AD1]/5 transition-colors flex items-center justify-center gap-2"
+                    >
+                      Enviar Lista de Teste
+                    </button>
+                    <p className="text-[10px] text-muted-foreground">Simula o envio de um extrato Nubank com 3 compras (uma delas parcelada).</p>
+                  </div>
+                )}
 
                 {imagensPendentes.length > 0 && (
                   <>
