@@ -595,25 +595,35 @@ Regras obrigatórias:
     // O AI nem sempre marca valor_eh_parcela=true para itens com notação "- X/Y" ou "Parcela X/Y".
     // Quando isso falha, valorEsteMes divide o valor por parcelas (ex: 8,80 ÷ 8 = R$ 1,10)
     // ao invés de retornar R$ 8,80. Aqui garantimos a extração correta independente do AI.
+    //
+    // ATENÇÃO: a IA coloca o valor logo após o nome na linha_original, ex:
+    //   "Mp *Sandaliasdalu - Parcela 3/5\nR$ 279,00"
+    // Por isso NÃO usamos $ (fim de string) no regex da linha_original.
+    // Estratégia dual:
+    //   1) Checar "estabelecimento" com $ (AI às vezes esquece de remover o sufixo)
+    //   2) Checar "linha_original" SEM $ (captura o padrão em qualquer posição)
     if (isNubank) {
-      const parcelaRegexNubank = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+      const parcelaRegexEnd    = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+      const parcelaRegexInline = /[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})/i;
       for (const c of compras as any[]) {
-        const linha = typeof c.linha_original === "string" ? c.linha_original : "";
-        const m = linha.match(parcelaRegexNubank);
+        const estab = typeof c.estabelecimento === "string" ? c.estabelecimento : "";
+        const linha = typeof c.linha_original  === "string" ? c.linha_original  : "";
+        // Preferir match no estabelecimento (mais preciso); cair na linha_original se não encontrar
+        const m = estab.match(parcelaRegexEnd) ?? linha.match(parcelaRegexInline);
         if (m) {
-          const parcelaAtualDetect = parseInt(m[1], 10);
+          const parcelaAtualDetect  = parseInt(m[1], 10);
           const totalParcelasDetect = parseInt(m[2], 10);
           if (
             parcelaAtualDetect >= 1 &&
             totalParcelasDetect >= parcelaAtualDetect &&
             totalParcelasDetect <= 99
           ) {
-            c.parcelas = totalParcelasDetect;
+            c.parcelas      = totalParcelasDetect;
             c.parcela_atual = parcelaAtualDetect;
             c.valor_eh_parcela = true;
             // Remove o sufixo "- X/Y" ou "- Parcela X/Y" do nome do estabelecimento
             if (typeof c.estabelecimento === "string") {
-              c.estabelecimento = c.estabelecimento.replace(parcelaRegexNubank, "").trim();
+              c.estabelecimento = c.estabelecimento.replace(parcelaRegexEnd, "").trim();
             }
           }
         }
