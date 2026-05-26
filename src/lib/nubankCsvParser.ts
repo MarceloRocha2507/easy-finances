@@ -129,5 +129,49 @@ export function parseNubankCsv(text: string): CompraExtraida[] {
     });
   }
 
+  // ── Marcar compras originais substituídas por reparcelamento interno ──
+  // Quando o Nubank parcela uma compra já lançada, cria 3 entradas no CSV:
+  //   (A) compra original    ex: "Claude.Ai Subscription"          R$ 114,20  ← deve ser EXCLUÍDA
+  //   (B) crédito de estorno ex: "Crédito de parcelamento de compra" -R$ 114,20 ← já excluída (sinal=credito)
+  //   (C) parcela mensal     ex: "Parcelamento de Compra - Claude.Ai Subscription - 1/7"  R$ 20,53 ← IMPORTAR
+  // Identificamos (A) verificando: valor coincide com (B) E existe (C) cujo nome contém o nome de (A).
+  const valoresEstorno = new Set<number>(
+    compras
+      .filter((c) => c.tipo === "estorno_parcelamento" && c.valor != null)
+      .map((c) => Math.round((c.valor as number) * 100)) // centavos p/ evitar float
+  );
+
+  if (valoresEstorno.size > 0) {
+    function normNome(s: string | null | undefined): string {
+      return (s || "")
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    for (const c of compras) {
+      // Só examina compras simples à vista (as que podem ser "originais")
+      if (c.tipo !== "compra" || c.sinal === "credito" || c.parcelas > 1 || c.valor == null) continue;
+
+      const valorCentavos = Math.round(c.valor * 100);
+      if (!valoresEstorno.has(valorCentavos)) continue;
+
+      // Confirma: existe "Parcelamento de Compra - X - N/M" onde X contém o nome desta compra
+      const nomeBase = normNome(c.estabelecimento);
+      const prefixo = nomeBase.substring(0, Math.min(6, nomeBase.length));
+      if (!prefixo) continue;
+
+      const temParcelamento = compras.some((p) => {
+        const pNorm = normNome(p.estabelecimento);
+        return pNorm.startsWith("parcelamento de compra") && pNorm.includes(prefixo);
+      });
+
+      if (temParcelamento) {
+        c.tipo = "compra_substituida"; // será ignorada pelo converterNubankParaPreview
+      }
+    }
+  }
+
   return compras;
 }
