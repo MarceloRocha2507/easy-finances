@@ -1,1 +1,2 @@
-fatal: path 'src/lib/version.ts' exists on disk, but not in 'HEAD'
+// Versão do aplicativo (exibida no rodapé da sidebar)
+export const APP_VERSION_DISPLAY = "v1.0.0";
