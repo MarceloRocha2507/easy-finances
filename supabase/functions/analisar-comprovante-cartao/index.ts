@@ -112,7 +112,19 @@ A imagem normalmente é a tela de DETALHE de UMA ÚNICA compra do app Nubank. Ca
 - linha_original = inclua AS DUAS LINHAS exatas: "R$ X,XX" e "em Nx de R$ Y,YY" para validação.
 - valor_texto = "R$ X,XX" (o valor TOTAL, não o da parcela).
 
-Se for um EXTRATO de fatura Nubank (lista com várias linhas), use regras genéricas: cada linha "Parcela X de Y" → valor_eh_parcela=true.`;
+### LISTA DE COMPRAS (FATURA / EXTRATO) NUBANK:
+Se for uma lista com várias compras (fatura mensal):
+- Cada linha costuma ter: Data (às vezes no cabeçalho), Ícone da categoria, Nome do estabelecimento, Valor.
+- Se a linha disser "Parcela X de Y" ou "X/Y":
+  - parcelas = Y
+  - parcela_atual = X
+  - valor_eh_parcela = TRUE (o valor mostrado é apenas o daquela parcela).
+- Se não houver menção a parcelas:
+  - parcelas = 1
+  - parcela_atual = 1
+  - valor_eh_parcela = FALSE.
+- sinal = normalmente "debito" (gastos), exceto se for "Pagamento recebido" ou "Estorno" (verde).
+- data = Use o cabeçalho de data acima da lista (ex: "25 MAI") ou a data da compra se visível.`;
 
     const genericRules = `
 
