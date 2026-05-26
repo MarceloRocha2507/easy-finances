@@ -573,8 +573,8 @@ Regras obrigatórias:
     }).filter((c: any) =>
       c.valor !== null &&
       c.valor > 0 &&
-      // PicPay precisa dos pagamentos para a Regra 5 do breakdown.
-      (isPicpay ? true : c.tipo !== "pagamento_fatura")
+      // PicPay e Nubank precisam dos pagamentos para a reconciliação correta da fatura.
+      ((isPicpay || isNubank) ? true : c.tipo !== "pagamento_fatura")
     );
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
