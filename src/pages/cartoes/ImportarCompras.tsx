@@ -12,8 +12,10 @@ import {
   importarComprasEmLote,
   verificarDuplicatas,
   gerarOpcoesAnoMes,
+  parsearData,
   PreviewCompra,
 } from "@/services/importar-compras-cartao";
+import { parseNubankCsv } from "@/lib/nubankCsvParser";
 import { Cartao } from "@/services/cartoes";
 
 import { Layout } from "@/components/Layout";
@@ -58,6 +60,7 @@ import {
   ArrowLeft,
   Upload,
   FileText,
+  FileUp,
   Check,
   X,
   AlertCircle,
@@ -73,9 +76,67 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Status = "idle" | "preview" | "checking" | "importing" | "success";
 type ModoMesFatura = "automatico" | "fixo";
+type ModoImportacao = "texto" | "nubank_csv";
+
+const PARCELA_REGEX_STRIP = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+const TIPOS_EXCLUIDOS_NUBANK = new Set(["pagamento_fatura", "estorno_parcelamento", "estorno", "compra_substituida"]);
+
+/** Converte CompraExtraida[] (CSV Nubank) para PreviewCompra[] (fluxo de importação) */
+function converterNubankParaPreview(
+  compras: ReturnType<typeof parseNubankCsv>,
+  responsavelId: string,
+  responsavelNome: string,
+  diaFechamento: number
+): PreviewCompra[] {
+  const result: PreviewCompra[] = [];
+  let linhaNum = 1;
+
+  for (const c of compras) {
+    const tipo = c.tipo || "compra";
+    // Pular pagamentos, estornos e créditos
+    if (TIPOS_EXCLUIDOS_NUBANK.has(tipo) || c.sinal === "credito") continue;
+
+    const valor = c.valor || 0;
+    if (valor <= 0) continue;
+
+    const dataCompra = c.data ? parsearData(c.data) : null;
+    const parcelas = Math.max(c.parcelas || 1, 1);
+    const parcelaAtual = c.parcela_atual || 1;
+    const ehParcelada = parcelas > 1;
+
+    // Remove sufixo de parcela do nome
+    const descricao = (c.estabelecimento || "").replace(PARCELA_REGEX_STRIP, "").trim();
+    const valorTotal = ehParcelada ? valor * parcelas : valor;
+    const mesFatura = dataCompra ? calcularMesFaturaCartaoStr(dataCompra, diaFechamento) : "";
+
+    result.push({
+      linha: linhaNum++,
+      dataOriginal: c.data || "",
+      dataCompra,
+      descricao,
+      valor,
+      valorTotal,
+      responsavelId,
+      responsavelNome,
+      responsavelInput: "",
+      mesFatura,
+      tipoLancamento: ehParcelada ? "parcelada" : "unica",
+      parcelas,
+      parcelaInicial: parcelaAtual,
+      valido: !!dataCompra && valor > 0 && !!responsavelId && !!mesFatura,
+      erro: !dataCompra ? "Data inválida" : !mesFatura ? "Mês da fatura não calculado" : undefined,
+      possivelDuplicata: false,
+      forcarImportacao: false,
+      marcadaDuplicataManual: false,
+    });
+  }
+
+  return result;
+}
 
 export default function ImportarCompras() {
   const { id: cartaoId } = useParams<{ id: string }>();
@@ -96,8 +157,26 @@ export default function ImportarCompras() {
   const [modoMesFatura, setModoMesFatura] = useState<ModoMesFatura>("automatico");
   const [mesFaturaGlobal, setMesFaturaGlobal] = useState<string>("");
 
+  // Modo de importação (texto manual vs CSV Nubank)
+  const [modoImportacao, setModoImportacao] = useState<ModoImportacao>("texto");
+  const [responsavelNubankId, setResponsavelNubankId] = useState<string>("");
+
   // Responsáveis
   const { data: responsaveis = [] } = useResponsaveis();
+
+  // Detecta se o cartão é Nubank
+  const isNubank = useMemo(
+    () => !!cartao?.nome?.toLowerCase().includes("nubank"),
+    [cartao]
+  );
+
+  // Inicializar responsável padrão para CSV Nubank (titular)
+  useEffect(() => {
+    if (responsaveis.length > 0 && !responsavelNubankId) {
+      const titular = responsaveis.find((r) => r.is_titular);
+      setResponsavelNubankId(titular?.id || responsaveis[0].id);
+    }
+  }, [responsaveis]);
 
   // Carregar cartão
   useEffect(() => {
@@ -342,6 +421,40 @@ export default function ImportarCompras() {
     reader.readAsText(file);
   }
 
+  // Upload e processamento do CSV oficial do Nubank
+  async function handleNubankCsvUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !cartao || !cartaoId) return;
+
+    const resp = responsaveis.find((r) => r.id === responsavelNubankId);
+    if (!resp) {
+      toast({ title: "Selecione um responsável antes de importar", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const texto = e.target?.result as string;
+      setStatus("checking");
+
+      const comprasExtraidas = parseNubankCsv(texto);
+      const preview = converterNubankParaPreview(
+        comprasExtraidas,
+        resp.id,
+        resp.apelido || resp.nome,
+        cartao.dia_fechamento
+      );
+
+      const comDuplicatas = await verificarDuplicatas(cartaoId, preview);
+      setPreviewData(comDuplicatas);
+      setStatus("preview");
+    };
+    reader.readAsText(file, "utf-8");
+
+    // Reset input para permitir re-upload do mesmo arquivo
+    event.target.value = "";
+  }
+
   // Atualizar responsável de uma linha
   function handleAtualizarResponsavel(linha: number, responsavelId: string) {
     setPreviewData((prev) =>
@@ -490,61 +603,185 @@ export default function ImportarCompras() {
                   Dados para importação
                 </CardTitle>
                 <CardDescription>
-                  Cole os dados das compras ou carregue um arquivo CSV/TXT
+                  {isNubank
+                    ? "Importe o CSV oficial da fatura Nubank ou faça importação manual"
+                    : "Cole os dados das compras ou carregue um arquivo CSV/TXT"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea
-                  placeholder={`Formato: Data,Descrição,Valor Responsável
+                {isNubank ? (
+                  <Tabs
+                    value={modoImportacao}
+                    onValueChange={(v) => {
+                      setModoImportacao(v as ModoImportacao);
+                      handleLimpar();
+                    }}
+                  >
+                    <TabsList className="w-full">
+                      <TabsTrigger value="nubank_csv" className="flex-1 gap-2">
+                        <FileUp className="h-4 w-4" />
+                        CSV Nubank
+                      </TabsTrigger>
+                      <TabsTrigger value="texto" className="flex-1 gap-2">
+                        <FileText className="h-4 w-4" />
+                        Importação manual
+                      </TabsTrigger>
+                    </TabsList>
 
-Exemplo:
-2026-01-22,IOF de compra internacional,0.16 eu
-2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae
-2026-01-05,Nortmotos - Parcela 3/4,72.98 eu`}
-                  className="min-h-[200px] font-mono text-sm"
-                  value={textoInput}
-                  onChange={(e) => setTextoInput(e.target.value)}
-                />
+                    {/* Tab: CSV Nubank */}
+                    <TabsContent value="nubank_csv" className="space-y-4 pt-2">
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>CSV oficial do Nubank</AlertTitle>
+                        <AlertDescription className="text-sm">
+                          Baixe o CSV pelo app Nubank: <strong>Fatura → Exportar fatura</strong>.
+                          Pagamentos recebidos e estornos são ignorados automaticamente.
+                        </AlertDescription>
+                      </Alert>
 
-                <div className="flex items-center gap-2">
-                  <Button onClick={handleProcessar} disabled={!textoInput.trim() || status === "checking"}>
-                    {status === "checking" ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Processar dados
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={handleLimpar}>
-                    Limpar
-                  </Button>
-                  <div className="flex-1" />
-                  <label htmlFor="file-upload">
-                    <input
-                      id="file-upload"
-                      type="file"
-                      accept=".csv,.txt"
-                      className="hidden"
-                      onChange={handleFileUpload}
+                      <div className="space-y-1.5">
+                        <Label>Responsável pelas compras</Label>
+                        <Select value={responsavelNubankId} onValueChange={setResponsavelNubankId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o responsável" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {responsaveis.map((r) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                {r.apelido || r.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <label htmlFor="nubank-csv-upload" className="block">
+                        <input
+                          id="nubank-csv-upload"
+                          type="file"
+                          accept=".csv"
+                          className="hidden"
+                          onChange={handleNubankCsvUpload}
+                          disabled={status === "checking"}
+                        />
+                        <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                          {status === "checking" ? (
+                            <>
+                              <Loader2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+                              <p className="text-sm font-medium">Processando...</p>
+                            </>
+                          ) : (
+                            <>
+                              <FileUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm font-medium">Clique para selecionar o CSV do Nubank</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Nubank_YYYY-MM-DD.csv
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </label>
+
+                      {previewData.length === 0 && (
+                        <Button variant="outline" size="sm" onClick={handleLimpar}>
+                          Limpar
+                        </Button>
+                      )}
+                    </TabsContent>
+
+                    {/* Tab: Importação manual */}
+                    <TabsContent value="texto" className="space-y-4 pt-2">
+                      <Textarea
+                        placeholder={`Formato: Data,Descrição,Valor Responsável\n\nExemplo:\n2026-01-22,IOF de compra internacional,0.16 eu\n2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae\n2026-01-05,Nortmotos - Parcela 3/4,72.98 eu`}
+                        className="min-h-[200px] font-mono text-sm"
+                        value={textoInput}
+                        onChange={(e) => setTextoInput(e.target.value)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button onClick={handleProcessar} disabled={!textoInput.trim() || status === "checking"}>
+                          {status === "checking" ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Verificando...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-2" />
+                              Processar dados
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" onClick={handleLimpar}>
+                          Limpar
+                        </Button>
+                        <div className="flex-1" />
+                        <label htmlFor="file-upload">
+                          <input
+                            id="file-upload"
+                            type="file"
+                            accept=".csv,.txt"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                          />
+                          <Button variant="outline" asChild>
+                            <span className="cursor-pointer">
+                              <Upload className="h-4 w-4 mr-2" />
+                              Carregar arquivo
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder={`Formato: Data,Descrição,Valor Responsável\n\nExemplo:\n2026-01-22,IOF de compra internacional,0.16 eu\n2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae\n2026-01-05,Nortmotos - Parcela 3/4,72.98 eu`}
+                      className="min-h-[200px] font-mono text-sm"
+                      value={textoInput}
+                      onChange={(e) => setTextoInput(e.target.value)}
                     />
-                    <Button variant="outline" asChild>
-                      <span className="cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Carregar arquivo
-                      </span>
-                    </Button>
-                  </label>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Button onClick={handleProcessar} disabled={!textoInput.trim() || status === "checking"}>
+                        {status === "checking" ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Verificando...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Processar dados
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" onClick={handleLimpar}>
+                        Limpar
+                      </Button>
+                      <div className="flex-1" />
+                      <label htmlFor="file-upload">
+                        <input
+                          id="file-upload"
+                          type="file"
+                          accept=".csv,.txt"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                        />
+                        <Button variant="outline" asChild>
+                          <span className="cursor-pointer">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Carregar arquivo
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
-            {/* Instruções */}
-            {status === "idle" && (
+            {/* Instruções (apenas modo texto manual) */}
+            {status === "idle" && modoImportacao === "texto" && (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>Formato esperado</AlertTitle>
