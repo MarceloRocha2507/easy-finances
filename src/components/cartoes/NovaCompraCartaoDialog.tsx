@@ -860,6 +860,27 @@ export function NovaCompraCartaoDialog({
                   />
                 </label>
 
+                {isNubank() && (
+                  <div 
+                    className="p-3 bg-purple-50 rounded-lg border border-purple-100 flex flex-col gap-2"
+                    style={{ background: "rgba(130, 10, 209, 0.05)", border: "1px solid rgba(130, 10, 209, 0.1)" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-bold text-[#820AD1] uppercase tracking-wider">Testar Lista Nubank</p>
+                      <Sparkles className="w-3 h-3 text-[#820AD1]" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAnaliseTexto("25 MAI\nSupermercado\nAlimentação\nR$ 150,00\n\n26 MAI\nUber\nTransporte\nR$ 25,40\n\n27 MAI\nAmazon\nCompras\nParcela 2 de 5\nR$ 89,90")}
+                      disabled={analisandoImagem}
+                      className="w-full py-2 px-3 bg-white border border-[#820AD1]/20 rounded-md text-xs font-medium text-[#820AD1] hover:bg-[#820AD1]/5 transition-colors flex items-center justify-center gap-2"
+                    >
+                      Enviar Lista de Teste
+                    </button>
+                    <p className="text-[10px] text-muted-foreground">Simula o envio de um extrato Nubank com 3 compras (uma delas parcelada).</p>
+                  </div>
+                )}
+
                 {imagensPendentes.length > 0 && (
                   <>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
