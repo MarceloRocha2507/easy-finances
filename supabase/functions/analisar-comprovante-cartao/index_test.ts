@@ -281,7 +281,7 @@ Deno.test("Nubank: 'Pix no Crédito' deve ser reclassificado como compra em déb
       assertEquals(compra.tipo, "compra");
       assertEquals(compra.sinal, "debito");
       assert(compra.valor > 0);
-      assert(String(compra.estabelecimento).toLowerCase().includes("pix no crédito".normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace("credito", "crédito").replace("crédito", "credito")) || true);
+      assert(String(compra.estabelecimento).toLowerCase().includes("pix no crédito".toLowerCase()));
     }
   } finally {
     restoreFetch();
