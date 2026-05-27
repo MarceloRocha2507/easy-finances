@@ -733,6 +733,28 @@ Regras obrigatórias:
       }
     }
 
+    // ============== PÓS-PROCESSAMENTO DE TIPO DE CRÉDITOS NUBANK ==============
+    // O AI às vezes retorna tipo="estorno" para "Crédito de parcelamento de compra", mas
+    // o correto é tipo="estorno_parcelamento". Com tipo errado, o frontend marca o item como
+    // creditoParcelamentoGenerico=true e o EXCLUI do import por padrão — causando total
+    // da fatura maior que o Nubank (crédito que deveria reduzir o total fica de fora).
+    if (isNubank) {
+      const normCred = (s: string) =>
+        s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      for (const c of compras as any[]) {
+        if (c.sinal !== "credito") continue;
+        const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(" "));
+        // "Crédito de parcelamento de compra" deve SEMPRE ser estorno_parcelamento
+        if (
+          (texto.includes("credito de parcelamento") ||
+            (texto.includes("credito") && texto.includes("parcelamento") && texto.includes("compra"))) &&
+          c.tipo !== "estorno_parcelamento"
+        ) {
+          c.tipo = "estorno_parcelamento";
+        }
+      }
+    }
+
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {
       // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,

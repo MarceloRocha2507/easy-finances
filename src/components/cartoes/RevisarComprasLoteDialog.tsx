@@ -142,19 +142,17 @@ export function RevisarComprasLoteDialog({
   useEffect(() => {
     async function verificarDuplicatas() {
       if (!open || compras.length === 0) return;
-      
+
       setBuscandoDuplicadas(true);
       try {
-        const hoje = new Date().toISOString().split("T")[0];
-        
-        // Buscar compras recentes deste cartão (últimos 3 dias para evitar redundância excessiva)
+        // Buscar compras deste cartão dos últimos 90 dias (cobre faturas parceladas de meses anteriores)
         const dataLimite = new Date();
-        dataLimite.setDate(dataLimite.getDate() - 3);
+        dataLimite.setDate(dataLimite.getDate() - 90);
         const dataLimiteStr = dataLimite.toISOString().split("T")[0];
 
         const { data: existentes, error } = await supabase
           .from("compras_cartao")
-          .select("valor_total, descricao, data_compra")
+          .select("valor_total, parcelas, descricao, data_compra")
           .eq("cartao_id", cartao.id)
           .gte("data_compra", dataLimiteStr);
 
@@ -162,25 +160,31 @@ export function RevisarComprasLoteDialog({
 
         if (existentes && existentes.length > 0) {
           setLinhas(prev => prev.map(l => {
-            const valorNum = parseFloat(l.valor.replace(",", "."));
-            let valorBusca = valorNum;
-            if (l.sinal === "credito") valorBusca = -valorNum;
+            const valorNum = parseFloat(l.valor.replace(",", ".")) || 0;
+            const numParcelas = Math.min(Math.max(parseInt(l.parcelas) || 1, 1), 24);
 
-            // Critério de duplicidade: mesmo valor e descrição parecida OU mesmo valor e mesma data
+            // Calcular o valorTotal como será salvo no banco:
+            // valorEhParcela=true → valor é da parcela → total = valor × parcelas
+            // valorEhParcela=false → valor já é o total
+            const valorTotalCalculado = l.valorEhParcela ? valorNum * numParcelas : valorNum;
+            const valorBusca = l.sinal === "credito" ? -valorTotalCalculado : valorTotalCalculado;
+
+            // Critério de duplicidade: mesmo valor_total E descrição parecida OU mesma data de compra
             const ehDuplicada = existentes.some(ex => {
-              const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.01;
-              const mesmaDescricao = ex.descricao?.toLowerCase().includes(l.descricao.toLowerCase()) || 
-                                   l.descricao.toLowerCase().includes(ex.descricao?.toLowerCase() || "");
+              const mesmoValor = Math.abs(Number(ex.valor_total) - valorBusca) < 0.02;
+              const mesmaDescricao =
+                (ex.descricao?.toLowerCase() || "").includes(l.descricao.toLowerCase().slice(0, 10)) ||
+                l.descricao.toLowerCase().includes((ex.descricao?.toLowerCase() || "").slice(0, 10));
               const mesmaData = ex.data_compra === l.data;
-              
+
               return mesmoValor && (mesmaDescricao || mesmaData);
             });
 
-            return { 
-              ...l, 
+            return {
+              ...l,
               possivelDuplicada: ehDuplicada,
               // Desmarcar por padrão se for duplicada
-              incluir: ehDuplicada ? false : l.incluir 
+              incluir: ehDuplicada ? false : l.incluir
             };
           }));
         }
