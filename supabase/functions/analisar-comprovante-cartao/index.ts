@@ -700,22 +700,12 @@ Regras obrigatórias:
 
     // ============== PÓS-PROCESSAMENTO DETERMINÍSTICO NUBANK ==============
     // O AI nem sempre marca valor_eh_parcela=true para itens com notação "- X/Y" ou "Parcela X/Y".
-    // Quando isso falha, valorEsteMes divide o valor por parcelas (ex: 8,80 ÷ 8 = R$ 1,10)
-    // ao invés de retornar R$ 8,80. Aqui garantimos a extração correta independente do AI.
-    //
-    // ATENÇÃO: a IA coloca o valor logo após o nome na linha_original, ex:
-    //   "Mp *Sandaliasdalu - Parcela 3/5\nR$ 279,00"
-    // Por isso NÃO usamos $ (fim de string) no regex da linha_original.
-    // Estratégia dual:
-    //   1) Checar "estabelecimento" com $ (AI às vezes esquece de remover o sufixo)
-    //   2) Checar "linha_original" SEM $ (captura o padrão em qualquer posição)
     if (isNubank) {
       const parcelaRegexEnd = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
       const parcelaRegexInline = /[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})/i;
       for (const c of compras as any[]) {
         const estab = typeof c.estabelecimento === "string" ? c.estabelecimento : "";
         const linha = typeof c.linha_original === "string" ? c.linha_original : "";
-        // Preferir match no estabelecimento (mais preciso); cair na linha_original se não encontrar
         const m = estab.match(parcelaRegexEnd) ?? linha.match(parcelaRegexInline);
         if (m) {
           const parcelaAtualDetect = parseInt(m[1], 10);
@@ -724,7 +714,6 @@ Regras obrigatórias:
             c.parcelas = totalParcelasDetect;
             c.parcela_atual = parcelaAtualDetect;
             c.valor_eh_parcela = true;
-            // Remove o sufixo "- X/Y" ou "- Parcela X/Y" do nome do estabelecimento
             if (typeof c.estabelecimento === "string") {
               c.estabelecimento = c.estabelecimento.replace(parcelaRegexEnd, "").trim();
             }
@@ -740,7 +729,10 @@ Regras obrigatórias:
     // da fatura maior que o Nubank (crédito que deveria reduzir o total fica de fora).
     if (isNubank) {
       const normCred = (s: string) =>
-        s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        s
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
       for (const c of compras as any[]) {
         if (c.sinal !== "credito") continue;
         const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(" "));
@@ -757,9 +749,6 @@ Regras obrigatórias:
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {
-      // Regra 3: se existe trio (raiz + estorno_parcelamento + Fin parc01/N) na mesma fatura,
-      // forçar ignorar=true em raiz e crédito. Se raiz está riscada SEM crédito de mesmo valor,
-      // marcar riscada_sem_credito=true (regra 4).
       function normalizeName(s: string | null | undefined): string {
         return (s || "")
           .normalize("NFD")
@@ -788,7 +777,6 @@ Regras obrigatórias:
         const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
         const nomeFin = normalizeName(fin.estabelecimento);
 
-        // Tenta achar crédito de parcelamento com valor ≈ totalCompra
         const credito = compras.find(
           (c: any) =>
             c !== fin &&
@@ -798,7 +786,6 @@ Regras obrigatórias:
             Math.abs((c.valor || 0) - totalCompra) < 0.02,
         );
 
-        // Tenta achar raiz: mesma similaridade de nome E (valor ≈ totalCompra OU está riscada)
         const raiz = compras.find(
           (c: any) =>
             c !== fin &&
@@ -818,7 +805,6 @@ Regras obrigatórias:
         }
       }
 
-      // Regra 4: marcar compras riscadas que NÃO têm crédito de mesmo valor
       for (const c of compras) {
         if (!c.riscada || c.ignorar) continue;
         const temCredito = compras.some(
@@ -826,7 +812,7 @@ Regras obrigatórias:
         );
         (c as any).riscada_sem_credito = !temCredito;
       }
-    } // fim if (isPicpay)
+    }
 
     // Retrocompat: também devolve os campos da primeira compra no nível raiz
     const first = compras[0];
