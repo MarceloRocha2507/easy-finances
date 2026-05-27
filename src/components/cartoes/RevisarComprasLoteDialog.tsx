@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 import { Cartao } from "@/services/cartoes";
 import { criarCompraCartao } from "@/services/compras-cartao";
 import { calcularMesFaturaCartaoStr } from "@/lib/dateUtils";
-import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle, Download } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles, Trash2, X, AlertTriangle, Download, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FaturaPicpayBreakdown } from "./FaturaPicpayBreakdown";
+import { useResponsaveis } from "@/services/responsaveis";
 
 export interface CompraExtraida {
   valor: number | null;
@@ -48,6 +49,7 @@ type LinhaCompra = {
   tipo: string;
   sinal: "debito" | "credito";
   valorEhParcela: boolean;
+  responsavelId: string;
   possivelDuplicada?: boolean;
   creditoParcelamentoGenerico?: boolean;
   estornoParcelamento?: boolean;
@@ -90,9 +92,11 @@ export function RevisarComprasLoteDialog({
 }: Props) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { data: responsaveis = [] } = useResponsaveis();
   const [salvando, setSalvando] = useState(false);
   const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
   const [buscandoDuplicadas, setBuscandoDuplicadas] = useState(true);
+  const [responsavelLote, setResponsavelLote] = useState("");
 
   const [linhas, setLinhas] = useState<LinhaCompra[]>(() => {
     const hoje = new Date().toISOString().split("T")[0];
@@ -125,6 +129,7 @@ export function RevisarComprasLoteDialog({
         tipo,
         sinal,
         valorEhParcela: c.valor_eh_parcela === true,
+        responsavelId,
         creditoParcelamentoGenerico,
         estornoParcelamento,
         compraSubstituida,
@@ -287,7 +292,7 @@ export function RevisarComprasLoteDialog({
             tipoLancamento: numParcelas > 1 ? "parcelada" : "unica",
             dataCompra,
             categoriaId: categoriaId && categoriaId !== "none" ? categoriaId : undefined,
-            responsavelId,
+            responsavelId: l.responsavelId || responsavelId,
             nomeFatura: l.descricao.trim().toUpperCase(),
           });
           sucessos++;
@@ -593,6 +598,22 @@ export function RevisarComprasLoteDialog({
                 onChange={(e) => atualizar(i, { descricao: e.target.value })}
                 style={{ ...inputStyle, marginBottom: 6, fontWeight: 500 }}
               />
+              {responsaveis.length > 0 && (
+                <div className="flex items-center gap-1.5 mb-2">
+                  <User style={{ width: 12, height: 12, color: "#9CA3AF", flexShrink: 0 }} />
+                  <select
+                    value={l.responsavelId}
+                    onChange={(e) => atualizar(i, { responsavelId: e.target.value })}
+                    style={{ ...inputStyle, fontSize: 12, padding: "4px 6px", color: "#374151" }}
+                  >
+                    {responsaveis.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.apelido || r.nome}{r.is_titular ? " (eu)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>Valor (R$)</label>
@@ -698,6 +719,48 @@ export function RevisarComprasLoteDialog({
                 (saldo esperado no Nubank: R$ {Math.max(0, totalSelecionado - totalPagamentosExcluidos).toFixed(2).replace(".", ",")})
               </span>
             </p>
+          )}
+          {responsaveis.length > 1 && (
+            <div className="flex items-center gap-2 mb-3 p-2.5 rounded-lg" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <User style={{ width: 13, height: 13, color: "#6B7280", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: "#6B7280", whiteSpace: "nowrap" }}>Aplicar a todos:</span>
+              <select
+                value={responsavelLote}
+                onChange={(e) => setResponsavelLote(e.target.value)}
+                style={{ ...inputStyle, fontSize: 12, padding: "4px 6px", flex: 1 }}
+              >
+                <option value="">— selecione —</option>
+                {responsaveis.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.apelido || r.nome}{r.is_titular ? " (eu)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!responsavelLote}
+                onClick={() => {
+                  if (!responsavelLote) return;
+                  setLinhas((prev) => prev.map((l) => ({ ...l, responsavelId: responsavelLote })));
+                  setResponsavelLote("");
+                }}
+                style={{
+                  height: 30,
+                  paddingInline: 10,
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#fff",
+                  background: responsavelLote ? "#111827" : "#D1D5DB",
+                  border: "none",
+                  cursor: responsavelLote ? "pointer" : "not-allowed",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                Aplicar
+              </button>
+            </div>
           )}
           <div className="flex gap-2">
             <button
