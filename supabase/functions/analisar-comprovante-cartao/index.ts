@@ -728,34 +728,30 @@ Regras obrigatórias:
     // creditoParcelamentoGenerico=true e o EXCLUI do import por padrão — causando total
     // da fatura maior que o Nubank (crédito que deveria reduzir o total fica de fora).
     if (isNubank) {
-      const normCred = (s: string) =>
-        s
-          .normalize('NFD')
-          .replace(/[̀-ͯ]/g, "")
-          .toLowerCase();
+      const normCred = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
       for (const c of compras as any[]) {
-        const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(' '));
+        const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(" "));
 
         // 'Crédito de parcelamento de compra' deve SEMPRE ser estorno_parcelamento + credito
         if (
-          c.sinal === 'credito' &&
-          (texto.includes('credito de parcelamento') ||
-            (texto.includes('credito') && texto.includes('parcelamento') && texto.includes('compra'))) &&
-          c.tipo !== 'estorno_parcelamento'
+          c.sinal === "credito" &&
+          (texto.includes("credito de parcelamento") ||
+            (texto.includes("credito") && texto.includes("parcelamento") && texto.includes("compra"))) &&
+          c.tipo !== "estorno_parcelamento"
         ) {
-          c.tipo = 'estorno_parcelamento';
+          c.tipo = "estorno_parcelamento";
         }
 
         // 'Pagamento recebido' / 'Pagamento de fatura' deve SEMPRE ser pagamento_fatura + credito.
         // O AI às vezes retorna tipo errado (compra/outro) ou sinal errado (debito), fazendo o
         // item ser importado como débito positivo e inflando o total da fatura.
         if (
-          texto.includes('pagamento recebido') ||
-          texto.includes('pagamento de fatura') ||
-          texto.includes('pagamento da fatura')
+          texto.includes("pagamento recebido") ||
+          texto.includes("pagamento de fatura") ||
+          texto.includes("pagamento da fatura")
         ) {
-          c.tipo = 'pagamento_fatura';
-          c.sinal = 'credito';
+          c.tipo = "pagamento_fatura";
+          c.sinal = "credito";
         }
 
         // Corrigir ano claramente errado nas datas (ex.: AI leu "2023" numa fatura de 2026).
@@ -768,7 +764,6 @@ Regras obrigatórias:
         }
       }
     }
-
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {
