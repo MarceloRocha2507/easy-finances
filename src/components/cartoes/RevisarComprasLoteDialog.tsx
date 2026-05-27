@@ -265,6 +265,26 @@ export function RevisarComprasLoteDialog({
       }
     }
 
+    // Determinar o mês de fatura dominante a partir dos débitos selecionados.
+    // Créditos com datas antes do dia de fechamento seriam mapeados para o mês
+    // anterior, causando divergência com a fatura exibida no banco. Ao forçar
+    // o mesmo mês dos débitos, garantimos que tudo fique no mesmo ciclo de fatura.
+    const contagemMes: Record<string, number> = {};
+    for (const l of selecionadas) {
+      if (l.sinal !== "credito" && l.data) {
+        const d = new Date(l.data + "T12:00:00");
+        const m = calcularMesFaturaCartaoStr(d, cartao.dia_fechamento);
+        contagemMes[m] = (contagemMes[m] || 0) + 1;
+      }
+    }
+    let mesDominante: string | null = null;
+    {
+      let maxCount = 0;
+      for (const [m, count] of Object.entries(contagemMes)) {
+        if (count > maxCount) { maxCount = count; mesDominante = m; }
+      }
+    }
+
     setSalvando(true);
     const total = selecionadas.length;
     let sucessos = 0;
@@ -283,7 +303,12 @@ export function RevisarComprasLoteDialog({
           let valor = l.valorEhParcela ? valorInformado * numParcelas : valorInformado;
           if (l.sinal === "credito") valor = -valor;
           const dataCompra = new Date(l.data + "T12:00:00");
-          const mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
+          let mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
+          // Créditos com data antes do fechamento podem cair no mês anterior;
+          // forçar o mês dominante dos débitos para manter tudo no mesmo ciclo.
+          if (l.sinal === "credito" && mesDominante && mesFaturaStr !== mesDominante) {
+            mesFaturaStr = mesDominante;
+          }
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
 
           await criarCompraCartao({
