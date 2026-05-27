@@ -730,22 +730,45 @@ Regras obrigatórias:
     if (isNubank) {
       const normCred = (s: string) =>
         s
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, "")
           .toLowerCase();
       for (const c of compras as any[]) {
-        if (c.sinal !== "credito") continue;
-        const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(" "));
-        // "Crédito de parcelamento de compra" deve SEMPRE ser estorno_parcelamento
+        const texto = normCred([c.estabelecimento, c.linha_original].filter(Boolean).join(' '));
+
+        // 'Crédito de parcelamento de compra' deve SEMPRE ser estorno_parcelamento + credito
         if (
-          (texto.includes("credito de parcelamento") ||
-            (texto.includes("credito") && texto.includes("parcelamento") && texto.includes("compra"))) &&
-          c.tipo !== "estorno_parcelamento"
+          c.sinal === 'credito' &&
+          (texto.includes('credito de parcelamento') ||
+            (texto.includes('credito') && texto.includes('parcelamento') && texto.includes('compra'))) &&
+          c.tipo !== 'estorno_parcelamento'
         ) {
-          c.tipo = "estorno_parcelamento";
+          c.tipo = 'estorno_parcelamento';
+        }
+
+        // 'Pagamento recebido' / 'Pagamento de fatura' deve SEMPRE ser pagamento_fatura + credito.
+        // O AI às vezes retorna tipo errado (compra/outro) ou sinal errado (debito), fazendo o
+        // item ser importado como débito positivo e inflando o total da fatura.
+        if (
+          texto.includes('pagamento recebido') ||
+          texto.includes('pagamento de fatura') ||
+          texto.includes('pagamento da fatura')
+        ) {
+          c.tipo = 'pagamento_fatura';
+          c.sinal = 'credito';
+        }
+
+        // Corrigir ano claramente errado nas datas (ex.: AI leu "2023" numa fatura de 2026).
+        // Datas com ano < (anoAtual - 1) num extrato de fatura são quase certamente erros de OCR.
+        if (c.data && typeof c.data === "string") {
+          const mData = c.data.match(/^(\d{4})-(\d{2}-\d{2})$/);
+          if (mData && parseInt(mData[1]) < anoAtual - 1) {
+            c.data = `${anoAtual}-${mData[2]}`;
+          }
         }
       }
     }
+
 
     // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
     if (isPicpay) {
