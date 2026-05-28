@@ -2,34 +2,49 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Defensive cleanup: desregistra qualquer service worker residual de versões
-// antigas (PWA) e limpa todos os caches do navegador. Sem isso, dispositivos
-// que tinham SW antigo continuam servindo bundle antigo (design "antigo" piscando).
-// Quando SWs são encontrados, força um reload após o cleanup para garantir que
-// os assets frescos sejam carregados — evita o flash de design antigo/novo.
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .getRegistrations()
-    .then((regs) => {
-      if (regs.length === 0) {
-        // Sem SWs registrados — apenas limpa caches residuais se houver
-        if (typeof caches !== "undefined") {
-          caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).catch(() => {});
-        }
-        return;
+// Cleanup assíncrono de SW/caches ANTES de renderizar o app, para evitar que
+// assets antigos (de PWA removido) causem flash do design antigo. O guard de
+// sessionStorage evita loop de reload caso o browser disk-cache também tenha
+// assets residuais após a limpeza.
+async function initApp() {
+  // Remove ?_cb=... deixado pelo reload de cleanup anterior
+  if (window.location.search.includes("_cb=")) {
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("_cb");
+    history.replaceState(null, "", clean.pathname + clean.search + clean.hash);
+  }
+
+  // Guard: se já fizemos cleanup nesta sessão de tab, renderiza direto
+  if (!sessionStorage.getItem("sw-cleanup-done")) {
+    let needsReload = false;
+
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations().catch(() => [] as ServiceWorkerRegistration[]);
+      if (regs.length > 0) {
+        await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+        needsReload = true;
       }
-      // Havia SWs registrados: desregistra todos, limpa caches e força reload
-      // para garantir que o novo bundle seja carregado do servidor.
-      Promise.all(regs.map((r) => r.unregister().catch(() => {})))
-        .then(() => {
-          if (typeof caches !== "undefined") {
-            return caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n))));
-          }
-        })
-        .then(() => window.location.reload())
-        .catch(() => {});
-    })
-    .catch(() => {});
+    }
+
+    if (typeof caches !== "undefined") {
+      const names = await caches.keys().catch(() => [] as string[]);
+      if (names.length > 0) {
+        await Promise.all(names.map((n) => caches.delete(n)));
+        needsReload = true;
+      }
+    }
+
+    if (needsReload) {
+      sessionStorage.setItem("sw-cleanup-done", "1");
+      const url = new URL(window.location.href);
+      url.searchParams.set("_cb", Date.now().toString());
+      // replace() para não poluir o histórico de navegação
+      window.location.replace(url.toString());
+      return; // não renderiza — o reload carregará assets frescos
+    }
+  }
+
+  createRoot(document.getElementById("root")!).render(<App />);
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+initApp();
