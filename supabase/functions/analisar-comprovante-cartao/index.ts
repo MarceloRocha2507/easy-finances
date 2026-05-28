@@ -826,9 +826,10 @@ Regras obrigatórias:
         }
       }
 
-      // FALLBACK: riscadas que o trio-detection não conseguiu parear (nomes divergentes entre
-      // a compra original e o "Fin" gerado pelo PicPay, ex: "Espetinhosbom" vs "Espetinhosparc").
-      // Se existe um "Credito Parcelamento Compra" com o mesmo valor, marca ambos como ignorar=true.
+      // FALLBACK AMPLIADO: itera sobre cada "Credito Parcelamento Compra" e busca a compra
+      // original pelo valor — independentemente de riscada=true/false, pois a IA às vezes
+      // não detecta visualmente o tachado nas imagens do PicPay.
+      // Exclui itens Fin (nova parcela), IOF e pagamento_fatura da busca de compra original.
       const creditosParcelamentoLivres = (compras as any[]).filter(
         (c: any) =>
           !c.ignorar &&
@@ -836,16 +837,21 @@ Regras obrigatórias:
           (c.tipo === "estorno_parcelamento" ||
             /credito\s*parcelamento\s*compra/i.test(c.linha_original || c.estabelecimento || "")),
       );
-      for (const riscada of compras as any[]) {
-        if (!riscada.riscada || riscada.ignorar) continue;
-        const idx = creditosParcelamentoLivres.findIndex(
-          (o: any) => Math.abs((o.valor || 0) - (riscada.valor || 0)) < 0.02,
+      for (const credito of creditosParcelamentoLivres) {
+        if (credito.ignorar) continue;
+        const compraOriginal = (compras as any[]).find(
+          (c: any) =>
+            !c.ignorar &&
+            c.sinal !== "credito" &&
+            c.tipo !== "iof" &&
+            c.tipo !== "pagamento_fatura" &&
+            !/\bfin\b/i.test(c.linha_original || c.estabelecimento || "") &&
+            Math.abs((c.valor || 0) - (credito.valor || 0)) < 0.02,
         );
-        if (idx !== -1) {
-          riscada.ignorar = true;
-          riscada.tipo = "compra_substituida";
-          creditosParcelamentoLivres[idx].ignorar = true;
-          creditosParcelamentoLivres.splice(idx, 1);
+        if (compraOriginal) {
+          compraOriginal.ignorar = true;
+          compraOriginal.tipo = "compra_substituida";
+          credito.ignorar = true;
         }
       }
 

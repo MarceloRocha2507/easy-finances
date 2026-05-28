@@ -45,6 +45,35 @@ export function calcularFaturaPicpay(
   compras: CompraExtraida[],
   saldoAnterior: number,
 ): FaturaPicpayBreakdown {
+  // PRÉ-PROCESSAMENTO: parear créditos "Credito Parcelamento Compra" com sua compra
+  // original pelo valor, para os casos em que a IA não detectou o tachado visualmente
+  // e o servidor não pôde marcar ignorar=true.
+  const efetivamenteIgnorar = new Set<CompraExtraida>();
+  const creditosSemIgnorar = compras.filter(
+    (c) =>
+      !c.ignorar &&
+      (c.sinal || "debito") === "credito" &&
+      (c.tipo === "estorno_parcelamento" ||
+        /credito\s*parcelamento\s*compra/i.test(c.linha_original || c.estabelecimento || "")),
+  );
+  for (const credito of creditosSemIgnorar) {
+    if (efetivamenteIgnorar.has(credito)) continue;
+    const compraOriginal = compras.find(
+      (c) =>
+        !c.ignorar &&
+        !efetivamenteIgnorar.has(c) &&
+        (c.sinal || "debito") !== "credito" &&
+        c.tipo !== "iof" &&
+        c.tipo !== "pagamento_fatura" &&
+        !isFin(c) &&
+        Math.abs(valorLinha(c) - valorLinha(credito)) < 0.02,
+    );
+    if (compraOriginal) {
+      efetivamenteIgnorar.add(compraOriginal);
+      efetivamenteIgnorar.add(credito);
+    }
+  }
+
   const regra1: BreakdownItem[] = [];
   const regra2: BreakdownItem[] = [];
   const regra3: BreakdownItem[] = [];
@@ -58,8 +87,8 @@ export function calcularFaturaPicpay(
     const tipo = c.tipo || "compra";
     const sinal = c.sinal || "debito";
 
-    // Itens ignorados (regras 3a/3b): mapeia para a lista de ignorados
-    if (c.ignorar === true) {
+    // Itens ignorados (regras 3a/3b): marcados pelo servidor ou pelo pré-processamento acima
+    if (c.ignorar === true || efetivamenteIgnorar.has(c)) {
       if (tipo === "estorno_parcelamento" || sinal === "credito") {
         creditosParcelamento.push(c);
       } else {
