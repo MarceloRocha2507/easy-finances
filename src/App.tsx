@@ -9,6 +9,22 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
+// Aplica o tema salvo imediatamente (antes do primeiro render) para evitar
+// flash de tema incorreto caso o script inline do index.html não esteja presente
+// (ex: preview do Lovable que usa seu próprio index.html).
+if (typeof window !== "undefined") {
+  try {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  } catch (_) {
+    // localStorage indisponível (modo privado sem permissão, etc.)
+  }
+}
+
 import { lazy, Suspense } from "react";
 
 const Auth = lazy(() => import("./pages/Auth"));
