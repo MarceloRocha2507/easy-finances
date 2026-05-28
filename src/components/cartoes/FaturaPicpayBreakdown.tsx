@@ -77,14 +77,16 @@ export function FaturaPicpayBreakdown({
   const [lancamentosStr, setLancamentosStr] = useState(() =>
     lancamentosResumoInicial != null ? lancamentosResumoInicial.toFixed(2).replace(".", ",") : "",
   );
+  const [pagamentoManualStr, setPagamentoManualStr] = useState("0,00");
   const [expandIgnorados, setExpandIgnorados] = useState(false);
 
   const saldoAnterior = parseValor(saldoAnteriorStr);
+  const pagamentoManual = parseValor(pagamentoManualStr);
   const lancamentos = lancamentosStr.trim() ? parseValor(lancamentosStr) : null;
 
   const breakdown: Breakdown = useMemo(
-    () => calcularFaturaPicpay(compras, saldoAnterior),
-    [compras, saldoAnterior],
+    () => calcularFaturaPicpay(compras, saldoAnterior, pagamentoManual),
+    [compras, saldoAnterior, pagamentoManual],
   );
 
   const diff = lancamentos != null ? breakdown.total_calculado - lancamentos : null;
@@ -139,6 +141,24 @@ export function FaturaPicpayBreakdown({
           />
         </div>
       </div>
+
+      {breakdown.regra5_pagamentos.itens.length === 0 && (
+        <div>
+          <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>
+            Pagamento recebido nesta fatura
+            <span style={{ color: "#EF4444", marginLeft: 4 }}>
+              (IA não detectou — preencha manualmente se houver)
+            </span>
+          </label>
+          <input
+            inputMode="decimal"
+            value={pagamentoManualStr}
+            onChange={(e) => setPagamentoManualStr(e.target.value)}
+            style={inputStyle}
+            placeholder="0,00"
+          />
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <Linha

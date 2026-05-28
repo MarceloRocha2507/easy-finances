@@ -44,6 +44,7 @@ function temSufixoParcela(c: CompraExtraida): boolean {
 export function calcularFaturaPicpay(
   compras: CompraExtraida[],
   saldoAnterior: number,
+  pagamentoManual = 0,
 ): FaturaPicpayBreakdown {
   // PRÉ-PROCESSAMENTO: parear créditos "Credito Parcelamento Compra" com sua compra
   // original pelo valor, para os casos em que a IA não detectou o tachado visualmente
@@ -161,14 +162,17 @@ export function calcularFaturaPicpay(
   const t3 = sum(regra3);
   const t4 = sum(regra4);
 
+  // Pagamento manual complementa quando a IA não extraiu os pagamentos_fatura.
+  const totalPagamentosEfetivo = totalPagamentos > 0 ? totalPagamentos : pagamentoManual;
+
   return {
     regra1_avista: { itens: regra1, total: t1 },
     regra2_parcelas: { itens: regra2, total: t2 },
     regra3_fin_iof: { itens: regra3, total: t3 },
     regra4_riscadas_sem_credito: { itens: regra4, total: t4 },
-    regra5_pagamentos: { itens: pagamentos, total: totalPagamentos },
+    regra5_pagamentos: { itens: pagamentos, total: totalPagamentosEfetivo },
     ignorados: { riscadasComCredito, creditosParcelamento },
-    total_calculado: t1 + t2 + t3 + t4 - totalPagamentos,
+    total_calculado: t1 + t2 + t3 + t4 - totalPagamentosEfetivo,
   };
 }
 
