@@ -792,18 +792,9 @@ Regras obrigatórias:
       );
 
       for (const fin of finPrimeiras) {
-        const totalCompra = (fin.valor || 0) * (fin.parcelas || 1);
         const nomeFin = normalizeName(fin.estabelecimento);
 
-        const credito = compras.find(
-          (c: any) =>
-            c !== fin &&
-            c.sinal === "credito" &&
-            (c.tipo === "estorno_parcelamento" ||
-              /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
-            Math.abs((c.valor || 0) - totalCompra) < 0.02,
-        );
-
+        // Busca a raiz por NOME (não por valor: o total financiado difere do original por causa do IOF).
         const raiz = compras.find(
           (c: any) =>
             c !== fin &&
@@ -811,15 +802,50 @@ Regras obrigatórias:
             c.tipo !== "estorno_parcelamento" &&
             c.sinal !== "credito" &&
             !c.valor_eh_parcela &&
-            nomesParecidos(normalizeName(c.estabelecimento), nomeFin) &&
-            Math.abs((c.valor || 0) - totalCompra) < 0.02,
+            nomesParecidos(normalizeName(c.estabelecimento), nomeFin),
         );
 
-        if (raiz && credito) {
+        if (!raiz) continue;
+
+        // Busca o crédito pelo valor DA RAIZ (valor original pré-financiamento), não pelo totalCompra.
+        const valorRaiz = raiz.valor || 0;
+        const credito = compras.find(
+          (c: any) =>
+            c !== fin &&
+            c.sinal === "credito" &&
+            (c.tipo === "estorno_parcelamento" ||
+              /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
+            Math.abs((c.valor || 0) - valorRaiz) < 0.02,
+        );
+
+        if (credito) {
           raiz.ignorar = true;
           raiz.tipo = "compra_substituida";
           credito.ignorar = true;
           credito.tipo = "estorno_parcelamento";
+        }
+      }
+
+      // FALLBACK: riscadas que o trio-detection não conseguiu parear (nomes divergentes entre
+      // a compra original e o "Fin" gerado pelo PicPay, ex: "Espetinhosbom" vs "Espetinhosparc").
+      // Se existe um "Credito Parcelamento Compra" com o mesmo valor, marca ambos como ignorar=true.
+      const creditosParcelamentoLivres = (compras as any[]).filter(
+        (c: any) =>
+          !c.ignorar &&
+          c.sinal === "credito" &&
+          (c.tipo === "estorno_parcelamento" ||
+            /credito\s*parcelamento\s*compra/i.test(c.linha_original || c.estabelecimento || "")),
+      );
+      for (const riscada of compras as any[]) {
+        if (!riscada.riscada || riscada.ignorar) continue;
+        const idx = creditosParcelamentoLivres.findIndex(
+          (o: any) => Math.abs((o.valor || 0) - (riscada.valor || 0)) < 0.02,
+        );
+        if (idx !== -1) {
+          riscada.ignorar = true;
+          riscada.tipo = "compra_substituida";
+          creditosParcelamentoLivres[idx].ignorar = true;
+          creditosParcelamentoLivres.splice(idx, 1);
         }
       }
 

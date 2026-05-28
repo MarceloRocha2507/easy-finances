@@ -74,6 +74,13 @@ export function calcularFaturaPicpay(
       continue;
     }
 
+    // Guard: créditos que escaparam do ignorar=true (trio-detection falhou) não devem
+    // inflacionar R1/R2/R3. Crédito de parcelamento que não foi pareado → descarta silenciosamente.
+    if (sinal === "credito") {
+      creditosParcelamento.push(c);
+      continue;
+    }
+
     // R4 — riscada SEM crédito correspondente
     if (c.riscada === true) {
       regra4.push({ compra: c, valor: v });
