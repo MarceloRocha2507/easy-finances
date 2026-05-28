@@ -265,13 +265,25 @@ export function RevisarComprasLoteDialog({
       }
     }
 
-    // Determinar o mês de fatura dominante a partir dos débitos selecionados.
-    // Créditos com datas antes do dia de fechamento seriam mapeados para o mês
-    // anterior, causando divergência com a fatura exibida no banco. Ao forçar
-    // o mesmo mês dos débitos, garantimos que tudo fique no mesmo ciclo de fatura.
+    // Determinar o mês de fatura dominante a partir dos itens selecionados.
+    //
+    // Problema: numa fatura de cartão (Inter, Nubank, etc.) aparecem parcelas cujas
+    // datas são a data da COMPRA ORIGINAL (meses atrás). Ao aplicar
+    // calcularMesFaturaCartaoStr nessas datas antigas, o sistema colocaria cada
+    // parcela em um mês diferente (a parcela 3 de um compra de março iria para março,
+    // a parcela 7 de outubro iria para outubro/novembro, etc.).
+    //
+    // Solução: calcular o mês mais frequente entre os ITENS DE PRIMEIRA PARCELA
+    // (parcela_atual = 1 ou à vista). Esses itens têm data do ciclo atual e
+    // produzem o mês correto da fatura. Depois forçamos esse mês dominante em:
+    //   a) todos os créditos (que podem cair no mês anterior pelo fechamento)
+    //   b) todos os débitos com parcela_atual > 1 (data é de um ciclo anterior)
     const contagemMes: Record<string, number> = {};
     for (const l of selecionadas) {
-      if (l.sinal !== "credito" && l.data) {
+      const parcelaAtualNum = parseInt(l.parcelaAtual) || 1;
+      // Usar apenas itens de primeira parcela/à vista para determinar o mês correto
+      const ehPrimeiraParcela = parcelaAtualNum === 1;
+      if (l.sinal !== "credito" && ehPrimeiraParcela && l.data) {
         const d = new Date(l.data + "T12:00:00");
         const m = calcularMesFaturaCartaoStr(d, cartao.dia_fechamento);
         contagemMes[m] = (contagemMes[m] || 0) + 1;
@@ -304,10 +316,16 @@ export function RevisarComprasLoteDialog({
           if (l.sinal === "credito") valor = -valor;
           const dataCompra = new Date(l.data + "T12:00:00");
           let mesFaturaStr = calcularMesFaturaCartaoStr(dataCompra, cartao.dia_fechamento);
-          // Créditos com data antes do fechamento podem cair no mês anterior;
-          // forçar o mês dominante dos débitos para manter tudo no mesmo ciclo.
-          if (l.sinal === "credito" && mesDominante && mesFaturaStr !== mesDominante) {
-            mesFaturaStr = mesDominante;
+          // Forçar mês dominante em dois casos:
+          // 1. Créditos — a data pode ser anterior ao fechamento → cairiam no mês errado
+          // 2. Débitos com parcela_atual > 1 — a data é da compra original (mês anterior)
+          //    e não do ciclo atual, então calcularMesFaturaCartaoStr retorna o mês errado
+          if (mesDominante && mesFaturaStr !== mesDominante) {
+            const parcelaAtualNum = parseInt(l.parcelaAtual) || 1;
+            const ehParcelaAnterior = l.valorEhParcela && parcelaAtualNum > 1;
+            if (l.sinal === "credito" || ehParcelaAnterior) {
+              mesFaturaStr = mesDominante;
+            }
           }
           const [ano, mes] = mesFaturaStr.split("-").map(Number);
 
