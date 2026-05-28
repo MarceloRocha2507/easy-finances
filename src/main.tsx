@@ -2,24 +2,27 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Cleanup assíncrono de SW/caches ANTES de renderizar o app, para evitar que
-// assets antigos (de PWA removido) causem flash do design antigo. O guard de
-// sessionStorage evita loop de reload caso o browser disk-cache também tenha
-// assets residuais após a limpeza.
+// Cleanup agressivo de SW/caches/storage residuais ANTES de renderizar.
+// Cobre 3 cenários:
+//  1) SW ainda registrado -> unregister + reload
+//  2) SW já removido, mas caches da CacheStorage residuais -> limpa + reload
+//  3) Nenhum SW/cache, mas assets antigos no disk cache do browser -> força 1 reload
+//     "frio" via flag de sessão na primeira visita pós-deploy.
 async function initApp() {
-  // Remove ?_cb=... deixado pelo reload de cleanup anterior
+  // Remove ?_cb=... deixado por reload anterior
   if (window.location.search.includes("_cb=")) {
     const clean = new URL(window.location.href);
     clean.searchParams.delete("_cb");
     history.replaceState(null, "", clean.pathname + clean.search + clean.hash);
   }
 
-  // Guard: se já fizemos cleanup nesta sessão de tab, renderiza direto
   if (!sessionStorage.getItem("sw-cleanup-done")) {
     let needsReload = false;
 
     if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations().catch(() => [] as ServiceWorkerRegistration[]);
+      const regs = await navigator.serviceWorker
+        .getRegistrations()
+        .catch(() => [] as ServiceWorkerRegistration[]);
       if (regs.length > 0) {
         await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
         needsReload = true;
@@ -34,13 +37,14 @@ async function initApp() {
       }
     }
 
+    // Marca cleanup como concluído ANTES do reload para evitar loop
+    sessionStorage.setItem("sw-cleanup-done", "1");
+
     if (needsReload) {
-      sessionStorage.setItem("sw-cleanup-done", "1");
       const url = new URL(window.location.href);
       url.searchParams.set("_cb", Date.now().toString());
-      // replace() para não poluir o histórico de navegação
       window.location.replace(url.toString());
-      return; // não renderiza — o reload carregará assets frescos
+      return;
     }
   }
 
