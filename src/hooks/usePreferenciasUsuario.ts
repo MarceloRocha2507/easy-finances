@@ -55,12 +55,16 @@ export function usePreferenciasUsuario() {
     enabled: !!user?.id,
   });
 
-  // Sincronizar tema do banco com next-themes
+  // Sincronizar tema do banco com next-themes.
+  // Só aplica quando há um registro REAL no banco (campo `id` presente).
+  // O fallback PREFERENCIAS_PADRAO não tem `id` e não deve sobrescrever
+  // a preferência já armazenada no localStorage — caso contrário o
+  // padrão 'system' substituiria 'dark' causando flash visual ao carregar.
   useEffect(() => {
-    if (preferencias?.tema) {
+    if (preferencias?.tema && (preferencias as PreferenciasUsuario).id) {
       setTheme(preferencias.tema);
     }
-  }, [preferencias?.tema, setTheme]);
+  }, [preferencias?.tema, (preferencias as PreferenciasUsuario | undefined)?.id, setTheme]);
 
   const salvarPreferencias = useMutation({
     mutationFn: async (novasPreferencias: Partial<PreferenciasUsuario>) => {
