@@ -94,7 +94,14 @@ Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fa
 Procure o bloco "Resumo" da fatura e preencha (se visíveis):
 - saldo_fatura_anterior: valor numérico do "Saldo da fatura anterior" (ex.: "R$ 0,00" → 0).
 - lancamentos_resumo: valor numérico do campo "Lançamentos" do Resumo.
-Se algum não estiver visível, omita o campo.`;
+Se algum não estiver visível, omita o campo.
+
+### ✅ CHECKLIST OBRIGATÓRIO ANTES DE FINALIZAR A RESPOSTA
+1. Releia a imagem de CIMA para BAIXO procurando QUALQUER texto em VERDE (Pagamento de Fatura, Credito Parcelamento Compra) e QUALQUER texto TACHADO/RISCADO.
+2. Itens verdes → devem estar no array com sinal="credito". Itens tachados → devem estar com riscada=true.
+3. CONTE: número de linhas verdes visíveis DEVE IGUALAR ao número de itens com sinal="credito" no array. Se não bater, adicione os que faltam ANTES de responder.
+4. "Credito Parcelamento Compra" com seta ← aparece várias vezes seguidas no mesmo dia — extraia TODAS, uma por uma.
+5. NUNCA omita "Pagamento de Fatura" mesmo que pareça repetido ou técnico.`;
 
     const nubankRules = `
 
@@ -279,7 +286,7 @@ Regras obrigatórias:
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: isNubank && imageBase64 ? "gpt-4o" : "gpt-4o-mini",
+        model: (isNubank || isPicpay) && imageBase64 ? "gpt-4o" : "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -583,6 +590,145 @@ Regras obrigatórias:
       }
     }
 
+    // ============== SEGUNDA PASSAGEM: AUDITORIA DE CRÉDITOS E RISCADOS PICPAY ==============
+    // Espelha o que já existe para Nubank: re-lê a imagem focando APENAS em itens verdes
+    // (Pagamento de Fatura, Credito Parcelamento Compra) e itens tachados, para compensar
+    // falhas de detecção do gpt-4o na primeira passagem.
+    if (isPicpay && imageBase64) {
+      const picpayAuditPrompt = `Você vai fazer uma SEGUNDA PASSAGEM focada APENAS em itens especiais da fatura PicPay.
+
+Objetivo: localizar e retornar:
+A) Todas as linhas em VERDE: "Pagamento de Fatura" e "Credito Parcelamento Compra".
+B) Todas as linhas com texto TACHADO/RISCADO (estabelecimento e valor com linha horizontal no meio).
+
+Regras obrigatórias:
+- Itens verdes → sinal="credito", valor positivo.
+  - "Pagamento de Fatura" → tipo="pagamento_fatura", ignorar=false.
+  - "Credito Parcelamento Compra" → tipo="estorno_parcelamento", ignorar=true.
+- Itens tachados → sinal="debito", riscada=true, tipo="compra_substituida", ignorar=true.
+- NÃO retorne compras normais (sem verde nem tachado).
+- Se existirem 3 linhas verdes "Credito Parcelamento Compra" visíveis, o array deve ter 3 itens desse tipo.
+- Se existir "Pagamento de Fatura" verde, SEMPRE inclua no array.`;
+
+      const picpayAuditResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: `${systemPrompt}\n\n${picpayAuditPrompt}` },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Faça uma segunda leitura e retorne SOMENTE os itens VERDES (Pagamento de Fatura, Credito Parcelamento Compra) e itens TACHADOS visíveis nesta imagem.",
+                },
+                { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+              ],
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "registrar_compras_comprovante",
+                description: "Registra uma ou mais compras extraídas da imagem",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    compras: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          valor: { type: "number" },
+                          estabelecimento: { type: "string" },
+                          tipo: { type: "string" },
+                          sinal: { type: "string" },
+                          data: { type: "string" },
+                          parcelas: { type: "integer" },
+                          parcela_atual: { type: "integer" },
+                          valor_eh_parcela: { type: "boolean" },
+                          linha_original: { type: "string" },
+                          valor_texto: { type: "string" },
+                          riscada: { type: "boolean" },
+                          ignorar: { type: "boolean" },
+                        },
+                        required: ["valor", "estabelecimento", "tipo", "sinal", "data", "parcelas", "parcela_atual", "valor_eh_parcela", "linha_original", "valor_texto"],
+                      },
+                    },
+                    confianca: { type: "string" },
+                  },
+                  required: ["compras", "confianca"],
+                },
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "registrar_compras_comprovante" } },
+        }),
+      });
+
+      if (picpayAuditResponse.ok) {
+        const picpayAuditJson = await picpayAuditResponse.json();
+        const picpayAuditToolCall = picpayAuditJson?.choices?.[0]?.message?.tool_calls?.[0];
+
+        if (picpayAuditToolCall?.function?.arguments) {
+          try {
+            const picpayAuditParsed = JSON.parse(picpayAuditToolCall.function.arguments);
+            const auditItems: any[] = Array.isArray(picpayAuditParsed?.compras)
+              ? picpayAuditParsed.compras
+              : [];
+
+            const normalizeText = (value: unknown) =>
+              String(value ?? "")
+                .normalize("NFD")
+                .replace(/[̀-ͯ]/g, "")
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const coerceV = (v: unknown): number | null => {
+              if (typeof v === "number" && isFinite(v)) return Math.abs(v);
+              if (typeof v !== "string") return null;
+              const s = v.trim().replace(/r\$\s*/i, "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+              const n = parseFloat(s);
+              return isFinite(n) ? Math.abs(n) : null;
+            };
+
+            const sameItem = (a: any, b: any) => {
+              const vA = coerceV(a?.valor_texto ?? a?.valor);
+              const vB = coerceV(b?.valor_texto ?? b?.valor);
+              return (
+                a?.sinal === b?.sinal &&
+                a?.tipo === b?.tipo &&
+                a?.data === b?.data &&
+                vA !== null && vB !== null &&
+                Math.abs(vA - vB) < 0.01 &&
+                (normalizeText(a?.estabelecimento || a?.linha_original).includes(
+                  normalizeText(b?.estabelecimento || b?.linha_original),
+                ) ||
+                  normalizeText(b?.estabelecimento || b?.linha_original).includes(
+                    normalizeText(a?.estabelecimento || a?.linha_original),
+                  ))
+              );
+            };
+
+            for (const item of auditItems) {
+              if (!rawCompras.some((existing: any) => sameItem(existing, item))) {
+                rawCompras.push(item);
+              }
+            }
+          } catch (auditError) {
+            console.error("Falha ao processar auditoria de créditos PicPay:", auditError);
+          }
+        }
+      }
+    }
+
     // Coerção defensiva: a IA às vezes retorna valor como string ("1.234,56", "R$ 49,90").
     // Convertemos sempre para number no formato JS (ponto decimal).
     function coerceValor(v: unknown): number | null {
@@ -756,6 +902,19 @@ Regras obrigatórias:
 
         // Corrigir ano claramente errado nas datas (ex.: AI leu "2023" numa fatura de 2026).
         // Datas com ano < (anoAtual - 1) num extrato de fatura são quase certamente erros de OCR.
+        if (c.data && typeof c.data === "string") {
+          const mData = c.data.match(/^(\d{4})-(\d{2}-\d{2})$/);
+          if (mData && parseInt(mData[1]) < anoAtual - 1) {
+            c.data = `${anoAtual}-${mData[2]}`;
+          }
+        }
+      }
+    }
+
+    // ============== CORREÇÃO DE DATAS PARA PICPAY ==============
+    // A IA às vezes lê o ano errado (ex.: "2023" em vez de 2026) nas imagens de parcelamentos.
+    if (isPicpay) {
+      for (const c of compras as any[]) {
         if (c.data && typeof c.data === "string") {
           const mData = c.data.match(/^(\d{4})-(\d{2}-\d{2})$/);
           if (mData && parseInt(mData[1]) < anoAtual - 1) {
