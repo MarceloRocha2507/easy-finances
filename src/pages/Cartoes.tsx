@@ -367,12 +367,6 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
       ? "Fechada"
       : "Aberta";
 
-  const statusStyle =
-    cartao.statusFaturaExibida === "paga"
-      ? { bg: "bg-emerald-500/20", text: "text-emerald-300" }
-      : cartao.statusFaturaExibida === "fechada"
-      ? { bg: "bg-amber-500/20", text: "text-amber-300" }
-      : { bg: "bg-white/10", text: "text-white/70" };
 
   return (
     <div
