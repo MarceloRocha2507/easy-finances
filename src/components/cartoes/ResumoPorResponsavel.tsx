@@ -137,17 +137,17 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
                 </span>
                 {/* Status de acerto */}
                 {item.status === "quitado" ? (
-                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px]">
+                  <Badge variant="secondary" className="bg-[#DCFCE7] text-[#16A34A] border-0 text-[10px]">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Quitado
                   </Badge>
                 ) : item.status === "parcial" ? (
-                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-0 text-[10px]">
+                  <Badge variant="secondary" className="bg-[#FEF3C7] text-[#D97706] border-0 text-[10px]">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     Parcial
                   </Badge>
                 ) : !item.isTitular && item.total > 0 ? (
-                  <Badge variant="secondary" className="bg-red-500/10 text-red-600 border-0 text-[10px]">
+                  <Badge variant="secondary" className="bg-[#FEE2E2] text-[#DC2626] border-0 text-[10px]">
                     <Clock className="h-3 w-3 mr-1" />
                     Pendente
                   </Badge>
@@ -156,7 +156,7 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
 
               {/* Valor pago */}
               {item.valorPago > 0 && (
-                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <p className="text-[11px] text-[#16A34A] dark:text-[#16A34A] mt-0.5">
                   Pagou {formatCurrency(item.valorPago)} de {formatCurrency(item.total)}
                 </p>
               )}

@@ -59,7 +59,7 @@ export function ProximasFaturas({ faturas, onCartaoClick }: Props) {
             : "secondary";
 
           const badgeClass = fatura.diasRestantes <= 7 && fatura.diasRestantes > 3
-            ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+            ? "bg-amber-100 text-[#D97706] border-[#D97706] dark:text-[#D97706] dark:border-[#D97706]"
             : "";
 
           const diasLabel = fatura.diasRestantes < 0

@@ -39,12 +39,12 @@ import {
    Gradientes únicos por cartão
 ====================================================== */
 const CARD_GRADIENTS = [
-  { from: "#1a1a2e", to: "#111827", accent: "#e94560" },   // Azul noite
-  { from: "#0f3460", to: "#1a1a2e", accent: "#533483" },   // Marinho profundo
-  { from: "#2d1b69", to: "#11998e", accent: "#a8edea" },   // Violeta → teal
-  { from: "#141e30", to: "#243b55", accent: "#c0c0c0" },   // Deep ocean
-  { from: "#373B44", to: "#4286f4", accent: "#f5f5f5" },   // Grafite → azul
-  { from: "#1a1a2e", to: "#6a0572", accent: "#e040fb" },   // Noite → roxo
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#111827" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#374151" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#6B7280" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#16A34A" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#DC2626" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#D97706" },
 ];
 
 export default function Cartoes() {
@@ -140,7 +140,7 @@ export default function Cartoes() {
           <div>
             <h1
               className="section-title-accent font-display font-bold text-xl"
-              style={{ color: 'hsl(var(--accent-violet))' }}
+              style={{ color: '#111827' }}
             >
               Cartões
             </h1>
@@ -204,10 +204,10 @@ export default function Cartoes() {
             <div className="flex items-center gap-2 mb-5">
               <span
                 className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: 'hsl(var(--accent-violet))' }}
+                style={{ backgroundColor: '#111827' }}
               />
               <h2 className="section-title-accent font-display font-bold text-sm"
-                style={{ color: 'hsl(var(--accent-violet))' }}>
+                style={{ color: '#111827' }}>
                 Previsão de Faturas
               </h2>
               <span className="text-xs text-muted-foreground ml-1">— próximos 4 meses</span>
@@ -236,13 +236,13 @@ export default function Cartoes() {
                             ? "bg-background border-2 shadow-sm"
                             : "bg-muted/40 border border-border/50"
                         )}
-                        style={isAtual ? { borderColor: 'hsl(var(--accent-violet))' } : undefined}
+                        style={isAtual ? { borderColor: '#111827' } : undefined}
                       >
                         <p className={cn(
                           "text-[10px] font-display font-semibold uppercase tracking-widest mb-1.5",
                           isAtual ? "text-muted-foreground" : "text-muted-foreground/60"
                         )}
-                          style={isAtual ? { color: 'hsl(var(--accent-violet))' } : undefined}
+                          style={isAtual ? { color: '#111827' } : undefined}
                         >
                           {getMesLabel(offset)}
                         </p>
@@ -356,7 +356,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
     cartao.percentualUsado > 85
       ? "#DC2626"
       : cartao.percentualUsado > 60
-      ? "#fbbf24"
+      ? "#D97706"
       : "#16A34A";
 
   const statusLabel =
@@ -395,9 +395,9 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
           <span className={cn(
             "text-[10px] font-display font-semibold px-2.5 py-1 rounded-full shrink-0",
             cartao.statusFaturaExibida === "paga"
-              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              ? "bg-[#DCFCE7] text-[#16A34A] dark:text-[#16A34A]"
               : cartao.statusFaturaExibida === "fechada"
-              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              ? "bg-[#FEF3C7] text-[#D97706] dark:text-[#D97706]"
               : "bg-muted text-muted-foreground"
           )}>
             {statusLabel}
@@ -421,7 +421,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
             </p>
             <p className={cn(
               "text-sm font-display font-bold",
-              diasAteVencimento <= 3 ? "text-red-500" : diasAteVencimento <= 7 ? "text-amber-500" : "text-muted-foreground"
+              diasAteVencimento <= 3 ? "text-[#DC2626]" : diasAteVencimento <= 7 ? "text-[#D97706]" : "text-muted-foreground"
             )}>
               {diasAteVencimento}d
             </p>
@@ -454,16 +454,16 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
               label: "Usado",
               value: cartao.limiteUsado,
               color: cartao.percentualUsado > 85
-                ? "text-red-500 dark:text-red-400"
+                ? "text-[#DC2626] dark:text-[#DC2626]"
                 : cartao.percentualUsado > 60
-                ? "text-amber-500 dark:text-amber-400"
+                ? "text-[#D97706] dark:text-[#D97706]"
                 : "text-foreground",
             },
             {
               label: "Disponível",
               value: cartao.limiteDisponivel,
               color: cartao.limiteDisponivel > cartao.limite * 0.2
-                ? "text-emerald-600 dark:text-emerald-400"
+                ? "text-[#16A34A] dark:text-[#16A34A]"
                 : "text-foreground",
             },
           ].map(({ label, value, color }) => (
