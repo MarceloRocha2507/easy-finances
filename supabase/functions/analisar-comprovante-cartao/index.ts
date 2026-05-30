@@ -597,18 +597,25 @@ Regras obrigatórias:
     if (isPicpay && imageBase64) {
       const picpayAuditPrompt = `Você vai fazer uma SEGUNDA PASSAGEM focada APENAS em itens especiais da fatura PicPay.
 
-Objetivo: localizar e retornar:
-A) Todas as linhas em VERDE: "Pagamento de Fatura" e "Credito Parcelamento Compra".
-B) Todas as linhas com texto TACHADO/RISCADO (estabelecimento e valor com linha horizontal no meio).
+## PASSO 1 — CONTE antes de extrair
+Olhe a imagem inteira e CONTE:
+- Quantas linhas têm texto em VERDE (cor verde, não cinza nem preto)?
+- Quantas linhas têm texto TACHADO/RISCADO (linha horizontal cortando o nome ou o valor)?
 
-Regras obrigatórias:
-- Itens verdes → sinal="credito", valor positivo.
-  - "Pagamento de Fatura" → tipo="pagamento_fatura", ignorar=false.
-  - "Credito Parcelamento Compra" → tipo="estorno_parcelamento", ignorar=true.
-- Itens tachados → sinal="debito", riscada=true, tipo="compra_substituida", ignorar=true.
-- NÃO retorne compras normais (sem verde nem tachado).
-- Se existirem 3 linhas verdes "Credito Parcelamento Compra" visíveis, o array deve ter 3 itens desse tipo.
-- Se existir "Pagamento de Fatura" verde, SEMPRE inclua no array.`;
+## PASSO 2 — EXTRAIA cada item encontrado
+
+Itens VERDES → sinal="credito", valor positivo absoluto:
+- "Pagamento de Fatura" ou "Pagamento recebido" → tipo="pagamento_fatura", ignorar=false.
+- "Credito Parcelamento Compra" (ícone ← seta) → tipo="estorno_parcelamento", ignorar=true.
+  ATENÇÃO: aparecem várias seguidas (ex.: 3 linhas "Credito Parcelamento Compra" de valores diferentes). Extraia CADA UMA separadamente.
+
+Itens TACHADOS/RISCADOS → sinal="debito", riscada=true, tipo="compra_substituida", ignorar=true.
+
+## PASSO 3 — VERIFIQUE
+- Número de itens verdes no array == número que você contou no Passo 1?
+- Se não bater, adicione os que faltam antes de responder.
+
+NÃO retorne compras normais (texto preto, sem risco). Só verdes e tachados.`;
 
       const picpayAuditResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -920,6 +927,39 @@ Regras obrigatórias:
           if (mData && parseInt(mData[1]) < anoAtual - 1) {
             c.data = `${anoAtual}-${mData[2]}`;
           }
+        }
+      }
+    }
+
+    // ============== PÓS-PROCESSAMENTO DE TIPO DE CRÉDITOS PICPAY ==============
+    // A IA às vezes retorna tipo="compra" e sinal="debito" para itens que são claramente
+    // créditos (ex.: "Credito Parcelamento Compra" com sinal errado). Corrigimos de forma
+    // determinística, igual ao bloco Nubank acima.
+    if (isPicpay) {
+      const normP = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      for (const c of compras as any[]) {
+        const texto = normP([c.estabelecimento, c.linha_original].filter(Boolean).join(" "));
+
+        // "Credito Parcelamento Compra" (verde, seta ←) deve SEMPRE ser estorno_parcelamento
+        // + credito + ignorar=true, independente do que a IA retornou.
+        if (
+          texto.includes("credito parcelamento compra") ||
+          texto.includes("crédito parcelamento compra")
+        ) {
+          c.tipo = "estorno_parcelamento";
+          c.sinal = "credito";
+          c.ignorar = true;
+        }
+
+        // "Pagamento de Fatura" deve SEMPRE ser pagamento_fatura + credito.
+        if (
+          texto.includes("pagamento de fatura") ||
+          texto.includes("pagamento da fatura") ||
+          texto.includes("pagamento recebido")
+        ) {
+          c.tipo = "pagamento_fatura";
+          c.sinal = "credito";
+          c.ignorar = false; // pagamentos não devem ser ignorados
         }
       }
     }
