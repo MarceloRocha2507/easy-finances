@@ -66,42 +66,32 @@ Deno.serve(async (req) => {
 
     const picpayRules = `
 
-## COMPOSIÇÃO DA FATURA PICPAY (5 categorias)
+## REGRAS PICPAY
 
-Fatura final = (1) compras à vista + (2) parcelas de meses anteriores + (3) 1ª parcela Fin + IOF + (4) compras riscadas SEM crédito ainda − (5) pagamento parcial recebido.
+O frontend soma APENAS compras normais (texto preto, não riscado). Itens riscados e créditos são descartados automaticamente.
 
-### 1) Compras à vista
-Sem indicação de parcela. → tipo="compra", parcelas=1, parcela_atual=1, valor_eh_parcela=false. Valor cheio.
+### O que contar (texto NORMAL, preto)
+- À vista: tipo="compra", parcelas=1, parcela_atual=1, valor_eh_parcela=false.
+- Parcelada "Parcela X de Y" ou "parc XX/YY" SEM prefixo "Fin": tipo="compra", parcelas=Y, parcela_atual=X, valor_eh_parcela=true. Valor já é a parcela (não multiplique).
+- "Fin <Nome> parcNN/MM": tipo="compra", estabelecimento=<Nome> (sem o prefixo "Fin"), parcelas=MM, parcela_atual=NN, valor_eh_parcela=true.
+- "IOF Diario Parcelado" / "IOF Adicional Parcelado": tipo="iof", parcelas=1, valor_eh_parcela=false.
 
-### 2) Parcelas de compras anteriores
-"Parcela X de Y", "X/Y", "parc XX/YY" SEM prefixo "Fin". → tipo="compra", parcelas=Y, parcela_atual=X, valor_eh_parcela=true. Valor mostrado JÁ É a parcela (NÃO multiplique).
+### O que marcar (extraia mas o frontend descarta)
+- Linhas RISCADAS/TACHADAS (texto com traço horizontal): riscada=true, sinal="debito".
+- "Credito Parcelamento Compra" (ícone ← seta, texto verde): tipo="estorno_parcelamento", sinal="credito", ignorar=true.
+- "Pagamento de Fatura" / "Pagamento recebido" (texto verde): tipo="pagamento_fatura", sinal="credito". SEMPRE extraia — o frontend subtrai do total.
 
-### 3) Parcelamentos novos PicPay (trio "Fin")
-Quando o usuário parcela uma compra já lançada, aparecem 3 movimentos na MESMA fatura:
-  (a) Compra raiz original (normalmente RISCADA) → tipo="compra_substituida", ignorar=true, riscada=true.
-  (b) "Credito Parcelamento Compra" (verde, com seta ←) → tipo="estorno_parcelamento", sinal="credito", ignorar=true. NÃO entra (já compensa a raiz).
-  (c) "Fin <Nome> parcNN/MM" + "IOF Diario Parcelado" / "IOF Adicional Parcelado" → ENTRAM normalmente.
-     - Fin: tipo="compra", estabelecimento=<Nome>, parcelas=MM, parcela_atual=NN, valor_eh_parcela=true, ignorar=false.
-     - IOF: tipo="iof", parcelas=1, valor_eh_parcela=false, ignorar=false.
+### Resumo da fatura
+Se visíveis no bloco Resumo, preencha:
+- saldo_fatura_anterior: valor numérico (ex.: "R$ 0,00" → 0).
+- lancamentos_resumo: valor numérico do campo "Lançamentos".
 
-### 4) Compras RISCADAS SEM crédito correspondente
-Linha tachada SEM "Credito Parcelamento Compra" de valor igual na mesma fatura. → tipo="compra", riscada=true, ignorar=false, valor_eh_parcela=false. Valor cheio permanece.
-
-### 5) Pagamento de Fatura
-Linhas verdes "Pagamento de Fatura"/"Pagamento recebido". → tipo="pagamento_fatura", sinal="credito". INCLUA no array (o frontend aplica a Regra 5 baseada no saldo da fatura anterior).
-
-### Resumo da fatura (campos extras no nível raiz)
-Procure o bloco "Resumo" da fatura e preencha (se visíveis):
-- saldo_fatura_anterior: valor numérico do "Saldo da fatura anterior" (ex.: "R$ 0,00" → 0).
-- lancamentos_resumo: valor numérico do campo "Lançamentos" do Resumo.
-Se algum não estiver visível, omita o campo.
-
-### ✅ CHECKLIST OBRIGATÓRIO ANTES DE FINALIZAR A RESPOSTA
-1. Releia a imagem de CIMA para BAIXO procurando QUALQUER texto em VERDE (Pagamento de Fatura, Credito Parcelamento Compra) e QUALQUER texto TACHADO/RISCADO.
-2. Itens verdes → devem estar no array com sinal="credito". Itens tachados → devem estar com riscada=true.
-3. CONTE: número de linhas verdes visíveis DEVE IGUALAR ao número de itens com sinal="credito" no array. Se não bater, adicione os que faltam ANTES de responder.
-4. "Credito Parcelamento Compra" com seta ← aparece várias vezes seguidas no mesmo dia — extraia TODAS, uma por uma.
-5. NUNCA omita "Pagamento de Fatura" mesmo que pareça repetido ou técnico.`;
+### ✅ CHECKLIST OBRIGATÓRIO
+1. Procure linhas RISCADAS → riscada=true em cada uma.
+2. Procure linhas VERDES → sinal="credito" em cada uma.
+3. CONTE verdes visíveis == itens com sinal="credito" no array. Se não bater, adicione os que faltam.
+4. "Credito Parcelamento Compra" aparece várias vezes seguidas — extraia CADA UMA separadamente.
+5. NUNCA omita "Pagamento de Fatura".`;
 
     const nubankRules = `
 
@@ -961,105 +951,6 @@ NÃO retorne compras normais (texto preto, sem risco). Só verdes e tachados.`;
           c.sinal = "credito";
           c.ignorar = false; // pagamentos não devem ser ignorados
         }
-      }
-    }
-
-    // ============== PÓS-VALIDAÇÃO DETERMINÍSTICA DO TRIO "Fin" (APENAS PICPAY) ==============
-    if (isPicpay) {
-      function normalizeName(s: string | null | undefined): string {
-        return (s || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-      }
-      function nomesParecidos(a: string, b: string): boolean {
-        if (!a || !b) return false;
-        if (a === b) return true;
-        const min = Math.min(a.length, b.length);
-        if (min < 3) return false;
-        return a.startsWith(b.substring(0, min)) || b.startsWith(a.substring(0, min));
-      }
-
-      const finPrimeiras = compras.filter(
-        (c: any) =>
-          c.tipo === "compra" &&
-          c.valor_eh_parcela === true &&
-          c.parcela_atual === 1 &&
-          typeof c.linha_original === "string" &&
-          /\bfin\b/i.test(c.linha_original),
-      );
-
-      for (const fin of finPrimeiras) {
-        const nomeFin = normalizeName(fin.estabelecimento);
-
-        // Busca a raiz por NOME (não por valor: o total financiado difere do original por causa do IOF).
-        const raiz = compras.find(
-          (c: any) =>
-            c !== fin &&
-            c.tipo !== "iof" &&
-            c.tipo !== "estorno_parcelamento" &&
-            c.sinal !== "credito" &&
-            !c.valor_eh_parcela &&
-            nomesParecidos(normalizeName(c.estabelecimento), nomeFin),
-        );
-
-        if (!raiz) continue;
-
-        // Busca o crédito pelo valor DA RAIZ (valor original pré-financiamento), não pelo totalCompra.
-        const valorRaiz = raiz.valor || 0;
-        const credito = compras.find(
-          (c: any) =>
-            c !== fin &&
-            c.sinal === "credito" &&
-            (c.tipo === "estorno_parcelamento" ||
-              /credito\s+parcelamento\s+compra/i.test(c.linha_original || c.estabelecimento || "")) &&
-            Math.abs((c.valor || 0) - valorRaiz) < 0.02,
-        );
-
-        if (credito) {
-          raiz.ignorar = true;
-          raiz.tipo = "compra_substituida";
-          credito.ignorar = true;
-          credito.tipo = "estorno_parcelamento";
-        }
-      }
-
-      // FALLBACK AMPLIADO: itera sobre cada "Credito Parcelamento Compra" e busca a compra
-      // original pelo valor — independentemente de riscada=true/false, pois a IA às vezes
-      // não detecta visualmente o tachado nas imagens do PicPay.
-      // Exclui itens Fin (nova parcela), IOF e pagamento_fatura da busca de compra original.
-      const creditosParcelamentoLivres = (compras as any[]).filter(
-        (c: any) =>
-          !c.ignorar &&
-          c.sinal === "credito" &&
-          (c.tipo === "estorno_parcelamento" ||
-            /credito\s*parcelamento\s*compra/i.test(c.linha_original || c.estabelecimento || "")),
-      );
-      for (const credito of creditosParcelamentoLivres) {
-        if (credito.ignorar) continue;
-        const compraOriginal = (compras as any[]).find(
-          (c: any) =>
-            !c.ignorar &&
-            c.sinal !== "credito" &&
-            c.tipo !== "iof" &&
-            c.tipo !== "pagamento_fatura" &&
-            !/\bfin\b/i.test(c.linha_original || c.estabelecimento || "") &&
-            Math.abs((c.valor || 0) - (credito.valor || 0)) < 0.02,
-        );
-        if (compraOriginal) {
-          compraOriginal.ignorar = true;
-          compraOriginal.tipo = "compra_substituida";
-          credito.ignorar = true;
-        }
-      }
-
-      for (const c of compras) {
-        if (!c.riscada || c.ignorar) continue;
-        const temCredito = compras.some(
-          (o: any) => o !== c && o.sinal === "credito" && Math.abs((o.valor || 0) - (c.valor || 0)) < 0.02,
-        );
-        (c as any).riscada_sem_credito = !temCredito;
       }
     }
 

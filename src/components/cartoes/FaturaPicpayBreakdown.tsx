@@ -78,7 +78,7 @@ export function FaturaPicpayBreakdown({
     lancamentosResumoInicial != null ? lancamentosResumoInicial.toFixed(2).replace(".", ",") : "",
   );
   const [pagamentoManualStr, setPagamentoManualStr] = useState("0,00");
-  const [expandIgnorados, setExpandIgnorados] = useState(false);
+  const [expandDescartados, setExpandDescartados] = useState(false);
 
   const saldoAnterior = parseValor(saldoAnteriorStr);
   const pagamentoManual = parseValor(pagamentoManualStr);
@@ -92,8 +92,7 @@ export function FaturaPicpayBreakdown({
   const diff = lancamentos != null ? breakdown.total_calculado - lancamentos : null;
   const bate = diff != null && Math.abs(diff) < 0.02;
 
-  const totalIgnorados =
-    breakdown.ignorados.riscadasComCredito.length + breakdown.ignorados.creditosParcelamento.length;
+  const totalDescartados = breakdown.ignorados.descartados.length;
 
   return (
     <div
@@ -112,7 +111,7 @@ export function FaturaPicpayBreakdown({
         <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>
           Cálculo da fatura PicPay
         </span>
-        <span style={{ fontSize: 10, color: "#6B7280" }}>5 regras</span>
+        <span style={{ fontSize: 10, color: "#6B7280" }}>compras normais</span>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -178,12 +177,7 @@ export function FaturaPicpayBreakdown({
           hint="Novos parcelamentos PicPay"
         />
         <Linha
-          label="4. Riscadas sem crédito"
-          count={breakdown.regra4_riscadas_sem_credito.itens.length}
-          total={breakdown.regra4_riscadas_sem_credito.total}
-        />
-        <Linha
-          label="5. − Pagamentos parciais"
+          label="4. − Pagamentos"
           count={breakdown.regra5_pagamentos.itens.filter((p) => p.status === "aplicado").length}
           total={-breakdown.regra5_pagamentos.total}
           hint={
@@ -235,7 +229,7 @@ export function FaturaPicpayBreakdown({
             title={
               bate
                 ? undefined
-                : "Verifique: (1) riscadas sem crédito ignoradas indevidamente, (2) tratamento do Pagamento de Fatura, (3) todos os IOFs somados, (4) pares compra/crédito identificados por valor."
+                : "Verifique se todas as compras riscadas foram detectadas pela IA e se o Pagamento de Fatura foi extraído."
             }
           >
             {bate ? (
@@ -252,11 +246,11 @@ export function FaturaPicpayBreakdown({
         )}
       </div>
 
-      {totalIgnorados > 0 && (
+      {totalDescartados > 0 && (
         <div>
           <button
             type="button"
-            onClick={() => setExpandIgnorados((v) => !v)}
+            onClick={() => setExpandDescartados((v) => !v)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -269,34 +263,32 @@ export function FaturaPicpayBreakdown({
               cursor: "pointer",
             }}
           >
-            {expandIgnorados ? (
+            {expandDescartados ? (
               <ChevronUp style={{ width: 12, height: 12 }} />
             ) : (
               <ChevronDown style={{ width: 12, height: 12 }} />
             )}
-            Itens ignorados (compras riscadas + créditos que se cancelam): {totalIgnorados}
+            Itens descartados (riscados + créditos/estornos): {totalDescartados}
           </button>
-          {expandIgnorados && (
+          {expandDescartados && (
             <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
-              {[...breakdown.ignorados.riscadasComCredito, ...breakdown.ignorados.creditosParcelamento].map(
-                (c, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      fontSize: 11,
-                      color: "#6B7280",
-                      padding: "4px 8px",
-                      background: "#F9FAFB",
-                      borderRadius: 6,
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span>{c.estabelecimento || c.linha_original || "—"}</span>
-                    <span>{formatBRL(typeof c.valor === "number" ? c.valor : 0)}</span>
-                  </div>
-                ),
-              )}
+              {breakdown.ignorados.descartados.map((c, i) => (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: 11,
+                    color: "#6B7280",
+                    padding: "4px 8px",
+                    background: "#F9FAFB",
+                    borderRadius: 6,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>{c.estabelecimento || c.linha_original || "—"}</span>
+                  <span>{formatBRL(typeof c.valor === "number" ? c.valor : 0)}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
