@@ -18,7 +18,6 @@ import {
   RefreshCw,
   MoreHorizontal,
   FileText,
-  Wifi,
 } from "lucide-react";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
