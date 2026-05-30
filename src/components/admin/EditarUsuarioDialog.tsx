@@ -128,7 +128,7 @@ export function EditarUsuarioDialog({ user, open, onOpenChange, onSave }: Editar
                 </SelectItem>
                 <SelectItem value="anual">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span className="w-2 h-2 rounded-full bg-[#6B7280]" />
                     Anual (365 dias)
                   </div>
                 </SelectItem>

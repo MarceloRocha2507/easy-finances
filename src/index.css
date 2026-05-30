@@ -76,7 +76,7 @@
     --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --accent-violet: 262 83% 41%;
+    --accent-violet: 220 39% 11%;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -131,7 +131,7 @@
     --sidebar-accent-foreground: 248 0.3% 98.4%;
     --sidebar-border: 0 0% 100% / 10%;
     --sidebar-ring: 264 2.7% 55.1%;
-    --accent-violet: 262 65% 68%;
+    --accent-violet: 220 39% 11%;
 
     /* Glass effect variables - dark mode */
     --glass-bg: 220 15% 10% / 0.75;
@@ -321,7 +321,7 @@
   }
 
   .card-status-info {
-    @apply border-l-4 border-l-purple-500;
+    @apply border-l-4 border-l-[#6B7280];
   }
 
   /* Display font utility */

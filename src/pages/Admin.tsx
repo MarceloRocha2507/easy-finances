@@ -222,7 +222,7 @@ export default function Admin() {
     const cores: Record<string, string> = {
       teste: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
       mensal: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-      anual: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+      anual: "bg-[#F3F4F6] text-[#111827]",
       ilimitado: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
     };
     const labels: Record<string, string> = { teste: "Teste", mensal: "Mensal", anual: "Anual", ilimitado: "Ilimitado" };
@@ -339,7 +339,7 @@ export default function Admin() {
                     <Badge className={
                       plano === "teste" ? "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300" :
                       plano === "mensal" ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" :
-                      plano === "anual" ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" :
+                      plano === "anual" ? "bg-[#F3F4F6] text-[#111827]" :
                       "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
                     }>
                       {plano.charAt(0).toUpperCase() + plano.slice(1)}: {count}
