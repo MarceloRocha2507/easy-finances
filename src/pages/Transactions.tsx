@@ -1760,7 +1760,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           )}
           {/* Badge de fatura paga */}
           {isFaturaCartaoPaga && (
-            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-[#E5E7EB] text-[#6B7280] dark:text-violet-400 hidden sm:inline-flex">
+            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-[#E5E7EB] text-[#6B7280] hidden sm:inline-flex">
               <CreditCard className="w-3 h-3 mr-0.5" />
               Cartão
             </Badge>

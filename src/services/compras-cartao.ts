@@ -943,7 +943,7 @@ export async function pagarFaturaComTransacao(input: PagarFaturaInput): Promise<
             user_id: user.id,
             name: "Fatura do Cartão",
             icon: "credit-card",
-            color: "#8B5CF6",
+            color: "#6B7280",
             type: "expense",
             is_default: true,
           })
@@ -1548,7 +1548,7 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<Adiant
           user_id: user.id,
           name: "Fatura do Cartão",
           icon: "credit-card",
-          color: "#8B5CF6",
+          color: "#6B7280",
           type: "expense",
           is_default: true,
         })
