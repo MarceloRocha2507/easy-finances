@@ -103,37 +103,55 @@ export function DetalhesCompraCartaoDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="p-0 gap-0 border-0 [&>button]:hidden"
-        style={{
-          borderRadius: 16,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          maxWidth: 440,
-        }}
+        className="p-0 gap-0 border-0 [&>button]:hidden flex flex-col"
+        style={{ maxWidth: 440 }}
       >
-        <div className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[85dvh]">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16 }}>
-              Detalhes da Compra
-            </h2>
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="transition-colors"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 4,
-                borderRadius: 6,
-                color: "#9CA3AF",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-            >
-              <X style={{ width: 18, height: 18 }} />
-            </button>
+        {/* Header com gradiente */}
+        <div
+          className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0"
+          style={{
+            background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <CreditCard style={{ width: 18, height: 18, color: "#6B7280" }} />
+            <div>
+              <h2
+                style={{
+                  color: "#1a1625",
+                  fontWeight: 700,
+                  fontSize: 17,
+                  lineHeight: "20px",
+                  letterSpacing: "-0.025em",
+                  fontFamily: "var(--font-display)",
+                }}
+              >
+                Detalhes da Compra
+              </h2>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex items-center justify-center transition-colors"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              color: "#9590aa",
+              background: "rgba(0,0,0,0.05)",
+              border: "none",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.09)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.05)")}
+          >
+            <X style={{ width: 15, height: 15 }} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5 max-h-[calc(85dvh-72px)]">
 
           {/* Transaction header */}
           <div className="flex items-center gap-3">

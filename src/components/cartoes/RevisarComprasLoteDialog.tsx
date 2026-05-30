@@ -416,14 +416,12 @@ export function RevisarComprasLoteDialog({
         style={
           isMobile
             ? {
-                borderRadius: 16,
                 left: "max(1.25rem, env(safe-area-inset-left))",
                 right: "max(1.25rem, env(safe-area-inset-right))",
                 top: "1rem",
                 maxHeight: "calc(100dvh - 2rem)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
               }
-            : { borderRadius: 16, boxShadow: "0 8px 32px rgba(0,0,0,0.12)", maxHeight: "90dvh" }
+            : { maxHeight: "90dvh" }
         }
       >
         {isMobile && (
@@ -434,17 +432,30 @@ export function RevisarComprasLoteDialog({
 
         <div
           className={cn(
-            "flex items-start justify-between shrink-0 bg-white z-10",
-            isMobile ? "sticky top-0 px-5 pt-2 pb-2 rounded-t-2xl" : "px-6 pt-6 pb-0",
+            "flex items-start justify-between shrink-0 z-10",
+            isMobile ? "sticky top-0 px-5 pt-4 pb-4" : "px-6 pt-5 pb-4",
           )}
+          style={{
+            background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+          }}
         >
           <div className="flex items-center gap-2.5">
             <Sparkles style={{ width: 18, height: 18, color: "#4F46E5" }} />
             <div>
-              <h2 style={{ color: "#111827", fontWeight: 700, fontSize: 16, lineHeight: "20px" }}>
+              <h2
+                style={{
+                  color: "#1a1625",
+                  fontWeight: 700,
+                  fontSize: 17,
+                  lineHeight: "20px",
+                  letterSpacing: "-0.025em",
+                  fontFamily: "var(--font-display)",
+                }}
+              >
                 Revisar compras detectadas
               </h2>
-              <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>
+              <p style={{ color: "#9590aa", fontSize: 12, marginTop: 2 }}>
                 {compras.length} transação(ões) detectada(s) · Cartão {cartao.nome}
               </p>
             </div>
@@ -453,9 +464,20 @@ export function RevisarComprasLoteDialog({
             type="button"
             onClick={() => !salvando && onOpenChange(false)}
             disabled={salvando}
-            style={{ background: "none", border: "none", cursor: salvando ? "not-allowed" : "pointer", padding: 4, borderRadius: 6, color: "#9CA3AF" }}
+            className="flex items-center justify-center transition-colors"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              color: "#9590aa",
+              background: "rgba(0,0,0,0.05)",
+              border: "none",
+              cursor: salvando ? "not-allowed" : "pointer",
+            }}
+            onMouseEnter={(e) => { if (!salvando) e.currentTarget.style.background = "rgba(0,0,0,0.09)"; }}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.05)")}
           >
-            <X style={{ width: 18, height: 18 }} />
+            <X style={{ width: 15, height: 15 }} />
           </button>
         </div>
 

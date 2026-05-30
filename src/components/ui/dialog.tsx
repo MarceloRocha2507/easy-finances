@@ -30,7 +30,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { noPadding?: boolean }
->(({ className, children, noPadding, ...props }, ref) => (
+>(({ className, children, noPadding, style: styleProp, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -40,6 +40,7 @@ const DialogContent = React.forwardRef<
         className,
       )}
       style={{
+        ...styleProp,
         borderRadius: 24,
         boxShadow:
           "0 1px 0 0 rgba(0,0,0,0.04), 0 4px 6px rgba(0,0,0,0.03), 0 24px 56px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
