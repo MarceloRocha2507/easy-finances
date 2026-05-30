@@ -15,7 +15,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/45 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -27,7 +27,7 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, style: styleProp, ...props }, ref) => (
+>(({ className, style: styleProp, children, ...props }, ref) => (
   <AlertDialogPortal>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
@@ -40,23 +40,46 @@ const AlertDialogContent = React.forwardRef<
         ...styleProp,
         borderRadius: 24,
         boxShadow:
-          "0 1px 0 0 rgba(0,0,0,0.04), 0 4px 6px rgba(0,0,0,0.03), 0 24px 56px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
+          "0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.10), 0 32px 64px rgba(26,22,37,0.08)",
         padding: 24,
         gap: 12,
+        overflow: "hidden",
+        position: "relative",
       }}
       {...props}
-    />
+    >
+      {/* Faixa de acento gradiente no topo */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 45%, #6366f1 100%)",
+          borderRadius: "24px 24px 0 0",
+          zIndex: 20,
+          pointerEvents: "none",
+        }}
+      />
+      {children}
+    </AlertDialogPrimitive.Content>
   </AlertDialogPortal>
 ));
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-1 text-left", className)} {...props} />
+  <div className={cn("flex flex-col gap-1 text-left pt-1", className)} {...props} />
 );
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
 const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex justify-end gap-2 mt-2", className)} {...props} />
+  <div
+    className={cn("flex justify-end gap-2 mt-1 pt-3", className)}
+    style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
+    {...props}
+  />
 );
 AlertDialogFooter.displayName = "AlertDialogFooter";
 
@@ -66,8 +89,14 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("leading-none tracking-tight", className)}
-    style={{ color: "#111827", fontSize: 16, fontWeight: 700 }}
+    className={cn("leading-none", className)}
+    style={{
+      color: "#1a1625",
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: "-0.03em",
+      fontFamily: "var(--font-display)",
+    }}
     {...props}
   />
 ));
@@ -80,7 +109,7 @@ const AlertDialogDescription = React.forwardRef<
   <AlertDialogPrimitive.Description
     ref={ref}
     className={cn("", className)}
-    style={{ color: "#9CA3AF", fontSize: 13 }}
+    style={{ color: "#7c778e", fontSize: 13, lineHeight: 1.55 }}
     {...props}
   />
 ));
@@ -89,32 +118,23 @@ AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayNam
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(({ className, ...props }, ref) => (
+>(({ className, style: actionStyle, ...props }, ref) => (
   <AlertDialogPrimitive.Action
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]",
       className,
     )}
     style={{
-      height: 48,
+      height: 44,
       padding: "0 20px",
-      borderRadius: 8,
+      borderRadius: 12,
       fontSize: 15,
       fontWeight: 600,
-      background: "#111827",
+      background: "linear-gradient(135deg, #1a1625 0%, #2d2848 100%)",
       color: "#fff",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = "#1F2937";
-    }}
-    onMouseLeave={(e) => {
-      // Check if it has destructive class to restore correct color
-      if (e.currentTarget.classList.contains("bg-destructive") || e.currentTarget.style.background === "rgb(220, 38, 38)") {
-        e.currentTarget.style.background = "#DC2626";
-      } else {
-        e.currentTarget.style.background = "#111827";
-      }
+      boxShadow: "0 1px 2px rgba(0,0,0,0.15), 0 4px 8px rgba(26,22,37,0.12)",
+      ...actionStyle,
     }}
     {...props}
   />
@@ -128,24 +148,18 @@ const AlertDialogCancel = React.forwardRef<
   <AlertDialogPrimitive.Cancel
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 hover:bg-gray-100 active:scale-[0.98]",
       className,
     )}
     style={{
-      height: 40,
+      height: 44,
       padding: "0 16px",
-      borderRadius: 8,
+      borderRadius: 12,
       fontSize: 14,
       fontWeight: 500,
       color: "#6B7280",
       background: "transparent",
       border: "none",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = "#F3F4F6";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = "transparent";
     }}
     {...props}
   />

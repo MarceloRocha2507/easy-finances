@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/45 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -43,11 +43,28 @@ const DialogContent = React.forwardRef<
         ...styleProp,
         borderRadius: 24,
         boxShadow:
-          "0 1px 0 0 rgba(0,0,0,0.04), 0 4px 6px rgba(0,0,0,0.03), 0 24px 56px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
+          "0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.10), 0 32px 64px rgba(26,22,37,0.08)",
         padding: 0,
+        overflow: "hidden",
       }}
       {...props}
     >
+      {/* Faixa de acento gradiente no topo */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 45%, #6366f1 100%)",
+          borderRadius: "24px 24px 0 0",
+          zIndex: 20,
+          pointerEvents: "none",
+        }}
+      />
+
       <div
         className={cn(
           "overflow-y-auto overflow-x-hidden flex flex-col",
@@ -58,19 +75,15 @@ const DialogContent = React.forwardRef<
       </div>
 
       <DialogPrimitive.Close
-        className="absolute right-4 top-4 flex items-center justify-center rounded-lg transition-colors focus:outline-none disabled:pointer-events-none"
+        className="absolute right-4 top-4 flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none disabled:pointer-events-none bg-black/[0.05] hover:bg-black/[0.09] text-[#9590aa] hover:text-[#6b6580]"
         style={{
-          width: 28,
-          height: 28,
-          color: "#9590aa",
-          background: "rgba(0,0,0,0.05)",
+          width: 30,
+          height: 30,
           border: "none",
-          zIndex: 10,
+          zIndex: 30,
         }}
-        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.09)")}
-        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.05)")}
       >
-        <X style={{ width: 15, height: 15 }} />
+        <X style={{ width: 14, height: 14 }} />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
@@ -81,17 +94,24 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col gap-1 text-left -mt-4 -mx-4 sm:-mt-6 sm:-mx-6 px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-black/[0.06]",
+      "flex flex-col gap-1.5 text-left -mt-4 -mx-4 sm:-mt-6 sm:-mx-6 px-5 sm:px-6 pt-6 sm:pt-7 pb-4 sm:pb-5",
       className,
     )}
-    style={{ background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)" }}
+    style={{
+      background: "linear-gradient(155deg, #f7f5ff 0%, #ede8ff 55%, #e8e0ff 100%)",
+      borderBottom: "1px solid rgba(124, 58, 237, 0.1)",
+    }}
     {...props}
   />
 );
 DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex justify-end gap-2 mt-2", className)} {...props} />
+  <div
+    className={cn("flex justify-end gap-2 mt-1 pt-3", className)}
+    style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
+    {...props}
+  />
 );
 DialogFooter.displayName = "DialogFooter";
 
@@ -104,9 +124,9 @@ const DialogTitle = React.forwardRef<
     className={cn("leading-none", className)}
     style={{
       color: "#1a1625",
-      fontSize: 17,
+      fontSize: 18,
       fontWeight: 700,
-      letterSpacing: "-0.025em",
+      letterSpacing: "-0.03em",
       fontFamily: "var(--font-display)",
     }}
     {...props}
@@ -121,7 +141,7 @@ const DialogDescription = React.forwardRef<
   <DialogPrimitive.Description
     ref={ref}
     className={cn("", className)}
-    style={{ color: "#9590aa", fontSize: 12, lineHeight: 1.5 }}
+    style={{ color: "#7c778e", fontSize: 12.5, lineHeight: 1.55 }}
     {...props}
   />
 ));
