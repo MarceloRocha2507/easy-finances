@@ -478,6 +478,54 @@ export default function ImportarCompras() {
     event.target.value = "";
   }
 
+  // Upload e processamento do CSV PicPay (modelo padronizado do app)
+  async function handlePicpayCsvUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !cartao || !cartaoId) return;
+
+    const resp = responsaveis.find((r) => r.id === responsavelNubankId);
+    if (!resp) {
+      toast({ title: "Selecione um responsável antes de importar", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const texto = e.target?.result as string;
+      setStatus("checking");
+
+      try {
+        const comprasExtraidas = parsePicpayCsv(texto);
+
+        const pagamentos = comprasExtraidas
+          .filter((c) => c.tipo === "pagamento_fatura" && c.valor != null)
+          .map((c) => ({ valor: c.valor as number, data: c.data || "" }));
+        setNubankPagamentos(pagamentos);
+
+        const preview = converterNubankParaPreview(
+          comprasExtraidas,
+          resp.id,
+          resp.apelido || resp.nome,
+          cartao.dia_fechamento
+        );
+
+        const comDuplicatas = await verificarDuplicatas(cartaoId, preview);
+        setPreviewData(comDuplicatas);
+        setStatus("preview");
+      } catch (err: any) {
+        toast({
+          title: "CSV inválido",
+          description: err?.message || "Não foi possível interpretar o arquivo.",
+          variant: "destructive",
+        });
+        setStatus("idle");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+
+    event.target.value = "";
+  }
+
   // Atualizar responsável de uma linha
   function handleAtualizarResponsavel(linha: number, responsavelId: string) {
     setPreviewData((prev) =>
