@@ -16,6 +16,7 @@ import {
   PreviewCompra,
 } from "@/services/importar-compras-cartao";
 import { parseNubankCsv } from "@/lib/nubankCsvParser";
+import { parsePicpayCsv } from "@/lib/picpayCsvParser";
 import { Cartao } from "@/services/cartoes";
 
 import { Layout } from "@/components/Layout";
@@ -80,7 +81,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Status = "idle" | "preview" | "checking" | "importing" | "success";
 type ModoMesFatura = "automatico" | "fixo";
-type ModoImportacao = "texto" | "nubank_csv";
+type ModoImportacao = "texto" | "nubank_csv" | "picpay_csv";
 
 const PARCELA_REGEX_STRIP = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
 const TIPOS_EXCLUIDOS_NUBANK = new Set(["pagamento_fatura", "estorno_parcelamento", "estorno", "compra_substituida"]);
