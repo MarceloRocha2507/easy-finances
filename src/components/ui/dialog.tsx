@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -40,8 +40,9 @@ const DialogContent = React.forwardRef<
         className,
       )}
       style={{
-        borderRadius: 16,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        borderRadius: 24,
+        boxShadow:
+          "0 1px 0 0 rgba(0,0,0,0.04), 0 4px 6px rgba(0,0,0,0.03), 0 24px 56px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
         padding: 0,
       }}
       {...props}
@@ -56,10 +57,19 @@ const DialogContent = React.forwardRef<
       </div>
 
       <DialogPrimitive.Close
-        className="absolute right-4 top-4 transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none"
-        style={{ color: "#9CA3AF", background: "transparent", border: "none", zIndex: 10 }}
+        className="absolute right-4 top-4 flex items-center justify-center rounded-lg transition-colors focus:outline-none disabled:pointer-events-none"
+        style={{
+          width: 28,
+          height: 28,
+          color: "#9590aa",
+          background: "rgba(0,0,0,0.05)",
+          border: "none",
+          zIndex: 10,
+        }}
+        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.09)")}
+        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.05)")}
       >
-        <X style={{ width: 18, height: 18 }} />
+        <X style={{ width: 15, height: 15 }} />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
@@ -68,7 +78,14 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-1 text-left", className)} {...props} />
+  <div
+    className={cn(
+      "flex flex-col gap-1 text-left -mt-4 -mx-4 sm:-mt-6 sm:-mx-6 px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-black/[0.06]",
+      className,
+    )}
+    style={{ background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)" }}
+    {...props}
+  />
 );
 DialogHeader.displayName = "DialogHeader";
 
@@ -83,8 +100,14 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("leading-none tracking-tight", className)}
-    style={{ color: "#111827", fontSize: 16, fontWeight: 700 }}
+    className={cn("leading-none", className)}
+    style={{
+      color: "#1a1625",
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: "-0.025em",
+      fontFamily: "var(--font-display)",
+    }}
     {...props}
   />
 ));
@@ -97,7 +120,7 @@ const DialogDescription = React.forwardRef<
   <DialogPrimitive.Description
     ref={ref}
     className={cn("", className)}
-    style={{ color: "#9CA3AF", fontSize: 12 }}
+    style={{ color: "#9590aa", fontSize: 12, lineHeight: 1.5 }}
     {...props}
   />
 ));
