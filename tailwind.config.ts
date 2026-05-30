@@ -15,6 +15,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
+  				'Geist',
   				'Inter',
   				'ui-sans-serif',
   				'system-ui',
@@ -25,6 +26,12 @@ export default {
   				'Helvetica Neue',
   				'Arial',
   				'Noto Sans',
+  				'sans-serif'
+  			],
+  			display: [
+  				'Bricolage Grotesque',
+  				'ui-sans-serif',
+  				'system-ui',
   				'sans-serif'
   			],
   			serif: [
@@ -89,6 +96,9 @@ export default {
   			expense: {
   				DEFAULT: 'hsl(var(--expense))',
   				foreground: 'hsl(var(--expense-foreground))'
+  			},
+  			'accent-violet': {
+  				DEFAULT: 'hsl(var(--accent-violet))',
   			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',

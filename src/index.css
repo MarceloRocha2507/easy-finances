@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 98.4%;
@@ -61,9 +72,11 @@
     --chart-4: 84 18.9% 82.8%;
     --chart-5: 70 18.8% 76.9%;
     --sidebar: 248 0.3% 98.4%;
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --accent-violet: 262 83% 41%;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -118,6 +131,7 @@
     --sidebar-accent-foreground: 248 0.3% 98.4%;
     --sidebar-border: 0 0% 100% / 10%;
     --sidebar-ring: 264 2.7% 55.1%;
+    --accent-violet: 262 65% 68%;
 
     /* Glass effect variables - dark mode */
     --glass-bg: 220 15% 10% / 0.75;
@@ -148,7 +162,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -308,5 +322,86 @@
 
   .card-status-info {
     @apply border-l-4 border-l-purple-500;
+  }
+
+  /* Display font utility */
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Violet accent utilities */
+  .text-accent-violet {
+    color: hsl(var(--accent-violet));
+  }
+
+  .bg-accent-violet {
+    background-color: hsl(var(--accent-violet));
+  }
+
+  .border-accent-violet {
+    border-color: hsl(var(--accent-violet));
+  }
+
+  /* Metric tile tinted backgrounds */
+  .metric-tile-income {
+    background-color: hsl(152 60% 97%);
+  }
+  .dark .metric-tile-income {
+    background-color: hsl(152 40% 8%);
+  }
+
+  .metric-tile-expense {
+    background-color: hsl(0 65% 97%);
+  }
+  .dark .metric-tile-expense {
+    background-color: hsl(0 40% 8%);
+  }
+
+  /* Card glow shadows */
+  .card-glow-income {
+    box-shadow: 0 2px 12px hsl(152 60% 36% / 0.12), 0 1px 3px hsl(0 0% 0% / 0.06);
+  }
+
+  .card-glow-expense {
+    box-shadow: 0 2px 12px hsl(0 65% 51% / 0.12), 0 1px 3px hsl(0 0% 0% / 0.06);
+  }
+
+  /* Slide-up entrance animation */
+  .animate-slide-up-fade {
+    animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Hero resultado banner */
+  .resultado-hero-positive {
+    background: linear-gradient(135deg, hsl(152 60% 96%) 0%, hsl(152 50% 93%) 50%, hsl(152 40% 96%) 100%);
+  }
+  .dark .resultado-hero-positive {
+    background: linear-gradient(135deg, hsl(152 40% 9%) 0%, hsl(152 35% 12%) 50%, hsl(152 40% 9%) 100%);
+  }
+
+  .resultado-hero-negative {
+    background: linear-gradient(135deg, hsl(0 65% 97%) 0%, hsl(0 55% 95%) 50%, hsl(0 65% 97%) 100%);
+  }
+  .dark .resultado-hero-negative {
+    background: linear-gradient(135deg, hsl(0 40% 9%) 0%, hsl(0 35% 12%) 50%, hsl(0 40% 9%) 100%);
+  }
+
+  /* Section title accent bar */
+  .section-title-accent {
+    position: relative;
+    padding-left: 12px;
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+  .section-title-accent::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    border-radius: 2px;
+    background-color: hsl(var(--accent-violet));
   }
 }

@@ -140,28 +140,38 @@ export default function Dashboard() {
       <div className="page-enter">
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
-        {/* Linha 1: Saudação e refresh */}
+        {/* Linha 1: Saudação e ações */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <p className="text-sm text-muted-foreground truncate">
-              Olá, {user?.user_metadata?.full_name || "Usuário"}
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-accent-violet shrink-0 animate-pulse" />
+              <p className="font-display font-bold text-base text-foreground truncate">
+                {(() => {
+                  const fullName = user?.user_metadata?.full_name || "Usuário";
+                  return fullName.split(" ")[0];
+                })()}
+              </p>
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="h-8 w-8 shrink-0"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
             >
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
-          
+
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <GlobalSearch variant="icon" />
             <Link to="/transactions">
-              <Button variant="ghost" size="sm" className="text-primary gap-1.5 px-2 sm:px-3">
-                <Plus className="w-5 h-5" />
+              <Button
+                size="sm"
+                className="gap-1.5 px-3 sm:px-4 text-white font-display font-semibold text-xs"
+                style={{ backgroundColor: 'hsl(var(--accent-violet))', boxShadow: '0 2px 8px hsl(var(--accent-violet) / 0.3)' }}
+              >
+                <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Novo Registro</span>
               </Button>
             </Link>
@@ -185,34 +195,51 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Card Resultado do Mês */}
+      {/* Card Resultado do Mês — Hero Banner */}
       {(() => {
         const resultado = (completeStats?.completedIncome || 0) - (completeStats?.completedExpenseWithFatura || 0);
         const isPositive = resultado >= 0;
+        const dayOfMonth = new Date().getDate();
+        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const monthProgress = Math.round((dayOfMonth / daysInMonth) * 100);
         return (
-          <Card
-            className="mb-3 rounded-xl border shadow-sm animate-fade-in"
-            style={{ backgroundColor: isPositive ? '#F0FDF4' : '#FEF2F2' }}
+          <div
+            className={`mb-3 rounded-2xl border overflow-hidden animate-fade-in relative ${isPositive ? 'resultado-hero-positive border-emerald-100 dark:border-emerald-900/40' : 'resultado-hero-negative border-rose-100 dark:border-rose-900/40'}`}
           >
-            <CardContent className="flex flex-col items-center justify-center py-5 gap-1">
+            {/* Decorative blur circle */}
+            <div
+              className="absolute -top-6 -right-6 w-32 h-32 rounded-full opacity-20 blur-2xl pointer-events-none"
+              style={{ backgroundColor: isPositive ? '#16a34a' : '#dc2626' }}
+            />
+            <div className="flex flex-col items-center justify-center py-6 px-4 gap-1.5 relative z-10">
               {isStatsFetching ? (
-                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-12 w-48" />
               ) : (
                 <>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {isPositive ? <CheckCircle className="w-4 h-4 text-[hsl(var(--income))]" /> : <AlertTriangle className="w-4 h-4 text-destructive" />}
+                  <div className="flex items-center gap-1.5 text-xs font-display font-semibold uppercase tracking-widest text-muted-foreground">
+                    {isPositive
+                      ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--income))]" />
+                      : <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                    }
                     <span>Resultado do Mês</span>
                   </div>
-                  <p className={`text-2xl font-bold ${isPositive ? 'text-[hsl(var(--income))]' : 'text-destructive'}`}>
+                  <p className={`text-4xl sm:text-5xl font-display font-extrabold tabular-nums tracking-tight ${isPositive ? 'text-[hsl(var(--income))]' : 'text-destructive'}`}>
                     {formatCurrency(resultado)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isPositive ? 'Suas finanças estão no azul este mês.' : 'Você gastou mais do que recebeu este mês.'}
+                  <p className="text-xs text-muted-foreground/80">
+                    {isPositive ? 'Finanças no azul este mês.' : 'Gastos acima das receitas este mês.'}
                   </p>
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+            {/* Month progress bar */}
+            <div className="h-1 w-full bg-black/5 dark:bg-white/5">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${isPositive ? 'bg-emerald-500/60' : 'bg-rose-500/60'}`}
+                style={{ width: `${monthProgress}%` }}
+              />
+            </div>
+          </div>
         );
       })()}
 
@@ -228,9 +255,9 @@ export default function Dashboard() {
         return (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-4 animate-fade-in">
             {/* PAINEL 1 — Visão Geral (2/5) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
-              <div className="px-5 pt-4 pb-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-3">
+                <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Visão Geral
                 </h3>
               </div>
@@ -241,29 +268,29 @@ export default function Dashboard() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 text-muted-foreground/50 hover:text-foreground"
                     onClick={() => setEditarSaldoOpen(true)}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Wallet className="h-4 w-4 text-foreground/30" />
+                  <Wallet className="h-3.5 w-3.5 text-foreground/20" />
                 </div>
-                <p className="text-[#6B7280] text-xs mb-1.5">Saldo Disponível</p>
+                <p className="font-display text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Saldo Disponível</p>
                 {isStatsFetching ? (
-                  <Skeleton className="h-8 w-44" />
+                  <Skeleton className="h-10 w-44" />
                 ) : (
-                  <p className="text-2xl sm:text-[26px] font-bold tabular-nums text-[#111827]">
+                  <p className="text-3xl sm:text-4xl font-display font-extrabold tabular-nums tracking-tight text-foreground">
                     {formatCurrency(completeStats?.saldoDisponivel || 0)}
                   </p>
                 )}
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-[11px] text-[#6B7280]">
+                <div className="flex items-center gap-1 mt-2">
+                  <span className="text-[11px] text-muted-foreground/70">
                     Estimado: {formatCurrency(completeStats?.estimatedBalance || 0)}
                   </span>
                   <TooltipProvider>
                     <UITooltip>
                       <TooltipTrigger asChild>
-                        <button className="text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                        <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
                           <HelpCircle className="w-3 h-3" />
                         </button>
                       </TooltipTrigger>
@@ -293,9 +320,9 @@ export default function Dashboard() {
             </div>
 
             {/* PAINEL 2 — Este Mês (3/5) */}
-            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
-              <div className="px-5 pt-4 pb-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+              <div className="px-5 pt-4 pb-3">
+                <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Este Mês
                 </h3>
               </div>
@@ -358,20 +385,20 @@ export default function Dashboard() {
 
 
       {/* Receitas vs Despesas - largura total */}
-      <Card className="border rounded-xl shadow-sm animate-fade-in mb-4" style={{ animationDelay: '0.5s', opacity: 0 }}>
+      <Card className="border rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] animate-fade-in mb-4 overflow-hidden" style={{ animationDelay: '0.5s', opacity: 0 }}>
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-            <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-2 whitespace-nowrap">
-              <BarChart3 className="w-4 h-4 shrink-0" />
+            <CardTitle className="section-title-accent text-sm sm:text-base text-accent-violet flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 shrink-0 text-accent-violet" />
               Receitas vs Despesas ({mesReferencia.getFullYear()})
             </CardTitle>
-            <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-display font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 Receitas
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} />
+              <span className="flex items-center gap-1.5 text-xs bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full font-display font-semibold">
+                <span className="w-2 h-2 rounded-full bg-rose-400" />
                 Despesas
               </span>
             </div>
@@ -388,6 +415,16 @@ export default function Dashboard() {
                 data={monthlyData}
                 margin={{ top: 10, right: 5, left: isMobile ? -10 : 0, bottom: 0 }}
               >
+                <defs>
+                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#4ade80" stopOpacity={0.7} />
+                  </linearGradient>
+                  <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#fb7185" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -397,20 +434,20 @@ export default function Dashboard() {
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: isMobile ? 10 : 11 }}
+                  tick={{ fontSize: isMobile ? 10 : 11, fontFamily: 'Geist, sans-serif' }}
                   tickFormatter={(value: string) => isMobile ? value.slice(0, 3) + '.' : value}
                 />
                 <YAxis
                   tickFormatter={formatYAxis}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: isMobile ? 10 : 11 }}
+                  tick={{ fontSize: isMobile ? 10 : 11, fontFamily: 'Geist, sans-serif' }}
                   width={isMobile ? 45 : 60}
                 />
                 <Tooltip content={<CustomBarTooltip />} />
                 <Bar
                   dataKey="income"
-                  fill="#22c55e"
+                  fill="url(#incomeGradient)"
                   name="Receitas"
                   radius={[6, 6, 0, 0]}
                   animationBegin={200}
@@ -419,7 +456,7 @@ export default function Dashboard() {
                 />
                 <Bar
                   dataKey="expense"
-                  fill="#f87171"
+                  fill="url(#expenseGradient)"
                   name="Despesas"
                   radius={[6, 6, 0, 0]}
                   animationBegin={200}

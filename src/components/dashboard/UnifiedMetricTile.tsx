@@ -14,12 +14,9 @@ interface UnifiedMetricTileProps {
   isLoading?: boolean;
   formatValue?: (value: number) => string;
   valueColor?: "income" | "expense" | "neutral";
+  className?: string;
 }
 
-/**
- * Tile compacto usado dentro de um painel unificado.
- * Sem borda/sombra própria — divisores vêm do container pai.
- */
 export function UnifiedMetricTile({
   title,
   value,
@@ -30,13 +27,20 @@ export function UnifiedMetricTile({
   isLoading,
   formatValue,
   valueColor,
+  className,
 }: UnifiedMetricTileProps) {
   const getValueColor = () => {
-    if (valueColor === "expense") return "text-[#DC2626]";
-    if (valueColor === "income") return "text-[#16A34A]";
-    if (prefix === "-") return "text-[#DC2626]";
-    if (prefix === "+") return "text-[#16A34A]";
-    return value >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]";
+    if (valueColor === "expense") return "text-[#DC2626] dark:text-[#f87171]";
+    if (valueColor === "income") return "text-[#16A34A] dark:text-[#4ade80]";
+    if (prefix === "-") return "text-[#DC2626] dark:text-[#f87171]";
+    if (prefix === "+") return "text-[#16A34A] dark:text-[#4ade80]";
+    return value >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626] dark:text-[#f87171]";
+  };
+
+  const getTileBg = () => {
+    if (valueColor === "income" || prefix === "+") return "metric-tile-income";
+    if (valueColor === "expense" || prefix === "-") return "metric-tile-expense";
+    return "";
   };
 
   const displayValue = formatValue ? formatValue(value) : formatCurrency(value);
@@ -44,30 +48,33 @@ export function UnifiedMetricTile({
   return (
     <div
       className={cn(
-        "relative p-3 sm:p-4 transition-colors",
-        onClick && "cursor-pointer hover:bg-[#FAFAFA] dark:hover:bg-[#1f1f1f]"
+        "relative p-4 sm:p-5 transition-all duration-200",
+        getTileBg(),
+        onClick && "cursor-pointer hover:brightness-[0.97] active:brightness-95",
+        className
       )}
       onClick={onClick}
     >
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-        <Icon className="h-3.5 w-3.5 text-foreground/30" />
+      <div className="flex items-center gap-1.5 mb-2">
+        <Icon className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+        <p className="font-display font-semibold text-[10px] uppercase tracking-widest text-muted-foreground">
+          {title}
+        </p>
       </div>
 
-      <p className="text-[#6B7280] text-[11px] sm:text-xs mb-1 pr-5">{title}</p>
-
       {isLoading ? (
-        <Skeleton className="h-5 w-20 bg-gray-200/60 dark:bg-gray-700/40" />
+        <Skeleton className="h-7 w-24 bg-gray-200/60 dark:bg-gray-700/40 mb-1.5" />
       ) : (
-        <p className={cn("text-base sm:text-lg font-bold tabular-nums", getValueColor())}>
+        <p className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums leading-tight", getValueColor())}>
           {prefix}{displayValue}
         </p>
       )}
 
       {isLoading ? (
-        <Skeleton className="h-3 w-14 mt-1 bg-gray-200/60 dark:bg-gray-700/40" />
+        <Skeleton className="h-3 w-14 mt-1.5 bg-gray-200/60 dark:bg-gray-700/40" />
       ) : (
         subInfo && (
-          <div className="text-[10px] sm:text-[11px] text-[#6B7280] mt-1 leading-tight">
+          <div className="text-[10px] sm:text-[11px] text-muted-foreground/70 mt-1.5 leading-tight">
             {subInfo}
           </div>
         )
