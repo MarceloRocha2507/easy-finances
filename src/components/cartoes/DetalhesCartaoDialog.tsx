@@ -425,8 +425,7 @@ export function DetalhesCartaoDialog({
 
               <Button
                 size="sm"
-                className="h-9 gap-1.5 rounded-xl font-semibold shadow-sm text-white"
-                style={cartao.cor ? { backgroundColor: cartao.cor, borderColor: cartao.cor } : {}}
+                className="h-9 gap-1.5 rounded-xl font-semibold shadow-sm bg-[#111827] hover:bg-[#1F2937] text-white"
                 onClick={() => setNovaCompraOpen(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
