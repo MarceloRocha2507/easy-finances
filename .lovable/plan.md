@@ -1,55 +1,32 @@
-## Problema
+## Por que ainda parece antigo
 
-Nas imagens da fatura Nubank, o modelo de visão está extraindo de forma inconsistente as linhas em **verde com sinal negativo**:
+O `NovaCompraCartaoDialog` não foi incluído na varredura anterior — ele tem cabeçalho 100% manual (não usa `<DialogHeader>`) e ainda força:
 
-- Imagem 1: perdeu "Crédito de parcelamento de compra" de R$ 34,90 e R$ 30,00 (08 MAI).
-- Imagem 2: capturou corretamente "Crédito de parcelamento de compra" de R$ 114,20 (09 MAI).
-- Imagem 3: perdeu "Pagamento recebido" de R$ 74,67 (24 MAI).
-- Imagem 4: perdeu "Pagamento recebido" de R$ 20,00 (22 MAI).
+- `borderRadius: 16` via `style` inline (sobrescreve os 24 do base)
+- `boxShadow: 0 8px 32px rgba(0,0,0,0.12)` (sobrescreve a sombra de 4 camadas)
+- Header próprio com `bg-white`, sem gradiente
+- Botão `X` próprio (já que `[&>button]:hidden` esconde o do base)
 
-Ou seja, o prompt já descreve corretamente os tipos, mas o modelo está "pulando" linhas — provavelmente porque o texto verde tem baixo contraste no fundo escuro e o modelo trata a linha como decorativa.
+Resultado: cantos menores, sombra mais simples, sem faixa gradiente no topo — exatamente o "design antigo" da screenshot.
 
-Não há bug de código no frontend (o filtro `valor > 0 && estabelecimento` aceita perfeitamente esses tipos, pois `valor` vem positivo e `estabelecimento` é o próprio texto "Pagamento recebido" / "Crédito de parcelamento de compra"). A correção é no **prompt da Edge Function**.
+## Mudanças (somente em `src/components/cartoes/NovaCompraCartaoDialog.tsx`)
 
-## Mudanças
+1. **Remover overrides do `DialogContent`**
+   - Tirar `rounded-2xl` do `className`
+   - Remover `borderRadius: 16` e `boxShadow` dos dois `style` (desktop e mobile), deixando o base aplicar 24px + sombra de 4 camadas
+   - Manter `[&>button]:hidden`, dimensões e comportamento mobile (slide bottom, safe-area)
 
-Arquivo único: `supabase/functions/analisar-comprovante-cartao/index.ts`, bloco `nubankRules`.
+2. **Aplicar faixa gradiente no header sticky** (padrão usado em `TotalAPagarCard` / `TransactionDetailsDialog`)
+   - `background: linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)`
+   - `borderBottom: 1px solid rgba(0,0,0,0.06)`
+   - Título com `fontFamily: var(--font-display)`, `fontSize: 17`, `fontWeight: 700`, `letterSpacing: -0.025em`, cor `#1a1625` (tokens do `DialogTitle` novo)
+   - Ajustar paddings para casar com a faixa (sem `bg-white` por baixo)
 
-### 1. Adicionar bloco de instrução visual explícita no topo do bloco Nubank
+3. **Padronizar o botão `X` manual** para o estilo novo
+   - 28×28, `borderRadius: 8`, fundo `rgba(0,0,0,0.05)` → hover `rgba(0,0,0,0.09)`, cor `#9590aa`
 
-Antes de "COMO A FATURA DO NUBANK FUNCIONA", adicionar uma seção **"ATENÇÃO VISUAL — LINHAS VERDES"** explicando que:
+Nada de lógica/estado/validação é alterado — apenas tokens visuais do shell do modal.
 
-- No app do Nubank (tema escuro), TODAS as linhas com valor em **verde** OU com sinal `– R$` / `-R$` na frente são lançamentos válidos e DEVEM ser extraídas com `sinal="credito"`.
-- Essas linhas têm o mesmo peso visual que compras normais — não são cabeçalhos, não são decoração, NÃO PODEM ser ignoradas.
-- Tipos esperados em verde: `pagamento_fatura` ("Pagamento recebido", "Pagamento de fatura"), `estorno_parcelamento` ("Crédito de parcelamento de compra"), `estorno` ("Estorno X", "Reembolso X", "Crédito <Estab>").
-- A descrição "Crédito de parcelamento de compra" pode aparecer quebrada em até 3 linhas; trate sempre como UMA linha lógica.
+## Observação
 
-### 2. Adicionar checklist de auto-verificação no final do bloco Nubank
-
-Bloco final obrigatório no prompt:
-
-```
-ANTES DE FINALIZAR A RESPOSTA:
-1. Releia a imagem de cima para baixo procurando QUALQUER texto em verde ou QUALQUER valor com prefixo "–" / "-".
-2. Para cada um, confirme que existe um item no array "compras" com sinal="credito" e a data correspondente.
-3. Conte: número de linhas verdes na imagem == número de itens com sinal="credito" no array. Se não bater, REVISE antes de responder.
-4. NUNCA omita uma linha porque "parece técnica" ou "parece resumo" — extraia tudo.
-```
-
-### 3. Reforçar regra de classificação
-
-Na seção "Classificação do tipo", deixar explícito que `Pagamento recebido` e `Pagamento de fatura` SEMPRE são extraídos (não filtrados pelo modelo), pois o frontend é quem decide se vira "Adiantar Fatura" ou se é só informativo.
-
-## Fora de escopo
-
-- Não mexer no parser de CSV nem em `RevisarComprasLoteDialog`.
-- Não mexer no filtro do frontend.
-- Não trocar de modelo de IA — apenas reforçar o prompt.
-
-## Como validar
-
-Após a edição, reenviar as 4 imagens de exemplo. Cada uma deve agora trazer todas as linhas verdes:
-- Imagem 1: 2 itens com `tipo="estorno_parcelamento"` (34,90 e 30,00).
-- Imagem 2: 1 item `estorno_parcelamento` (114,20) + 1 item `iof` (4,00).
-- Imagem 3: 1 item `pagamento_fatura` (74,67).
-- Imagem 4: 1 item `pagamento_fatura` (20,00).
+Se quiser, depois deste posso fazer uma varredura final por outros modais com `borderRadius`/`boxShadow` inline (ex.: `DetalhesCartaoDialog`, `PagarFaturaDialog`, `EditarCompraDialog`) que possam estar no mesmo padrão antigo. Mas começo só pelo Nova Compra para validar o resultado.
