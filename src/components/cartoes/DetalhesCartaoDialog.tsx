@@ -215,33 +215,32 @@ export function DetalhesCartaoDialog({
 
   const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-amber-500" : "bg-income";
 
-  const headerBg = cartao.cor
-    ? `linear-gradient(145deg, ${cartao.cor} 0%, ${cartao.cor}cc 45%, #0f172a 100%)`
-    : "linear-gradient(145deg, #334155 0%, #1e293b 50%, #0f172a 100%)";
+  const accentColor = cartao.cor || "#6366f1";
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-0">
 
-          {/* ── HEADER PREMIUM ── */}
-          <div className="relative px-5 pt-5 pb-5 overflow-hidden" style={{ background: headerBg }}>
-            {/* Decorative blobs */}
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/[0.04] -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-white/[0.03] translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none" />
-
-            <DialogHeader className="space-y-0 relative z-10">
+          {/* ── HEADER LIMPO ── */}
+          <div className="relative px-5 pt-5 pb-5 bg-white border-b border-black/[0.06]">
+            <DialogHeader className="space-y-0">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-white" />
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="h-8 w-8 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${accentColor}14` }}
+                  >
+                    <CreditCard className="h-4 w-4" style={{ color: accentColor }} />
                   </div>
-                  <DialogTitle className="text-base font-bold text-white tracking-tight">
+                  <DialogTitle className="text-base font-bold tracking-tight" style={{ color: "#1a1625" }}>
                     {cartao.nome}
                   </DialogTitle>
                 </div>
-                <Badge className="bg-white/15 text-white border-white/25 text-[10px] font-semibold hover:bg-white/20">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-semibold border-black/10 bg-black/[0.03] text-[#6b6580] hover:bg-black/[0.05]"
+                >
                   {cartao.bandeira || "Crédito"}
                 </Badge>
               </div>
@@ -249,58 +248,58 @@ export function DetalhesCartaoDialog({
             </DialogHeader>
 
             {/* Month navigation */}
-            <div className="flex items-center justify-center gap-2 mt-4 relative z-10">
+            <div className="flex items-center justify-center gap-2 mt-5">
               <button
-                className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
+                className="h-7 w-7 rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, -1))}
               >
-                <ChevronLeft className="h-4 w-4 text-white/80" />
+                <ChevronLeft className="h-4 w-4 text-[#6b6580]" />
               </button>
-              <span className="text-xs font-semibold text-white/75 capitalize bg-white/10 rounded-full px-4 py-1.5 min-w-[126px] text-center">
+              <span className="text-xs font-semibold capitalize bg-black/[0.04] rounded-full px-4 py-1.5 min-w-[126px] text-center text-[#1a1625]">
                 {monthLabel(mesRef)}
               </span>
               <button
-                className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
+                className="h-7 w-7 rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, 1))}
               >
-                <ChevronRight className="h-4 w-4 text-white/80" />
+                <ChevronRight className="h-4 w-4 text-[#6b6580]" />
               </button>
             </div>
 
             {/* Invoice amount - hero element */}
-            <div className="text-center mt-5 relative z-10">
-              <p className="text-[2.6rem] font-black text-white leading-none tracking-tighter">
+            <div className="text-center mt-5">
+              <p className="text-[2.4rem] font-black leading-none tracking-tighter" style={{ color: "#1a1625" }}>
                 {formatCurrency(totalMes)}
               </p>
-              <p className="text-[10px] text-white/50 mt-2 uppercase tracking-[0.18em] font-semibold">
+              <p className="text-[10px] mt-2 uppercase tracking-[0.18em] font-semibold text-[#9590aa]">
                 fatura atual
               </p>
             </div>
 
-            {/* Limit / Available - glass cards */}
-            <div className="grid grid-cols-2 gap-2 mt-5 relative z-10">
-              <div className="rounded-xl bg-white/10 px-3 py-2.5">
-                <p className="text-[9px] text-white/55 uppercase tracking-widest font-semibold">Limite</p>
-                <p className="text-sm font-bold text-white mt-1">{formatCurrency(limite)}</p>
+            {/* Limit / Available */}
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <div className="rounded-xl bg-black/[0.03] px-3 py-2.5 border border-black/[0.04]">
+                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#9590aa]">Limite</p>
+                <p className="text-sm font-bold mt-1 text-[#1a1625]">{formatCurrency(limite)}</p>
               </div>
-              <div className="rounded-xl bg-white/10 px-3 py-2.5">
-                <p className="text-[9px] text-white/55 uppercase tracking-widest font-semibold">Disponível</p>
-                <p className="text-sm font-bold text-emerald-300 mt-1">{formatCurrency(disponivel)}</p>
+              <div className="rounded-xl bg-black/[0.03] px-3 py-2.5 border border-black/[0.04]">
+                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#9590aa]">Disponível</p>
+                <p className="text-sm font-bold text-emerald-600 mt-1">{formatCurrency(disponivel)}</p>
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="mt-3 relative z-10">
-              <div className="h-1.5 rounded-full bg-white/15 overflow-hidden">
+            <div className="mt-3">
+              <div className="h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${
-                    usoPct > 85 ? "bg-red-400" : usoPct > 60 ? "bg-amber-400" : "bg-emerald-400"
+                    usoPct > 85 ? "bg-red-500" : usoPct > 60 ? "bg-amber-500" : "bg-emerald-500"
                   }`}
                   style={{ width: `${usoPct}%` }}
                 />
               </div>
               <div className="flex justify-end mt-1">
-                <span className="text-[9px] text-white/40 font-medium">{usoPct.toFixed(0)}% utilizado</span>
+                <span className="text-[9px] text-[#9590aa] font-medium">{usoPct.toFixed(0)}% utilizado</span>
               </div>
             </div>
           </div>
