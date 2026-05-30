@@ -476,47 +476,8 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Categoria + Comparativo lado a lado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <PieChartWithLegend data={pieData} delay={0.45} isLoading={isCategoryFetching} />
-        {dashboardData?.comparativo && (
-          <div className="hidden sm:block">
-            <ComparativoMensal comparativo={dashboardData.comparativo} />
-          </div>
-        )}
-      </div>
 
 
-      {/* Cartões */}
-      <div className="mb-6">
-        <CartoesCredito
-          cartoes={dashboardData?.cartoes || []}
-          resumo={
-            dashboardData?.resumo || {
-              totalFaturaMes: 0,
-              totalPendente: 0,
-              totalPago: 0,
-              limiteTotal: 0,
-              limiteDisponivel: 0,
-              quantidadeCartoes: 0,
-            }
-          }
-          isLoading={isLoading}
-          onCartaoClick={handleCartaoClick}
-        />
-      </div>
-
-      {/* Faturas + Compras */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <ProximasFaturas
-          faturas={dashboardData?.proximasFaturas || []}
-          onCartaoClick={(cartaoId) => {
-            const cartao = dashboardData?.cartoes.find((c) => c.id === cartaoId);
-            if (cartao) handleCartaoClick(cartao);
-          }}
-        />
-        <UltimasCompras compras={dashboardData?.ultimasCompras || []} />
-      </div>
 
       {/* Metas */}
       <div className="mb-6">
