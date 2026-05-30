@@ -31,7 +31,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const Categories = lazy(() => import("./pages/Categories"));
-const Reports = lazy(() => import("./pages/Reports"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Cartoes = lazy(() => import("./pages/Cartoes"));
@@ -44,17 +43,12 @@ const Responsaveis = lazy(() => import("./pages/Responsaveis"));
 const MetasPage = lazy(() => import("./pages/Metas"));
 const InvestimentosPage = lazy(() => import("./pages/Investimentos"));
 const FaturasPage = lazy(() => import("./pages/cartoes/Faturas"));
-const ParcelamentosPage = lazy(() => import("./pages/cartoes/Parcelamentos"));
 const LimitesPage = lazy(() => import("./pages/cartoes/Limites"));
 const AuditoriaPage = lazy(() => import("./pages/cartoes/Auditoria"));
 const ImportarComprasPage = lazy(() => import("./pages/cartoes/ImportarCompras"));
 const BancosPage = lazy(() => import("./pages/Bancos"));
-const RelatorioCategorias = lazy(() => import("./pages/reports/RelatorioCategorias"));
-const Exportacoes = lazy(() => import("./pages/reports/Exportacoes"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
-const ImportarPage = lazy(() => import("./pages/transactions/Importar"));
-const DespesasFuturasPage = lazy(() => import("./pages/DespesasFuturas"));
 
 const AssistentePage = lazy(() => import("./pages/Assistente"));
 
@@ -103,27 +97,6 @@ const App = () => (
             />
 
 
-            <Route
-              path="/transactions/importar"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <ImportarPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/transactions/futuras"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <DespesasFuturasPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/transactions/simulador"
@@ -174,16 +147,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/cartoes/parcelamentos"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <ParcelamentosPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/cartoes/bancos"
@@ -272,36 +235,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/reports/categorias"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <RelatorioCategorias />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/reports/exportar"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <Exportacoes />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/profile"

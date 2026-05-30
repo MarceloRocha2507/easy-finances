@@ -215,86 +215,109 @@ export function DetalhesCartaoDialog({
 
   const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-amber-500" : "bg-income";
 
+  const headerBg = cartao.cor
+    ? `linear-gradient(145deg, ${cartao.cor} 0%, ${cartao.cor}cc 45%, #0f172a 100%)`
+    : "linear-gradient(145deg, #334155 0%, #1e293b 50%, #0f172a 100%)";
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col">
-          {/* Header redesenhado */}
-          <div className="px-5 sm:px-6 pt-5 pb-5 bg-muted border-b">
-            <DialogHeader className="space-y-0">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <DialogTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                  <CreditCard className="h-4 w-4" />
-                  {cartao.nome}
-                </DialogTitle>
-                <Badge variant="outline" className="text-[10px]">
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-0">
+
+          {/* ── HEADER PREMIUM ── */}
+          <div className="relative px-5 pt-5 pb-5 overflow-hidden" style={{ background: headerBg }}>
+            {/* Decorative blobs */}
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/[0.04] -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-white/[0.03] translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none" />
+
+            <DialogHeader className="space-y-0 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <DialogTitle className="text-base font-bold text-white tracking-tight">
+                    {cartao.nome}
+                  </DialogTitle>
+                </div>
+                <Badge className="bg-white/15 text-white border-white/25 text-[10px] font-semibold hover:bg-white/20">
                   {cartao.bandeira || "Crédito"}
                 </Badge>
               </div>
-              <DialogDescription className="sr-only">
-                Detalhes da fatura do cartão
-              </DialogDescription>
+              <DialogDescription className="sr-only">Detalhes da fatura do cartão</DialogDescription>
             </DialogHeader>
 
-            {/* Navegação de mês compacta */}
-            <div className="flex items-center justify-center gap-1 mt-2 mb-3">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 rounded-full"
+            {/* Month navigation */}
+            <div className="flex items-center justify-center gap-2 mt-4 relative z-10">
+              <button
+                className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, -1))}
               >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="min-w-[110px] text-center text-xs font-medium text-muted-foreground capitalize bg-background/60 rounded-full px-3 py-1">
+                <ChevronLeft className="h-4 w-4 text-white/80" />
+              </button>
+              <span className="text-xs font-semibold text-white/75 capitalize bg-white/10 rounded-full px-4 py-1.5 min-w-[126px] text-center">
                 {monthLabel(mesRef)}
               </span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 rounded-full"
+              <button
+                className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, 1))}
               >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                <ChevronRight className="h-4 w-4 text-white/80" />
+              </button>
             </div>
 
-            {/* Valor da fatura como destaque */}
-            <p className="text-center text-2xl sm:text-3xl font-bold text-destructive tracking-tight">
-              {formatCurrency(totalMes)}
-            </p>
-            <p className="text-center text-xs text-muted-foreground mt-0.5">fatura atual</p>
-
-            {/* Limite e Disponível inline */}
-            <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground">
-              <span>Limite: <span className="font-semibold text-foreground">{formatCurrency(limite)}</span></span>
-              <span>Disponível: <span className="font-semibold text-income">{formatCurrency(disponivel)}</span></span>
+            {/* Invoice amount - hero element */}
+            <div className="text-center mt-5 relative z-10">
+              <p className="text-[2.6rem] font-black text-white leading-none tracking-tighter">
+                {formatCurrency(totalMes)}
+              </p>
+              <p className="text-[10px] text-white/50 mt-2 uppercase tracking-[0.18em] font-semibold">
+                fatura atual
+              </p>
             </div>
 
-            {/* Progress bar com cor dinâmica */}
-            <div className="mt-1.5 flex items-center gap-2">
-              <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+            {/* Limit / Available - glass cards */}
+            <div className="grid grid-cols-2 gap-2 mt-5 relative z-10">
+              <div className="rounded-xl bg-white/10 px-3 py-2.5">
+                <p className="text-[9px] text-white/55 uppercase tracking-widest font-semibold">Limite</p>
+                <p className="text-sm font-bold text-white mt-1">{formatCurrency(limite)}</p>
+              </div>
+              <div className="rounded-xl bg-white/10 px-3 py-2.5">
+                <p className="text-[9px] text-white/55 uppercase tracking-widest font-semibold">Disponível</p>
+                <p className="text-sm font-bold text-emerald-300 mt-1">{formatCurrency(disponivel)}</p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-3 relative z-10">
+              <div className="h-1.5 rounded-full bg-white/15 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${progressColor}`}
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    usoPct > 85 ? "bg-red-400" : usoPct > 60 ? "bg-amber-400" : "bg-emerald-400"
+                  }`}
                   style={{ width: `${usoPct}%` }}
                 />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground w-8 text-right">{usoPct.toFixed(0)}%</span>
+              <div className="flex justify-end mt-1">
+                <span className="text-[9px] text-white/40 font-medium">{usoPct.toFixed(0)}% utilizado</span>
+              </div>
             </div>
           </div>
 
-          {/* Conteúdo */}
-          <div className="px-5 sm:px-6 py-4 space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
-            {/* Ações */}
-            <div className="flex items-center justify-between gap-1 min-w-0">
-              <div className="flex items-center gap-1 shrink-0">
+          {/* ── CONTEÚDO ── */}
+          <div className="px-5 sm:px-6 py-4 space-y-4 overflow-y-auto overflow-x-hidden min-h-0">
+
+            {/* Toolbar de ações */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-0.5 bg-muted/70 rounded-xl p-1">
                 {/* Mobile: dropdown */}
                 <div className="flex sm:hidden">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-9 w-9">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <button className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors">
+                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       {podePagarFatura && (
@@ -335,15 +358,15 @@ export function DetalhesCartaoDialog({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                
+
                 {/* Desktop: ícones */}
-                <div className="hidden sm:flex items-center gap-0.5">
+                <div className="hidden sm:flex items-center">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setGerarMensagemOpen(true)}>
-                          <FileText className="h-4 w-4" />
-                        </Button>
+                        <button className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors" onClick={() => setGerarMensagemOpen(true)}>
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>Gerar mensagem</TooltipContent>
                     </Tooltip>
@@ -351,9 +374,9 @@ export function DetalhesCartaoDialog({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRegistrarAcertoOpen(true)}>
-                          <Wallet className="h-4 w-4" />
-                        </Button>
+                        <button className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors" onClick={() => setRegistrarAcertoOpen(true)}>
+                          <Wallet className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>Registrar acerto</TooltipContent>
                     </Tooltip>
@@ -361,9 +384,9 @@ export function DetalhesCartaoDialog({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setAjustarFaturaOpen(true)}>
-                          <Scale className="h-4 w-4" />
-                        </Button>
+                        <button className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors" onClick={() => setAjustarFaturaOpen(true)}>
+                          <Scale className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>Ajustar fatura</TooltipContent>
                     </Tooltip>
@@ -371,17 +394,15 @@ export function DetalhesCartaoDialog({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-8 w-8" 
+                        <button
+                          className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors"
                           onClick={() => {
                             onOpenChange(false);
                             navigate(`/cartoes/${cartao.id}/importar`);
                           }}
                         >
-                          <Upload className="h-4 w-4" />
-                        </Button>
+                          <Upload className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>Importar compras</TooltipContent>
                     </Tooltip>
@@ -389,15 +410,13 @@ export function DetalhesCartaoDialog({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
+                        <button
+                          className="h-8 w-8 rounded-lg hover:bg-background/80 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           disabled={totalPago === 0}
                           onClick={() => setDesmarcarPagasOpen(true)}
                         >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
+                          <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>Desmarcar pagas</TooltipContent>
                     </Tooltip>
@@ -405,35 +424,43 @@ export function DetalhesCartaoDialog({
                 </div>
               </div>
 
-              <Button size="sm" className="h-9 sm:h-8 gap-1" onClick={() => setNovaCompraOpen(true)}>
+              <Button
+                size="sm"
+                className="h-9 gap-1.5 rounded-xl font-semibold shadow-sm text-white"
+                style={cartao.cor ? { backgroundColor: cartao.cor, borderColor: cartao.cor } : {}}
+                onClick={() => setNovaCompraOpen(true)}
+              >
                 <Plus className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Compra</span>
+                Compra
               </Button>
             </div>
 
-            {/* Resumo Pendente / Pago / Meu (EU) - cards lado a lado */}
+            {/* Status cards — Pendente / Pago / Meu */}
             {parcelas.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium">Pendente</span>
+                <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-destructive/70 rounded-l-xl" />
+                  <div className="flex items-center gap-1 pl-1.5">
+                    <Clock className="h-3 w-3 text-destructive/60" />
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Pendente</span>
                   </div>
-                  <p className="text-sm font-semibold text-destructive">{formatCurrency(totalMes)}</p>
+                  <p className="text-sm font-bold text-destructive pl-1.5">{formatCurrency(totalMes)}</p>
                 </div>
-                <div className="rounded-xl border border-income/20 bg-income/5 p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Check className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium">Pago</span>
+                <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-500 rounded-l-xl" />
+                  <div className="flex items-center gap-1 pl-1.5">
+                    <Check className="h-3 w-3 text-emerald-500/70" />
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Pago</span>
                   </div>
-                  <p className="text-sm font-semibold text-income">{formatCurrency(totalPago)}</p>
+                  <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 pl-1.5">{formatCurrency(totalPago)}</p>
                 </div>
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Crown className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium">Meu</span>
+                <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary rounded-l-xl" />
+                  <div className="flex items-center gap-1 pl-1.5">
+                    <Crown className="h-3 w-3 text-primary/70" />
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Meu</span>
                   </div>
-                  <p className="text-sm font-semibold text-foreground">{formatCurrency(totalMeu)}</p>
+                  <p className="text-sm font-bold text-foreground pl-1.5">{formatCurrency(totalMeu)}</p>
                 </div>
               </div>
             )}
@@ -448,7 +475,7 @@ export function DetalhesCartaoDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-9 text-xs gap-1.5"
+                className="w-full h-9 text-xs gap-1.5 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                 onClick={() => setPagarFaturaOpen(true)}
               >
                 <Check className="h-3.5 w-3.5" />
@@ -456,13 +483,12 @@ export function DetalhesCartaoDialog({
               </Button>
             )}
 
-            {/* Ver todas as despesas */}
+            {/* Ver todas as despesas - CTA principal */}
             <Button
-              className="w-full h-10 sm:h-9 text-sm gap-2"
+              className="w-full h-11 text-sm gap-2 rounded-xl font-semibold shadow-sm"
               onClick={async () => {
                 onOpenChange(false);
-                
-                // Busca a primeira parcela não paga deste cartão (o mês "aberto")
+
                 const { data: openParcela } = await supabase
                   .from("parcelas_cartao")
                   .select("mes_referencia, compra:compras_cartao!inner(cartao_id)")
@@ -474,47 +500,41 @@ export function DetalhesCartaoDialog({
                   .maybeSingle();
 
                 let month, year;
-                
+
                 if (openParcela?.mes_referencia) {
-                  // Converte para objeto Date garantindo que não haja problemas de fuso horário
-                  const openDate = new Date(openParcela.mes_referencia + 'T12:00:00');
+                  const openDate = new Date(openParcela.mes_referencia + "T12:00:00");
                   month = openDate.getMonth() + 1;
                   year = openDate.getFullYear();
                 } else {
-                  // Se não houver nada aberto, usa o mês que estava sendo visualizado no modal
                   month = mesRef.getMonth() + 1;
                   year = mesRef.getFullYear();
                 }
-                
+
                 navigate(`/cartoes/${cartao.id}/despesas?month=${month}&year=${year}`);
               }}
             >
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="h-4 w-4" />
               {parcelas.length > 0 && totalMes > 0
                 ? `Ver todas as ${parcelas.length} despesas`
                 : "Ver fatura aberta"}
             </Button>
 
-            {/* Ações do cartão - discretas */}
-            <div className="flex gap-2 pt-2 border-t min-w-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 gap-1.5 min-w-0 h-9 text-xs"
+            {/* Ações secundárias */}
+            <div className="flex gap-1 pt-1 border-t">
+              <button
+                className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-colors font-medium"
                 onClick={() => setEditarCartaoOpen(true)}
               >
-                <Settings className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Editar cartão</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 gap-1.5 min-w-0 h-9 text-xs text-destructive hover:text-destructive"
+                <Settings className="h-3.5 w-3.5" />
+                Editar cartão
+              </button>
+              <button
+                className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl transition-colors font-medium"
                 onClick={() => setExcluirCartaoOpen(true)}
               >
-                <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Excluir</span>
-              </Button>
+                <Trash2 className="h-3.5 w-3.5" />
+                Excluir
+              </button>
             </div>
           </div>
         </DialogContent>

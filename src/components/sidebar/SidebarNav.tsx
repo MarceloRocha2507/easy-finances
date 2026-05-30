@@ -7,23 +7,14 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   Tags,
-  BarChart3,
   CreditCard,
   PiggyBank,
   Repeat,
   Shield,
-  Layers,
   Users,
-  PieChart,
-  Download,
-  Upload,
-  History,
   Building2,
-  CalendarClock,
   CalendarDays,
-  Bot,
   Sparkles,
-  
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -39,10 +30,7 @@ const transacoesMenu = {
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
-    { icon: Upload, label: "Importar", href: "/transactions/importar" },
-    { icon: CalendarClock, label: "Despesas Futuras", href: "/transactions/futuras" },
     { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
-    
   ],
 };
 
@@ -51,21 +39,10 @@ const cartoesMenu = {
   label: "Cartões",
   subItems: [
     { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-    { icon: Layers, label: "Parcelamentos", href: "/cartoes/parcelamentos" },
     { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
   ],
 };
 
-const relatoriosMenu = {
-  icon: BarChart3,
-  label: "Relatórios",
-  subItems: [
-    { icon: BarChart3, label: "Visão Geral", href: "/reports" },
-    { icon: PieChart, label: "Por Categoria", href: "/reports/categorias" },
-    { icon: Download, label: "Exportações", href: "/reports/exportar" },
-    { icon: History, label: "Auditoria", href: "/cartoes/auditoria" },
-  ],
-};
 
 interface SidebarNavProps {
   isAdmin: boolean;
@@ -86,11 +63,10 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     ),
   }), [totalDetectados]);
 
-  type MenuKey = "transacoes" | "cartoes" | "relatorios";
+  type MenuKey = "transacoes" | "cartoes";
   const getActiveMenu = useCallback((path: string): MenuKey | null => {
     if (path.startsWith("/transactions") || path === "/assinaturas") return "transacoes";
-    if ((path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/auditoria")) return "cartoes";
-    if (path.startsWith("/reports") || path === "/cartoes/auditoria") return "relatorios";
+    if (path.startsWith("/cartoes") && path !== "/cartoes/bancos") return "cartoes";
     return null;
   }, []);
 
@@ -99,7 +75,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     return {
       transacoes: active === "transacoes",
       cartoes: active === "cartoes",
-      relatorios: active === "relatorios",
     };
   });
 
@@ -109,18 +84,15 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       setOpenMenus({
         transacoes: active === "transacoes",
         cartoes: active === "cartoes",
-        relatorios: active === "relatorios",
       });
     }
   }, [pathname, getActiveMenu]);
 
   const handleMenuChange = useCallback((menu: MenuKey) => (open: boolean) => {
     if (open) {
-      // Accordion: close all others, open only this one
       setOpenMenus({
         transacoes: menu === "transacoes",
         cartoes: menu === "cartoes",
-        relatorios: menu === "relatorios",
       });
     } else {
       setOpenMenus(prev => ({ ...prev, [menu]: false }));
@@ -173,16 +145,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         excludePaths={["/cartoes/bancos", "/cartoes/auditoria"]}
         open={openMenus.cartoes}
         onOpenChange={handleMenuChange("cartoes")}
-        onItemClick={onItemClick}
-      />
-
-      <MenuCollapsible
-        icon={relatoriosMenu.icon}
-        label={relatoriosMenu.label}
-        subItems={relatoriosMenu.subItems}
-        basePath="/reports"
-        open={openMenus.relatorios}
-        onOpenChange={handleMenuChange("relatorios")}
         onItemClick={onItemClick}
       />
 
