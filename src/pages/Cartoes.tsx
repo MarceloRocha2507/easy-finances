@@ -18,7 +18,6 @@ import {
   RefreshCw,
   MoreHorizontal,
   FileText,
-  Wifi,
 } from "lucide-react";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
@@ -367,12 +366,6 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
       ? "Fechada"
       : "Aberta";
 
-  const statusStyle =
-    cartao.statusFaturaExibida === "paga"
-      ? { bg: "bg-emerald-500/20", text: "text-emerald-300" }
-      : cartao.statusFaturaExibida === "fechada"
-      ? { bg: "bg-amber-500/20", text: "text-amber-300" }
-      : { bg: "bg-white/10", text: "text-white/70" };
 
   return (
     <div
@@ -380,88 +373,37 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
       style={{ animationDelay: `${index * 0.06}s` }}
       onClick={onClick}
     >
-      {/* Face do Cartão — visual de cartão físico */}
-      <div
-        className="relative h-48 rounded-2xl overflow-hidden select-none transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_24px_48px_rgba(0,0,0,0.35)]"
-        style={{
-          background: `linear-gradient(135deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
-          boxShadow: '0 8px_24px rgba(0,0,0,0.25)',
-        }}
-      >
-        {/* Brilho diagonal */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)',
-          }}
-        />
+      {/* Painel de informações */}
+      <div className="bg-card border border-border rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300 group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
 
-        {/* Círculos decorativos de fundo */}
-        <div
-          className="absolute -right-8 -top-8 w-40 h-40 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${gradient.accent}15 0%, transparent 70%)` }}
-        />
-        <div
-          className="absolute -left-4 -bottom-8 w-32 h-32 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${gradient.accent}10 0%, transparent 70%)` }}
-        />
-
-        {/* Topo do cartão: chip + bandeira */}
-        <div className="absolute top-5 left-5 right-5 flex items-start justify-between">
-          {/* Chip EMV */}
-          <div className="relative w-9 h-7 rounded-[5px] overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #d4af37 0%, #f5e17a 30%, #b8860b 60%, #d4af37 100%)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-            }}
-          >
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-px p-1 opacity-60">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="bg-yellow-900/30 rounded-[1px]" />
-              ))}
+        {/* Cabeçalho: nome + bandeira + status */}
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/60">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className="w-1 h-9 rounded-full shrink-0"
+              style={{ backgroundColor: gradient.accent }}
+            />
+            <div className="min-w-0">
+              <p className="font-display font-bold text-sm text-foreground tracking-wide uppercase truncate">
+                {cartao.nome}
+              </p>
+              <p className="text-[10px] font-display font-semibold uppercase tracking-widest text-muted-foreground/70">
+                {cartao.bandeira || "Crédito"}
+              </p>
             </div>
           </div>
-
-          {/* Bandeira */}
-          <span className="font-display font-extrabold text-sm tracking-wider uppercase text-white/90">
-            {cartao.bandeira || "CRÉDITO"}
-          </span>
-        </div>
-
-        {/* Ícone Contactless */}
-        <div className="absolute top-5 left-16">
-          <Wifi className="h-4 w-4 rotate-90 text-white/30" strokeWidth={1.5} />
-        </div>
-
-        {/* Número mascarado */}
-        <div className="absolute bottom-14 left-5 right-5">
-          <p className="font-mono text-base tracking-[0.2em] text-white/50 select-none">
-            ●●●● ●●●● ●●●● ••••
-          </p>
-        </div>
-
-        {/* Rodapé do cartão: nome + status */}
-        <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-          <div>
-            <p className="text-[9px] font-display font-semibold uppercase tracking-widest text-white/40 mb-0.5">
-              Titular
-            </p>
-            <p className="font-display font-bold text-sm text-white tracking-wide uppercase truncate max-w-[160px]">
-              {cartao.nome}
-            </p>
-          </div>
           <span className={cn(
-            "text-[10px] font-display font-semibold px-2.5 py-1 rounded-full",
-            statusStyle.bg,
-            statusStyle.text
+            "text-[10px] font-display font-semibold px-2.5 py-1 rounded-full shrink-0",
+            cartao.statusFaturaExibida === "paga"
+              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              : cartao.statusFaturaExibida === "fechada"
+              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              : "bg-muted text-muted-foreground"
           )}>
             {statusLabel}
           </span>
         </div>
-      </div>
 
-      {/* Painel de informações abaixo do cartão */}
-      <div className="mt-3 bg-card border border-border rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300 group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
 
         {/* Fatura em destaque */}
         <div className="flex items-baseline justify-between mb-4">
