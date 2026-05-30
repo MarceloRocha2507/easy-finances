@@ -175,9 +175,18 @@ export function TransactionDetailsDialog({
       <DialogContent className="sm:max-w-md" noPadding>
         <div className="flex flex-col p-6 gap-0">
           {/* Header title */}
-          <p style={{ color: "#111827", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
-            Detalhes da Transação
-          </p>
+          <div
+            className="-mt-6 -mx-6 mb-4 px-6 pt-5 pb-4"
+            style={{
+              background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+              borderBottom: "1px solid rgba(0,0,0,0.06)",
+            }}
+          >
+            <p style={{ color: "#1a1625", fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em", fontFamily: "var(--font-display)" }}>
+              Detalhes da Transação
+            </p>
+          </div>
+
 
           {/* Transaction identity */}
           <div className="flex items-center gap-3 mb-4">
