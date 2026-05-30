@@ -321,7 +321,7 @@
   }
 
   .card-status-info {
-    @apply border-l-4 border-l-purple-500;
+    @apply border-l-4 border-l-[#6B7280];
   }
 
   /* Display font utility */
