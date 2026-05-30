@@ -132,8 +132,7 @@ export function parsePicpayCsv(text: string): CompraExtraida[] {
       valor_texto: valorStr,
       tipo,
       sinal,
-      observacao: observacao || undefined,
-    } as CompraExtraida);
+    });
   }
 
   return compras;
