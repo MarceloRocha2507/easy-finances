@@ -39,12 +39,12 @@ import {
    Gradientes únicos por cartão
 ====================================================== */
 const CARD_GRADIENTS = [
-  { from: "#1a1a2e", to: "#111827", accent: "#e94560" },   // Azul noite
-  { from: "#0f3460", to: "#1a1a2e", accent: "#533483" },   // Marinho profundo
-  { from: "#2d1b69", to: "#11998e", accent: "#a8edea" },   // Violeta → teal
-  { from: "#141e30", to: "#243b55", accent: "#c0c0c0" },   // Deep ocean
-  { from: "#373B44", to: "#4286f4", accent: "#f5f5f5" },   // Grafite → azul
-  { from: "#1a1a2e", to: "#6a0572", accent: "#e040fb" },   // Noite → roxo
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#111827" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#374151" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#6B7280" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#16A34A" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#DC2626" },
+  { from: "#F9FAFB", to: "#F3F4F6", accent: "#D97706" },
 ];
 
 export default function Cartoes() {

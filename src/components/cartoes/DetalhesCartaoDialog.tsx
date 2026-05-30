@@ -215,7 +215,7 @@ export function DetalhesCartaoDialog({
 
   const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-[#D97706]" : "bg-income";
 
-  const accentColor = cartao.cor || "#111827";
+  const accentColor = "#111827";
 
   return (
     <>
