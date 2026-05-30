@@ -130,11 +130,11 @@ export function RulesList() {
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div
                     className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${rule.category?.color || '#64748b'}15` }}
+                    style={{ backgroundColor: `${rule.category?.color || '#6B7280'}15` }}
                   >
                     <IconComponent
                       className="w-5 h-5"
-                      style={{ color: rule.category?.color || '#64748b' }}
+                      style={{ color: rule.category?.color || '#6B7280' }}
                     />
                   </div>
                   <div className="min-w-0">

@@ -215,7 +215,7 @@ export function DetalhesCartaoDialog({
 
   const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-amber-500" : "bg-income";
 
-  const accentColor = cartao.cor || "#6366f1";
+  const accentColor = cartao.cor || "#111827";
 
   return (
     <>
@@ -233,13 +233,13 @@ export function DetalhesCartaoDialog({
                   >
                     <CreditCard className="h-4 w-4" style={{ color: accentColor }} />
                   </div>
-                  <DialogTitle className="text-base font-bold tracking-tight" style={{ color: "#1a1625" }}>
+                  <DialogTitle className="text-base font-bold tracking-tight" style={{ color: "#111827" }}>
                     {cartao.nome}
                   </DialogTitle>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-[10px] font-semibold border-black/10 bg-black/[0.03] text-[#6b6580] hover:bg-black/[0.05]"
+                  className="text-[10px] font-semibold border-black/10 bg-black/[0.03] text-[#6B7280] hover:bg-black/[0.05]"
                 >
                   {cartao.bandeira || "Crédito"}
                 </Badge>
@@ -253,25 +253,25 @@ export function DetalhesCartaoDialog({
                 className="h-7 w-7 rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, -1))}
               >
-                <ChevronLeft className="h-4 w-4 text-[#6b6580]" />
+                <ChevronLeft className="h-4 w-4 text-[#6B7280]" />
               </button>
-              <span className="text-xs font-semibold capitalize bg-black/[0.04] rounded-full px-4 py-1.5 min-w-[126px] text-center text-[#1a1625]">
+              <span className="text-xs font-semibold capitalize bg-black/[0.04] rounded-full px-4 py-1.5 min-w-[126px] text-center text-[#111827]">
                 {monthLabel(mesRef)}
               </span>
               <button
                 className="h-7 w-7 rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors flex items-center justify-center"
                 onClick={() => setMesRef((m) => addMonths(m, 1))}
               >
-                <ChevronRight className="h-4 w-4 text-[#6b6580]" />
+                <ChevronRight className="h-4 w-4 text-[#6B7280]" />
               </button>
             </div>
 
             {/* Invoice amount - hero element */}
             <div className="text-center mt-5">
-              <p className="text-[2.4rem] font-black leading-none tracking-tighter" style={{ color: "#1a1625" }}>
+              <p className="text-[2.4rem] font-black leading-none tracking-tighter" style={{ color: "#111827" }}>
                 {formatCurrency(totalMes)}
               </p>
-              <p className="text-[10px] mt-2 uppercase tracking-[0.18em] font-semibold text-[#9590aa]">
+              <p className="text-[10px] mt-2 uppercase tracking-[0.18em] font-semibold text-[#6B7280]">
                 fatura atual
               </p>
             </div>
@@ -279,11 +279,11 @@ export function DetalhesCartaoDialog({
             {/* Limit / Available */}
             <div className="grid grid-cols-2 gap-2 mt-5">
               <div className="rounded-xl bg-black/[0.03] px-3 py-2.5 border border-black/[0.04]">
-                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#9590aa]">Limite</p>
-                <p className="text-sm font-bold mt-1 text-[#1a1625]">{formatCurrency(limite)}</p>
+                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#6B7280]">Limite</p>
+                <p className="text-sm font-bold mt-1 text-[#111827]">{formatCurrency(limite)}</p>
               </div>
               <div className="rounded-xl bg-black/[0.03] px-3 py-2.5 border border-black/[0.04]">
-                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#9590aa]">Disponível</p>
+                <p className="text-[9px] uppercase tracking-widest font-semibold text-[#6B7280]">Disponível</p>
                 <p className="text-sm font-bold text-emerald-600 mt-1">{formatCurrency(disponivel)}</p>
               </div>
             </div>
@@ -299,7 +299,7 @@ export function DetalhesCartaoDialog({
                 />
               </div>
               <div className="flex justify-end mt-1">
-                <span className="text-[9px] text-[#9590aa] font-medium">{usoPct.toFixed(0)}% utilizado</span>
+                <span className="text-[9px] text-[#6B7280] font-medium">{usoPct.toFixed(0)}% utilizado</span>
               </div>
             </div>
           </div>

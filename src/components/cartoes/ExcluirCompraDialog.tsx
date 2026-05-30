@@ -302,7 +302,7 @@ export function ExcluirCompraDialog({
                     border: "none",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#B91C1C")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#DC2626")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "#DC2626")}
                 >
                   {loading ? "Excluindo..." : "Confirmar Exclusão"}
@@ -347,7 +347,7 @@ export function ExcluirCompraDialog({
                     border: "none",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#B91C1C")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#DC2626")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "#DC2626")}
                 >
                   {loading ? "Excluindo..." : "Excluir"}

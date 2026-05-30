@@ -37,7 +37,7 @@ export function EventoItem({ evento, onClick, compact }: EventoItemProps) {
             {LABELS_TIPO[evento.tipo]}
           </span>
           {isPaid && (
-            <span className="text-[10px] text-[#22C55E] font-medium">
+            <span className="text-[10px] text-[#16A34A] font-medium">
               ✓ pago
             </span>
           )}
@@ -50,7 +50,7 @@ export function EventoItem({ evento, onClick, compact }: EventoItemProps) {
         <span
           className={cn(
             "text-sm font-semibold tabular-nums shrink-0",
-            evento.tipo === "receita" ? "text-[#22C55E]" : "text-[#111827]"
+            evento.tipo === "receita" ? "text-[#16A34A]" : "text-[#111827]"
           )}
         >
           {formatCurrency(evento.valor)}

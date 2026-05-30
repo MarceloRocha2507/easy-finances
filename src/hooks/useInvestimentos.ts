@@ -34,15 +34,15 @@ export interface MovimentacaoInvestimento {
 }
 
 export const TIPOS_INVESTIMENTO = [
-  { value: "poupanca", label: "Poupança", icon: "piggy-bank", cor: "#22c55e" },
-  { value: "cdb", label: "CDB", icon: "landmark", cor: "#3b82f6" },
-  { value: "lci", label: "LCI", icon: "building-2", cor: "#14b8a6" },
-  { value: "lca", label: "LCA", icon: "building-2", cor: "#0d9488" },
-  { value: "tesouro", label: "Tesouro Direto", icon: "building", cor: "#8b5cf6" },
+  { value: "poupanca", label: "Poupança", icon: "piggy-bank", cor: "#16A34A" },
+  { value: "cdb", label: "CDB", icon: "landmark", cor: "#111827" },
+  { value: "lci", label: "LCI", icon: "building-2", cor: "#16A34A" },
+  { value: "lca", label: "LCA", icon: "building-2", cor: "#16A34A" },
+  { value: "tesouro", label: "Tesouro Direto", icon: "building", cor: "#111827" },
   { value: "acoes", label: "Ações", icon: "trending-up", cor: "#f59e0b" },
-  { value: "fundos", label: "Fundos", icon: "layers", cor: "#ec4899" },
+  { value: "fundos", label: "Fundos", icon: "layers", cor: "#DC2626" },
   { value: "cripto", label: "Criptomoedas", icon: "bitcoin", cor: "#f97316" },
-  { value: "outros", label: "Outros", icon: "wallet", cor: "#6366f1" },
+  { value: "outros", label: "Outros", icon: "wallet", cor: "#111827" },
 ];
 
 export function useInvestimentos() {

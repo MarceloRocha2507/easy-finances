@@ -174,7 +174,7 @@ export function RegistrarAcertoDialog({
               user_id: user.id,
               name: "Acerto de Fatura",
               icon: "handshake",
-              color: "#10b981",
+              color: "#16A34A",
               type: "income",
               is_default: true,
             })

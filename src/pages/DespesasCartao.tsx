@@ -465,7 +465,7 @@ export default function DespesasCartao() {
             </Button>
             <CreditCard
               className="h-5 w-5 shrink-0 hidden sm:block"
-              style={{ color: cartao?.cor || "#6366f1" }}
+              style={{ color: cartao?.cor || "#111827" }}
             />
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold truncate">{cartao?.nome || "Cartão"}</h1>

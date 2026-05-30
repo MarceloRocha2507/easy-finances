@@ -776,7 +776,7 @@ export function NovaCompraCartaoDialog({
             isMobile ? "sticky top-0 px-5 pt-4 pb-4" : "px-6 pt-5 pb-4"
           )}
           style={{
-            background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+            background: "linear-gradient(160deg, #F9FAFB 0%, #F9FAFB 100%)",
             borderBottom: "1px solid rgba(0,0,0,0.06)",
           }}
         >
@@ -785,7 +785,7 @@ export function NovaCompraCartaoDialog({
             <div>
               <h2
                 style={{
-                  color: "#1a1625",
+                  color: "#111827",
                   fontWeight: 700,
                   fontSize: 17,
                   lineHeight: "20px",
@@ -795,7 +795,7 @@ export function NovaCompraCartaoDialog({
               >
                 Nova Compra
               </h2>
-              <p style={{ color: "#9590aa", fontSize: 12, marginTop: 2 }}>
+              <p style={{ color: "#6B7280", fontSize: 12, marginTop: 2 }}>
                 Registre uma compra no cartão {cartao.nome}
               </p>
             </div>
@@ -808,7 +808,7 @@ export function NovaCompraCartaoDialog({
               width: 28,
               height: 28,
               borderRadius: 8,
-              color: "#9590aa",
+              color: "#6B7280",
               background: "rgba(0,0,0,0.05)",
               border: "none",
               cursor: "pointer",
@@ -832,7 +832,7 @@ export function NovaCompraCartaoDialog({
               border: "1px dashed #D1D5DB",
               borderRadius: 10,
               padding: 12,
-              background: "#FAFAFA",
+              background: "#F9FAFB",
             }}
           >
             {imagemPreview ? (

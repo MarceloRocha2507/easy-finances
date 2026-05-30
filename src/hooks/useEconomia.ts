@@ -112,7 +112,7 @@ function gerarInsights(
       titulo: `${excedidos.length} categoria(s) acima do orçamento`,
       mensagem: `Você ultrapassou o limite em: ${excedidos.map((e) => e.categoriaNome).join(", ")}.`,
       icone: "alert-circle",
-      cor: "#ef4444",
+      cor: "#DC2626",
     });
   }
 
@@ -128,7 +128,7 @@ function gerarInsights(
         titulo: `Parabéns! Você está economizando ${percentualEconomia.toFixed(0)}%`,
         mensagem: `Você já economizou R$${economizado.toFixed(2)} este mês. Continue assim!`,
         icone: "trophy",
-        cor: "#22c55e",
+        cor: "#16A34A",
       });
     } else if (percentualEconomia >= 10) {
       insights.push({
@@ -137,7 +137,7 @@ function gerarInsights(
         titulo: `Você está economizando ${percentualEconomia.toFixed(0)}%`,
         mensagem: `Tente aumentar para 20% para ter uma reserva de emergência mais sólida.`,
         icone: "piggy-bank",
-        cor: "#3b82f6",
+        cor: "#111827",
       });
     }
   }
@@ -150,7 +150,7 @@ function gerarInsights(
       titulo: "Gastos maiores que receitas!",
       mensagem: `Você está gastando R$${(totalGasto - totalReceitas).toFixed(2)} a mais do que ganha. Revise seus gastos urgentemente.`,
       icone: "alert-octagon",
-      cor: "#ef4444",
+      cor: "#DC2626",
     });
   }
 
@@ -162,7 +162,7 @@ function gerarInsights(
       titulo: `Você reduziu ${Math.abs(comparativo.percentual).toFixed(0)}% dos gastos!`,
       mensagem: `Comparado ao mês passado, você economizou R$${Math.abs(comparativo.diferenca).toFixed(2)}. Excelente progresso!`,
       icone: "trending-down",
-      cor: "#22c55e",
+      cor: "#16A34A",
     });
   } else if (comparativo.tipo === "aumento" && comparativo.percentual >= 20) {
     insights.push({
@@ -186,7 +186,7 @@ function gerarInsights(
       titulo: `Previsão para os próximos ${diasRestantes} dias`,
       mensagem: `Mantendo a média atual de R$${mediaDiaria.toFixed(2)}/dia, você gastará mais R$${previsaoRestante.toFixed(2)} até o fim do mês.`,
       icone: "calculator",
-      cor: "#6366f1",
+      cor: "#111827",
     });
   }
 
@@ -263,7 +263,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
               categoriaId: catId,
               categoriaNome: cat?.name || "Sem categoria",
               categoriaIcone: cat?.icon || "tag",
-              categoriaCor: cat?.color || "#6366f1",
+              categoriaCor: cat?.color || "#111827",
               total: 0,
               quantidade: 0,
               percentual: 0,
@@ -306,7 +306,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
             categoriaId: catId,
             categoriaNome: cat?.name || "Sem categoria",
             categoriaIcone: cat?.icon || "tag",
-            categoriaCor: cat?.color || "#6366f1",
+            categoriaCor: cat?.color || "#111827",
             total: 0,
             quantidade: 0,
             percentual: 0,
@@ -341,7 +341,7 @@ export function useAnaliseGastos(mesReferencia?: Date) {
             categoriaId: catId,
             categoriaNome: cat?.name || "Sem categoria",
             categoriaIcone: cat?.icon || "tag",
-            categoriaCor: cat?.color || "#6366f1",
+            categoriaCor: cat?.color || "#111827",
             total: 0,
             quantidade: 0,
             percentual: 0,
@@ -524,7 +524,7 @@ export function useOrcamentos(mesReferencia?: Date) {
           categoryId: o.category_id,
           categoriaNome: o.categories?.name || "Categoria",
           categoriaIcone: o.categories?.icon || "tag",
-          categoriaCor: o.categories?.color || "#6366f1",
+          categoriaCor: o.categories?.color || "#111827",
           valorLimite: limite,
           gastoAtual: gasto,
           percentualUsado: percentual,

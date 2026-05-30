@@ -56,9 +56,9 @@ const categoriaLabel = (c: string) =>
   c === "streaming" ? "Streaming" : c === "software" ? "Software" : c === "saude" ? "Saúde" : c === "educacao" ? "Educação" : "Outros";
 
 const CATEGORIA_COLORS: Record<string, string> = {
-  streaming: "#8B5CF6",
+  streaming: "#111827",
   software: "#3B82F6",
-  saude: "#10B981",
+  saude: "#16A34A",
   educacao: "#F59E0B",
   outros: "#6B7280",
 };

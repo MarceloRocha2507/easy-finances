@@ -153,7 +153,7 @@ export function DetalhesTotalDespesasDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md overflow-hidden p-0 gap-0 border-none sm:rounded-2xl">
-        <DialogHeader className="px-6 pt-6 pb-4 bg-white dark:bg-[#1a1a1a]">
+        <DialogHeader className="px-6 pt-6 pb-4 bg-white dark:bg-[#111827]">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <TrendingDown className="w-5 h-5 text-expense" />
             Detalhamento de Despesas
@@ -163,7 +163,7 @@ export function DetalhesTotalDespesasDialog({
 
         <Separator className="bg-border/50" />
 
-        <ScrollArea className="max-h-[60vh] px-6 py-4 bg-white dark:bg-[#1a1a1a]">
+        <ScrollArea className="max-h-[60vh] px-6 py-4 bg-white dark:bg-[#111827]">
           {isLoading ? (
             <div className="space-y-4 py-4">
               {[1, 2, 3].map(i => (

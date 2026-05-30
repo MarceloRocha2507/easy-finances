@@ -110,7 +110,7 @@ export function DetalhesCompraCartaoDialog({
         <div
           className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0"
           style={{
-            background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+            background: "linear-gradient(160deg, #F9FAFB 0%, #F9FAFB 100%)",
             borderBottom: "1px solid rgba(0,0,0,0.06)",
           }}
         >
@@ -119,7 +119,7 @@ export function DetalhesCompraCartaoDialog({
             <div>
               <h2
                 style={{
-                  color: "#1a1625",
+                  color: "#111827",
                   fontWeight: 700,
                   fontSize: 17,
                   lineHeight: "20px",
@@ -139,7 +139,7 @@ export function DetalhesCompraCartaoDialog({
               width: 28,
               height: 28,
               borderRadius: 8,
-              color: "#9590aa",
+              color: "#6B7280",
               background: "rgba(0,0,0,0.05)",
               border: "none",
               cursor: "pointer",

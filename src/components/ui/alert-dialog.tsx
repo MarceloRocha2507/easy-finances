@@ -57,7 +57,7 @@ const AlertDialogContent = React.forwardRef<
           left: 0,
           right: 0,
           height: 3,
-          background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 45%, #6366f1 100%)",
+          background: "linear-gradient(90deg, #111827 0%, #a855f7 45%, #111827 100%)",
           borderRadius: "24px 24px 0 0",
           zIndex: 20,
           pointerEvents: "none",
@@ -91,7 +91,7 @@ const AlertDialogTitle = React.forwardRef<
     ref={ref}
     className={cn("leading-none", className)}
     style={{
-      color: "#1a1625",
+      color: "#111827",
       fontSize: 18,
       fontWeight: 700,
       letterSpacing: "-0.03em",
@@ -131,7 +131,7 @@ const AlertDialogAction = React.forwardRef<
       borderRadius: 12,
       fontSize: 15,
       fontWeight: 600,
-      background: "linear-gradient(135deg, #1a1625 0%, #2d2848 100%)",
+      background: "linear-gradient(135deg, #111827 0%, #2d2848 100%)",
       color: "#fff",
       boxShadow: "0 1px 2px rgba(0,0,0,0.15), 0 4px 8px rgba(26,22,37,0.12)",
       ...actionStyle,

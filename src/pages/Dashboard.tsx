@@ -255,7 +255,7 @@ export default function Dashboard() {
         return (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-4 animate-fade-in">
             {/* PAINEL 1 — Visão Geral (2/5) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-3">
                 <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Visão Geral
@@ -302,7 +302,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
               {/* Despesas (este mês) + clique para detalhes */}
               <div className="grid grid-cols-1 flex-1">
@@ -320,16 +320,16 @@ export default function Dashboard() {
             </div>
 
             {/* PAINEL 2 — Este Mês (3/5) */}
-            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-3 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-3">
                 <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Este Mês
                 </h3>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={completedIncome}
@@ -417,11 +417,11 @@ export default function Dashboard() {
               >
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.95} />
-                    <stop offset="100%" stopColor="#4ade80" stopOpacity={0.7} />
+                    <stop offset="0%" stopColor="#16A34A" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#16A34A" stopOpacity={0.7} />
                   </linearGradient>
                   <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.95} />
+                    <stop offset="0%" stopColor="#DC2626" stopOpacity={0.95} />
                     <stop offset="100%" stopColor="#fb7185" stopOpacity={0.7} />
                   </linearGradient>
                 </defs>

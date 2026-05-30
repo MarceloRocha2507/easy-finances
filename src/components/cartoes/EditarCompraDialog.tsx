@@ -199,7 +199,7 @@ export function EditarCompraDialog({
               unique.map((c: any) => ({
                 id: c.id,
                 nome: c.name,
-                cor: c.color || "#6366f1",
+                cor: c.color || "#111827",
                 icone: c.icon,
               }))
             );

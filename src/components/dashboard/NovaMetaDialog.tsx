@@ -39,14 +39,14 @@ interface NovaMetaDialogProps {
 }
 
 const CORES_DISPONIVEIS = [
-  "#64748b",
-  "#3b82f6",
-  "#22c55e",
+  "#6B7280",
+  "#111827",
+  "#16A34A",
   "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#14b8a6",
-  "#ec4899",
+  "#DC2626",
+  "#111827",
+  "#16A34A",
+  "#DC2626",
 ];
 
 export function NovaMetaDialog({ open, onOpenChange, onSuccess }: NovaMetaDialogProps) {

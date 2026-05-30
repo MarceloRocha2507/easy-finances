@@ -309,7 +309,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         }
 
         const categoryIcon = cat?.icon || '📦';
-        const categoryColor = cat?.color || '#6366f1';
+        const categoryColor = cat?.color || '#111827';
 
         if (categoryMap.has(categoryId)) {
           categoryMap.get(categoryId)!.total += Number(t.amount);
@@ -354,7 +354,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         }
 
         const categoryIcon = cat?.icon || '📦';
-        const categoryColor = cat?.color || '#6366f1';
+        const categoryColor = cat?.color || '#111827';
         const valor = Number(p.valor) || 0;
 
         if (categoryMap.has(catId)) {
@@ -388,7 +388,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
           const valor = Number(a.valor) || 0;
           const categoryName = cat?.name || 'Sem categoria';
           const categoryIcon = cat?.icon || '📦';
-          const categoryColor = cat?.color || '#6366f1';
+          const categoryColor = cat?.color || '#111827';
 
           if (categoryMap.has(catId)) {
             categoryMap.get(catId)!.total += valor;

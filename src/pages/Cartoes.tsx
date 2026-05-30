@@ -39,7 +39,7 @@ import {
    Gradientes únicos por cartão
 ====================================================== */
 const CARD_GRADIENTS = [
-  { from: "#1a1a2e", to: "#16213e", accent: "#e94560" },   // Azul noite
+  { from: "#1a1a2e", to: "#111827", accent: "#e94560" },   // Azul noite
   { from: "#0f3460", to: "#1a1a2e", accent: "#533483" },   // Marinho profundo
   { from: "#2d1b69", to: "#11998e", accent: "#a8edea" },   // Violeta → teal
   { from: "#141e30", to: "#243b55", accent: "#c0c0c0" },   // Deep ocean
@@ -354,10 +354,10 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
   const usoPercent = Math.min(cartao.percentualUsado, 100);
   const usoColor =
     cartao.percentualUsado > 85
-      ? "#f87171"
+      ? "#DC2626"
       : cartao.percentualUsado > 60
       ? "#fbbf24"
-      : "#4ade80";
+      : "#16A34A";
 
   const statusLabel =
     cartao.statusFaturaExibida === "paga"

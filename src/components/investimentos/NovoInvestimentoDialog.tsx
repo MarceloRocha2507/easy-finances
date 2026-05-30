@@ -61,7 +61,7 @@ export function NovoInvestimentoDialog({
         : undefined,
       dataInicio,
       dataVencimento,
-      cor: tipoSelecionado?.cor || "#22c55e",
+      cor: tipoSelecionado?.cor || "#16A34A",
       icone: tipoSelecionado?.icon || "piggy-bank",
       observacao: observacao.trim() || undefined,
     });

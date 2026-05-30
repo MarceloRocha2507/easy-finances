@@ -1293,7 +1293,7 @@ export default function Transactions() {
           {/* Dois painéis agrupados: Visão Geral + Este Mês */}
           <AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">
             {/* PAINEL 1 — Visão Geral (2/5) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-2">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
                   Visão Geral
@@ -1302,7 +1302,7 @@ export default function Transactions() {
 
               {/* Hero - Total de Despesas */}
               <div
-                className="relative px-5 py-4 cursor-pointer hover:bg-[#FAFAFA] dark:hover:bg-[#1f1f1f] transition-colors"
+                className="relative px-5 py-4 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-[#1f1f1f] transition-colors"
                 onClick={() => setDetalhesDespesasOpen(true)}
               >
                 <div className="absolute top-4 right-5 flex items-center gap-1">
@@ -1332,10 +1332,10 @@ export default function Transactions() {
                 </p>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
               {/* Saldo Real + Estimado lado a lado */}
-              <div className="grid grid-cols-2 divide-x divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+              <div className="grid grid-cols-2 divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Saldo Real"
                   value={stats?.realBalance || 0}
@@ -1367,16 +1367,16 @@ export default function Transactions() {
             </div>
 
             {/* PAINEL 2 — Este Mês (3/5) */}
-            <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-3 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-2">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
                   Este Mês
                 </h3>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#2a2a2a]" />
+              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#2a2a2a] flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}

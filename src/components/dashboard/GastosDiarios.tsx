@@ -75,8 +75,8 @@ export function GastosDiarios({ dados }: Props) {
                 >
                   <defs>
                     <linearGradient id="colorGasto" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#111827" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#111827" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -100,7 +100,7 @@ export function GastosDiarios({ dados }: Props) {
                   <Area
                     type="monotone"
                     dataKey="valor"
-                    stroke="#6366f1"
+                    stroke="#111827"
                     strokeWidth={2}
                     fill="url(#colorGasto)"
                   />
