@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, Wallet, ChevronLeft } from "lucide-react";
+import { Menu, X, ChevronLeft } from "lucide-react";
 import { GlobalSearch } from "@/components/dashboard";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -77,7 +77,11 @@ export function Layout({ children }: LayoutProps) {
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <div className="flex-1 max-w-[200px]">
+        <div className="flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
+          <span className="font-display font-extrabold text-lg text-foreground tracking-tight">Fina</span>
+        </div>
+        <div className="flex-1 max-w-[140px] ml-auto">
           <GlobalSearch variant="minimal" />
         </div>
       </header>
@@ -85,9 +89,9 @@ export function Layout({ children }: LayoutProps) {
       {/* Desktop Sidebar - Flush, minimal */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
         <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Wallet className="h-5 w-5 text-foreground" />
-            <span className="text-xl font-bold text-foreground">Fina</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
+            <span className="font-display font-extrabold text-2xl text-foreground tracking-tight">Fina</span>
           </div>
         </div>
         <div className="px-4 py-3 border-b border-border/30 shrink-0">
@@ -153,9 +157,10 @@ export function Layout({ children }: LayoutProps) {
           {!isDashboard && (
             <button
               onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer min-h-[44px] min-w-[44px] mb-3"
+              className="inline-flex items-center gap-1.5 font-display font-semibold text-[10px] uppercase tracking-widest transition-colors cursor-pointer mb-4"
+              style={{ color: 'hsl(var(--accent-violet))' }}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3" />
               Voltar
             </button>
           )}

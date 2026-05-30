@@ -143,7 +143,7 @@ export default function Cartoes() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Cartões</h1>
+            <h1 className="section-title-accent font-display font-bold text-xl" style={{ color: 'hsl(var(--accent-violet))' }}>Cartões</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
               Gerencie seus cartões e acompanhe as faturas
             </p>

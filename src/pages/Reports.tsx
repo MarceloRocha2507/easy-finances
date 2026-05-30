@@ -138,7 +138,7 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Relatórios</h1>
+            <h1 className="section-title-accent font-display font-bold text-xl" style={{ color: 'hsl(var(--accent-violet))' }}>Relatórios</h1>
             <p className="text-sm text-muted-foreground">Análise detalhada das suas finanças</p>
           </div>
           <div className="flex flex-wrap gap-2">

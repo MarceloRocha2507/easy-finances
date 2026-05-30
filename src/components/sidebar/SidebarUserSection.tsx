@@ -37,43 +37,40 @@ export const SidebarUserSection = memo(function SidebarUserSection({
   }, [user?.user_metadata?.full_name, user?.email]);
 
   return (
-    <div className="p-3 border-t border-border/50">
+    <div className="py-4 px-3 border-t border-border/50">
       <div className="flex items-center justify-between px-2">
         {/* Avatar + Nome clicável para /profile */}
-        <Link 
-          to="/profile" 
+        <Link
+          to="/profile"
           onClick={onClose}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0"
         >
-          <Avatar className="h-8 w-8 rounded-md">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={userName} className="rounded-md" />
-            <AvatarFallback className="bg-foreground text-background text-xs font-semibold rounded-md">
+          <Avatar className="h-9 w-9 rounded-xl shrink-0">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={userName} className="rounded-xl" />
+            <AvatarFallback className="bg-foreground text-background text-xs font-semibold rounded-xl">
               {userInitials}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-semibold text-foreground truncate max-w-[90px]">
+          <span className="font-display font-semibold text-sm text-foreground truncate max-w-[110px]">
             {userName}
           </span>
         </Link>
-        
+
         {/* Ícones de ação */}
-        <div className="flex items-center gap-1">
-          {/* Notificações - isolado para evitar re-renders */}
+        <div className="flex items-center gap-1 shrink-0">
           <NotificationBadge onClick={onClose} />
-          
-          {/* Sair */}
-          <button 
+          <button
             onClick={onSignOut}
-            className="p-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+            className="p-2 rounded-lg transition-colors text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>
-      <Link 
-        to="/changelog" 
+      <Link
+        to="/changelog"
         onClick={onClose}
-        className="block text-center text-[10px] text-muted-foreground hover:text-foreground transition-colors pt-1"
+        className="block text-center text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors pt-2"
       >
         {APP_VERSION_DISPLAY}
       </Link>

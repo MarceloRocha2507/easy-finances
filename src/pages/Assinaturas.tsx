@@ -129,7 +129,7 @@ export default function Assinaturas() {
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Assinaturas</h1>
+            <h1 className="section-title-accent font-display font-bold text-xl" style={{ color: 'hsl(var(--accent-violet))' }}>Assinaturas</h1>
             <p className="text-sm text-muted-foreground">Gerencie suas assinaturas recorrentes</p>
           </div>
           <Button onClick={() => { setEditando(null); setDialogNova(true); }} className="gap-2 w-full sm:w-auto">

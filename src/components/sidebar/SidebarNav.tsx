@@ -130,20 +130,27 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const isActive = useCallback((href: string) => pathname === href, [pathname]);
 
   return (
-    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
       {mainMenuItems.map((item) => (
         <Link
           key={item.href}
           to={item.href}
           onClick={onItemClick}
           className={cn(
-            "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150",
+            "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm rounded-lg transition-colors duration-150",
             isActive(item.href)
-              ? "menu-item-active"
-              : "text-muted-foreground menu-item-hover"
+              ? "border-l-2 text-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet)/0.07)]"
+              : "text-muted-foreground menu-item-hover border-l-2 border-transparent"
           )}
+          style={isActive(item.href) ? { borderLeftColor: 'hsl(var(--accent-violet))' } : undefined}
         >
-          <item.icon className={cn("h-4 w-4 transition-opacity duration-150", isActive(item.href) ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
+          <item.icon
+            className={cn(
+              "h-[18px] w-[18px] shrink-0 transition-opacity duration-150",
+              isActive(item.href) ? "opacity-100" : "opacity-40 group-hover:opacity-70"
+            )}
+            style={isActive(item.href) ? { color: 'hsl(var(--accent-violet))' } : undefined}
+          />
           {item.label}
         </Link>
       ))}
@@ -203,13 +210,17 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         to="/assistente"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 mx-1 px-3 py-2 text-sm rounded-lg transition-colors duration-150 mt-1",
+          "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm font-display font-semibold rounded-lg transition-colors duration-150 mt-1 border-l-2",
           isActive("/assistente")
-            ? "menu-item-active"
-            : "text-muted-foreground menu-item-hover"
+            ? "border-l-2 bg-[hsl(var(--accent-violet)/0.07)]"
+            : "text-muted-foreground menu-item-hover border-transparent"
         )}
+        style={{
+          color: 'hsl(var(--accent-violet))',
+          borderLeftColor: isActive("/assistente") ? 'hsl(var(--accent-violet))' : 'transparent',
+        }}
       >
-        <Bot className={cn("h-4 w-4 transition-opacity duration-150", isActive("/assistente") ? "opacity-100" : "opacity-50 group-hover:opacity-75")} />
+        <Sparkles className="h-[18px] w-[18px] shrink-0" style={{ color: 'hsl(var(--accent-violet))' }} />
         Fina IA
       </Link>
       
