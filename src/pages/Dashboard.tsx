@@ -138,53 +138,49 @@ export default function Dashboard() {
     <Layout>
 
       <div className="page-enter">
-      {/* Header */}
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Linha 1: Saudação e ações */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-accent-violet shrink-0 animate-pulse" />
-              <p className="font-display font-bold text-base text-foreground truncate">
-                {(() => {
-                  const fullName = user?.user_metadata?.full_name || "Usuário";
-                  return fullName.split(" ")[0];
-                })()}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <GlobalSearch variant="icon" />
-            <Link to="/transactions">
-              <Button
-                size="sm"
-                className="gap-1.5 px-3 sm:px-4 text-white font-display font-semibold text-xs"
-                style={{ backgroundColor: 'hsl(var(--accent-violet))', boxShadow: '0 2px 8px hsl(var(--accent-violet) / 0.3)' }}
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Novo Registro</span>
-              </Button>
-            </Link>
-          </div>
+      {/* Header — uma única linha organizada */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
+        {/* Esquerda: saudação + refresh */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-[#111827] shrink-0 animate-pulse" />
+          <p className="font-display font-bold text-base text-[#111827] truncate">
+            {(() => {
+              const fullName = user?.user_metadata?.full_name || "Usuário";
+              return fullName.split(" ")[0];
+            })()}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-8 w-8 shrink-0 text-[#6B7280] hover:text-[#111827]"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
-        {/* Linha 2: Filtro de período */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {/* Centro: filtro de período */}
+        <div className="flex items-center justify-center min-w-0 flex-1">
           <FiltroPeriodo
             mesAtual={mesReferencia}
             onMesChange={setMesReferencia}
             mesesDisponiveis={mesesDisponiveis}
           />
+        </div>
+
+        {/* Direita: busca + novo registro */}
+        <div className="flex items-center gap-2 shrink-0 justify-end">
+          <GlobalSearch variant="icon" />
+          <Link to="/transactions">
+            <Button
+              size="sm"
+              className="gap-1.5 px-3 sm:px-4 bg-[#111827] hover:bg-[#1F2937] text-white font-display font-semibold text-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Novo Registro</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
