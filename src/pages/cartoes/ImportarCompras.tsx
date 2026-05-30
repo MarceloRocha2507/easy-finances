@@ -16,6 +16,7 @@ import {
   PreviewCompra,
 } from "@/services/importar-compras-cartao";
 import { parseNubankCsv } from "@/lib/nubankCsvParser";
+import { parsePicpayCsv } from "@/lib/picpayCsvParser";
 import { Cartao } from "@/services/cartoes";
 
 import { Layout } from "@/components/Layout";
@@ -80,7 +81,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Status = "idle" | "preview" | "checking" | "importing" | "success";
 type ModoMesFatura = "automatico" | "fixo";
-type ModoImportacao = "texto" | "nubank_csv";
+type ModoImportacao = "texto" | "nubank_csv" | "picpay_csv";
 
 const PARCELA_REGEX_STRIP = /\s*[-–]\s*(?:Parcela\s+)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
 const TIPOS_EXCLUIDOS_NUBANK = new Set(["pagamento_fatura", "estorno_parcelamento", "estorno", "compra_substituida"]);
@@ -477,6 +478,54 @@ export default function ImportarCompras() {
     event.target.value = "";
   }
 
+  // Upload e processamento do CSV PicPay (modelo padronizado do app)
+  async function handlePicpayCsvUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !cartao || !cartaoId) return;
+
+    const resp = responsaveis.find((r) => r.id === responsavelNubankId);
+    if (!resp) {
+      toast({ title: "Selecione um responsável antes de importar", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const texto = e.target?.result as string;
+      setStatus("checking");
+
+      try {
+        const comprasExtraidas = parsePicpayCsv(texto);
+
+        const pagamentos = comprasExtraidas
+          .filter((c) => c.tipo === "pagamento_fatura" && c.valor != null)
+          .map((c) => ({ valor: c.valor as number, data: c.data || "" }));
+        setNubankPagamentos(pagamentos);
+
+        const preview = converterNubankParaPreview(
+          comprasExtraidas,
+          resp.id,
+          resp.apelido || resp.nome,
+          cartao.dia_fechamento
+        );
+
+        const comDuplicatas = await verificarDuplicatas(cartaoId, preview);
+        setPreviewData(comDuplicatas);
+        setStatus("preview");
+      } catch (err: any) {
+        toast({
+          title: "CSV inválido",
+          description: err?.message || "Não foi possível interpretar o arquivo.",
+          variant: "destructive",
+        });
+        setStatus("idle");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+
+    event.target.value = "";
+  }
+
   // Atualizar responsável de uma linha
   function handleAtualizarResponsavel(linha: number, responsavelId: string) {
     setPreviewData((prev) =>
@@ -625,32 +674,36 @@ export default function ImportarCompras() {
                   Dados para importação
                 </CardTitle>
                 <CardDescription>
-                  {isNubank
-                    ? "Importe o CSV oficial da fatura Nubank ou faça importação manual"
-                    : "Cole os dados das compras ou carregue um arquivo CSV/TXT"}
+                  Importe via CSV oficial (Nubank/PicPay) ou cole os dados manualmente
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isNubank ? (
-                  <Tabs
-                    value={modoImportacao}
-                    onValueChange={(v) => {
-                      setModoImportacao(v as ModoImportacao);
-                      handleLimpar();
-                    }}
-                  >
-                    <TabsList className="w-full">
+                <Tabs
+                  value={modoImportacao}
+                  onValueChange={(v) => {
+                    setModoImportacao(v as ModoImportacao);
+                    handleLimpar();
+                  }}
+                >
+                  <TabsList className="w-full">
+                    {isNubank && (
                       <TabsTrigger value="nubank_csv" className="flex-1 gap-2">
                         <FileUp className="h-4 w-4" />
                         CSV Nubank
                       </TabsTrigger>
-                      <TabsTrigger value="texto" className="flex-1 gap-2">
-                        <FileText className="h-4 w-4" />
-                        Importação manual
-                      </TabsTrigger>
-                    </TabsList>
+                    )}
+                    <TabsTrigger value="picpay_csv" className="flex-1 gap-2">
+                      <FileUp className="h-4 w-4" />
+                      CSV PicPay
+                    </TabsTrigger>
+                    <TabsTrigger value="texto" className="flex-1 gap-2">
+                      <FileText className="h-4 w-4" />
+                      Importação manual
+                    </TabsTrigger>
+                  </TabsList>
 
-                    {/* Tab: CSV Nubank */}
+                  {/* Tab: CSV Nubank */}
+                  {isNubank && (
                     <TabsContent value="nubank_csv" className="space-y-4 pt-2">
                       <Alert>
                         <Info className="h-4 w-4" />
@@ -703,60 +756,70 @@ export default function ImportarCompras() {
                           )}
                         </div>
                       </label>
-
-                      {previewData.length === 0 && (
-                        <Button variant="outline" size="sm" onClick={handleLimpar}>
-                          Limpar
-                        </Button>
-                      )}
                     </TabsContent>
+                  )}
 
-                    {/* Tab: Importação manual */}
-                    <TabsContent value="texto" className="space-y-4 pt-2">
-                      <Textarea
-                        placeholder={`Formato: Data,Descrição,Valor Responsável\n\nExemplo:\n2026-01-22,IOF de compra internacional,0.16 eu\n2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae\n2026-01-05,Nortmotos - Parcela 3/4,72.98 eu`}
-                        className="min-h-[200px] font-mono text-sm"
-                        value={textoInput}
-                        onChange={(e) => setTextoInput(e.target.value)}
+                  {/* Tab: CSV PicPay */}
+                  <TabsContent value="picpay_csv" className="space-y-4 pt-2">
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>CSV padronizado do PicPay</AlertTitle>
+                      <AlertDescription className="text-sm">
+                        Cabeçalho esperado:{" "}
+                        <code className="bg-muted px-1 rounded text-xs">
+                          data,descricao,valor,cartao,tipo,categoria,parcela_atual,parcela_total,status,observacao
+                        </code>
+                        . Linhas com <strong>status=cancelado</strong>, <strong>tipo=pagamento</strong> ou{" "}
+                        <strong>tipo=credito</strong> são ignoradas automaticamente.
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="space-y-1.5">
+                      <Label>Responsável pelas compras</Label>
+                      <Select value={responsavelNubankId} onValueChange={setResponsavelNubankId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {responsaveis.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.apelido || r.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <label htmlFor="picpay-csv-upload" className="block">
+                      <input
+                        id="picpay-csv-upload"
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handlePicpayCsvUpload}
+                        disabled={status === "checking"}
                       />
-                      <div className="flex items-center gap-2">
-                        <Button onClick={handleProcessar} disabled={!textoInput.trim() || status === "checking"}>
-                          {status === "checking" ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Verificando...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4 mr-2" />
-                              Processar dados
-                            </>
-                          )}
-                        </Button>
-                        <Button variant="outline" onClick={handleLimpar}>
-                          Limpar
-                        </Button>
-                        <div className="flex-1" />
-                        <label htmlFor="file-upload">
-                          <input
-                            id="file-upload"
-                            type="file"
-                            accept=".csv,.txt"
-                            className="hidden"
-                            onChange={handleFileUpload}
-                          />
-                          <Button variant="outline" asChild>
-                            <span className="cursor-pointer">
-                              <Upload className="h-4 w-4 mr-2" />
-                              Carregar arquivo
-                            </span>
-                          </Button>
-                        </label>
+                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                        {status === "checking" ? (
+                          <>
+                            <Loader2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+                            <p className="text-sm font-medium">Processando...</p>
+                          </>
+                        ) : (
+                          <>
+                            <FileUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm font-medium">Clique para selecionar o CSV do PicPay</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              modelo_fatura.csv
+                            </p>
+                          </>
+                        )}
                       </div>
-                    </TabsContent>
-                  </Tabs>
-                ) : (
-                  <>
+                    </label>
+                  </TabsContent>
+
+                  {/* Tab: Importação manual */}
+                  <TabsContent value="texto" className="space-y-4 pt-2">
                     <Textarea
                       placeholder={`Formato: Data,Descrição,Valor Responsável\n\nExemplo:\n2026-01-22,IOF de compra internacional,0.16 eu\n2026-01-20,Comercial Peixoto - Parcela 1/2,41.21 mae\n2026-01-05,Nortmotos - Parcela 3/4,72.98 eu`}
                       className="min-h-[200px] font-mono text-sm"
@@ -797,10 +860,11 @@ export default function ImportarCompras() {
                         </Button>
                       </label>
                     </div>
-                  </>
-                )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
+
 
             {/* Instruções (apenas modo texto manual) */}
             {status === "idle" && modoImportacao === "texto" && (
