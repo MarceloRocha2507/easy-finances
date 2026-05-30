@@ -126,7 +126,7 @@ export function RuleDialog({ open, onOpenChange, editingRule }: RuleDialogProps)
                   return (
                     <SelectItem key={cat.id} value={cat.id}>
                       <div className="flex items-center gap-2">
-                        <IconComp className="w-4 h-4" style={{ color: cat.color || '#64748b' }} />
+                        <IconComp className="w-4 h-4" style={{ color: cat.color || '#6B7280' }} />
                         <span>{cat.name}</span>
                         <span className="text-xs text-muted-foreground">
                           ({cat.type === 'income' ? 'Receita' : 'Despesa'})
@@ -175,7 +175,7 @@ export function RuleDialog({ open, onOpenChange, editingRule }: RuleDialogProps)
                     "{keywords.split(',').map(k => k.trim()).filter(Boolean).join('" ou "')}"
                   </span>{' '}
                   serão categorizadas como{' '}
-                  <span className="font-medium" style={{ color: selectedCategory.color || '#64748b' }}>
+                  <span className="font-medium" style={{ color: selectedCategory.color || '#6B7280' }}>
                     {selectedCategory.name}
                   </span>
                 </p>

@@ -13,7 +13,7 @@ interface CartaoCardProps {
 }
 
 function CartaoCard({ cartao, onClick }: CartaoCardProps) {
-  const corCartao = cartao.cor || "#64748b";
+  const corCartao = cartao.cor || "#6B7280";
 
   return (
     <div

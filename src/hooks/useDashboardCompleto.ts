@@ -271,7 +271,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           limite,
           dia_fechamento: cartao.dia_fechamento || 1,
           dia_vencimento: cartao.dia_vencimento || 10,
-          cor: cartao.cor || "#6366f1",
+          cor: cartao.cor || "#111827",
           totalMes: totais.total,
           totalPendente: totais.pendente,
           totalPago: totais.pago,
@@ -541,7 +541,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             valorAlvo: Number(m.valor_alvo) || 0,
             valorAtual: Number(m.valor_atual) || 0,
             dataLimite: m.data_limite ? new Date(m.data_limite) : null,
-            cor: m.cor || "#6366f1",
+            cor: m.cor || "#111827",
             icone: m.icone || "piggy-bank",
             progresso:
               Number(m.valor_alvo) > 0

@@ -27,9 +27,9 @@ export interface CalendarioEvento {
 }
 
 export const CORES_TIPO: Record<CalendarioEventoTipo, string> = {
-  receita: "#22C55E",
+  receita: "#16A34A",
   despesa: "#DC2626",
-  fatura: "#8B5CF6",
+  fatura: "#111827",
   fechamento: "#F59E0B",
   assinatura: "#EC4899",
   meta: "#0EA5E9",

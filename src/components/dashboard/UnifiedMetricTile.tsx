@@ -30,11 +30,11 @@ export function UnifiedMetricTile({
   className,
 }: UnifiedMetricTileProps) {
   const getValueColor = () => {
-    if (valueColor === "expense") return "text-[#DC2626] dark:text-[#f87171]";
-    if (valueColor === "income") return "text-[#16A34A] dark:text-[#4ade80]";
-    if (prefix === "-") return "text-[#DC2626] dark:text-[#f87171]";
-    if (prefix === "+") return "text-[#16A34A] dark:text-[#4ade80]";
-    return value >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626] dark:text-[#f87171]";
+    if (valueColor === "expense") return "text-[#DC2626] dark:text-[#DC2626]";
+    if (valueColor === "income") return "text-[#16A34A] dark:text-[#16A34A]";
+    if (prefix === "-") return "text-[#DC2626] dark:text-[#DC2626]";
+    if (prefix === "+") return "text-[#16A34A] dark:text-[#16A34A]";
+    return value >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626] dark:text-[#DC2626]";
   };
 
   const getTileBg = () => {

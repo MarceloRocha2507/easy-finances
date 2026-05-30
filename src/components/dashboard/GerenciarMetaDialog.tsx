@@ -75,14 +75,14 @@ interface Props {
 }
 
 const CORES_DISPONIVEIS = [
-  "#6366f1",
-  "#22c55e",
-  "#ef4444",
+  "#111827",
+  "#16A34A",
+  "#DC2626",
   "#f59e0b",
-  "#3b82f6",
-  "#ec4899",
-  "#14b8a6",
-  "#8b5cf6",
+  "#111827",
+  "#DC2626",
+  "#16A34A",
+  "#111827",
 ];
 
 const VALORES_RAPIDOS = [50, 100, 200, 500, 1000];
@@ -101,7 +101,7 @@ export function GerenciarMetaDialog({ meta, open, onOpenChange, onSuccess }: Pro
   const [dataLimite, setDataLimite] = useState<Date | undefined>(
     meta?.dataLimite || undefined
   );
-  const [cor, setCor] = useState(meta?.cor || "#6366f1");
+  const [cor, setCor] = useState(meta?.cor || "#111827");
 
   // Estado para modo "Registrar receita e depositar"
   const [modoReceitaEDeposito, setModoReceitaEDeposito] = useState(false);

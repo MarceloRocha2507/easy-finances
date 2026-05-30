@@ -36,7 +36,7 @@ const ICON_OPTIONS = [
   { value: 'tag', label: 'Etiqueta', icon: Tag },
 ];
 
-const COLOR_OPTIONS = ['#64748b', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#ec4899', '#0ea5e9', '#f97316'];
+const COLOR_OPTIONS = ['#6B7280', '#111827', '#16A34A', '#f59e0b', '#DC2626', '#111827', '#16A34A', '#DC2626', '#0ea5e9', '#f97316'];
 
 interface CategoryFormData {
   name: string;
@@ -48,7 +48,7 @@ interface CategoryFormData {
 const initialFormData: CategoryFormData = {
   name: '',
   icon: 'package',
-  color: '#64748b',
+  color: '#6B7280',
   type: 'expense',
 };
 
@@ -122,7 +122,7 @@ export default function Categories() {
     setFormData({
       name: category.name,
       icon: category.icon || 'package',
-      color: category.color || '#64748b',
+      color: category.color || '#6B7280',
       type: category.type,
     });
     setEditingId(category.id);
@@ -155,7 +155,7 @@ export default function Categories() {
         <div className="flex items-center gap-3">
           <div 
             className="w-3 h-3 rounded-[3px] shrink-0" 
-            style={{ backgroundColor: category.color || '#64748b' }}
+            style={{ backgroundColor: category.color || '#6B7280' }}
           />
           <div className="flex items-center gap-1 w-[68px] justify-end">
             {!category.is_default && (

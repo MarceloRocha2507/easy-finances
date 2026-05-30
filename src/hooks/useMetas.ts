@@ -30,7 +30,7 @@ async function getOrCreateMetaCategory(
 ): Promise<string> {
   const categoryName = type === "expense" ? "Depósito em Meta" : "Retirada de Meta";
   const icon = "piggy-bank";
-  const color = type === "expense" ? "#6366f1" : "#22c55e";
+  const color = type === "expense" ? "#111827" : "#16A34A";
 
   // Buscar categoria existente
   const { data: existing } = await supabase
@@ -88,7 +88,7 @@ export function useMetas() {
         valorAlvo: Number(m.valor_alvo) || 0,
         valorAtual: Number(m.valor_atual) || 0,
         dataLimite: m.data_limite ? new Date(m.data_limite) : null,
-        cor: m.cor || "#6366f1",
+        cor: m.cor || "#111827",
         icone: m.icone || "piggy-bank",
         progresso:
           Number(m.valor_alvo) > 0
@@ -130,7 +130,7 @@ export function useCriarMeta() {
         data_limite: data.dataLimite
           ? data.dataLimite.toISOString().split("T")[0]
           : null,
-        cor: data.cor || "#6366f1",
+        cor: data.cor || "#111827",
         icone: data.icone || "piggy-bank",
         concluida: false,
       });

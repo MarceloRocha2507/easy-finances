@@ -76,7 +76,7 @@ export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: T
       {/* Card trigger */}
       <div
         className={cn(
-          "relative h-full bg-white dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-[10px]",
+          "relative h-full bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-[10px]",
           "shadow-[0_1px_3px_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden",
           "cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-200"
         )}
@@ -111,7 +111,7 @@ export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: T
             <div
               className="px-6 pt-6 pb-4"
               style={{
-                background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+                background: "linear-gradient(160deg, #F9FAFB 0%, #F9FAFB 100%)",
                 borderBottom: "1px solid rgba(0,0,0,0.06)",
               }}
             >

@@ -49,7 +49,7 @@ export function CalendarioGrid({
   return (
     <div className="bg-white border border-[#E5E7EB] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
       {/* Cabeçalho dos dias da semana */}
-      <div className="grid grid-cols-7 border-b border-[#E5E7EB] bg-[#FAFAFA]">
+      <div className="grid grid-cols-7 border-b border-[#E5E7EB] bg-[#F9FAFB]">
         {DIAS_SEMANA.map((d) => (
           <div
             key={d}
@@ -88,7 +88,7 @@ export function CalendarioGrid({
                 "relative flex flex-col items-center justify-start gap-1 min-h-[72px] sm:min-h-[88px] p-1.5 sm:p-2",
                 "border-r border-b border-[#F3F4F6] transition-colors text-left",
                 "hover:bg-[#F9FAFB]",
-                !isMesAtual && "bg-[#FAFAFA]",
+                !isMesAtual && "bg-[#F9FAFB]",
                 isSelecionado && "bg-[#EFF6FF]",
                 (idx + 1) % 7 === 0 && "border-r-0"
               )}

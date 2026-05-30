@@ -213,7 +213,7 @@ export function DetalhesDespesasDialog({
                           onOpenChange(false);
                           navigate(`/cartoes/${cartao.id}/despesas`);
                         }}
-                        className="w-full flex items-center justify-between gap-3 py-3 group hover:bg-[#FAFAFA] -mx-2 px-2 rounded transition-colors"
+                        className="w-full flex items-center justify-between gap-3 py-3 group hover:bg-[#F9FAFB] -mx-2 px-2 rounded transition-colors"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span

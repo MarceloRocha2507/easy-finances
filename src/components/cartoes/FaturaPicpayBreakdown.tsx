@@ -145,7 +145,7 @@ export function FaturaPicpayBreakdown({
         <div>
           <label style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 500 }}>
             Pagamento recebido nesta fatura
-            <span style={{ color: "#EF4444", marginLeft: 4 }}>
+            <span style={{ color: "#DC2626", marginLeft: 4 }}>
               (IA não detectou — preencha manualmente se houver)
             </span>
           </label>
@@ -224,7 +224,7 @@ export function FaturaPicpayBreakdown({
               marginTop: 2,
               fontSize: 11,
               fontWeight: 700,
-              color: bate ? "#047857" : "#B91C1C",
+              color: bate ? "#047857" : "#DC2626",
             }}
             title={
               bate

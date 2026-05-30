@@ -178,11 +178,11 @@ export function TransactionDetailsDialog({
           <div
             className="-mt-6 -mx-6 mb-4 px-6 pt-5 pb-4"
             style={{
-              background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+              background: "linear-gradient(160deg, #F9FAFB 0%, #F9FAFB 100%)",
               borderBottom: "1px solid rgba(0,0,0,0.06)",
             }}
           >
-            <p style={{ color: "#1a1625", fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em", fontFamily: "var(--font-display)" }}>
+            <p style={{ color: "#111827", fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em", fontFamily: "var(--font-display)" }}>
               Detalhes da Transação
             </p>
           </div>

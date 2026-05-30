@@ -10,7 +10,7 @@ const CORES_BANDEIRA: Record<string, string> = {
   elo: "#00a4e0",
   amex: "#006fcf",
   hipercard: "#b3131b",
-  default: "#6366f1",
+  default: "#111827",
 };
 
 interface Props {

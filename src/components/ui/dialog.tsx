@@ -58,7 +58,7 @@ const DialogContent = React.forwardRef<
           left: 0,
           right: 0,
           height: 3,
-          background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 45%, #6366f1 100%)",
+          background: "linear-gradient(90deg, #111827 0%, #a855f7 45%, #111827 100%)",
           borderRadius: "24px 24px 0 0",
           zIndex: 20,
           pointerEvents: "none",
@@ -75,7 +75,7 @@ const DialogContent = React.forwardRef<
       </div>
 
       <DialogPrimitive.Close
-        className="absolute right-4 top-4 flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none disabled:pointer-events-none bg-black/[0.05] hover:bg-black/[0.09] text-[#9590aa] hover:text-[#6b6580]"
+        className="absolute right-4 top-4 flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none disabled:pointer-events-none bg-black/[0.05] hover:bg-black/[0.09] text-[#6B7280] hover:text-[#6B7280]"
         style={{
           width: 30,
           height: 30,
@@ -123,7 +123,7 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     className={cn("leading-none", className)}
     style={{
-      color: "#1a1625",
+      color: "#111827",
       fontSize: 18,
       fontWeight: 700,
       letterSpacing: "-0.03em",
