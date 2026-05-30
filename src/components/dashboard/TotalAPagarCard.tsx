@@ -108,7 +108,13 @@ export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: T
         <DialogContent className="max-w-md overflow-hidden" noPadding>
           <div className="flex flex-col">
             {/* Header */}
-            <div className="px-6 pt-6 pb-4">
+            <div
+              className="px-6 pt-6 pb-4"
+              style={{
+                background: "linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)",
+                borderBottom: "1px solid rgba(0,0,0,0.06)",
+              }}
+            >
               <p style={{ color: "#9CA3AF", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
                 Total a Pagar
               </p>
@@ -135,8 +141,7 @@ export function TotalAPagarCard({ mesReferencia, isLoading: externalLoading }: T
               </div>
             </div>
 
-            {/* Divider */}
-            <div style={{ height: 1, background: "#F3F4F6" }} />
+
 
             {/* Content */}
             <div className="overflow-y-auto max-h-[55vh]">
