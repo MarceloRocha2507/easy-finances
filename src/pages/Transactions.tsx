@@ -552,9 +552,13 @@ export default function Transactions() {
         // Find the original transaction to pass to the dialog
         const originalTxn = transactions?.find(t => t.id === editingId);
         if (originalTxn) {
-          setPendingEditData({ id: editingId, ...data });
-          setRecurringEditTransaction(originalTxn);
+          // Fecha o dialog primeiro e abre o de confirmação após desmontar
+          // para evitar conflito de overlays (tela borrada sem conteúdo).
           setDialogOpen(false);
+          setTimeout(() => {
+            setPendingEditData({ id: editingId, ...data });
+            setRecurringEditTransaction(originalTxn);
+          }, 220);
           return;
         }
       }
