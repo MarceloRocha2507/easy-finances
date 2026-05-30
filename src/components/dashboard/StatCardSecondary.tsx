@@ -31,48 +31,48 @@ export function StatCardSecondary({
   isLoading,
 }: StatCardSecondaryProps) {
   const borderClasses = {
-    pending: "border-l-4 border-l-blue-500",
-    warning: "border-l-4 border-l-amber-500",
-    danger: "border-l-4 border-l-red-500",
-    info: "border-l-4 border-l-purple-500",
-    success: "border-l-4 border-l-emerald-500",
-    neutral: "border-l-4 border-l-slate-400",
+    pending: "border-l-4 border-l-[#6B7280]",
+    warning: "border-l-4 border-l-[#D97706]",
+    danger: "border-l-4 border-l-[#DC2626]",
+    info: "border-l-4 border-l-[#6B7280]",
+    success: "border-l-4 border-l-[#16A34A]",
+    neutral: "border-l-4 border-l-[#9CA3AF]",
   };
 
   const iconBgClasses = {
-    pending: "bg-blue-100 dark:bg-blue-950",
-    warning: "bg-amber-100 dark:bg-amber-950",
-    danger: "bg-red-100 dark:bg-red-950",
-    info: "bg-purple-100 dark:bg-purple-950",
-    success: "bg-emerald-100 dark:bg-emerald-950",
-    neutral: "bg-slate-100 dark:bg-slate-800",
+    pending: "bg-[#F3F4F6]",
+    warning: "bg-[#FEF3C7]",
+    danger: "bg-[#FEE2E2]",
+    info: "bg-[#F3F4F6]",
+    success: "bg-[#DCFCE7]",
+    neutral: "bg-[#F3F4F6]",
   };
 
   const iconColorClasses = {
-    pending: "text-blue-600",
-    warning: "text-amber-600",
-    danger: "text-red-600",
-    info: "text-purple-600",
-    success: "text-emerald-600",
-    neutral: "text-slate-600 dark:text-slate-400",
+    pending: "text-[#6B7280]",
+    warning: "text-[#D97706]",
+    danger: "text-[#DC2626]",
+    info: "text-[#6B7280]",
+    success: "text-[#16A34A]",
+    neutral: "text-[#6B7280]",
   };
 
   const skeletonClasses = {
-    pending: "bg-blue-200/50 dark:bg-blue-800/30",
-    warning: "bg-amber-200/50 dark:bg-amber-800/30",
-    danger: "bg-red-200/50 dark:bg-red-800/30",
-    info: "bg-purple-200/50 dark:bg-purple-800/30",
-    success: "bg-emerald-200/50 dark:bg-emerald-800/30",
-    neutral: "bg-slate-200/50 dark:bg-slate-700/30",
+    pending: "bg-[#E5E7EB]",
+    warning: "bg-[#FDE68A]",
+    danger: "bg-[#FECACA]",
+    info: "bg-[#E5E7EB]",
+    success: "bg-[#BBF7D0]",
+    neutral: "bg-[#E5E7EB]",
   };
 
   const valueColorClasses = {
-    pending: "text-blue-600",
-    warning: "text-amber-600",
-    danger: "text-red-600",
-    info: "text-purple-600",
-    success: "text-emerald-600",
-    neutral: "text-foreground",
+    pending: "text-[#111827]",
+    warning: "text-[#D97706]",
+    danger: "text-[#DC2626]",
+    info: "text-[#111827]",
+    success: "text-[#16A34A]",
+    neutral: "text-[#111827]",
   };
 
   return (
