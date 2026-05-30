@@ -1723,7 +1723,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
         isFaturaCartaoPaga
-          ? 'bg-violet-100 dark:bg-violet-900/30'
+          ? 'bg-[#F3F4F6]'
           : isPending 
             ? isOverdue 
               ? 'bg-red-100 dark:bg-red-900/30'
@@ -1735,7 +1735,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         <IconComponent className={cn(
           "w-3.5 h-3.5 sm:w-4 sm:h-4",
           isFaturaCartaoPaga
-            ? 'text-violet-600'
+            ? 'text-[#6B7280]'
             : isPending 
               ? isOverdue 
                 ? 'text-red-600'
@@ -1760,7 +1760,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           )}
           {/* Badge de fatura paga */}
           {isFaturaCartaoPaga && (
-            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hidden sm:inline-flex">
+            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 shrink-0 border-[#E5E7EB] text-[#6B7280] dark:text-violet-400 hidden sm:inline-flex">
               <CreditCard className="w-3 h-3 mr-0.5" />
               Cartão
             </Badge>
@@ -1963,12 +1963,12 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
       {/* Ícone de cartão */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
-        isPaga ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-violet-100 dark:bg-violet-900/30"
+        isPaga ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-[#F3F4F6]"
       )}>
         {isPaga ? (
           <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
         ) : (
-          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-600" />
+          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6B7280]" />
         )}
       </div>
       
