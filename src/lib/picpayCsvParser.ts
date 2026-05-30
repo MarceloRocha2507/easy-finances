@@ -94,7 +94,6 @@ export function parsePicpayCsv(text: string): CompraExtraida[] {
     const valorStr = cols[ix.valor];
     const tipoStr = cols[ix.tipo];
     const status = ix.status >= 0 ? (cols[ix.status] || "").toLowerCase() : "ativo";
-    const observacao = ix.observacao >= 0 ? cols[ix.observacao] : "";
 
     if (!dataStr || !descricao || !valorStr) continue;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) continue;
