@@ -213,7 +213,7 @@ export function DetalhesCartaoDialog({
   const usoPct = limite > 0 ? Math.min((totalMes / limite) * 100, 100) : 0;
   const podePagarFatura = parcelas.some((p) => !p.paga);
 
-  const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-amber-500" : "bg-income";
+  const progressColor = usoPct > 85 ? "bg-destructive" : usoPct > 60 ? "bg-[#D97706]" : "bg-income";
 
   const accentColor = cartao.cor || "#111827";
 
@@ -284,7 +284,7 @@ export function DetalhesCartaoDialog({
               </div>
               <div className="rounded-xl bg-black/[0.03] px-3 py-2.5 border border-black/[0.04]">
                 <p className="text-[9px] uppercase tracking-widest font-semibold text-[#6B7280]">Disponível</p>
-                <p className="text-sm font-bold text-emerald-600 mt-1">{formatCurrency(disponivel)}</p>
+                <p className="text-sm font-bold text-[#16A34A] mt-1">{formatCurrency(disponivel)}</p>
               </div>
             </div>
 
@@ -293,7 +293,7 @@ export function DetalhesCartaoDialog({
               <div className="h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${
-                    usoPct > 85 ? "bg-red-500" : usoPct > 60 ? "bg-amber-500" : "bg-emerald-500"
+                    usoPct > 85 ? "bg-[#DC2626]" : usoPct > 60 ? "bg-[#D97706]" : "bg-[#16A34A]"
                   }`}
                   style={{ width: `${usoPct}%` }}
                 />
@@ -446,12 +446,12 @@ export function DetalhesCartaoDialog({
                   <p className="text-sm font-bold text-destructive pl-1.5">{formatCurrency(totalMes)}</p>
                 </div>
                 <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-500 rounded-l-xl" />
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#16A34A] rounded-l-xl" />
                   <div className="flex items-center gap-1 pl-1.5">
-                    <Check className="h-3 w-3 text-emerald-500/70" />
+                    <Check className="h-3 w-3 text-[#16A34A]/70" />
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Pago</span>
                   </div>
-                  <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 pl-1.5">{formatCurrency(totalPago)}</p>
+                  <p className="text-sm font-bold text-[#16A34A] dark:text-[#16A34A] pl-1.5">{formatCurrency(totalPago)}</p>
                 </div>
                 <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary rounded-l-xl" />
@@ -474,7 +474,7 @@ export function DetalhesCartaoDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-9 text-xs gap-1.5 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                className="w-full h-9 text-xs gap-1.5 rounded-xl border-[#16A34A] text-[#16A34A] hover:bg-[#DCFCE7] dark:border-[#16A34A] dark:text-[#16A34A] dark:hover:bg-emerald-950/40"
                 onClick={() => setPagarFaturaOpen(true)}
               >
                 <Check className="h-3.5 w-3.5" />
