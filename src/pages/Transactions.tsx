@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
@@ -309,6 +309,7 @@ function GroupHeader({ grupo, collapsed, onToggle }: { grupo: GrupoTransacao; co
 }
 
 export default function Transactions() {
+  const actionClickedRef = useRef(0);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
@@ -599,6 +600,8 @@ export default function Transactions() {
   };
 
   const handleEdit = (transaction: Transaction) => {
+    actionClickedRef.current = Date.now();
+    setViewingTransaction(null);
     setFormData({
       type: transaction.type,
       amount: transaction.amount.toString(),
@@ -1566,6 +1569,7 @@ export default function Transactions() {
                               onDuplicate={handleDuplicate}
                               onView={setViewingTransaction}
                               onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
+                              actionClickedRef={actionClickedRef}
                               saldoApos={saldoMap?.get(item.id)}
                               isUltimaTransacao={item.id === ultimaTransacaoId}
                               totalGuardado={totalGuardado}
@@ -1595,6 +1599,7 @@ export default function Transactions() {
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
                     onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
+                     actionClickedRef={actionClickedRef}
                     saldoApos={saldoMap?.get(item.id)}
                     isUltimaTransacao={item.id === ultimaTransacaoId}
                     totalGuardado={totalGuardado}
@@ -1709,12 +1714,13 @@ interface TransactionRowProps {
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
   onToggleDesconsiderada: (id: string, desconsiderada: boolean) => void;
+  actionClickedRef: React.MutableRefObject<number>;
   saldoApos?: number;
   isUltimaTransacao?: boolean;
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, actionClickedRef, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
@@ -1722,7 +1728,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
-    <div className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors")}>
+    <div
+      className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors")}
+      onClick={(e) => {
+        if (Date.now() - actionClickedRef.current < 500) return;
+        const target = e.target as HTMLElement;
+        if (target.closest('button, [role="menu"], [role="menuitem"], [data-action-cell]')) return;
+        onView(transaction);
+      }}
+    >
       {/* Ícone da categoria */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
@@ -1839,7 +1853,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </span>
 
         {/* Mobile dropdown */}
-        <div className="flex md:hidden">
+        <div className="flex md:hidden" data-action-cell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -1847,31 +1861,31 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onView(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onView(transaction); }}>
                 <Eye className="w-4 h-4 mr-2" />
                 Ver detalhes
               </DropdownMenuItem>
               {isPending && (
-                <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)}>
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPaid(transaction.id); }}>
                   <Check className="w-4 h-4 mr-2 text-emerald-600" />
                   Marcar como pago
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onDuplicate(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}>
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
               {transaction.type === 'expense' && (
-                <DropdownMenuItem onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}>
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
                   <EyeOff className="w-4 h-4 mr-2" />
                   {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction)}>
+              <DropdownMenuItem className="text-destructive" onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
               </DropdownMenuItem>
@@ -1880,12 +1894,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </div>
 
         {/* Desktop hover - posição absoluta, aparece sobre o valor */}
-        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50">
+        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50" data-action-cell>
           <Button 
             variant="ghost" 
             size="icon" 
             className="h-7 w-7" 
-            onClick={() => onView(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onView(transaction); }}
             title="Ver detalhes"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -1895,7 +1909,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               variant="ghost" 
               size="icon" 
               className="h-7 w-7 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
-              onClick={() => onMarkAsPaid(transaction.id)}
+              onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPaid(transaction.id); }}
               title="Marcar como pago"
             >
               <Check className="w-3.5 h-3.5" />
@@ -1905,12 +1919,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             variant="ghost" 
             size="icon" 
             className="h-7 w-7" 
-            onClick={() => onDuplicate(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}
             title="Duplicar transação"
           >
             <Copy className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(transaction)} title="Editar">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {transaction.type === 'expense' && (
@@ -1918,7 +1932,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               variant="ghost" 
               size="icon" 
               className="h-7 w-7" 
-              onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}
+              onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
               title={transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
             >
               <EyeOff className="w-3.5 h-3.5" />
@@ -1928,7 +1942,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             variant="ghost" 
             size="icon" 
             className="h-7 w-7 text-destructive hover:text-destructive" 
-            onClick={() => onDelete(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}
             title="Excluir"
           >
             <Trash2 className="w-3.5 h-3.5" />
