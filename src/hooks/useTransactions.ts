@@ -5,6 +5,7 @@ import { useToast } from './use-toast';
 import { Category } from './useCategories';
 import { findMatchingCategory } from '@/services/category-rules';
 import { formatCurrency, formatDate } from '@/lib/formatters';
+import { parseISO } from 'date-fns';
 
 // Helper to send Telegram notification after transaction creation
 async function enviarNotificacaoTelegram(params: {
@@ -578,7 +579,7 @@ export function useCreateInstallmentTransaction() {
       // Parcelada ou Fixa - criar múltiplas transações
       const parcelas = totalParcelas;
       const valorParcela = transactionWithCategory.amount! / (tipoLancamento === 'parcelada' ? parcelas : 1);
-      const baseDate = transactionWithCategory.date ? new Date(transactionWithCategory.date) : new Date();
+      const baseDate = transactionWithCategory.date ? parseISO(transactionWithCategory.date) : new Date();
 
       // Criar transação pai primeiro
       const { data: parentTransaction, error: parentError } = await supabase
