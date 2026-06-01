@@ -990,6 +990,7 @@ export default function Transactions() {
                         <CalendarComponent
                           mode="single"
                           selected={formData.date}
+                          defaultMonth={formData.date}
                           onSelect={(date) => date && setFormData({ ...formData, date })}
                           locale={ptBR}
                           className="pointer-events-auto"
