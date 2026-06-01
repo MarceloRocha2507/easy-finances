@@ -309,6 +309,7 @@ function GroupHeader({ grupo, collapsed, onToggle }: { grupo: GrupoTransacao; co
 }
 
 export default function Transactions() {
+  const actionClickedRef = useState(() => ({ current: 0 }))[0];
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
@@ -599,6 +600,8 @@ export default function Transactions() {
   };
 
   const handleEdit = (transaction: Transaction) => {
+    actionClickedRef.current = Date.now();
+    setViewingTransaction(null);
     setFormData({
       type: transaction.type,
       amount: transaction.amount.toString(),
@@ -1722,7 +1725,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
   const isOverdue = isPending && transaction.due_date && transaction.due_date < today;
   
   return (
-    <div className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors")}>
+    <div
+      className={cn("group flex items-center py-2 sm:py-3 px-2 sm:px-4 hover:bg-muted/50 rounded-lg transition-colors")}
+      onClick={(e) => {
+        if (Date.now() - actionClickedRef.current < 500) return;
+        const target = e.target as HTMLElement;
+        if (target.closest('button, [role="menu"], [role="menuitem"], [data-action-cell]')) return;
+        onView(transaction);
+      }}
+    >
       {/* Ícone da categoria */}
       <div className={cn(
         "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center mr-2 sm:mr-3 shrink-0",
@@ -1839,7 +1850,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </span>
 
         {/* Mobile dropdown */}
-        <div className="flex md:hidden">
+        <div className="flex md:hidden" data-action-cell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -1880,7 +1891,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
         </div>
 
         {/* Desktop hover - posição absoluta, aparece sobre o valor */}
-        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50">
+        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50" data-action-cell>
           <Button 
             variant="ghost" 
             size="icon" 
