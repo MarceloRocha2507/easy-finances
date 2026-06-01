@@ -593,8 +593,23 @@ export default function Transactions() {
     }
   };
 
+  const getDefaultDateForNew = () => {
+    const hoje = new Date();
+    if (!dataInicial) return hoje;
+    const mesmoMes =
+      dataInicial.getFullYear() === hoje.getFullYear() &&
+      dataInicial.getMonth() === hoje.getMonth();
+    if (mesmoMes) return hoje;
+    // Usa o dia atual dentro do mês filtrado (clamped ao último dia do mês)
+    const ano = dataInicial.getFullYear();
+    const mes = dataInicial.getMonth();
+    const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+    const dia = Math.min(hoje.getDate(), ultimoDia);
+    return new Date(ano, mes, dia);
+  };
+
   const resetForm = () => {
-    setFormData(initialFormData);
+    setFormData({ ...initialFormData, date: getDefaultDateForNew() });
     setEditingId(null);
     setIsSuggested(false);
   };
