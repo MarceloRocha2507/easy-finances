@@ -726,7 +726,7 @@ export default function Transactions() {
 
             <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gradient-primary">
+                <Button size="sm" className="gradient-primary" onClick={() => { if (!editingId) setFormData(prev => ({ ...prev, date: getDefaultDateForNew() })); }}>
                   <Plus className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Nova</span>
                 </Button>
