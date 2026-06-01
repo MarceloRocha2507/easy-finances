@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
@@ -309,7 +309,7 @@ function GroupHeader({ grupo, collapsed, onToggle }: { grupo: GrupoTransacao; co
 }
 
 export default function Transactions() {
-  const actionClickedRef = useState(() => ({ current: 0 }))[0];
+  const actionClickedRef = useRef(0);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
@@ -1712,12 +1712,13 @@ interface TransactionRowProps {
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
   onToggleDesconsiderada: (id: string, desconsiderada: boolean) => void;
+  actionClickedRef: React.MutableRefObject<number>;
   saldoApos?: number;
   isUltimaTransacao?: boolean;
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, actionClickedRef, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
