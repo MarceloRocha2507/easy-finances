@@ -1861,31 +1861,31 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onView(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onView(transaction); }}>
                 <Eye className="w-4 h-4 mr-2" />
                 Ver detalhes
               </DropdownMenuItem>
               {isPending && (
-                <DropdownMenuItem onClick={() => onMarkAsPaid(transaction.id)}>
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPaid(transaction.id); }}>
                   <Check className="w-4 h-4 mr-2 text-emerald-600" />
                   Marcar como pago
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onDuplicate(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}>
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(transaction)}>
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
               {transaction.type === 'expense' && (
-                <DropdownMenuItem onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}>
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
                   <EyeOff className="w-4 h-4 mr-2" />
                   {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(transaction)}>
+              <DropdownMenuItem className="text-destructive" onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
               </DropdownMenuItem>
@@ -1899,7 +1899,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             variant="ghost" 
             size="icon" 
             className="h-7 w-7" 
-            onClick={() => onView(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onView(transaction); }}
             title="Ver detalhes"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -1909,7 +1909,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               variant="ghost" 
               size="icon" 
               className="h-7 w-7 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
-              onClick={() => onMarkAsPaid(transaction.id)}
+              onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPaid(transaction.id); }}
               title="Marcar como pago"
             >
               <Check className="w-3.5 h-3.5" />
@@ -1919,12 +1919,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             variant="ghost" 
             size="icon" 
             className="h-7 w-7" 
-            onClick={() => onDuplicate(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}
             title="Duplicar transação"
           >
             <Copy className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(transaction)} title="Editar">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {transaction.type === 'expense' && (
@@ -1932,7 +1932,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               variant="ghost" 
               size="icon" 
               className="h-7 w-7" 
-              onClick={() => onToggleDesconsiderada(transaction.id, !transaction.desconsiderada)}
+              onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
               title={transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
             >
               <EyeOff className="w-3.5 h-3.5" />
@@ -1942,7 +1942,7 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
             variant="ghost" 
             size="icon" 
             className="h-7 w-7 text-destructive hover:text-destructive" 
-            onClick={() => onDelete(transaction)}
+            onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}
             title="Excluir"
           >
             <Trash2 className="w-3.5 h-3.5" />
