@@ -223,7 +223,7 @@ export default function Cartoes() {
                 );
               }
               return (
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
                   {[0, 1, 2, 3].map((offset) => {
                     const isAtual = offset === 0;
                     const valor = getFaturaDoMes(titular.id, offset);
@@ -231,7 +231,7 @@ export default function Cartoes() {
                       <div
                         key={offset}
                         className={cn(
-                          "p-3 rounded-xl text-center transition-all",
+                          "p-1.5 sm:p-3 rounded-xl text-center transition-all min-w-0",
                           isAtual
                             ? "bg-background border-2 shadow-sm"
                             : "bg-muted/40 border border-border/50"
@@ -239,7 +239,7 @@ export default function Cartoes() {
                         style={isAtual ? { borderColor: '#111827' } : undefined}
                       >
                         <p className={cn(
-                          "text-[10px] font-display font-semibold uppercase tracking-widest mb-1.5",
+                          "text-[9px] sm:text-[10px] font-display font-semibold uppercase tracking-widest mb-1.5",
                           isAtual ? "text-muted-foreground" : "text-muted-foreground/60"
                         )}
                           style={isAtual ? { color: '#111827' } : undefined}
@@ -247,8 +247,8 @@ export default function Cartoes() {
                           {getMesLabel(offset)}
                         </p>
                         <p className={cn(
-                          "font-display font-bold tabular-nums",
-                          isAtual ? "text-lg" : "text-sm text-muted-foreground"
+                          "font-display font-bold tabular-nums truncate",
+                          isAtual ? "text-sm sm:text-lg" : "text-[11px] sm:text-sm text-muted-foreground"
                         )}>
                           {formatCurrency(valor)}
                         </p>
