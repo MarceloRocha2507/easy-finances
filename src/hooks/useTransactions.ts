@@ -741,10 +741,13 @@ export function useUpdateRecurringTransactions() {
 
         const groupId = txn.parent_id || id;
 
+        // Strip per-occurrence fields so we don't collapse every future row onto the same date
+        const { date: _d, due_date: _dd, paid_date: _pd, ...safeUpdates } = updates as any;
+
         // Update all in group with date >= this transaction's date
         const { error } = await supabase
           .from('transactions')
-          .update(updates)
+          .update(safeUpdates)
           .or(`parent_id.eq.${groupId},id.eq.${groupId}`)
           .gte('date', txn.date)
           .is('deleted_at', null);
