@@ -1569,6 +1569,7 @@ export default function Transactions() {
                               onDuplicate={handleDuplicate}
                               onView={setViewingTransaction}
                               onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
+                              actionClickedRef={actionClickedRef}
                               saldoApos={saldoMap?.get(item.id)}
                               isUltimaTransacao={item.id === ultimaTransacaoId}
                               totalGuardado={totalGuardado}
@@ -1598,6 +1599,7 @@ export default function Transactions() {
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
                     onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
+                     actionClickedRef={actionClickedRef}
                     saldoApos={saldoMap?.get(item.id)}
                     isUltimaTransacao={item.id === ultimaTransacaoId}
                     totalGuardado={totalGuardado}
