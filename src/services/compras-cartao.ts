@@ -216,9 +216,16 @@ export async function listarParcelasDaFatura(
   if (parcelasError) throw parcelasError;
   if (!parcelas) return [];
 
-  return parcelas.map((p: any) => ({
-    id: p.id,
-    compra_id: p.compra_id,
+  // Ordenar manualmente por data de criação da COMPRA para garantir a ordem de cadastro
+  return parcelas
+    .sort((a: any, b: any) => {
+      const dateA = new Date(a.compra?.created_at || 0).getTime();
+      const dateB = new Date(b.compra?.created_at || 0).getTime();
+      return dateA - dateB;
+    })
+    .map((p: any) => ({
+      id: p.id,
+      compra_id: p.compra_id,
     numero_parcela: p.numero_parcela,
     total_parcelas: p.compra?.parcelas || 1,
     valor: p.valor,
