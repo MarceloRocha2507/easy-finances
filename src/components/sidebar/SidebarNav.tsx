@@ -111,10 +111,10 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           className={cn(
             "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm rounded-lg transition-colors duration-150",
             isActive(item.href)
-              ? "border-l-2 text-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet)/0.07)]"
-              : "text-muted-foreground menu-item-hover border-l-2 border-transparent"
+              ? "text-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet)/0.07)]"
+              : "text-muted-foreground menu-item-hover"
           )}
-          style={isActive(item.href) ? { borderLeftColor: 'hsl(var(--accent-violet))' } : undefined}
+          style={isActive(item.href) ? { color: 'hsl(var(--accent-violet))' } : undefined}
         >
           <item.icon
             className={cn(
@@ -172,14 +172,13 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         to="/assistente"
         onClick={onItemClick}
         className={cn(
-          "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm font-display font-semibold rounded-lg transition-colors duration-150 mt-1 border-l-2",
+          "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm font-display font-semibold rounded-lg transition-colors duration-150 mt-1",
           isActive("/assistente")
-            ? "border-l-2 bg-[hsl(var(--accent-violet)/0.07)]"
-            : "text-muted-foreground menu-item-hover border-transparent"
+            ? "bg-[hsl(var(--accent-violet)/0.07)]"
+            : "text-muted-foreground menu-item-hover"
         )}
         style={{
           color: 'hsl(var(--accent-violet))',
-          borderLeftColor: isActive("/assistente") ? 'hsl(var(--accent-violet))' : 'transparent',
         }}
       >
         <Sparkles className="h-[18px] w-[18px] shrink-0" style={{ color: 'hsl(var(--accent-violet))' }} />

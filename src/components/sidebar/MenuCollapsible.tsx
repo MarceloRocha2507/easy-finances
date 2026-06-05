@@ -88,10 +88,10 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
       <CollapsibleTrigger asChild>
         <button
           className={cn(
-            "group w-full flex items-center justify-between mx-1 px-3 py-2.5 text-sm rounded-lg transition-colors duration-150 border-l-2",
+            "group w-full flex items-center justify-between mx-1 px-3 py-2.5 text-sm rounded-lg transition-colors duration-150",
             isMenuActive
-              ? "border-transparent bg-[hsl(var(--accent-violet)/0.07)]"
-              : "border-transparent text-muted-foreground menu-item-hover"
+              ? "bg-[hsl(var(--accent-violet)/0.07)]"
+              : "text-muted-foreground menu-item-hover"
           )}
           style={isMenuActive ? { color: 'hsl(var(--accent-violet))' } : undefined}
         >
@@ -122,13 +122,13 @@ export const MenuCollapsible = React.memo(function MenuCollapsible({
             to={subItem.href}
             onClick={onItemClick}
             className={cn(
-              "group flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors duration-150 border-l-2",
+              "group flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors duration-150",
               isItemActive(subItem.href)
                 ? "bg-[hsl(var(--accent-violet)/0.05)]"
-                : "border-transparent text-muted-foreground menu-item-hover"
+                : "text-muted-foreground menu-item-hover"
             )}
             style={isItemActive(subItem.href)
-              ? { color: 'hsl(var(--accent-violet))', borderLeftColor: 'hsl(var(--accent-violet) / 0.5)' }
+              ? { color: 'hsl(var(--accent-violet))' }
               : undefined
             }
           >
