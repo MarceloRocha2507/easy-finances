@@ -211,7 +211,7 @@ export async function listarParcelasDaFatura(
     .gte("mes_referencia", primeiroDia)
     .lt("mes_referencia", fimMes)
     .eq("ativo", true)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true, foreignTable: "compras_cartao" });
 
   if (parcelasError) throw parcelasError;
   if (!parcelas) return [];
