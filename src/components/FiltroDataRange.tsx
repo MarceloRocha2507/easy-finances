@@ -55,27 +55,22 @@ export function FiltroDataRange({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col items-center gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-        {/* Month navigator - centered on mobile, inline on desktop */}
-        <div className={cn(
-          "flex items-center gap-0.5 rounded-md border border-input px-1 h-8",
-          isMesAtivo && "bg-accent border-accent"
-        )}>
+      <div className="flex items-center gap-2 p-1.5 bg-gray-50/50 rounded-lg border border-gray-100">
+        <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1.5 h-9 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleMesNavigation('prev')}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4 text-gray-500" />
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
               <span
                 onClick={handleResetMesAtual}
                 className={cn(
-                  "text-xs font-medium capitalize min-w-[110px] text-center select-none",
-                  isMesAtivo && "text-accent-foreground",
+                  "text-[13px] font-semibold capitalize min-w-[100px] text-center select-none text-gray-700",
                   !isMesAtual && "cursor-pointer hover:text-primary",
                   isMesAtual && "cursor-default"
                 )}
@@ -91,71 +86,74 @@ export function FiltroDataRange({
             variant="ghost"
             size="icon"
             onClick={() => handleMesNavigation('next')}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4 text-gray-500" />
           </Button>
         </div>
 
-        {/* Date range - subtle on mobile, normal on desktop */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm sm:text-foreground">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-auto py-0.5 px-1.5 text-xs text-muted-foreground sm:variant-outline sm:text-sm sm:py-1 sm:px-3 sm:h-8 sm:text-foreground font-normal",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4 shrink-0" />
-                <span className="truncate">
-                  {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={onStartDateChange}
-                initialFocus
-                locale={ptBR}
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+        <div className="flex items-center gap-3 ml-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-9 px-2 text-[13px] font-medium text-gray-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-gray-200",
+                    !startDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+                  <span className="tabular-nums">
+                    {startDate ? format(startDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50 bg-popover shadow-xl border-gray-200" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={onStartDateChange}
+                  initialFocus
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
-          <span className="text-muted-foreground text-xs shrink-0">até</span>
+          <span className="text-gray-400 text-[11px] font-medium uppercase tracking-wider">até</span>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-auto py-0.5 px-1.5 text-xs text-muted-foreground sm:variant-outline sm:text-sm sm:py-1 sm:px-3 sm:h-8 sm:text-foreground font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4 shrink-0" />
-                <span className="truncate">
-                  {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={onEndDateChange}
-                initialFocus
-                locale={ptBR}
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-9 px-2 text-[13px] font-medium text-gray-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-gray-200",
+                    !endDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+                  <span className="tabular-nums">
+                    {endDate ? format(endDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50 bg-popover shadow-xl border-gray-200" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={onEndDateChange}
+                  initialFocus
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
     </TooltipProvider>

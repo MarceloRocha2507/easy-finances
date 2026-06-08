@@ -96,44 +96,45 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
   const podeAvancar = currentIndex < mesOptions.length - 1;
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleMesAnterior}
-        disabled={!podeVoltar}
-        className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 p-1 bg-gray-50/50 rounded-lg border border-gray-100">
+      <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1 h-9 shadow-sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleMesAnterior}
+          disabled={!podeVoltar}
+          className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4 text-gray-500" />
+        </Button>
 
-      <Select value={isMesAtual ? "__current__" : mesValue} onValueChange={handleSelectChange}>
-        <SelectTrigger className="w-[150px] sm:w-[180px] h-8 sm:h-9">
-          <Calendar className="h-4 w-4 mr-2 shrink-0" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__current__">
-            <span className="font-medium text-primary">Mês Atual</span>
-          </SelectItem>
-          <SelectSeparator />
-          {mesOptions.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              <span className="capitalize">{opt.label}</span>
+        <Select value={isMesAtual ? "__current__" : mesValue} onValueChange={handleSelectChange}>
+          <SelectTrigger className="w-[140px] sm:w-[160px] h-7 border-none shadow-none bg-transparent hover:bg-gray-50 transition-colors text-[13px] font-semibold text-gray-700 capitalize">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-50 shadow-xl border-gray-200">
+            <SelectItem value="__current__">
+              <span className="font-semibold text-primary">Mês Atual</span>
             </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+            <SelectSeparator />
+            {mesOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                <span className="capitalize">{opt.label}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleProximoMes}
-        disabled={!podeAvancar}
-        className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleProximoMes}
+          disabled={!podeAvancar}
+          className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
+        >
+          <ChevronRight className="h-4 w-4 text-gray-500" />
+        </Button>
+      </div>
 
       {onRefresh && (
         <Button
@@ -141,7 +142,7 @@ export function FiltroPeriodo({ mesAtual, onMesChange, onRefresh, isLoading, onR
           size="icon"
           onClick={onRefresh}
           disabled={isLoading}
-          className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
+          className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 bg-white border-gray-200 text-gray-500 hover:text-primary transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
         </Button>

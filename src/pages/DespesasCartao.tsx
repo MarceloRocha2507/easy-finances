@@ -685,26 +685,26 @@ export default function DespesasCartao() {
         {/* Navegação de mês + Filtros */}
         <div className="space-y-3">
           {/* Linha 1: Navegação de mês */}
-          <div className="flex items-center justify-between sm:justify-start gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 p-1 bg-gray-50/50 rounded-lg border border-gray-100 w-fit">
+            <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1 h-9 shadow-sm">
               <Button
                 size="icon"
-                variant="outline"
-                className="h-8 w-8"
+                variant="ghost"
+                className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
                 onClick={() => setMesRef((m) => addMonths(m, -1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 text-gray-500" />
               </Button>
-              <span className="min-w-[120px] sm:min-w-[140px] text-center font-medium capitalize text-sm sm:text-base">
+              <span className="min-w-[120px] sm:min-w-[140px] text-center font-semibold capitalize text-[13px] text-gray-700 select-none">
                 {monthLabel(mesRef)}
               </span>
               <Button
                 size="icon"
-                variant="outline"
-                className="h-8 w-8"
+                variant="ghost"
+                className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
                 onClick={() => setMesRef((m) => addMonths(m, 1))}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 text-gray-500" />
               </Button>
             </div>
           </div>

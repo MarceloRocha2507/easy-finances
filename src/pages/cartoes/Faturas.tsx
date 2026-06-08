@@ -104,24 +104,28 @@ export default function Faturas() {
         </div>
 
         {/* Navegação de mês */}
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setMesRef(addMonths(mesRef, -1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-lg font-medium capitalize min-w-[180px] text-center">
-            {monthLabel(mesRef)}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setMesRef(addMonths(mesRef, 1))}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-center p-1 bg-gray-50/50 rounded-lg border border-gray-100 w-fit mx-auto">
+          <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1 h-9 shadow-sm">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
+              onClick={() => setMesRef(addMonths(mesRef, -1))}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-500" />
+            </Button>
+            <span className="text-[13px] font-semibold capitalize min-w-[120px] sm:min-w-[140px] text-center text-gray-700 select-none">
+              {monthLabel(mesRef)}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 p-0 hover:bg-gray-100 transition-colors"
+              onClick={() => setMesRef(addMonths(mesRef, 1))}
+            >
+              <ChevronRight className="h-4 w-4 text-gray-500" />
+            </Button>
+          </div>
         </div>
 
         {/* Cards de resumo */}
