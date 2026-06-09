@@ -331,9 +331,17 @@ export default function Assinaturas() {
                             <DropdownMenuItem onClick={() => pausar.mutate(a.id)}>
                               <Pause className="mr-2 h-4 w-4" /> Pausar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => cancelar.mutate(a.id)}>
-                              <XCircle className="mr-2 h-4 w-4" /> Cancelar
-                            </DropdownMenuItem>
+                            {a.link_cancelamento ? (
+                              <DropdownMenuItem asChild>
+                                <a href={a.link_cancelamento} target="_blank" rel="noopener noreferrer" className="flex items-center w-full">
+                                  <XCircle className="mr-2 h-4 w-4" /> Cancelar (Link Externo)
+                                </a>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => cancelar.mutate(a.id)}>
+                                <XCircle className="mr-2 h-4 w-4" /> Cancelar
+                              </DropdownMenuItem>
+                            )}
                           </>
                         )}
                         {(a.status === "pausada" || a.status === "cancelada") && (
