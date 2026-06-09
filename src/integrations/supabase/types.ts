@@ -84,6 +84,7 @@ export type Database = {
           data_pausa: string | null
           frequencia: string
           id: string
+          link_cancelamento: string | null
           metodo_pagamento: string
           moeda: string
           nome: string
@@ -108,6 +109,7 @@ export type Database = {
           data_pausa?: string | null
           frequencia?: string
           id?: string
+          link_cancelamento?: string | null
           metodo_pagamento?: string
           moeda?: string
           nome: string
@@ -132,6 +134,7 @@ export type Database = {
           data_pausa?: string | null
           frequencia?: string
           id?: string
+          link_cancelamento?: string | null
           metodo_pagamento?: string
           moeda?: string
           nome?: string
