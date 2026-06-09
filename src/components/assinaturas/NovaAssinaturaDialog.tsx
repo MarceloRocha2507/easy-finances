@@ -57,6 +57,7 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }
     proxima_cobranca: new Date().toISOString().split("T")[0],
     metodo_pagamento: "cartao_credito",
     observacoes: "",
+    link_cancelamento: "",
     category_id: "",
   });
 
@@ -72,6 +73,7 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }
         proxima_cobranca: assinatura.proxima_cobranca,
         metodo_pagamento: assinatura.metodo_pagamento,
         observacoes: assinatura.observacoes || "",
+        link_cancelamento: assinatura.link_cancelamento || "",
         category_id: assinatura.category_id || "",
       });
     } else {
@@ -85,6 +87,7 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }
         proxima_cobranca: new Date().toISOString().split("T")[0],
         metodo_pagamento: "cartao_credito",
         observacoes: "",
+        link_cancelamento: "",
         category_id: "",
       });
     }
@@ -102,6 +105,7 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }
       proxima_cobranca: form.proxima_cobranca,
       metodo_pagamento: form.metodo_pagamento,
       observacoes: form.observacoes || null,
+      link_cancelamento: form.link_cancelamento || null,
       category_id: form.category_id || null,
       status: assinatura?.status || "ativa",
       data_cancelamento: assinatura?.data_cancelamento || null,
@@ -199,6 +203,11 @@ export function NovaAssinaturaDialog({ open, onOpenChange, assinatura, prefill }
               <Label>Próxima cobrança</Label>
               <Input type="date" value={form.proxima_cobranca} onChange={(e) => setForm({ ...form, proxima_cobranca: e.target.value })} />
             </div>
+          </div>
+
+          <div>
+            <Label>Link para cancelamento</Label>
+            <Input value={form.link_cancelamento} onChange={(e) => setForm({ ...form, link_cancelamento: e.target.value })} placeholder="https://..." />
           </div>
 
           <div>

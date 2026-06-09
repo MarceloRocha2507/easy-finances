@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { Assinatura } from "@/hooks/useAssinaturas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CreditCard, Zap } from "lucide-react";
+import { CreditCard, Zap, ExternalLink } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -109,9 +109,23 @@ export function DetalhesAssinaturaDialog({ open, onOpenChange, assinatura }: Pro
             </div>
           )}
 
+          {assinatura.link_cancelamento && (
+            <div className="pt-2 border-t">
+              <p className="text-sm text-muted-foreground mb-1 text-red-500 font-medium">Cancelamento</p>
+              <a 
+                href={assinatura.link_cancelamento} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline flex items-center gap-1 w-fit"
+              >
+                Página de cancelamento <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+
           {assinatura.observacoes && (
             <div className="pt-2 border-t">
-              <p className="text-sm text-muted-foreground mb-1">Observações</p>
+              <p className="text-sm text-muted-foreground mb-1 font-medium">Observações</p>
               <p className="text-sm">{assinatura.observacoes}</p>
             </div>
           )}

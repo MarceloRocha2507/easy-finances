@@ -16,6 +16,7 @@ export interface Assinatura {
   metodo_pagamento: string;
   status: string;
   observacoes: string | null;
+  link_cancelamento: string | null;
   category_id: string | null;
   data_cancelamento: string | null;
   data_pausa: string | null;
