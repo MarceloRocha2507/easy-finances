@@ -1,0 +1,2 @@
+ALTER TABLE public.assinaturas ADD COLUMN IF NOT EXISTS link_cancelamento TEXT;
+COMMENT ON COLUMN public.assinaturas.link_cancelamento IS 'URL direta para a página de cancelamento do serviço da assinatura.';
