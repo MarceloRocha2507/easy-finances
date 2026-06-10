@@ -8,8 +8,6 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
@@ -71,8 +69,6 @@ export default function Anotacoes() {
         },
       }),
       Underline,
-      Bold,
-      Italic,
       TaskList,
       TaskItem.configure({
         nested: true,
