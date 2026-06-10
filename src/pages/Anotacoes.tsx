@@ -69,8 +69,6 @@ export default function Anotacoes() {
         },
       }),
       Underline,
-      Bold,
-      Italic,
       TaskList,
       TaskItem.configure({
         nested: true,
