@@ -81,7 +81,7 @@ export default function Anotacoes() {
   });
 
   useEffect(() => {
-    if (selectedNote && editor) {
+    if (selectedNote && editor && !editor.isDestroyed) {
       setLocalTitle(selectedNote.titulo);
       // Evita resetar o cursor se o conteúdo for o mesmo
       if (editor.getHTML() !== (selectedNote.conteudo || "")) {
@@ -89,12 +89,14 @@ export default function Anotacoes() {
       }
     } else if (!selectedNoteId) {
       setLocalTitle("");
-      editor?.commands.setContent("");
+      if (editor && !editor.isDestroyed) {
+        editor.commands.setContent("");
+      }
     }
   }, [selectedNoteId, selectedNote, editor]);
 
   const handleAutoSave = useCallback(async () => {
-    if (!selectedNote || !selectedNoteId || !editor) return;
+    if (!selectedNote || !selectedNoteId || !editor || editor.isDestroyed) return;
     
     const currentContent = editor.getHTML();
     if (localTitle === selectedNote.titulo && currentContent === (selectedNote.conteudo || "")) return;
