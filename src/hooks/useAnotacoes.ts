@@ -37,7 +37,7 @@ export function useAnotacoes() {
   });
 
   const createAnotacao = useMutation({
-    mutationFn: async (anotacao: Partial<Anotacao>) => {
+    mutationFn: async (anotacao: { titulo: string; conteudo?: string; fixado?: boolean }) => {
       if (!user) throw new Error("Usuário não autenticado");
       const { data, error } = await supabase
         .from("anotacoes")
