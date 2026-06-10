@@ -224,7 +224,96 @@ export default function Anotacoes() {
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex-1 overflow-y-auto"
               >
-                <div className="max-w-3xl mx-auto px-8 md:px-16 py-12 space-y-6">
+                <div className="max-w-3xl mx-auto px-8 md:px-16 py-8 space-y-6">
+                  {/* Toolbar Flutuante/Fixa */}
+                  {editor && (
+                    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 p-1 mb-8 bg-background/80 backdrop-blur-sm border rounded-lg shadow-sm">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('bold') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                      >
+                        <BoldIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('italic') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleItalic().run()}
+                      >
+                        <ItalicIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('underline') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleUnderline().run()}
+                      >
+                        <UnderlineIcon className="h-4 w-4" />
+                      </Button>
+                      
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('heading', { level: 1 }) && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                      >
+                        <Heading1 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('heading', { level: 2 }) && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                      >
+                        <Heading2 className="h-4 w-4" />
+                      </Button>
+                      
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('bulletList') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleBulletList().run()}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('taskList') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleTaskList().run()}
+                      >
+                        <CheckSquare className="h-4 w-4" />
+                      </Button>
+
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().undo().run()}
+                        disabled={!editor.can().undo()}
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().redo().run()}
+                        disabled={!editor.can().redo()}
+                      >
+                        <Redo2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
                     <div className="flex items-center gap-2">
                       {format(new Date(selectedNote.created_at), "PPP", { locale: ptBR })}
@@ -246,13 +335,12 @@ export default function Anotacoes() {
 
                   <div className="border-t border-muted/50 w-full" />
 
-                  <textarea
-                    className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30 focus:ring-0 px-0 leading-relaxed"
-                    placeholder="Comece a escrever aqui..."
-                    value={localContent}
-                    onChange={(e) => setLocalContent(e.target.value)}
-                    onBlur={handleAutoSave}
-                  />
+                  <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none tiptap-editor">
+                    <EditorContent 
+                      editor={editor} 
+                      onBlur={handleAutoSave}
+                    />
+                  </div>
                 </div>
               </motion.div>
             ) : (
