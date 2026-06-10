@@ -318,6 +318,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/anotacoes"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <AnotacoesPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
 
             <Route
