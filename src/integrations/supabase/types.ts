@@ -71,6 +71,36 @@ export type Database = {
           },
         ]
       }
+      anotacoes: {
+        Row: {
+          conteudo: string | null
+          created_at: string
+          fixado: boolean | null
+          id: string
+          titulo: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          conteudo?: string | null
+          created_at?: string
+          fixado?: boolean | null
+          id?: string
+          titulo: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          conteudo?: string | null
+          created_at?: string
+          fixado?: boolean | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       assinaturas: {
         Row: {
           cartao_id_pagamento: string | null

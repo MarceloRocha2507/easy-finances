@@ -15,6 +15,7 @@ import {
   Building2,
   CalendarDays,
   Sparkles,
+  StickyNote,
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -23,6 +24,7 @@ const mainMenuItems = [
   { icon: Building2, label: "Bancos", href: "/cartoes/bancos" },
   { icon: Tags, label: "Categorias", href: "/categories" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
+  { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
 
 const transacoesMenu = {
