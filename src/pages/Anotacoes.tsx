@@ -1,24 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { useAnotacoes, Anotacao } from "@/hooks/useAnotacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
 import {
   Plus,
   StickyNote,
-  Trash2,
-  Pin,
-  PinOff,
-  Search,
   Loader2,
-  MoreVertical,
-  ChevronRight,
-  ChevronDown,
+  Search,
   FileText,
   FilePlus2,
   MoreHorizontal,
+  Pin,
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  Underline as UnderlineIcon,
+  List,
+  CheckSquare,
+  Heading1,
+  Heading2,
+  Heading3,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,13 +41,13 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export default function Anotacoes() {
   const { anotacoes, isLoading, createAnotacao, deleteAnotacao, toggleFixar, updateAnotacao } = useAnotacoes();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [localTitle, setLocalTitle] = useState("");
-  const [localContent, setLocalContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const filteredAnotacoes = anotacoes.filter(
@@ -46,31 +58,65 @@ export default function Anotacoes() {
 
   const selectedNote = anotacoes.find((a) => a.id === selectedNoteId);
 
-  useEffect(() => {
-    if (selectedNote) {
-      setLocalTitle(selectedNote.titulo);
-      setLocalContent(selectedNote.conteudo || "");
-    } else {
-      setLocalTitle("");
-      setLocalContent("");
-    }
-  }, [selectedNoteId, selectedNote]);
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Underline,
+      Bold,
+      Italic,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Placeholder.configure({
+        placeholder: 'Comece a escrever aqui...',
+      }),
+    ],
+    content: '',
+    onUpdate: ({ editor }) => {
+      // O salvamento automático será via onBlur ou manual para evitar muitas chamadas
+    },
+  });
 
-  const handleAutoSave = async () => {
-    if (!selectedNote || !selectedNoteId) return;
-    if (localTitle === selectedNote.titulo && localContent === (selectedNote.conteudo || "")) return;
+  useEffect(() => {
+    if (selectedNote && editor) {
+      setLocalTitle(selectedNote.titulo);
+      // Evita resetar o cursor se o conteúdo for o mesmo
+      if (editor.getHTML() !== (selectedNote.conteudo || "")) {
+        editor.commands.setContent(selectedNote.conteudo || "");
+      }
+    } else if (!selectedNoteId) {
+      setLocalTitle("");
+      editor?.commands.setContent("");
+    }
+  }, [selectedNoteId, selectedNote, editor]);
+
+  const handleAutoSave = useCallback(async () => {
+    if (!selectedNote || !selectedNoteId || !editor) return;
+    
+    const currentContent = editor.getHTML();
+    if (localTitle === selectedNote.titulo && currentContent === (selectedNote.conteudo || "")) return;
     
     setIsSaving(true);
     try {
       await updateAnotacao.mutateAsync({
         id: selectedNoteId,
         titulo: localTitle || "Sem título",
-        conteudo: localContent,
+        conteudo: currentContent,
       });
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [selectedNote, selectedNoteId, editor, localTitle, updateAnotacao]);
 
   const handleCreateNote = async () => {
     const res = await createAnotacao.mutateAsync({
@@ -178,7 +224,96 @@ export default function Anotacoes() {
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex-1 overflow-y-auto"
               >
-                <div className="max-w-3xl mx-auto px-8 md:px-16 py-12 space-y-6">
+                <div className="max-w-3xl mx-auto px-8 md:px-16 py-8 space-y-6">
+                  {/* Toolbar Flutuante/Fixa */}
+                  {editor && (
+                    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 p-1 mb-8 bg-background/80 backdrop-blur-sm border rounded-lg shadow-sm">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('bold') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                      >
+                        <BoldIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('italic') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleItalic().run()}
+                      >
+                        <ItalicIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('underline') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleUnderline().run()}
+                      >
+                        <UnderlineIcon className="h-4 w-4" />
+                      </Button>
+                      
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('heading', { level: 1 }) && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                      >
+                        <Heading1 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('heading', { level: 2 }) && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                      >
+                        <Heading2 className="h-4 w-4" />
+                      </Button>
+                      
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('bulletList') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleBulletList().run()}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("h-8 w-8", editor.isActive('taskList') && "bg-muted")}
+                        onClick={() => editor.chain().focus().toggleTaskList().run()}
+                      >
+                        <CheckSquare className="h-4 w-4" />
+                      </Button>
+
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().undo().run()}
+                        disabled={!editor.can().undo()}
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().redo().run()}
+                        disabled={!editor.can().redo()}
+                      >
+                        <Redo2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
                     <div className="flex items-center gap-2">
                       {format(new Date(selectedNote.created_at), "PPP", { locale: ptBR })}
@@ -200,13 +335,12 @@ export default function Anotacoes() {
 
                   <div className="border-t border-muted/50 w-full" />
 
-                  <textarea
-                    className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30 focus:ring-0 px-0 leading-relaxed"
-                    placeholder="Comece a escrever aqui..."
-                    value={localContent}
-                    onChange={(e) => setLocalContent(e.target.value)}
-                    onBlur={handleAutoSave}
-                  />
+                  <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none tiptap-editor">
+                    <EditorContent 
+                      editor={editor} 
+                      onBlur={handleAutoSave}
+                    />
+                  </div>
                 </div>
               </motion.div>
             ) : (
