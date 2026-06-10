@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAnotacoes, Anotacao } from "@/hooks/useAnotacoes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,15 +13,12 @@ import {
   Search,
   Loader2,
   MoreVertical,
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  FilePlus2,
+  MoreHorizontal,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,13 +27,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 export default function Anotacoes() {
   const { anotacoes, isLoading, createAnotacao, deleteAnotacao, toggleFixar, updateAnotacao } = useAnotacoes();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingAnotacao, setEditingAnotacao] = useState<Anotacao | null>(null);
-  const [newNote, setNewNote] = useState({ titulo: "", conteudo: "" });
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [localTitle, setLocalTitle] = useState("");
+  const [localContent, setLocalContent] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredAnotacoes = anotacoes.filter(
     (a) =>
@@ -45,163 +43,181 @@ export default function Anotacoes() {
       a.conteudo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSave = () => {
-    if (!newNote.titulo.trim()) return;
+  const selectedNote = anotacoes.find((a) => a.id === selectedNoteId);
 
-    if (editingAnotacao) {
-      updateAnotacao.mutate({
-        id: editingAnotacao.id,
-        titulo: newNote.titulo,
-        conteudo: newNote.conteudo,
-      });
+  useEffect(() => {
+    if (selectedNote) {
+      setLocalTitle(selectedNote.titulo);
+      setLocalContent(selectedNote.conteudo || "");
     } else {
-      createAnotacao.mutate(newNote);
+      setLocalTitle("");
+      setLocalContent("");
     }
+  }, [selectedNoteId, selectedNote]);
 
-    setNewNote({ titulo: "", conteudo: "" });
-    setEditingAnotacao(null);
-    setIsDialogOpen(false);
+  const handleAutoSave = async () => {
+    if (!selectedNote || !selectedNoteId) return;
+    if (localTitle === selectedNote.titulo && localContent === (selectedNote.conteudo || "")) return;
+    
+    setIsSaving(true);
+    try {
+      await updateAnotacao.mutateAsync({
+        id: selectedNoteId,
+        titulo: localTitle || "Sem título",
+        conteudo: localContent,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const openEditDialog = (anotacao: Anotacao) => {
-    setEditingAnotacao(anotacao);
-    setNewNote({ titulo: anotacao.titulo, conteudo: anotacao.conteudo || "" });
-    setIsDialogOpen(true);
+  const handleCreateNote = async () => {
+    const res = await createAnotacao.mutateAsync({
+      titulo: "Nova Anotação",
+      conteudo: "",
+    });
+    if (res?.id) {
+      setSelectedNoteId(res.id);
+    }
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Anotações</h1>
-            <p className="text-muted-foreground">
-              Anote compras futuras, lembretes e observações importantes.
-            </p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) {
-              setEditingAnotacao(null);
-              setNewNote({ titulo: "", conteudo: "" });
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Nova Anotação
+      <div className="flex h-[calc(100vh-8rem)] overflow-hidden border rounded-xl bg-background shadow-sm">
+        {/* Sidebar Estilo Notion */}
+        <div className="w-64 md:w-80 flex flex-col border-r bg-muted/20">
+          <div className="p-4 border-b space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <StickyNote className="w-3 h-3" />
+                Minhas Notas
+              </h2>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCreateNote}>
+                <FilePlus2 className="w-4 h-4" />
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingAnotacao ? "Editar Anotação" : "Nova Anotação"}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Título da anotação"
-                    value={newNote.titulo}
-                    onChange={(e) => setNewNote({ ...newNote, titulo: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Conteúdo da anotação..."
-                    rows={5}
-                    value={newNote.conteudo}
-                    onChange={(e) => setNewNote({ ...newNote, conteudo: e.target.value })}
-                  />
-                </div>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar..."
+                className="pl-8 h-8 text-xs bg-background"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleSave} disabled={createAnotacao.isPending || updateAnotacao.isPending}>
-                  {createAnotacao.isPending || updateAnotacao.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Salvar"
+            ) : filteredAnotacoes.length === 0 ? (
+              <p className="text-xs text-center py-8 text-muted-foreground">Nenhuma nota.</p>
+            ) : (
+              filteredAnotacoes.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => setSelectedNoteId(note.id)}
+                  className={cn(
+                    "group flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors relative",
+                    selectedNoteId === note.id 
+                      ? "bg-accent text-accent-foreground shadow-sm" 
+                      : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
                   )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                >
+                  <FileText className={cn("w-4 h-4 shrink-0", selectedNoteId === note.id ? "text-primary" : "opacity-50")} />
+                  <span className="text-sm font-medium truncate flex-1">{note.titulo || "Sem título"}</span>
+                  {note.fixado && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity",
+                          selectedNoteId === note.id && "opacity-100"
+                        )}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toggleFixar.mutate({ id: note.id, fixado: note.fixado })}>
+                        {note.fixado ? "Desafixar" : "Fixar"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => {
+                          deleteAnotacao.mutate(note.id);
+                          if (selectedNoteId === note.id) setSelectedNoteId(null);
+                        }}
+                      >
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar anotações..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {/* Editor Estilo Notion */}
+        <div className="flex-1 flex flex-col bg-background relative overflow-hidden">
+          {selectedNote ? (
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-3xl mx-auto px-8 md:px-16 py-12 space-y-6">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
+                  <div className="flex items-center gap-2">
+                    {format(new Date(selectedNote.created_at), "PPP", { locale: ptBR })}
+                    {isSaving && (
+                      <span className="flex items-center gap-1 normal-case italic">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Salvando...
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredAnotacoes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-            <StickyNote className="w-12 h-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground">Nenhuma anotação encontrada.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAnotacoes.map((anotacao) => (
-              <Card key={anotacao.id} className="relative group hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                  <div className="space-y-1 pr-8">
-                    <CardTitle className="text-base font-semibold leading-tight">
-                      {anotacao.titulo}
-                    </CardTitle>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                      {format(new Date(anotacao.created_at), "dd 'de' MMMM", { locale: ptBR })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => toggleFixar.mutate({ id: anotacao.id, fixado: anotacao.fixado })}
-                    >
-                      {anotacao.fixado ? (
-                        <Pin className="h-4 w-4 text-[hsl(var(--accent-violet))]" />
-                      ) : (
-                        <PinOff className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(anotacao)}>
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => deleteAnotacao.mutate(anotacao.id)}
-                        >
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-6">
-                    {anotacao.conteudo}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                <input
+                  className="w-full text-4xl md:text-5xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/30 focus:ring-0 px-0"
+                  placeholder="Título da Página"
+                  value={localTitle}
+                  onChange={(e) => setLocalTitle(e.target.value)}
+                  onBlur={handleAutoSave}
+                />
+
+                <div className="border-t border-muted/50 w-full" />
+
+                <textarea
+                  className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30 focus:ring-0 px-0 leading-relaxed"
+                  placeholder="Comece a escrever aqui..."
+                  value={localContent}
+                  onChange={(e) => setLocalContent(e.target.value)}
+                  onBlur={handleAutoSave}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+                <StickyNote className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Selecione uma nota</h2>
+              <p className="text-muted-foreground max-w-xs mb-6">
+                Escolha uma nota existente na barra lateral ou crie uma nova para começar.
+              </p>
+              <Button onClick={handleCreateNote} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Criar primeira nota
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
 }
+
