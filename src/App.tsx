@@ -50,7 +50,7 @@ const BancosPage = lazy(() => import("./pages/Bancos"));
 const PreferenciasPage = lazy(() => import("./pages/profile/Preferencias"));
 const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 
-const AssistentePage = lazy(() => import("./pages/Assistente"));
+
 
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
 const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
@@ -286,16 +286,6 @@ const App = () => (
             }
           />
 
-            <Route
-              path="/assistente"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <AssistentePage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/assinaturas"

@@ -170,22 +170,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         </>
       )}
 
-      <Link
-        to="/assistente"
-        onClick={onItemClick}
-        className={cn(
-          "group flex items-center gap-3 mx-1 px-3 py-2.5 text-sm font-display font-semibold rounded-lg transition-colors duration-150 mt-1",
-          isActive("/assistente")
-            ? "bg-[hsl(var(--accent-violet)/0.07)]"
-            : "text-muted-foreground menu-item-hover"
-        )}
-        style={{
-          color: 'hsl(var(--accent-violet))',
-        }}
-      >
-        <Sparkles className="h-[18px] w-[18px] shrink-0" style={{ color: 'hsl(var(--accent-violet))' }} />
-        Fina IA
-      </Link>
       
     </nav>
   );
