@@ -8,7 +8,6 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
   Plus,
@@ -26,7 +25,6 @@ import {
   CheckSquare,
   Heading1,
   Heading2,
-  Heading3,
   Undo2,
   Redo2,
 } from "lucide-react";
@@ -68,7 +66,6 @@ export default function Anotacoes() {
           keepAttributes: false,
         },
       }),
-      Underline,
       TaskList,
       TaskItem.configure({
         nested: true,
@@ -332,10 +329,14 @@ export default function Anotacoes() {
                   <div className="border-t border-muted/50 w-full" />
 
                   <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none tiptap-editor">
-                    <EditorContent 
-                      editor={editor} 
-                      onBlur={handleAutoSave}
-                    />
+                    {editor ? (
+                      <EditorContent 
+                        editor={editor} 
+                        onBlur={handleAutoSave}
+                      />
+                    ) : (
+                      <div className="py-6 text-sm text-muted-foreground">Carregando editor...</div>
+                    )}
                   </div>
                 </div>
               </motion.div>
