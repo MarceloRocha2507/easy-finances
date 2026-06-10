@@ -4,6 +4,7 @@ import { useAnotacoes, Anotacao } from "@/hooks/useAnotacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   StickyNote,
@@ -167,54 +168,69 @@ export default function Anotacoes() {
 
         {/* Editor Estilo Notion */}
         <div className="flex-1 flex flex-col bg-background relative overflow-hidden">
-          {selectedNote ? (
-            <div className="flex-1 overflow-y-auto">
-              <div className="max-w-3xl mx-auto px-8 md:px-16 py-12 space-y-6">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
-                  <div className="flex items-center gap-2">
-                    {format(new Date(selectedNote.created_at), "PPP", { locale: ptBR })}
-                    {isSaving && (
-                      <span className="flex items-center gap-1 normal-case italic">
-                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Salvando...
-                      </span>
-                    )}
+          <AnimatePresence mode="wait">
+            {selectedNote ? (
+              <motion.div 
+                key={selectedNote.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="flex-1 overflow-y-auto"
+              >
+                <div className="max-w-3xl mx-auto px-8 md:px-16 py-12 space-y-6">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
+                    <div className="flex items-center gap-2">
+                      {format(new Date(selectedNote.created_at), "PPP", { locale: ptBR })}
+                      {isSaving && (
+                        <span className="flex items-center gap-1 normal-case italic">
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" /> Salvando...
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  <input
+                    className="w-full text-4xl md:text-5xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/30 focus:ring-0 px-0"
+                    placeholder="Título da Página"
+                    value={localTitle}
+                    onChange={(e) => setLocalTitle(e.target.value)}
+                    onBlur={handleAutoSave}
+                  />
+
+                  <div className="border-t border-muted/50 w-full" />
+
+                  <textarea
+                    className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30 focus:ring-0 px-0 leading-relaxed"
+                    placeholder="Comece a escrever aqui..."
+                    value={localContent}
+                    onChange={(e) => setLocalContent(e.target.value)}
+                    onBlur={handleAutoSave}
+                  />
                 </div>
-
-                <input
-                  className="w-full text-4xl md:text-5xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/30 focus:ring-0 px-0"
-                  placeholder="Título da Página"
-                  value={localTitle}
-                  onChange={(e) => setLocalTitle(e.target.value)}
-                  onBlur={handleAutoSave}
-                />
-
-                <div className="border-t border-muted/50 w-full" />
-
-                <textarea
-                  className="w-full min-h-[500px] text-lg bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30 focus:ring-0 px-0 leading-relaxed"
-                  placeholder="Comece a escrever aqui..."
-                  value={localContent}
-                  onChange={(e) => setLocalContent(e.target.value)}
-                  onBlur={handleAutoSave}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
-                <StickyNote className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">Selecione uma nota</h2>
-              <p className="text-muted-foreground max-w-xs mb-6">
-                Escolha uma nota existente na barra lateral ou crie uma nova para começar.
-              </p>
-              <Button onClick={handleCreateNote} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Criar primeira nota
-              </Button>
-            </div>
-          )}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col items-center justify-center text-center p-8"
+              >
+                <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+                  <StickyNote className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h2 className="text-xl font-semibold mb-2">Selecione uma nota</h2>
+                <p className="text-muted-foreground max-w-xs mb-6">
+                  Escolha uma nota existente na barra lateral ou crie uma nova para começar.
+                </p>
+                <Button onClick={handleCreateNote} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Criar primeira nota
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </Layout>
