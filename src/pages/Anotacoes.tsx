@@ -48,7 +48,6 @@ export default function Anotacoes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [localTitle, setLocalTitle] = useState("");
-  const [localContent, setLocalContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const filteredAnotacoes = anotacoes.filter(
@@ -59,31 +58,65 @@ export default function Anotacoes() {
 
   const selectedNote = anotacoes.find((a) => a.id === selectedNoteId);
 
-  useEffect(() => {
-    if (selectedNote) {
-      setLocalTitle(selectedNote.titulo);
-      setLocalContent(selectedNote.conteudo || "");
-    } else {
-      setLocalTitle("");
-      setLocalContent("");
-    }
-  }, [selectedNoteId, selectedNote]);
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Underline,
+      Bold,
+      Italic,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Placeholder.configure({
+        placeholder: 'Comece a escrever aqui...',
+      }),
+    ],
+    content: '',
+    onUpdate: ({ editor }) => {
+      // O salvamento automático será via onBlur ou manual para evitar muitas chamadas
+    },
+  });
 
-  const handleAutoSave = async () => {
-    if (!selectedNote || !selectedNoteId) return;
-    if (localTitle === selectedNote.titulo && localContent === (selectedNote.conteudo || "")) return;
+  useEffect(() => {
+    if (selectedNote && editor) {
+      setLocalTitle(selectedNote.titulo);
+      // Evita resetar o cursor se o conteúdo for o mesmo
+      if (editor.getHTML() !== (selectedNote.conteudo || "")) {
+        editor.commands.setContent(selectedNote.conteudo || "");
+      }
+    } else if (!selectedNoteId) {
+      setLocalTitle("");
+      editor?.commands.setContent("");
+    }
+  }, [selectedNoteId, selectedNote, editor]);
+
+  const handleAutoSave = useCallback(async () => {
+    if (!selectedNote || !selectedNoteId || !editor) return;
+    
+    const currentContent = editor.getHTML();
+    if (localTitle === selectedNote.titulo && currentContent === (selectedNote.conteudo || "")) return;
     
     setIsSaving(true);
     try {
       await updateAnotacao.mutateAsync({
         id: selectedNoteId,
         titulo: localTitle || "Sem título",
-        conteudo: localContent,
+        conteudo: currentContent,
       });
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [selectedNote, selectedNoteId, editor, localTitle, updateAnotacao]);
 
   const handleCreateNote = async () => {
     const res = await createAnotacao.mutateAsync({
