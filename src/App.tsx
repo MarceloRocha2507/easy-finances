@@ -2,6 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -60,14 +62,23 @@ const AnotacoesPage = lazy(() => import("./pages/Anotacoes"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30,
+      staleTime: 1000 * 60 * 5, // 5 minutos de "frescor" por padrão
+      gcTime: 1000 * 60 * 60 * 24, // Mantém no cache por 24h
       refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });
 
+const persister = createSyncStoragePersister({
+  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+});
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider 
+    client={queryClient} 
+    persistOptions={{ persister }}
+  >
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
       <AuthProvider>
         <TooltipProvider>
@@ -336,7 +347,7 @@ const App = () => (
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;
