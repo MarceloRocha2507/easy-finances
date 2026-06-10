@@ -1,24 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { useAnotacoes, Anotacao } from "@/hooks/useAnotacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
 import {
   Plus,
   StickyNote,
-  Trash2,
-  Pin,
-  PinOff,
-  Search,
   Loader2,
-  MoreVertical,
-  ChevronRight,
-  ChevronDown,
+  Search,
   FileText,
   FilePlus2,
   MoreHorizontal,
+  Pin,
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  Underline as UnderlineIcon,
+  List,
+  CheckSquare,
+  Heading1,
+  Heading2,
+  Heading3,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +41,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export default function Anotacoes() {
   const { anotacoes, isLoading, createAnotacao, deleteAnotacao, toggleFixar, updateAnotacao } = useAnotacoes();
