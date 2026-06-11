@@ -566,8 +566,8 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         metas,
       };
     },
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 1000 * 60 * 5, // Refresh automático a cada 5 minutos
+    staleTime: 1000 * 60 * 5, // Keep for 5 minutes
+    refetchInterval: 1000 * 60 * 10, // Auto refresh every 10 minutes
     retry: 1,
   });
 }
