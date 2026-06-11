@@ -464,7 +464,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           return {
             id: compra.id,
             descricao: compra.descricao,
-            valor: Math.abs(Number(compra.valor_total) || 0),
+            valor: Number(compra.valor_total) || 0,
             parcelas: compra.parcelas || 1,
             cartaoNome: cartao?.nome || "Cartão",
             data: new Date(compra.created_at),
