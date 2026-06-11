@@ -115,8 +115,12 @@ export default function Dashboard() {
     data: dashboardData,
     isLoading,
     isFetching,
-    refetch,
+    refetch: refetchDashboard,
   } = useDashboardCompleto(mesReferencia);
+
+  const refetch = useCallback(() => {
+    refetchDashboard();
+  }, [refetchDashboard]);
 
   const { data: mesesDisponiveis } = useMesesComMovimentacao();
 
