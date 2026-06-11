@@ -567,6 +567,7 @@ export async function editarCompra(
     descricao?: string;
     valorTotal?: number;
     categoriaId?: string;
+    subcategoriaId?: string;
     responsavelId?: string;
     mesFatura?: Date;
     parcelaInicial?: number;
