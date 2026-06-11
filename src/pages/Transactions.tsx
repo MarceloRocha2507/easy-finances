@@ -1949,17 +1949,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
-          {transaction.type === 'expense' && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
-              title={transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
-            >
-              <EyeOff className="w-3.5 h-3.5" />
-            </Button>
-          )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
+            title={transaction.desconsiderada ? 'Reconsiderar' : 'Desconsiderar'}
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
