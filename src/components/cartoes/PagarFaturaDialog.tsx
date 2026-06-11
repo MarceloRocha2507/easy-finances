@@ -181,7 +181,7 @@ export function PagarFaturaDialog({
           }));
       } else if (modo === "dividir_valores") {
         acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular)
+          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel")
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: parseFloat(parseBrazilianCurrency(r.valorCustom).toFixed(2)),
