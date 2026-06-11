@@ -1903,12 +1903,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
-              {transaction.type === 'expense' && (
-                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
-                  <EyeOff className="w-4 h-4 mr-2" />
-                  {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
+                <EyeOff className="w-4 h-4 mr-2" />
+                {transaction.desconsiderada ? 'Reconsiderar' : 'Desconsiderar'}
+              </DropdownMenuItem>
               <DropdownMenuItem className="text-destructive" onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
