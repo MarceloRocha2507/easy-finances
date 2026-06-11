@@ -432,7 +432,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             const primeiroMesFuturo = parcelasFuturas[0].mes_referencia;
             const valorTotalMesFuturo = parcelasFuturas
               .filter((p: any) => p.mes_referencia === primeiroMesFuturo)
-              .reduce((sum: number, p: any) => sum + Math.abs(Number(p.valor) || 0), 0);
+              .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
 
             const dataRef = new Date(primeiroMesFuturo + 'T12:00:00');
             const dataVencimento = new Date(dataRef.getFullYear(), dataRef.getMonth(), cartao.dia_vencimento);
