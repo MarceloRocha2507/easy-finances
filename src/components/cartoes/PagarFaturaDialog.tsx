@@ -121,12 +121,14 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveis
-      .filter(r => r.responsavel_id !== "sem-responsavel")
-      .reduce((sum, r) => {
-        const val = parseBrazilianCurrency(r.valorCustom);
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
+    return responsaveis.reduce((sum, r) => {
+      // Se for um item de ajuste (negativo), ele deve subtrair do total informado
+      if (r.responsavel_id === "sem-responsavel") {
+        return sum + r.total;
+      }
+      const val = parseBrazilianCurrency(r.valorCustom);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
   }, [responsaveis, modo]);
 
   const dividirValido = useMemo(() => {
