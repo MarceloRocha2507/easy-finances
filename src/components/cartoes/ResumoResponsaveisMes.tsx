@@ -48,6 +48,9 @@ async function buscarTotaisPorResponsavel(userId: string, mesReferencia: Date): 
       compra:compras_cartao!inner (
         user_id,
         responsavel_id,
+        cartao:cartoes (
+          nome
+        ),
         responsavel:responsaveis (
           id,
           nome,
@@ -83,14 +86,33 @@ async function buscarTotaisPorResponsavel(userId: string, mesReferencia: Date): 
       : resp?.apelido || resp?.nome || "Sem responsável";
 
     if (!map[key]) {
-      map[key] = { id: key, nome, isTitular, total: 0, qtd: 0, percentual: 0 };
+      map[key] = { 
+        id: key, 
+        nome, 
+        isTitular, 
+        total: 0, 
+        qtd: 0, 
+        percentual: 0,
+        detalhesPorCartao: []
+      };
     }
+    
     map[key].total += valor;
     map[key].qtd += 1;
+
+    const cartaoNome = p.compra?.cartao?.nome || "Cartão não identificado";
+    const indexCartao = map[key].detalhesPorCartao.findIndex(d => d.cartaoNome === cartaoNome);
+    
+    if (indexCartao >= 0) {
+      map[key].detalhesPorCartao[indexCartao].total += valor;
+    } else {
+      map[key].detalhesPorCartao.push({ cartaoNome, total: valor });
+    }
   });
 
   Object.values(map).forEach((item) => {
     item.percentual = totalGeral > 0 ? (item.total / totalGeral) * 100 : 0;
+    item.detalhesPorCartao.sort((a, b) => b.total - a.total);
   });
 
   return Object.values(map).sort((a, b) => {
