@@ -82,9 +82,13 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   useEffect(() => {
     const active = getActiveMenu(pathname);
     if (active) {
-      setOpenMenus({
-        transacoes: active === "transacoes",
-        cartoes: active === "cartoes",
+      setOpenMenus(prev => {
+        // Only update if it actually changes, to avoid unnecessary re-renders
+        if (prev[active]) return prev;
+        return {
+          transacoes: active === "transacoes",
+          cartoes: active === "cartoes",
+        };
       });
     }
   }, [pathname, getActiveMenu]);

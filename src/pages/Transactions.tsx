@@ -385,9 +385,9 @@ export default function Transactions() {
     }
   }, [suggestedCategoryId, isSuggestion]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-  };
+  }, [queryClient, user?.id]);
   const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
   const { assinaturas, isLoading: isAssinaturasLoading } = useAssinaturas();
 
