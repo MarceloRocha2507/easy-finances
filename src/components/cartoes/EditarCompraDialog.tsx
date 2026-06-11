@@ -98,7 +98,8 @@ export function EditarCompraDialog({
   const [valorTotal, setValorTotal] = useState(0);
   const [valorParcela, setValorParcela] = useState(0);
   const [editarApenasMes, setEditarApenasMes] = useState(false);
-  const [categoriaId, setCategoriaId] = useState<string | null>(null); // This is now subcategoria_id
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
+  const [subcategoriaId, setSubcategoriaId] = useState<string | null>(null);
   const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [mesFatura, setMesFatura] = useState("");
   const [parcelaInicial, setParcelaInicial] = useState("1");
