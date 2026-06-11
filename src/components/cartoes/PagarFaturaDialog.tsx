@@ -122,8 +122,10 @@ export function PagarFaturaDialog({
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
     return responsaveis.reduce((sum, r) => {
-      // Se for um item de ajuste (negativo), ele deve subtrair do total informado
+      // Se for um item de ajuste (negativo), ele deve SUBTRAIR do total informado.
+      // Como o r.total já é negativo (ex: -136,67), somar r.total fará a subtração correta.
       if (r.responsavel_id === "sem-responsavel") {
+        console.log("Ajuste encontrado:", r.total);
         return sum + r.total;
       }
       const val = parseBrazilianCurrency(r.valorCustom);
