@@ -413,7 +413,9 @@ export function PagarFaturaDialog({
                 </Label>
                 <ScrollArea className="max-h-[200px]">
                   <div className="space-y-2">
-                    {responsaveis.map((r) => (
+                    {responsaveis
+                      .filter(r => r.responsavel_id !== "sem-responsavel")
+                      .map((r) => (
                       <div
                         key={r.responsavel_id}
                         className={cn(
@@ -436,30 +438,35 @@ export function PagarFaturaDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {r.total <= 0
-                              ? "Ajuste de fatura"
-                              : r.is_titular
+                            {r.is_titular
                                 ? `Eu (${r.responsavel_apelido || r.responsavel_nome})`
                                 : (r.responsavel_apelido || r.responsavel_nome)}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
-                          </p>
+                          <div className="flex flex-col">
+                            <p className="text-xs text-muted-foreground">
+                              {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
+                            </p>
+                            {r.is_titular && (() => {
+                              const semResponsavel = responsaveis.find(x => x.responsavel_id === "sem-responsavel");
+                              if (semResponsavel && semResponsavel.total !== 0) {
+                                return (
+                                  <p className="text-[10px] text-blue-600 font-medium">
+                                    Inclui adiantamento de {formatCurrency(semResponsavel.total)}
+                                  </p>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
                         </div>
                         <div className="w-28 shrink-0">
-                          {r.total <= 0 ? (
-                            <p className="text-sm text-right font-semibold text-blue-600">
-                              {formatCurrency(r.total)}
-                            </p>
-                          ) : (
-                            <Input
-                              inputMode="decimal"
-                              placeholder={r.total.toFixed(2).replace(".", ",")}
-                              value={r.valorCustom}
-                              onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
-                              className="h-8 text-sm text-right"
-                            />
-                          )}
+                          <Input
+                            inputMode="decimal"
+                            placeholder={r.total.toFixed(2).replace(".", ",")}
+                            value={r.valorCustom}
+                            onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
+                            className="h-8 text-sm text-right"
+                          />
                         </div>
                       </div>
                     ))}
