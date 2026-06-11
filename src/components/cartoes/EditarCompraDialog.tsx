@@ -261,6 +261,7 @@ export function EditarCompraDialog({
           descricao,
           valorTotal,
           categoriaId: categoriaId || undefined,
+          subcategoriaId: subcategoriaId || undefined,
           responsavelId: responsavelId || undefined,
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
