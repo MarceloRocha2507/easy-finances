@@ -433,6 +433,72 @@ export function EditarCompraDialog({
                 </div>
               )}
 
+              {/* Categoria do Cartão */}
+              <div className="space-y-2">
+                <Label htmlFor="categoriaId" className="flex items-center gap-2">
+                  <TagIcon className="h-4 w-4" />
+                  Categoria do Cartão
+                </Label>
+                <Select
+                  value={categoriaId || "none"}
+                  onValueChange={(val) => setCategoriaId(val === "none" ? null : val)}
+                >
+                  <SelectTrigger id="categoriaId">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem categoria</SelectItem>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: c.cor }}
+                          />
+                          <span>{c.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Categoria principal da compra
+                </p>
+              </div>
+
+              {/* Subcategoria */}
+              <div className="space-y-2">
+                <Label htmlFor="subcategoriaId" className="flex items-center gap-2">
+                  <TagIcon className="h-4 w-4" />
+                  Subcategoria
+                </Label>
+                <Select
+                  value={subcategoriaId || "none"}
+                  onValueChange={(val) => setSubcategoriaId(val === "none" ? null : val)}
+                >
+                  <SelectTrigger id="subcategoriaId">
+                    <SelectValue placeholder="Selecione a subcategoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem subcategoria</SelectItem>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: c.cor }}
+                          />
+                          <span>{c.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Detalhe opcional da compra
+                </p>
+              </div>
+
               {/* Responsável */}
               <ResponsavelSelector
                 label="Responsável"
