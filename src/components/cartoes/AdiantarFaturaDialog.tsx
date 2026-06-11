@@ -20,7 +20,13 @@ import {
   desfazerAdiantamento, 
   AdiantarFaturaResult 
 } from "@/services/compras-cartao";
-import { Banknote, AlertCircle, Loader2, Info } from "lucide-react";
+import { Banknote, AlertCircle, Loader2, Info, HelpCircle } from "lucide-react";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 interface Props {
@@ -43,6 +49,7 @@ export function AdiantarFaturaDialog({
   const [valor, setValor] = useState("");
   const [observacao, setObservacao] = useState("");
   const [marcarParcelas, setMarcarParcelas] = useState(false);
+  const [desconsiderarCaixa, setDesconsiderarCaixa] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Formatar mês
@@ -75,6 +82,7 @@ export function AdiantarFaturaDialog({
         valorAdiantamento: valorNumerico,
         observacao: observacao.trim() || undefined,
         marcarParcelasComoPagas: marcarParcelas,
+        desconsiderarCaixa: desconsiderarCaixa,
       });
 
       // Toast com opção de desfazer
@@ -105,6 +113,7 @@ export function AdiantarFaturaDialog({
       setValor("");
       setObservacao("");
       setMarcarParcelas(false);
+      setDesconsiderarCaixa(false);
       
       onSuccess();
       onOpenChange(false);
@@ -121,6 +130,7 @@ export function AdiantarFaturaDialog({
       setValor("");
       setObservacao("");
       setMarcarParcelas(false);
+      setDesconsiderarCaixa(false);
     }
     onOpenChange(open);
   }
@@ -211,6 +221,35 @@ export function AdiantarFaturaDialog({
               id="marcar-parcelas"
               checked={marcarParcelas}
               onCheckedChange={setMarcarParcelas}
+            />
+          </div>
+          
+          {/* Nova opção: desconsiderar do caixa (não registrar como despesa) */}
+          <div className="flex items-center justify-between p-3 rounded-lg border border-amber-100 bg-amber-50/30 dark:border-amber-900/30 dark:bg-amber-900/10">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="desconsiderar-caixa" className="cursor-pointer text-amber-900 dark:text-amber-200">
+                  Desconsiderar do caixa
+                </Label>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-amber-500 hover:text-amber-600">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">Se ativado, este adiantamento reduzirá o valor da fatura mas NÃO será contado como uma despesa no seu saldo real do mês.</p>
+                  </TooltipContent>
+                </UITooltip>
+              </div>
+              <p className="text-[10px] text-amber-700/70 dark:text-amber-400/70">
+                Útil quando o saldo real já está zerado ou o dinheiro não saiu da conta principal.
+              </p>
+            </div>
+            <Switch
+              id="desconsiderar-caixa"
+              checked={desconsiderarCaixa}
+              onCheckedChange={setDesconsiderarCaixa}
             />
           </div>
 

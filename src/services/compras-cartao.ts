@@ -1458,6 +1458,7 @@ export type AdiantarFaturaInput = {
   valorAdiantamento: number;
   observacao?: string;
   marcarParcelasComoPagas?: boolean; // Opção avançada (desligado por padrão)
+  desconsiderarCaixa?: boolean; // Nova opção para não registrar despesa no saldo real
 };
 
 export type AdiantarFaturaResult = {
@@ -1581,6 +1582,7 @@ export async function adiantarFatura(input: AdiantarFaturaInput): Promise<Adiant
       paid_date: new Date().toISOString().split("T")[0],
       category_id: categoryId,
       tipo_lancamento: "unica",
+      desconsiderada: input.desconsiderarCaixa || false,
     })
     .select()
     .single();
