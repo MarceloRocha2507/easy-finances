@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
+import { AjustarEstimadoDialog } from '@/components/dashboard/AjustarEstimadoDialog';
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
@@ -318,6 +319,7 @@ export default function Transactions() {
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
+  const [ajustarEstimadoOpen, setAjustarEstimadoOpen] = useState(false);
   const [detalhesDespesasOpen, setDetalhesDespesasOpen] = useState(false);
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
@@ -1381,14 +1383,25 @@ export default function Transactions() {
                   icon={Info}
                   subInfo={
                     <div className="flex flex-col gap-0.5">
-                      <span>
-                        {formatCurrency(
-                          (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-                          - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
-                          - (stats?.faturaCartao || 0)
-                        )}{" "}
-                        <span className="text-muted-foreground/60">neste mês</span>
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span>
+                          {formatCurrency(
+                            (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
+                            - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
+                            - (stats?.faturaCartao || 0)
+                          )}{" "}
+                          <span className="text-muted-foreground/60">neste mês</span>
+                        </span>
+                        <button 
+                          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAjustarEstimadoOpen(true);
+                          }}
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
                       <span className="text-muted-foreground/60">real + a receber - a pagar</span>
                     </div>
                   }
@@ -1725,6 +1738,7 @@ export default function Transactions() {
           mesReferencia={dataInicial || new Date()} 
         />
       </div>
+      <AjustarEstimadoDialog open={ajustarEstimadoOpen} onOpenChange={setAjustarEstimadoOpen} />
     </Layout>
   );
 }
