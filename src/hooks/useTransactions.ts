@@ -951,31 +951,6 @@ export function useMarkFaturaAsPaid() {
     },
   });
 }
-          paid_date: today
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateTransactionCaches(queryClient);
-      toast({
-        title: 'Marcado como pago',
-        description: 'A transação foi marcada como realizada.',
-      });
-    },
-    onError: () => {
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar a transação.',
-        variant: 'destructive',
-      });
-    },
-  });
-}
 
 export function useToggleDesconsiderada() {
   const queryClient = useQueryClient();
