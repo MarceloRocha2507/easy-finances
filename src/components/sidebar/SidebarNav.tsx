@@ -41,7 +41,6 @@ const cartoesMenu = {
   label: "Cartões",
   subItems: [
     { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-    { icon: Users, label: "Responsáveis", href: "/cartoes/responsaveis" },
   ],
 };
 
