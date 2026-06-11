@@ -100,11 +100,7 @@ export function PagarFaturaDialog({
 
   // Total geral da fatura
   const totalFatura = useMemo(() => {
-    // Agora o "sem-responsavel" já está embutido no titular, então filtramos ele 
-    // da soma total para não contar em dobro.
-    return responsaveis
-      .filter(r => r.responsavel_id !== "sem-responsavel")
-      .reduce((sum, r) => sum + r.total, 0);
+    return responsaveis.reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis]);
 
   // Total apenas dos responsáveis com valor positivo (alvo do modo dividir)
