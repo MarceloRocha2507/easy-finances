@@ -68,12 +68,26 @@ export function PagarFaturaDialog({
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
+        const semResponsavel = resumo.find(r => r.responsavel_id === "sem-responsavel");
+        const titularOriginal = resumo.find(r => r.is_titular);
+
         setResponsaveis(
-          resumo.map((r) => ({
-            ...r,
-            recebido: false,
-            valorCustom: r.total.toFixed(2).replace(".", ","),
-          }))
+          resumo.map((r) => {
+            let totalAjustado = r.total;
+            
+            // Se for o titular e houver valor "sem responsável" (adiantamento ou compra avulsa), 
+            // somamos ao total do titular para que o input reflita o valor real que ele deve pagar.
+            if (r.is_titular && semResponsavel) {
+              totalAjustado = r.total + semResponsavel.total;
+            }
+
+            return {
+              ...r,
+              total: totalAjustado,
+              recebido: false,
+              valorCustom: totalAjustado.toFixed(2).replace(".", ","),
+            };
+          })
         );
       } catch (error) {
         console.error("Erro ao carregar resumo:", error);
@@ -92,7 +106,7 @@ export function PagarFaturaDialog({
     return responsaveis.find((r) => r.is_titular);
   }, [responsaveis]);
 
-  // Outros responsáveis (não titulares)
+  // Outros responsáveis (não titulares e não o "sem-responsavel" que já embutimos no titular)
   const outrosResponsaveis = useMemo(() => {
     return responsaveis.filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel");
   }, [responsaveis]);
@@ -100,7 +114,11 @@ export function PagarFaturaDialog({
 
   // Total geral da fatura
   const totalFatura = useMemo(() => {
-    return responsaveis.reduce((sum, r) => sum + r.total, 0);
+    // Agora o "sem-responsavel" já está embutido no titular, então filtramos ele 
+    // da soma total para não contar em dobro.
+    return responsaveis
+      .filter(r => r.responsavel_id !== "sem-responsavel")
+      .reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis]);
 
   // Total apenas dos responsáveis com valor positivo (alvo do modo dividir)
@@ -121,14 +139,12 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveis.reduce((sum, r) => {
-      // No modo dividir_valores, incluímos todos os itens do resumo (incluindo negativos)
-      // Se r.total <= 0, é um crédito/estorno que já diminui do saldo da fatura.
-      if (r.total <= 0) return sum + r.total;
-      
-      const val = parseBrazilianCurrency(r.valorCustom);
-      return sum + (isNaN(val) ? 0 : val);
-    }, 0);
+    return responsaveis
+      .filter(r => r.responsavel_id !== "sem-responsavel")
+      .reduce((sum, r) => {
+        const val = parseBrazilianCurrency(r.valorCustom);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
   }, [responsaveis, modo]);
 
   const dividirValido = useMemo(() => {
@@ -397,7 +413,9 @@ export function PagarFaturaDialog({
                 </Label>
                 <ScrollArea className="max-h-[200px]">
                   <div className="space-y-2">
-                    {responsaveis.map((r) => (
+                    {responsaveis
+                      .filter(r => r.responsavel_id !== "sem-responsavel")
+                      .map((r) => (
                       <div
                         key={r.responsavel_id}
                         className={cn(
@@ -420,30 +438,35 @@ export function PagarFaturaDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {r.total <= 0
-                              ? "Ajuste de fatura"
-                              : r.is_titular
+                            {r.is_titular
                                 ? `Eu (${r.responsavel_apelido || r.responsavel_nome})`
                                 : (r.responsavel_apelido || r.responsavel_nome)}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
-                          </p>
+                          <div className="flex flex-col">
+                            <p className="text-xs text-muted-foreground">
+                              {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
+                            </p>
+                            {r.is_titular && (() => {
+                              const semResponsavel = responsaveis.find(x => x.responsavel_id === "sem-responsavel");
+                              if (semResponsavel && semResponsavel.total !== 0) {
+                                return (
+                                  <p className="text-[10px] text-blue-600 font-medium">
+                                    Inclui adiantamento de {formatCurrency(semResponsavel.total)}
+                                  </p>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
                         </div>
                         <div className="w-28 shrink-0">
-                          {r.total <= 0 ? (
-                            <p className="text-sm text-right font-semibold text-blue-600">
-                              {formatCurrency(r.total)}
-                            </p>
-                          ) : (
-                            <Input
-                              inputMode="decimal"
-                              placeholder={r.total.toFixed(2).replace(".", ",")}
-                              value={r.valorCustom}
-                              onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
-                              className="h-8 text-sm text-right"
-                            />
-                          )}
+                          <Input
+                            inputMode="decimal"
+                            placeholder={r.total.toFixed(2).replace(".", ",")}
+                            value={r.valorCustom}
+                            onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
+                            className="h-8 text-sm text-right"
+                          />
                         </div>
                       </div>
                     ))}
