@@ -478,9 +478,25 @@ export function PagarFaturaDialog({
                     <p className="text-xs text-muted-foreground">Titular</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">
-                  {formatCurrency(titular.total)}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(titular.total)}
+                  </span>
+                  {(() => {
+                    const semResponsavel = responsaveis.find(r => r.responsavel_id === "sem-responsavel");
+                    if (semResponsavel && semResponsavel.total !== 0) {
+                      return (
+                        <span className={cn(
+                          "text-[10px] font-medium",
+                          semResponsavel.total < 0 ? "text-blue-600" : "text-destructive"
+                        )}>
+                          {semResponsavel.total < 0 ? "Adiantamento deduzido" : "Sem responsável somado"}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
             )}
 
