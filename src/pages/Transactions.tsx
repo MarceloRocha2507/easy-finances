@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
-import { AjustarEstimadoDialog } from '@/components/dashboard/AjustarEstimadoDialog';
+
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
 import { useAssinaturas } from '@/hooks/useAssinaturas';
@@ -319,7 +319,7 @@ export default function Transactions() {
   const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [ajustarSaldoOpen, setAjustarSaldoOpen] = useState(false);
-  const [ajustarEstimadoOpen, setAjustarEstimadoOpen] = useState(false);
+  
   const [detalhesDespesasOpen, setDetalhesDespesasOpen] = useState(false);
   const [dataInicial, setDataInicial] = useState<Date | undefined>(() => startOfMonth(new Date()));
   const [dataFinal, setDataFinal] = useState<Date | undefined>(() => endOfMonth(new Date()));
