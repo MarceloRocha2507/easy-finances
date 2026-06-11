@@ -1276,8 +1276,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         .eq('ativo', true);
 
       // Calcular total da fatura do titular e de outros responsáveis
-      let faturaCartaoTitular = 0;
-      let faturaCartaoOutros = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
+      let faturaCartaoTitularRaw = 0;
+      let faturaCartaoOutrosRaw = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
       let faturaViaParcelasPagas = 0; // titular pagas (para conciliação)
       let faturaTitularTodas = 0; // titular pagas + pendentes (para totalGeralDespesas)
       (parcelasCartao || []).forEach((p: any) => {
