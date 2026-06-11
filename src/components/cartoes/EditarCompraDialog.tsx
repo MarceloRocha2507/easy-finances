@@ -98,7 +98,8 @@ export function EditarCompraDialog({
   const [valorTotal, setValorTotal] = useState(0);
   const [valorParcela, setValorParcela] = useState(0);
   const [editarApenasMes, setEditarApenasMes] = useState(false);
-  const [categoriaId, setCategoriaId] = useState<string | null>(null); // This is now subcategoria_id
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
+  const [subcategoriaId, setSubcategoriaId] = useState<string | null>(null);
   const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [mesFatura, setMesFatura] = useState("");
   const [parcelaInicial, setParcelaInicial] = useState("1");
@@ -156,7 +157,7 @@ export function EditarCompraDialog({
         // Buscar compra completa
         const { data: compra } = await (supabase as any)
           .from("compras_cartao")
-          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, subcategoria_id, responsavel_id, nome_fatura, cartao_id")
+          .select("id, descricao, valor_total, parcelas, parcela_inicial, mes_inicio, categoria_id, subcategoria_id, responsavel_id, nome_fatura, cartao_id")
           .eq("id", parcela.compra_id)
           .single();
 
@@ -165,7 +166,8 @@ export function EditarCompraDialog({
           setNomeFatura(compra.nome_fatura || "");
           setValorTotal(compra.valor_total || 0);
           setValorParcela(Math.abs(parcela.valor || 0));
-          setCategoriaId(compra.subcategoria_id || null);
+          setCategoriaId(compra.categoria_id || null);
+          setSubcategoriaId(compra.subcategoria_id || null);
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
@@ -259,6 +261,7 @@ export function EditarCompraDialog({
           descricao,
           valorTotal,
           categoriaId: categoriaId || undefined,
+          subcategoriaId: subcategoriaId || undefined,
           responsavelId: responsavelId || undefined,
           mesFatura: mesFaturaDate,
           parcelaInicial: parseInt(parcelaInicial),
@@ -429,6 +432,72 @@ export function EditarCompraDialog({
                   </p>
                 </div>
               )}
+
+              {/* Categoria do Cartão */}
+              <div className="space-y-2">
+                <Label htmlFor="categoriaId" className="flex items-center gap-2">
+                  <TagIcon className="h-4 w-4" />
+                  Categoria do Cartão
+                </Label>
+                <Select
+                  value={categoriaId || "none"}
+                  onValueChange={(val) => setCategoriaId(val === "none" ? null : val)}
+                >
+                  <SelectTrigger id="categoriaId">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem categoria</SelectItem>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: c.cor }}
+                          />
+                          <span>{c.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Categoria principal da compra
+                </p>
+              </div>
+
+              {/* Subcategoria */}
+              <div className="space-y-2">
+                <Label htmlFor="subcategoriaId" className="flex items-center gap-2">
+                  <TagIcon className="h-4 w-4" />
+                  Subcategoria
+                </Label>
+                <Select
+                  value={subcategoriaId || "none"}
+                  onValueChange={(val) => setSubcategoriaId(val === "none" ? null : val)}
+                >
+                  <SelectTrigger id="subcategoriaId">
+                    <SelectValue placeholder="Selecione a subcategoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem subcategoria</SelectItem>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: c.cor }}
+                          />
+                          <span>{c.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Detalhe opcional da compra
+                </p>
+              </div>
 
               {/* Responsável */}
               <ResponsavelSelector

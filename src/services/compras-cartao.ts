@@ -567,6 +567,7 @@ export async function editarCompra(
     descricao?: string;
     valorTotal?: number;
     categoriaId?: string;
+    subcategoriaId?: string;
     responsavelId?: string;
     mesFatura?: Date;
     parcelaInicial?: number;
@@ -578,7 +579,8 @@ export async function editarCompra(
   const updateData: any = {};
   
   if (dados.descricao !== undefined) updateData.descricao = dados.descricao;
-  if (dados.categoriaId !== undefined) updateData.subcategoria_id = dados.categoriaId || null;
+  if (dados.categoriaId !== undefined) updateData.categoria_id = dados.categoriaId || null;
+  if (dados.subcategoriaId !== undefined) updateData.subcategoria_id = dados.subcategoriaId || null;
   if (dados.responsavelId !== undefined) updateData.responsavel_id = dados.responsavelId;
   if (dados.nomeFatura !== undefined) updateData.nome_fatura = dados.nomeFatura || null;
   if (dados.observacao !== undefined) updateData.observacao = dados.observacao || null;
