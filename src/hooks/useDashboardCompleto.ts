@@ -220,7 +220,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           if (!parcelasPorCartao[cartaoId]) {
             parcelasPorCartao[cartaoId] = { total: 0, pago: 0, pendente: 0 };
           }
-          const valor = Math.abs(Number(p.valor) || 0);
+          const valor = Number(p.valor) || 0;
           parcelasPorCartao[cartaoId].total += valor;
           if (p.paga) {
             parcelasPorCartao[cartaoId].pago += valor;
@@ -248,7 +248,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             const primeiroMesFuturo = parcelasFuturas[0].mes_referencia;
             const valorTotalMesFuturo = parcelasFuturas
               .filter((p: any) => p.mes_referencia === primeiroMesFuturo)
-              .reduce((sum: number, p: any) => sum + Math.abs(Number(p.valor) || 0), 0);
+              .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
 
             totais = {
               total: valorTotalMesFuturo,
@@ -432,7 +432,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
             const primeiroMesFuturo = parcelasFuturas[0].mes_referencia;
             const valorTotalMesFuturo = parcelasFuturas
               .filter((p: any) => p.mes_referencia === primeiroMesFuturo)
-              .reduce((sum: number, p: any) => sum + Math.abs(Number(p.valor) || 0), 0);
+              .reduce((sum: number, p: any) => sum + (Number(p.valor) || 0), 0);
 
             const dataRef = new Date(primeiroMesFuturo + 'T12:00:00');
             const dataVencimento = new Date(dataRef.getFullYear(), dataRef.getMonth(), cartao.dia_vencimento);
@@ -464,7 +464,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           return {
             id: compra.id,
             descricao: compra.descricao,
-            valor: Math.abs(Number(compra.valor_total) || 0),
+            valor: Number(compra.valor_total) || 0,
             parcelas: compra.parcelas || 1,
             cartaoNome: cartao?.nome || "Cartão",
             data: new Date(compra.created_at),
@@ -482,7 +482,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         const dataCompra = new Date(compra.created_at);
         if (dataCompra >= ultimos30Dias) {
           const dataStr = dataCompra.toISOString().split("T")[0];
-          comprasPorDia[dataStr] = (comprasPorDia[dataStr] || 0) + Math.abs(Number(compra.valor_total) || 0);
+          comprasPorDia[dataStr] = (comprasPorDia[dataStr] || 0) + (Number(compra.valor_total) || 0);
         }
       });
 
@@ -501,11 +501,11 @@ export function useDashboardCompleto(mesReferencia?: Date) {
 
       // ========== 11. COMPARATIVO MENSAL ==========
       const totalMesAtual = parcelasMesAtual.reduce(
-        (sum, p: any) => sum + Math.abs(Number(p.valor) || 0),
+        (sum, p: any) => sum + (Number(p.valor) || 0),
         0
       );
       const totalMesAnteriorCalc = parcelasMesAnterior.reduce(
-        (sum, p: any) => sum + Math.abs(Number(p.valor) || 0),
+        (sum, p: any) => sum + (Number(p.valor) || 0),
         0
       );
 
