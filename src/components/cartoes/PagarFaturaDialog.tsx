@@ -173,7 +173,7 @@ export function PagarFaturaDialog({
 
       if (modo === "cada_um_pagou") {
         acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular && r.recebido)
+          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: r.total,
