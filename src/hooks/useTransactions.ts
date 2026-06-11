@@ -1299,6 +1299,11 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       const today = new Date().toISOString().split('T')[0];
       
+      // Garantir que os totais negativos (estornos excedentes) não sejam somados aos gastos,
+      // mas sim que faturas em aberto negativas não apareçam como dívida no total estimado.
+      const faturaCartaoTitular = Math.max(0, faturaCartaoTitularRaw);
+      const faturaCartaoOutros = Math.max(0, faturaCartaoOutrosRaw);
+
       // Calcular saldo acumulado usando TODAS as transações completed
       // Despesas/receitas marcadas como "desconsiderada" são ignoradas do caixa
       let allCompletedIncome = 0;
