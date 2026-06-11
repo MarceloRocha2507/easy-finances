@@ -482,7 +482,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
         const dataCompra = new Date(compra.created_at);
         if (dataCompra >= ultimos30Dias) {
           const dataStr = dataCompra.toISOString().split("T")[0];
-          comprasPorDia[dataStr] = (comprasPorDia[dataStr] || 0) + Math.abs(Number(compra.valor_total) || 0);
+          comprasPorDia[dataStr] = (comprasPorDia[dataStr] || 0) + (Number(compra.valor_total) || 0);
         }
       });
 
