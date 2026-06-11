@@ -122,7 +122,10 @@ export function PagarFaturaDialog({
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
     return responsaveis.reduce((sum, r) => {
-      if (r.total <= 0) return sum; // ajuste já incluído no totalFatura
+      // No modo dividir_valores, incluímos todos os itens do resumo (incluindo negativos)
+      // Se r.total <= 0, é um crédito/estorno que já diminui do saldo da fatura.
+      if (r.total <= 0) return sum + r.total;
+      
       const val = parseBrazilianCurrency(r.valorCustom);
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
@@ -130,6 +133,7 @@ export function PagarFaturaDialog({
 
   const dividirValido = useMemo(() => {
     if (modo !== "dividir_valores") return true;
+    // Precisamos que a soma do que cada um pagou + créditos seja igual ao total da fatura
     return Math.abs(totalDividido - totalFatura) < 0.01;
   }, [modo, totalDividido, totalFatura]);
 
