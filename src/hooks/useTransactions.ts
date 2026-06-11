@@ -1315,6 +1315,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         completedIncome: 0,  // Receitas do mês
         completedExpense: 0, // Despesas do mês (sem fatura cartão)
         completedExpenseWithFatura: 0, // Despesas do mês (com fatura cartão)
+        completedExpenseCash: 0, // Despesas que saíram do caixa (para o card de Despesas)
         pendingIncome: 0,
         pendingExpense: 0,
         overdueCount: 0,
@@ -1344,6 +1345,9 @@ export function useCompleteStats(mesReferencia?: Date) {
             else {
               stats.completedExpense += amount;
               despesasBase += amount;
+              if (!(t as any).desconsiderada) {
+                stats.completedExpenseCash += amount;
+              }
             }
           }
         }
@@ -1353,6 +1357,16 @@ export function useCompleteStats(mesReferencia?: Date) {
       const faturaTotalParcelas = faturaViaParcelasPagas;
       const faturaConsolidada = Math.max(faturaViaTransacao, faturaTotalParcelas);
       stats.completedExpenseWithFatura = despesasBase + faturaConsolidada;
+      
+      // Calcular versão "caixa" da despesa com fatura (respeitando desconsiderada apenas para exibição no card de despesas)
+      const faturaViaTransacaoCash = (completedDoMes || [])
+        .filter(t => t.type === 'expense' && faturaCategoryIds.has(t.category_id!) && !(t as any).desconsiderada)
+        .reduce((acc, t) => acc + Number(t.amount), 0);
+      
+      const statsExibicao = {
+        ...stats,
+        completedExpenseWithFaturaCash: stats.completedExpenseCash + Math.max(faturaViaTransacaoCash, faturaTotalParcelas)
+      };
       // (totalGeralDespesas é calculado APÓS o loop de pending, abaixo)
 
       // Pendentes do mês
@@ -1401,6 +1415,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         totalGuardado,
         totalGeralDespesas: stats.totalGeralDespesas,
         faturaCartaoOutros: stats.faturaCartaoOutros,
+        completedExpenseWithFaturaCash: statsExibicao.completedExpenseWithFaturaCash,
       };
      } catch (error) {
         console.error('Erro ao calcular estatísticas completas:', error);
@@ -1411,6 +1426,7 @@ export function useCompleteStats(mesReferencia?: Date) {
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
           realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
           totalMetas: 0, totalGuardado: 0, totalGeralDespesas: 0, faturaCartaoOutros: 0,
+          completedExpenseWithFaturaCash: 0,
         };
       }
     },
