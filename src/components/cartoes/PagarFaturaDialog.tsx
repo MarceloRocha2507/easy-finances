@@ -458,18 +458,10 @@ export function PagarFaturaDialog({
                     : "bg-destructive/10 border-destructive/30 text-destructive"
                 )}>
                   <div className="flex items-center gap-1.5">
-                    {!dividirValido && <AlertCircle className="h-4 w-4" />}
+                    {dividirValido ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                     <span>Total informado</span>
                   </div>
                   <span className="font-bold">
-                    {formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
-                  </span>
-                </div>
-                  <span className="flex items-center gap-1.5">
-                    {dividirValido ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                    Total informado
-                  </span>
-                  <span className="font-semibold">
                     {formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
                   </span>
                 </div>
