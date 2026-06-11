@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { RecurringDeleteDialog } from '@/components/transactions/RecurringDeleteDialog';
@@ -385,9 +385,9 @@ export default function Transactions() {
     }
   }, [suggestedCategoryId, isSuggestion]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-  };
+  }, [queryClient, user?.id]);
   const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
   const { assinaturas, isLoading: isAssinaturasLoading } = useAssinaturas();
 

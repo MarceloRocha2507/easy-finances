@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
@@ -115,8 +115,12 @@ export default function Dashboard() {
     data: dashboardData,
     isLoading,
     isFetching,
-    refetch,
+    refetch: refetchDashboard,
   } = useDashboardCompleto(mesReferencia);
+
+  const refetch = useCallback(() => {
+    refetchDashboard();
+  }, [refetchDashboard]);
 
   const { data: mesesDisponiveis } = useMesesComMovimentacao();
 
