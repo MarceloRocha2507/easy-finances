@@ -1568,6 +1568,7 @@ export default function Transactions() {
                             <FaturaCartaoRow 
                               fatura={item as FaturaVirtual}
                               onClick={() => navigate(`/cartoes`)}
+                              onMarkAsPaid={(cartaoId, mesRef) => markFaturaAsPaidMutation.mutate({ cartaoId, mesReferencia: mesRef })}
                             />
                           ) : (
                             <TransactionRow 
@@ -1598,6 +1599,7 @@ export default function Transactions() {
                   <FaturaCartaoRow 
                     fatura={item as FaturaVirtual}
                     onClick={() => navigate(`/cartoes`)}
+                    onMarkAsPaid={(cartaoId, mesRef) => markFaturaAsPaidMutation.mutate({ cartaoId, mesReferencia: mesRef })}
                   />
                 ) : (
                   <TransactionRow 
@@ -1963,9 +1965,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
 interface FaturaCartaoRowProps {
   fatura: FaturaVirtual;
   onClick: () => void;
+  onMarkAsPaid: (cartaoId: string, mesReferencia: string) => void;
 }
 
-function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
+function FaturaCartaoRow({ fatura, onClick, onMarkAsPaid }: FaturaCartaoRowProps) {
   const statusConfig = {
     aberta: { label: 'Em aberto', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
     fechada: { label: 'Fechada', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
@@ -2017,13 +2020,63 @@ function FaturaCartaoRow({ fatura, onClick }: FaturaCartaoRowProps) {
         </div>
       </div>
 
-      {/* Valor da fatura */}
-      <span className={cn(
-        "font-semibold tabular-nums ml-2 sm:ml-4 text-sm sm:text-base",
-        isPaga ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
-      )}>
-        {formatCurrency(fatura.amount)}
-      </span>
+      {/* Valor + Ações container */}
+      <div className="flex items-center gap-1 ml-2 sm:ml-4 relative">
+        {/* Valor da fatura */}
+        <span className={cn(
+          "font-semibold tabular-nums text-sm sm:text-base shrink-0",
+          isPaga ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+        )}>
+          {formatCurrency(fatura.amount)}
+        </span>
+
+        {/* Mobile dropdown */}
+        <div className="flex md:hidden" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!isPaga && (
+                <DropdownMenuItem onClick={() => onMarkAsPaid(fatura.cartaoId, fatura.mesReferencia)}>
+                  <Check className="w-4 h-4 mr-2 text-emerald-600" />
+                  Marcar como paga
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={onClick}>
+                <Eye className="w-4 h-4 mr-2" />
+                Ver detalhes
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Desktop hover - aparece sobre o valor */}
+        <div className="hidden md:flex items-center gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card rounded-md pl-1 pr-0.5 py-0.5 shadow-sm border border-border/50" onClick={(e) => e.stopPropagation()}>
+          {!isPaga && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+              onClick={() => onMarkAsPaid(fatura.cartaoId, fatura.mesReferencia)}
+              title="Marcar como paga"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={onClick}
+            title="Ver detalhes"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -898,6 +898,59 @@ export function useMarkAsPaid() {
         .from('transactions')
         .update({ 
           status: 'completed',
+          paid_date: today,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Marcar como pago', description: 'O lançamento foi atualizado.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o status.', variant: 'destructive' });
+    },
+  });
+}
+
+export function useMarkFaturaAsPaid() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ cartaoId, mesReferencia }: { cartaoId: string; mesReferencia: string }) => {
+      // 1. Buscar IDs das compras desse cartão
+      const { data: compras, error: comprasError } = await supabase
+        .from('compras_cartao')
+        .select('id')
+        .eq('cartao_id', cartaoId);
+
+      if (comprasError) throw comprasError;
+      if (!compras || compras.length === 0) return;
+
+      const compraIds = compras.map(c => c.id);
+
+      // 2. Atualizar parcelas
+      const { error: updateError } = await supabase
+        .from('parcelas_cartao')
+        .update({ paga: true })
+        .eq('mes_referencia', mesReferencia)
+        .eq('ativo', true)
+        .in('compra_id', compraIds);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['faturas-na-listagem'] });
+      toast({ title: 'Fatura marcada como paga', description: 'Todas as parcelas do mês foram atualizadas.' });
+    },
+    onError: (error) => {
+      console.error('Erro ao marcar fatura como paga:', error);
+      toast({ title: 'Erro', description: 'Não foi possível marcar a fatura como paga.', variant: 'destructive' });
+    },
+  });
+}
           paid_date: today
         })
         .eq('id', id)
