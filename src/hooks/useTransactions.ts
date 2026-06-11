@@ -1394,7 +1394,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       });
 
       // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis
-      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
+      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutrosRaw;
 
       // Saldo Disponível = Saldo Inicial + Receitas Acumuladas - Despesas Acumuladas
       // (dinheiro "livre" que você pode gastar - usa histórico completo)
