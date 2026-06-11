@@ -411,7 +411,7 @@ export async function gerarMensagemFatura(
   }
 
   // Calcular total
-  const total = parcelasFiltradas.reduce((sum, p) => sum + Math.abs(p.valor), 0);
+  const total = parcelasFiltradas.reduce((sum, p) => sum + p.valor, 0);
 
   // Nome do responsável
   const nomeResponsavel = responsavelId
