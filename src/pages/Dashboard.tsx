@@ -246,7 +246,7 @@ export default function Dashboard() {
         const faturaCartao = completeStats?.faturaCartao || 0;
         const totalAPagar = pendingExpense + faturaCartao;
         const completedIncome = completeStats?.completedIncome || 0;
-        const completedExpense = completeStats?.completedExpenseWithFatura || 0;
+        const completedExpense = completeStats?.completedExpenseWithFaturaCash ?? completeStats?.completedExpenseWithFatura ?? 0;
 
         return (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-4 animate-fade-in">
