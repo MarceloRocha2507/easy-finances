@@ -1416,6 +1416,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         saldoDisponivel,
         patrimonioTotal,
         estimatedBalance,
+        faturaCartaoTitularRaw, // Para debug se necessário
+        faturaCartaoOutrosRaw,
         totalMetas,
         totalInvestido,
         totalGuardado,
