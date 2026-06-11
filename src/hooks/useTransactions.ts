@@ -1288,12 +1288,12 @@ export function useCompleteStats(mesReferencia?: Date) {
         if (isTitular) {
           faturaTitularTodas += valor;
           if (!isPaga) {
-            faturaCartaoTitular += valor;
+            faturaCartaoTitularRaw += valor;
           } else {
             faturaViaParcelasPagas += valor;
           }
         } else {
-          faturaCartaoOutros += valor;
+          faturaCartaoOutrosRaw += valor;
         }
       });
 
