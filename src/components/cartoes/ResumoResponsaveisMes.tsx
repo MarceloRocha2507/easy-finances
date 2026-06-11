@@ -221,7 +221,7 @@ export function ResumoResponsaveisMes({ mesReferencia }: Props) {
                 Por Cartão
               </p>
               <div className="grid gap-2">
-                {itemSelecionado?.detalhesPorCartao.map((detalhe, idx) => (
+                {(itemSelecionado?.detalhesPorCartao ?? []).map((detalhe, idx) => (
                   <div 
                     key={idx}
                     className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/30"
