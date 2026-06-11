@@ -1376,36 +1376,7 @@ export default function Transactions() {
                   subInfo="clique para ajustar"
                   onClick={() => setAjustarSaldoOpen(true)}
                   isLoading={isStatsFetching}
-                />
-                <UnifiedMetricTile
-                  title="Estimado"
-                  value={stats?.estimatedBalance || 0}
-                  icon={Info}
-                  subInfo={
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <span>
-                          {formatCurrency(
-                            (stats?.completedIncome || 0) + (stats?.pendingIncome || 0)
-                            - (stats?.completedExpenseWithFatura || 0) - (stats?.pendingExpense || 0)
-                            - (stats?.faturaCartao || 0)
-                          )}{" "}
-                          <span className="text-muted-foreground/60">neste mês</span>
-                        </span>
-                        <button 
-                          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAjustarEstimadoOpen(true);
-                          }}
-                        >
-                          <Pencil className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                      <span className="text-muted-foreground/60">real + a receber - a pagar</span>
-                    </div>
-                  }
-                  isLoading={isStatsFetching}
+                  className="col-span-2"
                 />
               </div>
             </div>
@@ -1738,7 +1709,7 @@ export default function Transactions() {
           mesReferencia={dataInicial || new Date()} 
         />
       </div>
-      <AjustarEstimadoDialog open={ajustarEstimadoOpen} onOpenChange={setAjustarEstimadoOpen} />
+      
     </Layout>
   );
 }

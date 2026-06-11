@@ -531,7 +531,7 @@ export default function Dashboard() {
         faturaCartao={completeStats?.faturaCartao || 0}
       />
       </div>
-      <AjustarEstimadoDialog open={ajustarEstimadoOpen} onOpenChange={setAjustarEstimadoOpen} />
+      
     </Layout>
   );
 }
