@@ -1903,12 +1903,10 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
-              {transaction.type === 'expense' && (
-                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
-                  <EyeOff className="w-4 h-4 mr-2" />
-                  {transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}>
+                <EyeOff className="w-4 h-4 mr-2" />
+                {transaction.desconsiderada ? 'Reconsiderar' : 'Desconsiderar'}
+              </DropdownMenuItem>
               <DropdownMenuItem className="text-destructive" onClick={() => { actionClickedRef.current = Date.now(); onDelete(transaction); }}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Excluir
@@ -1951,17 +1949,15 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { actionClickedRef.current = Date.now(); onEdit(transaction); }} title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </Button>
-          {transaction.type === 'expense' && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
-              title={transaction.desconsiderada ? 'Reconsiderar no saldo' : 'Desconsiderar do saldo'}
-            >
-              <EyeOff className="w-3.5 h-3.5" />
-            </Button>
-          )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={() => { actionClickedRef.current = Date.now(); onToggleDesconsiderada(transaction.id, !transaction.desconsiderada); }}
+            title={transaction.desconsiderada ? 'Reconsiderar' : 'Desconsiderar'}
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
