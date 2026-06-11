@@ -1426,6 +1426,7 @@ export function useCompleteStats(mesReferencia?: Date) {
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
           realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
           totalMetas: 0, totalGuardado: 0, totalGeralDespesas: 0, faturaCartaoOutros: 0,
+          completedExpenseWithFaturaCash: 0,
         };
       }
     },
