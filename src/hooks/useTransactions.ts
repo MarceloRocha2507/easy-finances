@@ -1408,7 +1408,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const realBalance = saldoDisponivel;
       
       // Saldo Estimado = Disponível + A Receber do mês - A Pagar do mês - Fatura do Cartão
-      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - (faturaCartaoTitularRaw > 0 ? faturaCartaoTitularRaw : 0);
 
       return {
         ...stats,
