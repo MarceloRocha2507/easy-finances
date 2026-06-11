@@ -1,15 +1,28 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/formatters";
-import { Crown, User, Users } from "lucide-react";
+import { Crown, User, Users, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface Props {
   mesReferencia: Date;
 }
+
+type DetalheCartao = {
+  cartaoNome: string;
+  total: number;
+};
 
 type ResumoItem = {
   id: string;
@@ -18,6 +31,7 @@ type ResumoItem = {
   total: number;
   qtd: number;
   percentual: number;
+  detalhesPorCartao: DetalheCartao[];
 };
 
 async function buscarTotaisPorResponsavel(userId: string, mesReferencia: Date): Promise<ResumoItem[]> {
