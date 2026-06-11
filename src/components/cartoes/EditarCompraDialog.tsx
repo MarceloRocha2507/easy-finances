@@ -166,7 +166,8 @@ export function EditarCompraDialog({
           setNomeFatura(compra.nome_fatura || "");
           setValorTotal(compra.valor_total || 0);
           setValorParcela(Math.abs(parcela.valor || 0));
-          setCategoriaId(compra.subcategoria_id || null);
+          setCategoriaId(compra.categoria_id || null);
+          setSubcategoriaId(compra.subcategoria_id || null);
           setResponsavelId(compra.responsavel_id || null);
           setTotalParcelas(compra.parcelas || 1);
           setParcelaInicial(String(compra.parcela_inicial || 1));
