@@ -255,8 +255,8 @@ export function useTransactionStats(filters?: TransactionFilters) {
       return stats;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -410,8 +410,8 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
       }));
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -467,8 +467,8 @@ export function useMonthlyData(year: number) {
       return monthlyData;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -1175,7 +1175,8 @@ export function useTransactionsWithBalance(filters?: TransactionFilters) {
       };
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
