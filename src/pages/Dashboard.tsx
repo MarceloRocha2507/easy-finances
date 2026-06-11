@@ -57,7 +57,7 @@ import { Progress } from "@/components/ui/progress";
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
-import { AjustarEstimadoDialog } from "@/components/dashboard/AjustarEstimadoDialog";
+
 
 function formatYAxis(value: number): string {
   if (value === 0) return "R$0";
@@ -94,7 +94,7 @@ export default function Dashboard() {
   const [gerenciarMetaOpen, setGerenciarMetaOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
-  const [ajustarEstimadoOpen, setAjustarEstimadoOpen] = useState(false);
+  
 
   // Calcular range do mês selecionado
   const inicioMesSelecionado = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, '0')}-01`;
