@@ -68,6 +68,10 @@ export function PagarFaturaDialog({
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
+        
+        // No modo dividir_valores, queremos que o input do titular 
+        // contenha APENAS a parte dele, sem o adiantamento embutido no valor do input,
+        // pois o adiantamento já aparece como uma linha de "Ajuste de fatura" subtraindo do total.
         setResponsaveis(
           resumo.map((r) => ({
             ...r,
