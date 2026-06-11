@@ -932,6 +932,7 @@ export function useToggleDesconsiderada() {
     mutationFn: async ({ id, desconsiderada }: { id: string; desconsiderada: boolean }) => {
       // Ao desconsiderar, marcar também como pendente para que o usuário
       // possa efetivar (marcar como paga) novamente depois.
+      // Se for receita (income), SEMPRE marcar como pendente ao desmarcar 'pago' (desconsiderada não se aplica a receitas da mesma forma no cálculo de saldo real)
       const updatePayload: any = { desconsiderada };
       if (desconsiderada) {
         updatePayload.status = 'pending';
