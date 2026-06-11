@@ -346,7 +346,7 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
   );
   const diasAteVencimento = calcularDiasAte(dataVencimento);
 
-  const mesParaExibir = cartao.mesExibicao || mesReferencia;
+  const mesParaExibir = new Date(cartao.mesExibicao || mesReferencia);
   const nomeMesFatura = mesParaExibir.toLocaleDateString("pt-BR", { month: "long" });
 
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
