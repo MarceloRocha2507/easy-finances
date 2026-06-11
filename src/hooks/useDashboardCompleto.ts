@@ -220,7 +220,7 @@ export function useDashboardCompleto(mesReferencia?: Date) {
           if (!parcelasPorCartao[cartaoId]) {
             parcelasPorCartao[cartaoId] = { total: 0, pago: 0, pendente: 0 };
           }
-          const valor = Math.abs(Number(p.valor) || 0);
+          const valor = Number(p.valor) || 0;
           parcelasPorCartao[cartaoId].total += valor;
           if (p.paga) {
             parcelasPorCartao[cartaoId].pago += valor;
