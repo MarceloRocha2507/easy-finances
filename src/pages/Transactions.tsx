@@ -1368,7 +1368,7 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              {/* Saldo Real + Estimado lado a lado */}
+              {/* Saldo Real + Total Estimado lado a lado */}
               <div className="grid grid-cols-2 divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Saldo Real"
@@ -1377,7 +1377,14 @@ export default function Transactions() {
                   subInfo="clique para ajustar"
                   onClick={() => setAjustarSaldoOpen(true)}
                   isLoading={isStatsFetching}
-                  className="col-span-2"
+                />
+                <UnifiedMetricTile
+                  title="Total Estimado"
+                  value={stats?.estimatedBalance || 0}
+                  icon={Wallet}
+                  subInfo={`previsto p/ ${format(dataInicial || new Date(), "MMM/yy", { locale: ptBR })}`}
+                  valueColor={(stats?.estimatedBalance || 0) >= 0 ? "income" : "expense"}
+                  isLoading={isStatsFetching}
                 />
               </div>
             </div>
