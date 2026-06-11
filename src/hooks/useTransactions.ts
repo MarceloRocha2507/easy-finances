@@ -1312,6 +1312,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Calcular receitas/despesas DO MÊS SELECIONADO
       const stats = {
         saldoInicial,
+        completedIncome: 0,  // Receitas do mês
         completedExpense: 0, // Despesas do mês (sem fatura cartão)
         completedExpenseWithFatura: 0, // Despesas do mês (com fatura cartão)
         completedExpenseCash: 0, // Despesas que saíram do caixa (para o card de Despesas)
