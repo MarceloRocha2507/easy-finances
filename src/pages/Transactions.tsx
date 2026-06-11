@@ -5,7 +5,7 @@ import { RecurringDeleteDialog } from '@/components/transactions/RecurringDelete
 import { RecurringEditDialog } from '@/components/transactions/RecurringEditDialog';
 import { LixeiraDialog } from '@/components/transactions/LixeiraDialog';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useUpdateRecurringTransactions, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useUpdateRecurringTransactions, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento, useMarkFaturaAsPaid } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
@@ -408,6 +408,7 @@ export default function Transactions() {
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
+  const markFaturaAsPaidMutation = useMarkFaturaAsPaid();
   const toggleDesconsideradaMutation = useToggleDesconsiderada();
 
   // Filtrar transações por busca
