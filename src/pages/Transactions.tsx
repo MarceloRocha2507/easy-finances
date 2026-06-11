@@ -360,7 +360,15 @@ export default function Transactions() {
   });
   
   const transactions = transactionsData?.transactions;
-  const saldoMap = transactionsData?.saldoMap;
+  const saldoMap = useMemo(() => {
+    const raw = transactionsData?.saldoMap;
+    if (!raw) return undefined;
+    if (raw instanceof Map) return raw;
+    // Rehydrate from cache (Map gets serialized to plain object/array)
+    if (Array.isArray(raw)) return new Map(raw as Array<[string, number]>);
+    if (typeof raw === "object") return new Map(Object.entries(raw as Record<string, number>));
+    return undefined;
+  }, [transactionsData?.saldoMap]);
   const totalGuardado = transactionsData?.totalGuardado || 0;
   const ultimaTransacaoId = transactionsData?.ultimaTransacaoId;
   const { data: categories, isLoading: categoriesLoading } = useCategories();
