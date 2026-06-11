@@ -146,8 +146,6 @@ export function useDashboardCompleto(mesReferencia?: Date) {
 
   return useQuery({
     queryKey: ["dashboard-completo", firstDayOfMonth(mesRef)],
-    staleTime: 1000 * 60 * 1, // Keep for 1 minute before refetching on mount
-    gcTime: 1000 * 60 * 5,
     queryFn: async (): Promise<DashboardData> => {
       const hoje = new Date();
       const mesAtual = firstDayOfMonth(mesRef);
