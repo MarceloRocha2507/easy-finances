@@ -94,7 +94,7 @@ export function PagarFaturaDialog({
 
   // Outros responsáveis (não titulares)
   const outrosResponsaveis = useMemo(() => {
-    return responsaveis.filter((r) => !r.is_titular);
+    return responsaveis.filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel");
   }, [responsaveis]);
 
 
