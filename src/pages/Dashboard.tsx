@@ -57,6 +57,7 @@ import { Progress } from "@/components/ui/progress";
 import { Meta } from "@/hooks/useDashboardCompleto";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import { EditarSaldoDialog } from "@/components/EditarSaldoDialog";
+import { AjustarEstimadoDialog } from "@/components/dashboard/AjustarEstimadoDialog";
 
 function formatYAxis(value: number): string {
   if (value === 0) return "R$0";
@@ -93,6 +94,7 @@ export default function Dashboard() {
   const [gerenciarMetaOpen, setGerenciarMetaOpen] = useState(false);
   const [editarSaldoOpen, setEditarSaldoOpen] = useState(false);
   const [despesasDialogOpen, setDespesasDialogOpen] = useState(false);
+  const [ajustarEstimadoOpen, setAjustarEstimadoOpen] = useState(false);
 
   // Calcular range do mês selecionado
   const inicioMesSelecionado = `${mesReferencia.getFullYear()}-${String(mesReferencia.getMonth() + 1).padStart(2, '0')}-01`;
@@ -286,8 +288,12 @@ export default function Dashboard() {
                   <TooltipProvider>
                     <UITooltip>
                       <TooltipTrigger asChild>
-                        <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                        <button 
+                          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors flex items-center gap-1"
+                          onClick={() => setAjustarEstimadoOpen(true)}
+                        >
                           <HelpCircle className="w-3 h-3" />
+                          <Pencil className="w-2.5 h-2.5" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
@@ -525,6 +531,7 @@ export default function Dashboard() {
         faturaCartao={completeStats?.faturaCartao || 0}
       />
       </div>
+      <AjustarEstimadoDialog open={ajustarEstimadoOpen} onOpenChange={setAjustarEstimadoOpen} />
     </Layout>
   );
 }

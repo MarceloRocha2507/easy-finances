@@ -1172,10 +1172,10 @@ export function useCompleteStats(mesReferencia?: Date) {
         (acc, b) => acc + Number(b.saldo_inicial || 0), 0
       );
 
-      // Buscar saldo inicial do profile
+      // Buscar dados do profile (saldo inicial e ajuste estimado)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('saldo_inicial')
+        .select('saldo_inicial, ajuste_estimado')
         .eq('user_id', user!.id)
         .single();
 
@@ -1184,6 +1184,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       if (saldoInicialBancos === 0) {
         saldoInicial = Number(profile?.saldo_inicial) || 0;
       }
+      
+      const ajusteEstimadoManual = Number(profile?.ajuste_estimado) || 0;
 
       // Buscar total de investimentos ativos
       const { data: investimentos } = await supabase
@@ -1407,8 +1409,8 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Saldo Real = Saldo Disponível (o que realmente está "livre")
       const realBalance = saldoDisponivel;
       
-      // Saldo Estimado = Disponível + A Receber do mês - A Pagar do mês - Fatura do Cartão
-      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - (faturaCartaoTitularRaw > 0 ? faturaCartaoTitularRaw : 0);
+      // Saldo Estimado = Disponível + A Receber do mês - A Pagar do mês - Fatura do Cartão + Ajuste Manual
+      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - (faturaCartaoTitularRaw > 0 ? faturaCartaoTitularRaw : 0) + ajusteEstimadoManual;
 
       return {
         ...stats,
