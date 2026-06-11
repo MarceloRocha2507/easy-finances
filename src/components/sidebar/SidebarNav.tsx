@@ -67,7 +67,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   type MenuKey = "transacoes" | "cartoes";
   const getActiveMenu = useCallback((path: string): MenuKey | null => {
     if (path.startsWith("/transactions") || path === "/assinaturas") return "transacoes";
-    if (path.startsWith("/cartoes") && path !== "/cartoes/bancos") return "cartoes";
+    if (path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/responsaveis") return "cartoes";
     return null;
   }, []);
 
