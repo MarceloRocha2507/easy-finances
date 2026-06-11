@@ -68,6 +68,10 @@ export function PagarFaturaDialog({
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
+        
+        // No modo dividir_valores, queremos que o input do titular 
+        // contenha APENAS a parte dele, sem o adiantamento embutido no valor do input,
+        // pois o adiantamento já aparece como uma linha de "Ajuste de fatura" subtraindo do total.
         setResponsaveis(
           resumo.map((r) => ({
             ...r,
@@ -122,8 +126,10 @@ export function PagarFaturaDialog({
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
     return responsaveis.reduce((sum, r) => {
-      // Se for um item de ajuste (negativo), ele deve subtrair do total informado
+      // Se for um item de ajuste (negativo), ele deve SUBTRAIR do total informado.
+      // Como o r.total já é negativo (ex: -136,67), somar r.total fará a subtração correta.
       if (r.responsavel_id === "sem-responsavel") {
+        console.log("Ajuste encontrado:", r.total);
         return sum + r.total;
       }
       const val = parseBrazilianCurrency(r.valorCustom);
@@ -483,22 +489,24 @@ export function PagarFaturaDialog({
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-sm font-semibold">
-                    {formatCurrency(titular.total)}
-                  </span>
                   {(() => {
                     const semResponsavel = responsaveis.find(r => r.responsavel_id === "sem-responsavel");
-                    if (semResponsavel && semResponsavel.total !== 0) {
-                      return (
-                        <span className={cn(
-                          "text-[10px] font-medium",
-                          semResponsavel.total < 0 ? "text-blue-600" : "text-destructive"
-                        )}>
-                          {semResponsavel.total < 0 ? "Adiantamento deduzido" : "Sem responsável somado"}
+                    const totalComAjuste = titular.total + (semResponsavel?.total || 0);
+                    return (
+                      <>
+                        <span className="text-sm font-semibold">
+                          {formatCurrency(totalComAjuste)}
                         </span>
-                      );
-                    }
-                    return null;
+                        {semResponsavel && semResponsavel.total !== 0 && (
+                          <span className={cn(
+                            "text-[10px] font-medium",
+                            semResponsavel.total < 0 ? "text-blue-600" : "text-destructive"
+                          )}>
+                            {semResponsavel.total < 0 ? "Adiantamento deduzido" : "Sem responsável somado"}
+                          </span>
+                        )}
+                      </>
+                    );
                   })()}
                 </div>
               </div>
