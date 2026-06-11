@@ -283,24 +283,8 @@ export default function Dashboard() {
                 )}
                 <div className="flex items-center gap-1 mt-2">
                   <span className="text-[11px] text-muted-foreground/70">
-                    Estimado: {formatCurrency(completeStats?.estimatedBalance || 0)}
+                    Base para todos os cálculos de saldo
                   </span>
-                  <TooltipProvider>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors flex items-center gap-1"
-                          onClick={() => setAjustarEstimadoOpen(true)}
-                        >
-                          <HelpCircle className="w-3 h-3" />
-                          <Pencil className="w-2.5 h-2.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="text-sm">Saldo real + receitas pendentes − despesas pendentes − fatura do cartão</p>
-                      </TooltipContent>
-                    </UITooltip>
-                  </TooltipProvider>
                 </div>
               </div>
 
