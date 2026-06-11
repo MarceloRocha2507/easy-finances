@@ -68,26 +68,12 @@ export function PagarFaturaDialog({
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
-        const semResponsavel = resumo.find(r => r.responsavel_id === "sem-responsavel");
-        const titularOriginal = resumo.find(r => r.is_titular);
-
         setResponsaveis(
-          resumo.map((r) => {
-            let totalAjustado = r.total;
-            
-            // Se for o titular e houver valor "sem responsável" (adiantamento ou compra avulsa), 
-            // somamos ao total do titular para que o input reflita o valor real que ele deve pagar.
-            if (r.is_titular && semResponsavel) {
-              totalAjustado = r.total + semResponsavel.total;
-            }
-
-            return {
-              ...r,
-              total: totalAjustado,
-              recebido: false,
-              valorCustom: totalAjustado.toFixed(2).replace(".", ","),
-            };
-          })
+          resumo.map((r) => ({
+            ...r,
+            recebido: false,
+            valorCustom: r.total.toFixed(2).replace(".", ","),
+          }))
         );
       } catch (error) {
         console.error("Erro ao carregar resumo:", error);
@@ -114,11 +100,7 @@ export function PagarFaturaDialog({
 
   // Total geral da fatura
   const totalFatura = useMemo(() => {
-    // Agora o "sem-responsavel" já está embutido no titular, então filtramos ele 
-    // da soma total para não contar em dobro.
-    return responsaveis
-      .filter(r => r.responsavel_id !== "sem-responsavel")
-      .reduce((sum, r) => sum + r.total, 0);
+    return responsaveis.reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis]);
 
   // Total apenas dos responsáveis com valor positivo (alvo do modo dividir)
@@ -139,12 +121,14 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveis
-      .filter(r => r.responsavel_id !== "sem-responsavel")
-      .reduce((sum, r) => {
-        const val = parseBrazilianCurrency(r.valorCustom);
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
+    return responsaveis.reduce((sum, r) => {
+      // Se for um item de ajuste (negativo), ele deve subtrair do total informado
+      if (r.responsavel_id === "sem-responsavel") {
+        return sum + r.total;
+      }
+      const val = parseBrazilianCurrency(r.valorCustom);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
   }, [responsaveis, modo]);
 
   const dividirValido = useMemo(() => {
@@ -413,22 +397,20 @@ export function PagarFaturaDialog({
                 </Label>
                 <ScrollArea className="max-h-[200px]">
                   <div className="space-y-2">
-                    {responsaveis
-                      .filter(r => r.responsavel_id !== "sem-responsavel")
-                      .map((r) => (
+                    {responsaveis.map((r) => (
                       <div
                         key={r.responsavel_id}
                         className={cn(
                           "flex items-center gap-3 p-3 rounded-lg border",
-                          r.total <= 0
+                          r.responsavel_id === "sem-responsavel"
                             ? "bg-blue-500/10 border-blue-500/30"
                             : "bg-muted/30"
                         )}
                       >
                         <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: r.total <= 0 ? "hsl(210 100% 50% / 0.15)" : r.is_titular ? "hsl(var(--primary) / 0.2)" : "hsl(var(--primary) / 0.1)" }}
+                          style={{ backgroundColor: r.responsavel_id === "sem-responsavel" ? "hsl(210 100% 50% / 0.15)" : r.is_titular ? "hsl(var(--primary) / 0.2)" : "hsl(var(--primary) / 0.1)" }}
                         >
-                          {r.total <= 0 ? (
+                          {r.responsavel_id === "sem-responsavel" ? (
                             <AlertCircle className="h-4 w-4 text-blue-600" />
                           ) : r.is_titular ? (
                             <Wallet className="h-4 w-4 text-primary" />
@@ -438,35 +420,30 @@ export function PagarFaturaDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {r.is_titular
+                            {r.responsavel_id === "sem-responsavel"
+                              ? "Ajuste de fatura"
+                              : r.is_titular
                                 ? `Eu (${r.responsavel_apelido || r.responsavel_nome})`
                                 : (r.responsavel_apelido || r.responsavel_nome)}
                           </p>
-                          <div className="flex flex-col">
-                            <p className="text-xs text-muted-foreground">
-                              {r.total <= 0 ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
-                            </p>
-                            {r.is_titular && (() => {
-                              const semResponsavel = responsaveis.find(x => x.responsavel_id === "sem-responsavel");
-                              if (semResponsavel && semResponsavel.total !== 0) {
-                                return (
-                                  <p className="text-[10px] text-blue-600 font-medium">
-                                    Inclui adiantamento de {formatCurrency(semResponsavel.total)}
-                                  </p>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {r.responsavel_id === "sem-responsavel" ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
+                          </p>
                         </div>
                         <div className="w-28 shrink-0">
-                          <Input
-                            inputMode="decimal"
-                            placeholder={r.total.toFixed(2).replace(".", ",")}
-                            value={r.valorCustom}
-                            onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
-                            className="h-8 text-sm text-right"
-                          />
+                          {r.responsavel_id === "sem-responsavel" ? (
+                            <p className="text-sm text-right font-semibold text-blue-600">
+                              {formatCurrency(r.total)}
+                            </p>
+                          ) : (
+                            <Input
+                              inputMode="decimal"
+                              placeholder={r.total.toFixed(2).replace(".", ",")}
+                              value={r.valorCustom}
+                              onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
+                              className="h-8 text-sm text-right"
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
