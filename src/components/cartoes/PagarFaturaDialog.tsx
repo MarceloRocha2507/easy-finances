@@ -68,26 +68,12 @@ export function PagarFaturaDialog({
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
-        const semResponsavel = resumo.find(r => r.responsavel_id === "sem-responsavel");
-        const titularOriginal = resumo.find(r => r.is_titular);
-
         setResponsaveis(
-          resumo.map((r) => {
-            let totalAjustado = r.total;
-            
-            // Se for o titular e houver valor "sem responsável" (adiantamento ou compra avulsa), 
-            // somamos ao total do titular para que o input reflita o valor real que ele deve pagar.
-            if (r.is_titular && semResponsavel) {
-              totalAjustado = r.total + semResponsavel.total;
-            }
-
-            return {
-              ...r,
-              total: totalAjustado,
-              recebido: false,
-              valorCustom: totalAjustado.toFixed(2).replace(".", ","),
-            };
-          })
+          resumo.map((r) => ({
+            ...r,
+            recebido: false,
+            valorCustom: r.total.toFixed(2).replace(".", ","),
+          }))
         );
       } catch (error) {
         console.error("Erro ao carregar resumo:", error);
