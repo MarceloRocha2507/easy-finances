@@ -114,7 +114,7 @@ export function PagarFaturaDialog({
   const totalRecebido = useMemo(() => {
     if (modo === "eu_pago_tudo") return 0;
     return responsaveis
-      .filter((r) => !r.is_titular && r.recebido)
+      .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
       .reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis, modo]);
 
