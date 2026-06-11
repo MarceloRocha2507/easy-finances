@@ -965,6 +965,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ajuste_estimado: number | null
           ativo: boolean | null
           avatar_url: string | null
           created_at: string
@@ -979,6 +980,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ajuste_estimado?: number | null
           ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
@@ -993,6 +995,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ajuste_estimado?: number | null
           ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
