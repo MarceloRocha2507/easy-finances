@@ -1068,10 +1068,10 @@ export default function DespesasCartao() {
                         {p.categoria_nome ? (
                           <Badge
                             variant="secondary"
-                            className="gap-1 text-xs"
+                            className="gap-1 text-xs border-0"
                             style={{
-                              backgroundColor: `${p.categoria_cor}15`,
-                              color: p.categoria_cor,
+                              backgroundColor: p.categoria_cor || "#94a3b8",
+                              color: "#fff",
                             }}
                           >
                             <Tag className="h-3 w-3" />
