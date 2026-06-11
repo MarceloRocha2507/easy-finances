@@ -1276,8 +1276,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         .eq('ativo', true);
 
       // Calcular total da fatura do titular e de outros responsáveis
-      let faturaCartaoTitular = 0;
-      let faturaCartaoOutros = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
+      let faturaCartaoTitularRaw = 0;
+      let faturaCartaoOutrosRaw = 0; // outros responsáveis (todas as parcelas, pagas + pendentes)
       let faturaViaParcelasPagas = 0; // titular pagas (para conciliação)
       let faturaTitularTodas = 0; // titular pagas + pendentes (para totalGeralDespesas)
       (parcelasCartao || []).forEach((p: any) => {
@@ -1288,17 +1288,22 @@ export function useCompleteStats(mesReferencia?: Date) {
         if (isTitular) {
           faturaTitularTodas += valor;
           if (!isPaga) {
-            faturaCartaoTitular += valor;
+            faturaCartaoTitularRaw += valor;
           } else {
             faturaViaParcelasPagas += valor;
           }
         } else {
-          faturaCartaoOutros += valor;
+          faturaCartaoOutrosRaw += valor;
         }
       });
 
       const today = new Date().toISOString().split('T')[0];
       
+      // Garantir que os totais negativos (estornos excedentes) não sejam somados aos gastos,
+      // mas sim que faturas em aberto negativas não apareçam como dívida no total estimado.
+      const faturaCartaoTitular = Math.max(0, faturaCartaoTitularRaw);
+      const faturaCartaoOutros = Math.max(0, faturaCartaoOutrosRaw);
+
       // Calcular saldo acumulado usando TODAS as transações completed
       // Despesas/receitas marcadas como "desconsiderada" são ignoradas do caixa
       let allCompletedIncome = 0;
@@ -1389,7 +1394,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       });
 
       // Total de Despesas do mês = despesas avulsas (completed + pending) + fatura COMPLETA de TODOS os responsáveis
-      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutros;
+      stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutrosRaw;
 
       // Saldo Disponível = Saldo Inicial + Receitas Acumuladas - Despesas Acumuladas
       // (dinheiro "livre" que você pode gastar - usa histórico completo)
@@ -1403,7 +1408,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       const realBalance = saldoDisponivel;
       
       // Saldo Estimado = Disponível + A Receber do mês - A Pagar do mês - Fatura do Cartão
-      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular;
+      const estimatedBalance = saldoDisponivel + stats.pendingIncome - stats.pendingExpense - (faturaCartaoTitularRaw > 0 ? faturaCartaoTitularRaw : 0);
 
       return {
         ...stats,
@@ -1411,6 +1416,8 @@ export function useCompleteStats(mesReferencia?: Date) {
         saldoDisponivel,
         patrimonioTotal,
         estimatedBalance,
+        faturaCartaoTitularRaw, // Para debug se necessário
+        faturaCartaoOutrosRaw,
         totalMetas,
         totalInvestido,
         totalGuardado,

@@ -283,8 +283,8 @@ export function useDashboardCompleto(mesReferencia?: Date) {
 
       // ========== 6. CALCULAR RESUMO ==========
       const limiteTotal = cartoesFormatados.reduce((sum, c) => sum + c.limite, 0);
-      const totalPendente = cartoesFormatados.reduce((sum, c) => sum + c.totalPendente, 0);
-      const totalPago = cartoesFormatados.reduce((sum, c) => sum + c.totalPago, 0);
+      const totalPendente = cartoesFormatados.reduce((sum, c) => sum + (c.totalPendente > 0 ? c.totalPendente : 0), 0);
+      const totalPago = cartoesFormatados.reduce((sum, c) => sum + (c.totalPago > 0 ? c.totalPago : 0), 0);
 
       const resumo: ResumoCartoes = {
         totalFaturaMes: totalPendente + totalPago,
