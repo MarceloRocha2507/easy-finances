@@ -1,32 +1,77 @@
-## Por que ainda parece antigo
+## Objetivo
 
-O `NovaCompraCartaoDialog` não foi incluído na varredura anterior — ele tem cabeçalho 100% manual (não usa `<DialogHeader>`) e ainda força:
+Adicionar um card "Total Estimado" na aba **Transações**, ao lado dos cards "A Pagar" e "A Receber", mostrando o saldo estimado do mês selecionado considerando apenas o responsável **EU (titular)**.
 
-- `borderRadius: 16` via `style` inline (sobrescreve os 24 do base)
-- `boxShadow: 0 8px 32px rgba(0,0,0,0.12)` (sobrescreve a sombra de 4 camadas)
-- Header próprio com `bg-white`, sem gradiente
-- Botão `X` próprio (já que `[&>button]:hidden` esconde o do base)
+## Fórmula
 
-Resultado: cantos menores, sombra mais simples, sem faixa gradiente no topo — exatamente o "design antigo" da screenshot.
+```
+Total Estimado do Mês =
+    Saldo Inicial (titular)
+  + Receitas confirmadas até o fim do mês selecionado
+  − Despesas confirmadas até o fim do mês selecionado
+  − Despesas pendentes do mês selecionado
+  − Faturas de cartão em aberto do mês selecionado (parte do titular)
+```
 
-## Mudanças (somente em `src/components/cartoes/NovaCompraCartaoDialog.tsx`)
+Regras importantes:
+- Apenas movimentações marcadas como do titular ("EU") entram no cálculo.
+- Transações com flag `desconsiderar_saldo = true` são ignoradas (regra já existente no projeto).
+- Faturas já pagas **não** entram como pendência (já saíram via despesa de pagamento). Faturas estornadas voltam ao estado "em aberto" automaticamente — o cálculo as reincluirá sem duplicar, porque a despesa de pagamento original também é removida no estorno.
+- Parcelas de cartão usam a parte do titular (`valor_titular` quando houver split; caso contrário, valor cheio).
 
-1. **Remover overrides do `DialogContent`**
-   - Tirar `rounded-2xl` do `className`
-   - Remover `borderRadius: 16` e `boxShadow` dos dois `style` (desktop e mobile), deixando o base aplicar 24px + sombra de 4 camadas
-   - Manter `[&>button]:hidden`, dimensões e comportamento mobile (slide bottom, safe-area)
+## Onde aparece
 
-2. **Aplicar faixa gradiente no header sticky** (padrão usado em `TotalAPagarCard` / `TransactionDetailsDialog`)
-   - `background: linear-gradient(160deg, #fafafe 0%, #f3f0ff 100%)`
-   - `borderBottom: 1px solid rgba(0,0,0,0.06)`
-   - Título com `fontFamily: var(--font-display)`, `fontSize: 17`, `fontWeight: 700`, `letterSpacing: -0.025em`, cor `#1a1625` (tokens do `DialogTitle` novo)
-   - Ajustar paddings para casar com a faixa (sem `bg-white` por baixo)
+`src/pages/Transactions.tsx` — na mesma grid dos cards `TotalAPagarCard` e `TotalAReceberCard`, virando uma grid de 3 colunas em desktop e empilhada em mobile, seguindo o mesmo padrão visual minimalista (sem gradientes, paleta canônica).
 
-3. **Padronizar o botão `X` manual** para o estilo novo
-   - 28×28, `borderRadius: 8`, fundo `rgba(0,0,0,0.05)` → hover `rgba(0,0,0,0.09)`, cor `#9590aa`
+## Implementação técnica
 
-Nada de lógica/estado/validação é alterado — apenas tokens visuais do shell do modal.
+1. **Novo hook** `src/hooks/useTotalEstimadoMes.ts`
+   - Input: `mesReferencia: Date` (vem do filtro de período já centralizado).
+   - Busca em paralelo via React Query:
+     - `useSaldoInicial` (já existe) — saldo inicial global do titular.
+     - `transactions` confirmadas com `date < primeiroDiaMesSeguinte`, agrupando receitas e despesas (filtra `responsavel` = titular ou nulo; ignora `desconsiderar_saldo`).
+     - `transactions` pendentes (status `pending`) dentro do mês selecionado.
+     - `parcelas_cartao` ativas do mês cuja fatura **não está paga** (via `acertos_fatura`/`status_fatura`), somando `valor_titular` quando existir.
+   - `queryKey`: `["total-estimado-mes", userId, mesKey]`.
+   - `staleTime`: 60s; invalidado pelas mutations existentes (criar/editar/excluir transação, pagar/estornar fatura, ajustar saldo).
 
-## Observação
+2. **Novo componente** `src/components/transactions/TotalEstimadoCard.tsx`
+   - Usa `StatCardMinimal` (já existe) com:
+     - Título: "Total Estimado"
+     - Ícone: `Wallet` ou `TrendingUp`
+     - Cor: verde (#16A34A) se ≥ 0, vermelho (#DC2626) se < 0
+     - `subInfo`: "Saldo previsto ao fim de {mês}"
+   - Estado loading com Skeleton.
+   - Clique abre dialog com breakdown (Saldo inicial / Receitas / Despesas confirmadas / Pendentes / Faturas em aberto).
 
-Se quiser, depois deste posso fazer uma varredura final por outros modais com `borderRadius`/`boxShadow` inline (ex.: `DetalhesCartaoDialog`, `PagarFaturaDialog`, `EditarCompraDialog`) que possam estar no mesmo padrão antigo. Mas começo só pelo Nova Compra para validar o resultado.
+3. **Integração** em `src/pages/Transactions.tsx`
+   - Ajustar grid dos resumos para 3 colunas (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`).
+   - Passar `mesReferencia` do filtro de período atual.
+
+4. **Invalidação de cache** — garantir que estes pontos invalidem `["total-estimado-mes"]`:
+   - `useTransactions` (create/update/delete/toggleStatus)
+   - `PagarFaturaDialog` (após pagamento e após estorno)
+   - `AjustarSaldoDialog` / `useSaldoInicial`
+   - Edição/exclusão de compras de cartão
+
+## Cenários validados pela lógica
+
+| Cenário | Comportamento esperado |
+|---|---|
+| Pagar fatura do cartão | Fatura sai das pendências; despesa de pagamento entra em "confirmadas". Saldo líquido inalterado. |
+| Estornar pagamento | Despesa de pagamento removida; fatura volta para pendências. Saldo líquido inalterado, sem duplicidade. |
+| Editar valor de despesa | Recalcula via invalidate, sem reload manual. |
+| Excluir despesa | Removida da soma instantaneamente. |
+| Mudar mês selecionado | Hook re-busca com `mesKey` novo. |
+| Transação `desconsiderar_saldo` | Não entra em nenhum dos totais. |
+| Despesa de terceiro (não-titular) | Não entra no cálculo do EU. |
+
+## Memória do projeto
+
+Após implementar, salvar `mem://features/transactions/total-estimado-mes` documentando a fórmula e adicionar referência em `mem://index.md`.
+
+## Fora do escopo
+
+- Não recriar o "Saldo Estimado" global removido anteriormente.
+- Não alterar Dashboard nem outras páginas.
+- Sem mudanças de schema do banco.
