@@ -94,7 +94,7 @@ export function PagarFaturaDialog({
 
   // Outros responsáveis (não titulares)
   const outrosResponsaveis = useMemo(() => {
-    return responsaveis.filter((r) => !r.is_titular);
+    return responsaveis.filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel");
   }, [responsaveis]);
 
 
@@ -114,7 +114,7 @@ export function PagarFaturaDialog({
   const totalRecebido = useMemo(() => {
     if (modo === "eu_pago_tudo") return 0;
     return responsaveis
-      .filter((r) => !r.is_titular && r.recebido)
+      .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
       .reduce((sum, r) => sum + r.total, 0);
   }, [responsaveis, modo]);
 
@@ -173,7 +173,7 @@ export function PagarFaturaDialog({
 
       if (modo === "cada_um_pagou") {
         acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular && r.recebido)
+          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: r.total,
@@ -181,7 +181,7 @@ export function PagarFaturaDialog({
           }));
       } else if (modo === "dividir_valores") {
         acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular)
+          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel")
           .map((r) => ({
             responsavel_id: r.responsavel_id,
             valor: parseFloat(parseBrazilianCurrency(r.valorCustom).toFixed(2)),
@@ -478,9 +478,25 @@ export function PagarFaturaDialog({
                     <p className="text-xs text-muted-foreground">Titular</p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">
-                  {formatCurrency(titular.total)}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(titular.total)}
+                  </span>
+                  {(() => {
+                    const semResponsavel = responsaveis.find(r => r.responsavel_id === "sem-responsavel");
+                    if (semResponsavel && semResponsavel.total !== 0) {
+                      return (
+                        <span className={cn(
+                          "text-[10px] font-medium",
+                          semResponsavel.total < 0 ? "text-blue-600" : "text-destructive"
+                        )}>
+                          {semResponsavel.total < 0 ? "Adiantamento deduzido" : "Sem responsável somado"}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
             )}
 
