@@ -139,14 +139,12 @@ export function PagarFaturaDialog({
   // Total informado no modo dividir_valores
   const totalDividido = useMemo(() => {
     if (modo !== "dividir_valores") return 0;
-    return responsaveis.reduce((sum, r) => {
-      // No modo dividir_valores, incluímos todos os itens do resumo (incluindo negativos)
-      // Se r.total <= 0, é um crédito/estorno que já diminui do saldo da fatura.
-      if (r.total <= 0) return sum + r.total;
-      
-      const val = parseBrazilianCurrency(r.valorCustom);
-      return sum + (isNaN(val) ? 0 : val);
-    }, 0);
+    return responsaveis
+      .filter(r => r.responsavel_id !== "sem-responsavel")
+      .reduce((sum, r) => {
+        const val = parseBrazilianCurrency(r.valorCustom);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
   }, [responsaveis, modo]);
 
   const dividirValido = useMemo(() => {
