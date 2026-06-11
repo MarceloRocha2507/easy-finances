@@ -501,11 +501,11 @@ export function useDashboardCompleto(mesReferencia?: Date) {
 
       // ========== 11. COMPARATIVO MENSAL ==========
       const totalMesAtual = parcelasMesAtual.reduce(
-        (sum, p: any) => sum + Math.abs(Number(p.valor) || 0),
+        (sum, p: any) => sum + (Number(p.valor) || 0),
         0
       );
       const totalMesAnteriorCalc = parcelasMesAnterior.reduce(
-        (sum, p: any) => sum + Math.abs(Number(p.valor) || 0),
+        (sum, p: any) => sum + (Number(p.valor) || 0),
         0
       );
 
