@@ -16,7 +16,7 @@ const utilities = [
     title: "Responsáveis",
     description: "Cadastre pessoas responsáveis por compras no cartão",
     icon: Users,
-    href: "/cartoes/responsaveis",
+    href: "/responsaveis",
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
   },

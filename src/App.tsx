@@ -173,7 +173,7 @@ const App = () => (
             />
 
             <Route
-              path="/cartoes/responsaveis"
+              path="/responsaveis"
               element={
                 <ProtectedRoute>
                   <Responsaveis />
@@ -214,8 +214,8 @@ const App = () => (
               }
             />
 
-            {/* Redirect antigo /responsaveis para novo caminho */}
-            <Route path="/responsaveis" element={<Navigate to="/cartoes/responsaveis" replace />} />
+            {/* Redirect antigo /cartoes/responsaveis para novo caminho */}
+            <Route path="/cartoes/responsaveis" element={<Navigate to="/responsaveis" replace />} />
 
             <Route
               path="/economia"
