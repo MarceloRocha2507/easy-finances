@@ -1382,7 +1382,7 @@ export default function Transactions() {
                   title="Total Estimado"
                   value={stats?.estimatedBalance || 0}
                   icon={Wallet}
-                  subInfo={`previsto p/ ${format(dataInicial || new Date(), "MMM/yy", { locale: ptBR })}`}
+                  subInfo="saldo previsto do mês (pendências)"
                   valueColor={(stats?.estimatedBalance || 0) >= 0 ? "income" : "expense"}
                   isLoading={isStatsFetching}
                 />
