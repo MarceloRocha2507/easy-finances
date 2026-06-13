@@ -1201,10 +1201,10 @@ export function useCompleteStats(mesReferencia?: Date) {
         (acc, b) => acc + Number(b.saldo_inicial || 0), 0
       );
 
-      // Buscar dados do profile (saldo inicial e ajuste estimado)
+      // Buscar dados do profile (saldo inicial)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('saldo_inicial, ajuste_estimado')
+        .select('saldo_inicial')
         .eq('user_id', user!.id)
         .single();
 
@@ -1214,8 +1214,6 @@ export function useCompleteStats(mesReferencia?: Date) {
         saldoInicial = Number(profile?.saldo_inicial) || 0;
       }
       
-      const ajusteEstimadoManual = Number(profile?.ajuste_estimado) || 0;
-
       // Buscar total de investimentos ativos
       const { data: investimentos } = await supabase
         .from('investimentos')
@@ -1437,11 +1435,11 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       const realBalance = saldoDisponivel;
 
-      // Total Estimado do mês = Receitas pendentes - Despesas pendentes - Fatura do Cartão (titular) + Ajuste Manual
+      // Total Estimado do mês = Receitas pendentes - Despesas pendentes - Fatura do Cartão (titular)
       // Para a fatura do titular, usa o MAIOR entre parcelas e lançamento manual pendente,
-      // evitando duplicação mas respeitando ajustes manuais maiores que as parcelas.
+      // evitando duplicação entre parcelas e eventual lançamento manual da fatura.
       const faturaTitularEstimado = Math.max(faturaCartaoTitular, faturaCartaoPendenteManual);
-      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado + ajusteEstimadoManual;
+      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado;
 
       return {
         ...stats,
