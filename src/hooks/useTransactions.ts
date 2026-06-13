@@ -1407,6 +1407,7 @@ export function useCompleteStats(mesReferencia?: Date) {
       // (totalGeralDespesas é calculado APÓS o loop de pending, abaixo)
 
       // Pendentes do mês
+      let faturaCartaoPendenteManual = 0;
       (pendingDoMes || []).forEach((t) => {
         const amount = Number(t.amount);
         const isFaturaCartao = t.category_id && faturaCategoryIds.has(t.category_id);
@@ -1415,9 +1416,10 @@ export function useCompleteStats(mesReferencia?: Date) {
         if (t.type === 'income') {
           if (!isDesconsiderada) stats.pendingIncome += amount;
         } else {
-          // Despesas com categoria "Fatura do Cartão" já estão em faturaCartaoTitular
-          // Despesas desconsideradas não entram no cálculo estimado
-          if (!isFaturaCartao && !isDesconsiderada) {
+          if (isFaturaCartao) {
+            // Acumula manual de fatura (concilia com parcelas via Math.max abaixo)
+            if (!isDesconsiderada) faturaCartaoPendenteManual += amount;
+          } else if (!isDesconsiderada) {
             stats.pendingExpense += amount;
           }
         }
@@ -1428,19 +1430,18 @@ export function useCompleteStats(mesReferencia?: Date) {
       stats.totalGeralDespesas = despesasBase + stats.pendingExpense + faturaTitularTodas + faturaCartaoOutrosRaw;
 
       // Saldo Disponível = Saldo Inicial + Receitas Acumuladas - Despesas Acumuladas
-      // (dinheiro "livre" que você pode gastar - usa histórico completo)
       const saldoDisponivel = saldoInicial + allCompletedIncome - allCompletedExpense;
-      
+
       // Patrimônio Total = Saldo Disponível + Metas + Investimentos
-      // (toda sua riqueza, incluindo reservas)
       const patrimonioTotal = saldoDisponivel + totalMetas + totalInvestido;
-      
-      // Saldo Real = Saldo Disponível (o que realmente está "livre")
+
       const realBalance = saldoDisponivel;
-      
+
       // Total Estimado do mês = Receitas pendentes - Despesas pendentes - Fatura do Cartão (titular) + Ajuste Manual
-      // Considera apenas pendências do mês selecionado (não soma saldo real acumulado)
-      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaCartaoTitular + ajusteEstimadoManual;
+      // Para a fatura do titular, usa o MAIOR entre parcelas e lançamento manual pendente,
+      // evitando duplicação mas respeitando ajustes manuais maiores que as parcelas.
+      const faturaTitularEstimado = Math.max(faturaCartaoTitular, faturaCartaoPendenteManual);
+      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado + ajusteEstimadoManual;
 
       return {
         ...stats,
