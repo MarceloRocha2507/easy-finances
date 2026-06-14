@@ -319,7 +319,7 @@ export default function Dashboard() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              <div className="grid grid-cols-1 divide-y divide-[#E5E7EB] dark:divide-[#111827] flex-1 min-[430px]:grid-cols-2 min-[430px]:divide-x min-[430px]:divide-y-0">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={completedIncome}
@@ -346,7 +346,7 @@ export default function Dashboard() {
                     faturaCartao > 0 ? (
                       <>
                         {formatCurrency(pendingExpense)} pendente
-                        <span className="text-muted-foreground/60"> + {formatCurrency(faturaCartao)} fatura</span>
+                        <span className="block break-words text-muted-foreground/60 min-[430px]:inline"> + {formatCurrency(faturaCartao)} fatura</span>
                       </>
                     ) : (
                       "referente a este mês"
