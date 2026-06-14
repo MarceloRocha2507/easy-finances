@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, EyeOff, ChevronDown, ChevronRight, Repeat, Sparkles, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Calendar, CreditCard, Wallet, RefreshCw, ShoppingCart, Home, Car, Utensils, Briefcase, Heart, GraduationCap, Gift, Plane, Gamepad2, Shirt, Pill, Book, Package, Zap, DollarSign, Tag, LayoutList, Clock, Check, AlertTriangle, Settings, Copy, Scale, Info, MoreHorizontal, Eye, EyeOff, ChevronDown, ChevronRight, Repeat, Sparkles, X, Target } from 'lucide-react';
 import { TransactionDetailsDialog } from '@/components/transactions/TransactionDetailsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -1280,44 +1280,53 @@ export default function Transactions() {
         {/* Saldo Inicial + Resumo Completo */}
         <AnimatedSection className="space-y-4">
           {/* Card de Saldo Inicial e Metas */}
-          <div className="flex items-center justify-between p-3 sm:p-3 gap-2 bg-muted/30 rounded-lg border border-border/50 mt-1">
+          <div className="flex items-center justify-between gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 mt-1 rounded-2xl border border-[#E5E7EB] dark:border-white/5 bg-gradient-to-r from-[#FAFAFB] to-[#F3F4F6] dark:from-[#0F1623] dark:to-[#111827] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {/* Saldo Inicial */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 ring-1 ring-primary/10 shrink-0">
                 <Wallet className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Saldo Inicial</span>
+                <span className="block font-display text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Saldo Inicial</span>
                 {isStatsFetching ? (
                   <Skeleton className="h-5 w-24 sm:h-6 sm:w-28" />
                 ) : (
-                  <p className="font-semibold text-sm sm:text-base truncate">
+                  <p className={cn(
+                    "font-display font-bold text-sm sm:text-base tabular-nums truncate leading-tight",
+                    (stats?.saldoInicial || 0) < 0 ? "text-[#DC2626]" : "text-foreground"
+                  )}>
                     {formatCurrency(stats?.saldoInicial || 0)}
                   </p>
                 )}
               </div>
             </div>
-            
+
             {/* Em Metas + Botão */}
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               {isStatsFetching ? (
                 <div className="text-right">
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
+                  <span className="block font-display text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Em Metas</span>
                   <Skeleton className="h-5 w-20 sm:h-6 sm:w-24" />
                 </div>
               ) : (stats?.totalMetas || 0) > 0 && (
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">Em Metas</span>
-                  <p className="font-semibold text-primary text-sm sm:text-base">
-                    {formatCurrency(stats?.totalMetas || 0)}
-                  </p>
-                </div>
+                <>
+                  <div className="text-right">
+                    <span className="block font-display text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Em Metas</span>
+                    <p className="font-display font-bold text-violet-600 dark:text-violet-400 text-sm sm:text-base tabular-nums leading-tight">
+                      {formatCurrency(stats?.totalMetas || 0)}
+                    </p>
+                  </div>
+                  <div className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/15 to-violet-500/5 ring-1 ring-violet-500/10 shrink-0">
+                    <Target className="w-4 h-4 text-violet-500" />
+                  </div>
+                </>
               )}
-              <Button 
-                variant="ghost" 
+              <div className="h-7 w-px bg-border/60 mx-0.5" />
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => setEditarSaldoOpen(true)}
-                className="h-8 w-8"
+                className="h-8 w-8 text-muted-foreground/60 hover:text-foreground"
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -1327,19 +1336,21 @@ export default function Transactions() {
           {/* Dois painéis agrupados: Visão Geral + Este Mês */}
           <AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">
             {/* PAINEL 1 — Visão Geral (2/5) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-white/5 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Visão Geral
                 </h3>
               </div>
 
               {/* Hero - Total de Despesas */}
               <div
-                className="relative px-5 py-4 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-[#1f1f1f] transition-colors"
+                className="relative px-5 py-4 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/[0.02] transition-colors overflow-hidden"
                 onClick={() => setDetalhesDespesasOpen(true)}
               >
-                <div className="absolute top-4 right-5 flex items-center gap-1">
+                {/* Decorative glow */}
+                <div className="absolute -top-10 -right-8 w-28 h-28 rounded-full bg-rose-500/10 blur-2xl pointer-events-none z-0" />
+                <div className="absolute top-4 right-5 z-10 flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1353,20 +1364,23 @@ export default function Transactions() {
                   </Button>
                   <CreditCard className="h-4 w-4 text-foreground/30" />
                 </div>
-                <p className="text-[#6B7280] text-xs mb-1.5">Total de Despesas</p>
+                <p className="relative z-[1] flex items-center gap-1.5 font-display text-[10px] font-semibold uppercase tracking-widest text-[#6B7280] mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  Total de Despesas
+                </p>
                 {isStatsFetching ? (
-                  <Skeleton className="h-8 w-44 bg-gray-200/60 dark:bg-gray-700/40" />
+                  <Skeleton className="h-9 w-44 bg-gray-200/60 dark:bg-gray-700/40" />
                 ) : (
-                  <p className="text-2xl sm:text-[26px] font-bold tabular-nums text-[#DC2626]">
+                  <p className="relative z-[1] text-[28px] sm:text-[30px] font-display font-extrabold tabular-nums tracking-tight text-[#DC2626] leading-none">
                     {showTotalGeral ? formatCurrency(stats?.totalGeralDespesas || 0) : '••••••'}
                   </p>
                 )}
-                <p className="text-[11px] text-[#6B7280] mt-1">
+                <p className="relative z-[1] text-[11px] text-[#6B7280] mt-2">
                   inclui outros responsáveis · clique para detalhes
                 </p>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
+              <div className="border-t border-[#E5E7EB] dark:border-white/5" />
 
               {/* Saldo Real + Total Estimado unificado */}
               <div className="grid grid-cols-1 flex-1">
@@ -1377,16 +1391,22 @@ export default function Transactions() {
                   valueContent={
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Saldo Real</p>
+                        <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40" />
+                          Saldo Real
+                        </p>
                         <p className={cn(
                           "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
-                          (stats?.realBalance || 0) >= 0 ? "text-[#111827]" : "text-[#DC2626]"
+                          (stats?.realBalance || 0) >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.realBalance || 0)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Estimado</p>
+                        <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Estimado
+                        </p>
                         <p className={cn(
                           "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
@@ -1405,16 +1425,16 @@ export default function Transactions() {
             </div>
 
             {/* PAINEL 2 — Este Mês (3/5) */}
-            <div className="lg:col-span-3 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#111827] rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col">
+            <div className="lg:col-span-3 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-white/5 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280]">
+                <h3 className="section-title-accent text-[11px] text-accent-violet">
                   Este Mês
                 </h3>
               </div>
 
-              <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
+              <div className="border-t border-[#E5E7EB] dark:border-white/5" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-white/5 flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}
@@ -1466,7 +1486,7 @@ export default function Transactions() {
                   title="Assinaturas"
                   value={totalMensalAssinaturas}
                   icon={Repeat}
-                  valueColor="expense"
+                  valueColor="violet"
                   subInfo={
                     <>
                       {assinaturasAtivas.length} ativas

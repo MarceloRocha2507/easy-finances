@@ -14,7 +14,7 @@ interface UnifiedMetricTileProps {
   onClick?: () => void;
   isLoading?: boolean;
   formatValue?: (value: number) => string;
-  valueColor?: "income" | "expense" | "neutral";
+  valueColor?: "income" | "expense" | "neutral" | "violet";
   className?: string;
 }
 
@@ -32,6 +32,7 @@ export function UnifiedMetricTile({
   className,
 }: UnifiedMetricTileProps) {
   const getValueColor = () => {
+    if (valueColor === "violet") return "text-violet-600 dark:text-violet-400";
     if (valueColor === "expense") return "text-[#DC2626] dark:text-[#DC2626]";
     if (valueColor === "income") return "text-[#16A34A] dark:text-[#16A34A]";
     if (prefix === "-") return "text-[#DC2626] dark:text-[#DC2626]";
@@ -40,9 +41,17 @@ export function UnifiedMetricTile({
   };
 
   const getTileBg = () => {
+    if (valueColor === "violet") return "metric-tile-violet";
     if (valueColor === "income" || prefix === "+") return "metric-tile-income";
     if (valueColor === "expense" || prefix === "-") return "metric-tile-expense";
     return "";
+  };
+
+  const getIconTone = () => {
+    if (valueColor === "violet") return "text-violet-500/70";
+    if (valueColor === "income" || prefix === "+") return "text-emerald-500/70";
+    if (valueColor === "expense" || prefix === "-") return "text-rose-500/70";
+    return "text-muted-foreground/50";
   };
 
   const displayValue = formatValue ? formatValue(value) : formatCurrency(value);
@@ -58,7 +67,7 @@ export function UnifiedMetricTile({
       onClick={onClick}
     >
       <div className="flex items-center gap-1.5 mb-2">
-        <Icon className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+        <Icon className={cn("h-3 w-3 shrink-0", getIconTone())} />
         <p className="font-display font-semibold text-[10px] uppercase tracking-widest text-muted-foreground">
           {title}
         </p>
