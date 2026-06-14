@@ -1399,7 +1399,7 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}
@@ -1427,16 +1427,22 @@ export default function Transactions() {
                   title="Despesas"
                   value={stats?.completedExpenseWithFatura || 0}
                   icon={TrendingDown}
-                  subInfo="total do mês (inclui fatura)"
-                  valueColor="expense"
-                  isLoading={isStatsFetching}
-                />
-                <UnifiedMetricTile
-                  title="A Pagar"
-                  value={stats?.pendingExpense || 0}
-                  icon={TrendingDown}
-                  subInfo="referente apenas a este mês"
-                  prefix="-"
+                  valueContent={
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Pagas</p>
+                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
+                          {formatCurrency(stats?.completedExpenseWithFatura || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">A pagar</p>
+                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
+                          {formatCurrency(stats?.pendingExpense || 0)}
+                        </p>
+                      </div>
+                    </div>
+                  }
                   valueColor="expense"
                   isLoading={isStatsFetching}
                 />
