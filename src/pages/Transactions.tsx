@@ -1399,12 +1399,22 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
-                  value={stats?.completedIncome || 0}
+                  value={(stats?.completedIncome || 0) + (stats?.pendingIncome || 0)}
                   icon={TrendingUp}
-                  subInfo="recebidas"
+                  subInfo={
+                    <>
+                      {formatCurrency(stats?.completedIncome || 0)} recebidas
+                      {(stats?.pendingIncome || 0) > 0 && (
+                        <span className="text-[#D97706] ml-1">
+                          · {formatCurrency(stats?.pendingIncome || 0)} a receber
+                        </span>
+                      )}
+                    </>
+                  }
+                  valueColor="income"
                   isLoading={isStatsFetching}
                 />
                 <UnifiedMetricTile
@@ -1413,15 +1423,6 @@ export default function Transactions() {
                   icon={TrendingDown}
                   subInfo="total do mês (inclui fatura)"
                   valueColor="expense"
-                  isLoading={isStatsFetching}
-                />
-                <UnifiedMetricTile
-                  title="A Receber"
-                  value={stats?.pendingIncome || 0}
-                  icon={TrendingUp}
-                  subInfo="pendentes"
-                  prefix="+"
-                  valueColor="income"
                   isLoading={isStatsFetching}
                 />
                 <UnifiedMetricTile
