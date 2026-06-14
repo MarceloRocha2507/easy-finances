@@ -1427,16 +1427,22 @@ export default function Transactions() {
                   title="Despesas"
                   value={stats?.completedExpenseWithFatura || 0}
                   icon={TrendingDown}
-                  subInfo="total do mês (inclui fatura)"
-                  valueColor="expense"
-                  isLoading={isStatsFetching}
-                />
-                <UnifiedMetricTile
-                  title="A Pagar"
-                  value={stats?.pendingExpense || 0}
-                  icon={TrendingDown}
-                  subInfo="referente apenas a este mês"
-                  prefix="-"
+                  valueContent={
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Pagas</p>
+                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
+                          {formatCurrency(stats?.completedExpenseWithFatura || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">A pagar</p>
+                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
+                          {formatCurrency(stats?.pendingExpense || 0)}
+                        </p>
+                      </div>
+                    </div>
+                  }
                   valueColor="expense"
                   isLoading={isStatsFetching}
                 />
