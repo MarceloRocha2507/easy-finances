@@ -1375,18 +1375,18 @@ export default function Transactions() {
                   value={stats?.realBalance || 0}
                   icon={Scale}
                   valueContent={
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Saldo Real</p>
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Saldo Real</p>
                         <p className={cn(
-                          "text-lg sm:text-xl font-display font-bold tabular-nums leading-tight",
+                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
                           (stats?.realBalance || 0) >= 0 ? "text-[#111827]" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.realBalance || 0)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Saldo Estimado</p>
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Estimado</p>
                         <p className={cn(
                           "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
@@ -1396,6 +1396,7 @@ export default function Transactions() {
                       </div>
                     </div>
                   }
+
                   subInfo="clique para ajustar saldo real"
                   onClick={() => setAjustarSaldoOpen(true)}
                   isLoading={isStatsFetching}
@@ -1419,15 +1420,15 @@ export default function Transactions() {
                   value={stats?.completedIncome || 0}
                   icon={TrendingUp}
                   valueContent={
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Recebidas</p>
-                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#16A34A]">
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Recebidas</p>
+                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#16A34A]">
                           {formatCurrency(stats?.completedIncome || 0)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">A receber</p>
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">A receber</p>
                         <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
                           {formatCurrency(stats?.pendingIncome || 0)}
                         </p>
@@ -1442,21 +1443,22 @@ export default function Transactions() {
                   value={stats?.completedExpenseWithFatura || 0}
                   icon={TrendingDown}
                   valueContent={
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Pagas</p>
-                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Pagas</p>
+                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#DC2626]">
                           {formatCurrency(stats?.completedExpenseWithFatura || 0)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">A pagar</p>
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">A pagar</p>
                         <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
                           {formatCurrency(stats?.pendingExpense || 0)}
                         </p>
                       </div>
                     </div>
                   }
+
                   valueColor="expense"
                   isLoading={isStatsFetching}
                 />
