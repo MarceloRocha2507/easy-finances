@@ -55,8 +55,8 @@ export function FiltroDataRange({
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-2 p-1.5 bg-gray-50/50 rounded-lg border border-gray-100">
-        <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1.5 h-9 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-gray-50/50 rounded-lg border border-gray-100 w-full">
+        <div className="flex items-center gap-1 rounded-md bg-white border border-gray-200 px-1.5 h-9 shadow-sm shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -92,7 +92,7 @@ export function FiltroDataRange({
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 ml-2">
+        <div className="flex items-center gap-2 sm:gap-3 sm:ml-2 flex-wrap">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
