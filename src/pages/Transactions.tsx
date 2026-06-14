@@ -1389,26 +1389,26 @@ export default function Transactions() {
                   value={stats?.realBalance || 0}
                   icon={Scale}
                   valueContent={
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 min-w-0">
+                      <div className="min-w-0">
                         <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
                           Saldo Real
                         </p>
                         <p className={cn(
-                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.realBalance || 0) >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.realBalance || 0)}
                         </p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                           Estimado
                         </p>
                         <p className={cn(
-                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.estimatedBalance || 0)}
