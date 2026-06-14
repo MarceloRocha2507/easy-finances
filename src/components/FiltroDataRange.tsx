@@ -92,7 +92,7 @@ export function FiltroDataRange({
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 ml-2">
+        <div className="flex items-center gap-2 sm:gap-3 sm:ml-2 flex-wrap">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
