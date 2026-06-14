@@ -1440,18 +1440,18 @@ export default function Transactions() {
                   value={stats?.completedIncome || 0}
                   icon={TrendingUp}
                   valueContent={
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
                       <div>
                         <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Recebidas</p>
-                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#16A34A]">
+                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#16A34A]">
                           {formatCurrency(stats?.completedIncome || 0)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">A receber</p>
-                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
+                      <div className="flex items-baseline justify-between gap-2 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5">
+                        <span className="text-[10px] text-muted-foreground/70">A receber</span>
+                        <span className="text-[13px] font-display font-semibold tabular-nums text-[#D97706]">
                           {formatCurrency(stats?.pendingIncome || 0)}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   }
@@ -1463,18 +1463,18 @@ export default function Transactions() {
                   value={stats?.completedExpenseWithFatura || 0}
                   icon={TrendingDown}
                   valueContent={
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
                       <div>
                         <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Pagas</p>
-                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#DC2626]">
+                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
                           {formatCurrency(stats?.completedExpenseWithFatura || 0)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">A pagar</p>
-                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
+                      <div className="flex items-baseline justify-between gap-2 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5">
+                        <span className="text-[10px] text-muted-foreground/70">A pagar</span>
+                        <span className="text-[13px] font-display font-semibold tabular-nums text-[#D97706]">
                           {formatCurrency(stats?.pendingExpense || 0)}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   }
