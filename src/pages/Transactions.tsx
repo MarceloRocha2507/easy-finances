@@ -1371,7 +1371,7 @@ export default function Transactions() {
                 {isStatsFetching ? (
                   <Skeleton className="h-9 w-44 bg-gray-200/60 dark:bg-gray-700/40" />
                 ) : (
-                  <p className="relative z-[1] text-[28px] sm:text-[30px] font-display font-extrabold tabular-nums tracking-tight text-[#DC2626] leading-none">
+                  <p className="relative z-[1] text-[22px] sm:text-[30px] font-display font-extrabold tabular-nums tracking-tight text-[#DC2626] leading-none">
                     {showTotalGeral ? formatCurrency(stats?.totalGeralDespesas || 0) : '••••••'}
                   </p>
                 )}
@@ -1396,7 +1396,7 @@ export default function Transactions() {
                           Saldo Real
                         </p>
                         <p className={cn(
-                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight",
                           (stats?.realBalance || 0) >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.realBalance || 0)}
@@ -1408,7 +1408,7 @@ export default function Transactions() {
                           Estimado
                         </p>
                         <p className={cn(
-                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.estimatedBalance || 0)}
@@ -1434,7 +1434,7 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-white/5" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-white/5 flex-1">
+              <div className="grid grid-cols-3 divide-x divide-[#E5E7EB] dark:divide-white/5 flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}
@@ -1443,7 +1443,7 @@ export default function Transactions() {
                     <div className="space-y-2">
                       <div>
                         <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Recebidas</p>
-                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#16A34A]">
+                        <p className="text-sm sm:text-xl font-display font-bold tabular-nums leading-tight text-[#16A34A]">
                           {formatCurrency(stats?.completedIncome || 0)}
                         </p>
                       </div>
@@ -1466,7 +1466,7 @@ export default function Transactions() {
                     <div className="space-y-2">
                       <div>
                         <p className="text-[10px] text-muted-foreground/70 leading-none mb-1">Pagas</p>
-                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
+                        <p className="text-sm sm:text-xl font-display font-bold tabular-nums leading-tight text-[#DC2626]">
                           {formatCurrency(stats?.completedExpenseWithFatura || 0)}
                         </p>
                       </div>

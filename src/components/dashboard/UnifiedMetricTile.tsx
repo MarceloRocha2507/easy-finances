@@ -59,7 +59,7 @@ export function UnifiedMetricTile({
   return (
     <div
       className={cn(
-        "relative p-4 sm:p-5 transition-all duration-200",
+        "relative p-2.5 sm:p-5 transition-all duration-200",
         getTileBg(),
         onClick && "cursor-pointer hover:brightness-[0.97] active:brightness-95",
         className
