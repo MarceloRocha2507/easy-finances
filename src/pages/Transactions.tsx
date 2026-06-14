@@ -1402,17 +1402,16 @@ export default function Transactions() {
               <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
-                  value={(stats?.completedIncome || 0) + (stats?.pendingIncome || 0)}
+                  value={stats?.completedIncome || 0}
                   icon={TrendingUp}
                   subInfo={
-                    <>
-                      {formatCurrency(stats?.completedIncome || 0)} recebidas
-                      {(stats?.pendingIncome || 0) > 0 && (
-                        <span className="text-[#D97706] ml-1">
-                          · {formatCurrency(stats?.pendingIncome || 0)} a receber
-                        </span>
-                      )}
-                    </>
+                    (stats?.pendingIncome || 0) > 0 ? (
+                      <span className="text-[#D97706]">
+                        + {formatCurrency(stats?.pendingIncome || 0)} a receber
+                      </span>
+                    ) : (
+                      'recebidas'
+                    )
                   }
                   valueColor="income"
                   isLoading={isStatsFetching}
