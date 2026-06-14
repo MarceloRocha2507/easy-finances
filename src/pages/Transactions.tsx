@@ -1389,14 +1389,14 @@ export default function Transactions() {
                   value={stats?.realBalance || 0}
                   icon={Scale}
                   valueContent={
-                    <div className="grid grid-cols-1 gap-2 min-w-0 sm:grid-cols-2 sm:gap-3">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 min-w-0">
                       <div className="min-w-0">
                         <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
                           Saldo Real
                         </p>
                         <p className={cn(
-                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-words",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.realBalance || 0) >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.realBalance || 0)}
@@ -1408,7 +1408,7 @@ export default function Transactions() {
                           Estimado
                         </p>
                         <p className={cn(
-                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-words",
+                          "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.estimatedBalance || 0)}
@@ -1447,9 +1447,9 @@ export default function Transactions() {
                           {formatCurrency(stats?.completedIncome || 0)}
                         </p>
                       </div>
-                      <div className="flex flex-col items-start gap-1.5 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5 min-w-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                      <div className="flex items-baseline justify-between gap-2 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5 min-w-0">
                         <span className="text-[10px] text-muted-foreground/70 shrink-0">A receber</span>
-                        <span className="text-[12px] sm:text-[13px] font-display font-semibold tabular-nums text-[#D97706] break-words self-stretch text-left sm:self-auto sm:text-right">
+                        <span className="text-[12px] sm:text-[13px] font-display font-semibold tabular-nums text-[#D97706] truncate">
                           {formatCurrency(stats?.pendingIncome || 0)}
                         </span>
                       </div>
@@ -1470,9 +1470,9 @@ export default function Transactions() {
                           {formatCurrency(stats?.completedExpenseWithFatura || 0)}
                         </p>
                       </div>
-                      <div className="flex flex-col items-start gap-1.5 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5 min-w-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                      <div className="flex items-baseline justify-between gap-2 pt-1.5 border-t border-[#E5E7EB] dark:border-white/5 min-w-0">
                         <span className="text-[10px] text-muted-foreground/70 shrink-0">A pagar</span>
-                        <span className="text-[12px] sm:text-[13px] font-display font-semibold tabular-nums text-[#D97706] break-words self-stretch text-left sm:self-auto sm:text-right">
+                        <span className="text-[12px] sm:text-[13px] font-display font-semibold tabular-nums text-[#D97706] truncate">
                           {formatCurrency(stats?.pendingExpense || 0)}
                         </span>
                       </div>

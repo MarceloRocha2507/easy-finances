@@ -59,7 +59,7 @@ export function UnifiedMetricTile({
   return (
     <div
       className={cn(
-        "relative min-w-0 p-4 sm:p-5 transition-all duration-200",
+        "relative p-4 sm:p-5 transition-all duration-200",
         getTileBg(),
         onClick && "cursor-pointer hover:brightness-[0.97] active:brightness-95",
         className
@@ -77,7 +77,7 @@ export function UnifiedMetricTile({
         <Skeleton className="h-7 w-24 bg-gray-200/60 dark:bg-gray-700/40 mb-1.5" />
       ) : (
         valueContent ?? (
-          <p className={cn("min-w-0 break-words text-[clamp(1.125rem,5vw,1.5rem)] sm:text-2xl font-display font-bold tabular-nums leading-tight", getValueColor())}>
+          <p className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums leading-tight", getValueColor())}>
             {prefix}{displayValue}
           </p>
         )
