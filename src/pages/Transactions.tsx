@@ -1334,7 +1334,7 @@ export default function Transactions() {
           </div>
 
           {/* Dois painéis agrupados: Visão Geral + Este Mês */}
-          <AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+          <AnimatedSection delay={0.1} className="grid grid-cols-1 lg:grid-cols-5 gap-3 items-start">
             {/* PAINEL 1 — Visão Geral (2/5) */}
             <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-white/5 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
               <div className="px-5 pt-4 pb-2">
