@@ -1399,7 +1399,7 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 divide-x divide-y sm:divide-y-0 divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}
