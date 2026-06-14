@@ -9,6 +9,7 @@ interface UnifiedMetricTileProps {
   value: number;
   icon: LucideIcon;
   prefix?: string;
+  valueContent?: ReactNode;
   subInfo?: ReactNode;
   onClick?: () => void;
   isLoading?: boolean;
@@ -22,6 +23,7 @@ export function UnifiedMetricTile({
   value,
   icon: Icon,
   prefix,
+  valueContent,
   subInfo,
   onClick,
   isLoading,
@@ -65,9 +67,11 @@ export function UnifiedMetricTile({
       {isLoading ? (
         <Skeleton className="h-7 w-24 bg-gray-200/60 dark:bg-gray-700/40 mb-1.5" />
       ) : (
-        <p className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums leading-tight", getValueColor())}>
-          {prefix}{displayValue}
-        </p>
+        valueContent ?? (
+          <p className={cn("text-xl sm:text-2xl font-display font-bold tabular-nums leading-tight", getValueColor())}>
+            {prefix}{displayValue}
+          </p>
+        )
       )}
 
       {isLoading ? (
