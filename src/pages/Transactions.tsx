@@ -1368,22 +1368,36 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-[#111827]" />
 
-              {/* Saldo Real + Total Estimado lado a lado */}
-              <div className="grid grid-cols-2 divide-x divide-[#E5E7EB] dark:divide-[#111827] flex-1">
+              {/* Saldo Real + Total Estimado unificado */}
+              <div className="grid grid-cols-1 flex-1">
                 <UnifiedMetricTile
-                  title="Saldo Real"
+                  title="Saldos"
                   value={stats?.realBalance || 0}
                   icon={Scale}
-                  subInfo="clique para ajustar"
+                  valueContent={
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Saldo Real</p>
+                        <p className={cn(
+                          "text-lg sm:text-xl font-display font-bold tabular-nums leading-tight",
+                          (stats?.realBalance || 0) >= 0 ? "text-[#111827]" : "text-[#DC2626]"
+                        )}>
+                          {formatCurrency(stats?.realBalance || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Saldo Estimado</p>
+                        <p className={cn(
+                          "text-base sm:text-lg font-display font-bold tabular-nums leading-tight",
+                          (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
+                        )}>
+                          {formatCurrency(stats?.estimatedBalance || 0)}
+                        </p>
+                      </div>
+                    </div>
+                  }
+                  subInfo="clique para ajustar saldo real"
                   onClick={() => setAjustarSaldoOpen(true)}
-                  isLoading={isStatsFetching}
-                />
-                <UnifiedMetricTile
-                  title="Total Estimado"
-                  value={stats?.estimatedBalance || 0}
-                  icon={Wallet}
-                  subInfo="saldo previsto do mês (pendências)"
-                  valueColor={(stats?.estimatedBalance || 0) >= 0 ? "income" : "expense"}
                   isLoading={isStatsFetching}
                 />
               </div>
