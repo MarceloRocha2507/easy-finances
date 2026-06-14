@@ -1404,14 +1404,21 @@ export default function Transactions() {
                   title="Receitas"
                   value={stats?.completedIncome || 0}
                   icon={TrendingUp}
-                  subInfo={
-                    (stats?.pendingIncome || 0) > 0 ? (
-                      <span className="text-[#D97706]">
-                        + {formatCurrency(stats?.pendingIncome || 0)} a receber
-                      </span>
-                    ) : (
-                      'recebidas'
-                    )
+                  valueContent={
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">Recebidas</p>
+                        <p className="text-lg sm:text-xl font-display font-bold tabular-nums leading-tight text-[#16A34A]">
+                          {formatCurrency(stats?.completedIncome || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-none">A receber</p>
+                        <p className="text-base sm:text-lg font-display font-bold tabular-nums leading-tight text-[#D97706]">
+                          {formatCurrency(stats?.pendingIncome || 0)}
+                        </p>
+                      </div>
+                    </div>
                   }
                   valueColor="income"
                   isLoading={isStatsFetching}
