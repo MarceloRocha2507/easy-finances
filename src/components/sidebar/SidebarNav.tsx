@@ -139,16 +139,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         onItemClick={onItemClick}
       />
 
-      <MenuCollapsible
-        icon={cartoesMenu.icon}
-        label={cartoesMenu.label}
-        subItems={cartoesMenu.subItems}
-        basePath="/cartoes"
-        excludePaths={["/cartoes/bancos", "/cartoes/auditoria"]}
-        open={openMenus.cartoes}
-        onOpenChange={handleMenuChange("cartoes")}
-        onItemClick={onItemClick}
-      />
+
+
 
 
       {isAdmin && (
