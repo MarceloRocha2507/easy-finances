@@ -38,13 +38,8 @@ const transacoesMenu = {
   ],
 };
 
-const cartoesMenu = {
-  icon: CreditCard,
-  label: "Cartões",
-  subItems: [
-    { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-  ],
-};
+
+
 
 
 interface SidebarNavProps {
