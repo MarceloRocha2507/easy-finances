@@ -17,12 +17,14 @@ import {
   Sparkles,
   StickyNote,
   Wrench,
+  BarChart3,
 } from "lucide-react";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: CalendarDays, label: "Calendário", href: "/calendario" },
   { icon: CreditCard, label: "Cartões", href: "/cartoes" },
+  { icon: BarChart3, label: "Relatórios", href: "/relatorios" },
   { icon: Wrench, label: "Utilitários", href: "/utilitarios" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
