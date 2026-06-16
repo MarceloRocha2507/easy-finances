@@ -345,6 +345,17 @@ const App = () => (
             />
 
             <Route
+              path="/relatorios"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <RelatoriosPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/admin"
               element={
                 <AdminRoute>
