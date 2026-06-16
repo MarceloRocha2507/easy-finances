@@ -22,10 +22,12 @@ import {
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: CalendarDays, label: "Calendário", href: "/calendario" },
+  { icon: CreditCard, label: "Cartões", href: "/cartoes" },
   { icon: Wrench, label: "Utilitários", href: "/utilitarios" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
+
 
 const transacoesMenu = {
   icon: ArrowLeftRight,
