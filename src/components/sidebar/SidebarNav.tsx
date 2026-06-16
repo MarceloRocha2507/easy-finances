@@ -22,10 +22,12 @@ import {
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: CalendarDays, label: "Calendário", href: "/calendario" },
+  { icon: CreditCard, label: "Cartões", href: "/cartoes" },
   { icon: Wrench, label: "Utilitários", href: "/utilitarios" },
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
+
 
 const transacoesMenu = {
   icon: ArrowLeftRight,
@@ -36,13 +38,8 @@ const transacoesMenu = {
   ],
 };
 
-const cartoesMenu = {
-  icon: CreditCard,
-  label: "Cartões",
-  subItems: [
-    { icon: CreditCard, label: "Visão Geral", href: "/cartoes" },
-  ],
-};
+
+
 
 
 interface SidebarNavProps {
@@ -142,16 +139,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         onItemClick={onItemClick}
       />
 
-      <MenuCollapsible
-        icon={cartoesMenu.icon}
-        label={cartoesMenu.label}
-        subItems={cartoesMenu.subItems}
-        basePath="/cartoes"
-        excludePaths={["/cartoes/bancos", "/cartoes/auditoria"]}
-        open={openMenus.cartoes}
-        onOpenChange={handleMenuChange("cartoes")}
-        onItemClick={onItemClick}
-      />
+
+
 
 
       {isAdmin && (
