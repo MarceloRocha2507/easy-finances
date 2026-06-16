@@ -59,6 +59,7 @@ const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCom
 const CalendarioPage = lazy(() => import("./pages/Calendario"));
 const AnotacoesPage = lazy(() => import("./pages/Anotacoes"));
 const UtilitariosPage = lazy(() => import("./pages/Utilitarios"));
+const RelatoriosPage = lazy(() => import("./pages/Relatorios"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
