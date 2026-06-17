@@ -6,6 +6,7 @@ import { Category } from './useCategories';
 import { findMatchingCategory } from '@/services/category-rules';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { parseISO } from 'date-fns';
+import { pushMonitorHubEvent } from '@/lib/monitorhub';
 
 // Helper to send Telegram notification after transaction creation
 async function enviarNotificacaoTelegram(params: {
@@ -521,6 +522,13 @@ export function useCreateTransaction() {
           date: data.date,
         });
       }
+
+      // MonitorHub: evento de nova transação + refresh do saldo (fire-and-forget)
+      pushMonitorHubEvent("transacao_criada", Number(data.amount) || 0, {
+        type: data.type,
+        description: data.description,
+        date: data.date,
+      });
     },
     onError: () => {
       toast({
