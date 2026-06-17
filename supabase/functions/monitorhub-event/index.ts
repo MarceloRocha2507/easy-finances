@@ -3,7 +3,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { enviarEvento, enviarMetrica } from "../_shared/monitorhub.ts";
+import { enviarEvento } from "../_shared/monitorhub.ts";
 
 interface EventBody {
   event: "transacao_criada" | "fatura_paga";
