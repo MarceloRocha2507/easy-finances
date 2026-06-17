@@ -12,7 +12,7 @@ export function pushMonitorHubEvent(
   // Não aguardamos a promise — disparo assíncrono.
   void supabase.functions
     .invoke("monitorhub-event", {
-      body: { event, value, payload, refreshSaldo: true },
+      body: { event, value, payload },
     })
     .catch((err) => {
       console.warn("[monitorhub] push falhou:", err);
