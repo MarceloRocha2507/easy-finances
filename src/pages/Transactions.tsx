@@ -1414,7 +1414,7 @@ export default function Transactions() {
                           {formatCurrency(stats?.estimatedBalance || 0)}
                         </p>
                         <p className="text-[10px] text-muted-foreground/70 leading-none mt-1.5">
-                          c/ saldo real:{" "}
+                          previsão {format(dataFinal || endOfMonth(new Date()), "dd/MM", { locale: ptBR })}:{" "}
                           <span className={cn(
                             "font-semibold tabular-nums",
                             ((stats?.realBalance || 0) + (stats?.estimatedBalance || 0)) >= 0
