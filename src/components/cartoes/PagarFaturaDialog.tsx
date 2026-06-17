@@ -22,6 +22,7 @@ import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { pushMonitorHubEvent } from "@/lib/monitorhub";
 
 interface Props {
   cartao: Cartao;
