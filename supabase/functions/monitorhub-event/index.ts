@@ -9,8 +9,6 @@ interface EventBody {
   event: "transacao_criada" | "fatura_paga";
   value?: number;
   payload?: Record<string, unknown>;
-  // Se true, também recomputa e envia a métrica "saldo" do usuário.
-  refreshSaldo?: boolean;
 }
 
 function isValidBody(b: unknown): b is EventBody {
