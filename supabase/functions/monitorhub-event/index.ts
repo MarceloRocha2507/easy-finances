@@ -59,11 +59,6 @@ Deno.serve(async (req) => {
       ...(body.payload ?? {}),
     });
 
-    // Para eventos financeiros, atualiza também a métrica de saldo do usuário.
-    if (body.refreshSaldo !== false) {
-      const saldo = await computarSaldoUsuario(supabase, userRes.user.id);
-      await enviarMetrica(`saldo_${userRes.user.id}`, saldo, "BRL");
-    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
