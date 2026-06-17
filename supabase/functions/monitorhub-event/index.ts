@@ -3,14 +3,12 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { enviarEvento, enviarMetrica } from "../_shared/monitorhub.ts";
+import { enviarEvento } from "../_shared/monitorhub.ts";
 
 interface EventBody {
   event: "transacao_criada" | "fatura_paga";
   value?: number;
   payload?: Record<string, unknown>;
-  // Se true, também recomputa e envia a métrica "saldo" do usuário.
-  refreshSaldo?: boolean;
 }
 
 function isValidBody(b: unknown): b is EventBody {
@@ -19,24 +17,6 @@ function isValidBody(b: unknown): b is EventBody {
   return e === "transacao_criada" || e === "fatura_paga";
 }
 
-async function computarSaldoUsuario(
-  supabase: ReturnType<typeof createClient>,
-  userId: string
-): Promise<number> {
-  const { data, error } = await supabase
-    .from("bancos")
-    .select("saldo_atual")
-    .eq("user_id", userId)
-    .eq("ativo", true);
-  if (error) {
-    console.error("[monitorhub-event] erro saldo:", error.message);
-    return 0;
-  }
-  return (data ?? []).reduce(
-    (s: number, b: { saldo_atual: number | null }) => s + (Number(b.saldo_atual) || 0),
-    0
-  );
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -79,11 +59,6 @@ Deno.serve(async (req) => {
       ...(body.payload ?? {}),
     });
 
-    // Para eventos financeiros, atualiza também a métrica de saldo do usuário.
-    if (body.refreshSaldo !== false) {
-      const saldo = await computarSaldoUsuario(supabase, userRes.user.id);
-      await enviarMetrica(`saldo_${userRes.user.id}`, saldo, "BRL");
-    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
