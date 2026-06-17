@@ -6,6 +6,7 @@ import { Category } from './useCategories';
 import { findMatchingCategory } from '@/services/category-rules';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { parseISO } from 'date-fns';
+import { pushMonitorHubEvent } from '@/lib/monitorhub';
 
 // Helper to send Telegram notification after transaction creation
 async function enviarNotificacaoTelegram(params: {
