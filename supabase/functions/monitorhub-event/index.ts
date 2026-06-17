@@ -17,24 +17,6 @@ function isValidBody(b: unknown): b is EventBody {
   return e === "transacao_criada" || e === "fatura_paga";
 }
 
-async function computarSaldoUsuario(
-  supabase: ReturnType<typeof createClient>,
-  userId: string
-): Promise<number> {
-  const { data, error } = await supabase
-    .from("bancos")
-    .select("saldo_atual")
-    .eq("user_id", userId)
-    .eq("ativo", true);
-  if (error) {
-    console.error("[monitorhub-event] erro saldo:", error.message);
-    return 0;
-  }
-  return (data ?? []).reduce(
-    (s: number, b: { saldo_atual: number | null }) => s + (Number(b.saldo_atual) || 0),
-    0
-  );
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
