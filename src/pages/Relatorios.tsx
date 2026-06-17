@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +6,9 @@ import { useCategories } from "@/hooks/useCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/formatters";
 import { BarChart3, CreditCard, Wallet, Loader2 } from "lucide-react";
+import { FiltroPeriodo } from "@/components/dashboard/FiltroPeriodo";
+import { useMesesComMovimentacao } from "@/hooks/useMesesComMovimentacao";
+import { startOfMonth, endOfMonth, format } from "date-fns";
 
 interface CategoryRow {
   id: string;
@@ -19,9 +22,17 @@ interface CategoryRow {
 export default function Relatorios() {
   const { user } = useAuth();
   const { data: categories = [] } = useCategories();
+  const { data: mesesDisponiveis } = useMesesComMovimentacao();
+
+  const hoje = new Date();
+  const [mesAtual, setMesAtual] = useState<Date>(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+
+  const inicio = format(startOfMonth(mesAtual), "yyyy-MM-dd");
+  const fim = format(endOfMonth(mesAtual), "yyyy-MM-dd");
+  const mesRef = format(startOfMonth(mesAtual), "yyyy-MM-dd");
 
   const { data: txExpenses = [], isLoading: loadingTx } = useQuery({
-    queryKey: ["relatorios", "transactions", user?.id],
+    queryKey: ["relatorios", "transactions", user?.id, inicio, fim],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")
@@ -29,6 +40,8 @@ export default function Relatorios() {
         .eq("user_id", user!.id)
         .eq("type", "expense")
         .eq("desconsiderada", false)
+        .gte("date", inicio)
+        .lt("date", format(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1), "yyyy-MM-dd"))
         .limit(10000);
       if (error) throw error;
       return data ?? [];
@@ -37,13 +50,15 @@ export default function Relatorios() {
   });
 
   const { data: cardExpenses = [], isLoading: loadingCard } = useQuery({
-    queryKey: ["relatorios", "compras-cartao", user?.id],
+    queryKey: ["relatorios", "compras-cartao", user?.id, mesRef],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("compras_cartao")
-        .select("categoria_id, valor_total")
-        .eq("user_id", user!.id)
+        .from("parcelas_cartao")
+        .select("valor, compra_id, compras_cartao!inner(categoria_id, user_id, ativo)")
+        .eq("compras_cartao.user_id", user!.id)
+        .eq("compras_cartao.ativo", true)
         .eq("ativo", true)
+        .eq("mes_referencia", mesRef)
         .limit(10000);
       if (error) throw error;
       return data ?? [];
@@ -73,10 +88,11 @@ export default function Relatorios() {
       const row = getOrInit(t.category_id);
       row.totalNormal += Number(t.amount) || 0;
     }
-    for (const c of cardExpenses) {
-      if (!c.categoria_id) continue;
-      const row = getOrInit(c.categoria_id);
-      row.totalCartao += Number(c.valor_total) || 0;
+    for (const p of cardExpenses as any[]) {
+      const catId = p.compras_cartao?.categoria_id;
+      if (!catId) continue;
+      const row = getOrInit(catId);
+      row.totalCartao += Number(p.valor) || 0;
     }
 
     return Array.from(map.values())
@@ -93,14 +109,21 @@ export default function Relatorios() {
   return (
     <Layout>
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center">
-            <BarChart3 className="h-5 w-5 text-[#374151]" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center">
+              <BarChart3 className="h-5 w-5 text-[#374151]" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">Relatórios</h1>
+              <p className="text-sm text-[#6B7280]">Gastos por categoria — transações e cartões</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">Relatórios</h1>
-            <p className="text-sm text-[#6B7280]">Gastos por categoria — transações e cartões</p>
-          </div>
+          <FiltroPeriodo
+            mesAtual={mesAtual}
+            onMesChange={setMesAtual}
+            mesesDisponiveis={mesesDisponiveis}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
