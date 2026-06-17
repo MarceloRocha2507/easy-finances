@@ -1413,6 +1413,17 @@ export default function Transactions() {
                         )}>
                           {formatCurrency(stats?.estimatedBalance || 0)}
                         </p>
+                        <p className="text-[10px] text-muted-foreground/70 leading-none mt-1.5">
+                          c/ saldo real:{" "}
+                          <span className={cn(
+                            "font-semibold tabular-nums",
+                            ((stats?.realBalance || 0) + (stats?.estimatedBalance || 0)) >= 0
+                              ? "text-[#16A34A]"
+                              : "text-[#DC2626]"
+                          )}>
+                            {formatCurrency((stats?.realBalance || 0) + (stats?.estimatedBalance || 0))}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   }
