@@ -522,6 +522,13 @@ export function useCreateTransaction() {
           date: data.date,
         });
       }
+
+      // MonitorHub: evento de nova transação + refresh do saldo (fire-and-forget)
+      pushMonitorHubEvent("transacao_criada", Number(data.amount) || 0, {
+        type: data.type,
+        description: data.description,
+        date: data.date,
+      });
     },
     onError: () => {
       toast({
