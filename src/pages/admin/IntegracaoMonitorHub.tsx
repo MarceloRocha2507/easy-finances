@@ -62,8 +62,14 @@ export default function IntegracaoMonitorHubPage() {
   async function save() {
     if (!config) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("monitorhub_config" as never)
+    const { error } = await (supabase as unknown as {
+      from: (t: string) => {
+        update: (v: Record<string, unknown>) => {
+          eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
+        };
+      };
+    })
+      .from("monitorhub_config")
       .update({
         enabled: config.enabled,
         hub_url: config.hub_url,
