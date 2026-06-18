@@ -260,10 +260,15 @@ export default function Admin() {
             <h1 className="text-xl font-semibold text-foreground">Painel Admin</h1>
             <p className="text-muted-foreground mt-1">Gerencie os usuários do sistema</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Novo Usuário</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <a href="/admin/integracao-monitorhub"><Shield className="h-4 w-4 mr-2" />MonitorHub</a>
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4 mr-2" />Novo Usuário</Button>
+              </DialogTrigger>
+
             <DialogContent>
               <DialogHeader><DialogTitle>Criar Novo Usuário</DialogTitle></DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 mt-4">
@@ -299,7 +304,9 @@ export default function Admin() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
+
         </div>
 
         {/* Stats Row */}
