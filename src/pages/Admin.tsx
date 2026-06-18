@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
+import { Link } from "react-router-dom";
+
 import { useAdmin, AdminUser, TipoPlano } from "@/hooks/useAdmin";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
