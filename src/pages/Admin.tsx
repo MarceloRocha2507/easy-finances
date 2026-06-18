@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
+import { Link } from "react-router-dom";
+
 import { useAdmin, AdminUser, TipoPlano } from "@/hooks/useAdmin";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -262,7 +264,9 @@ export default function Admin() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <a href="/admin/integracao-monitorhub"><Shield className="h-4 w-4 mr-2" />MonitorHub</a>
+              <Link to="/admin/integracao-monitorhub"><Shield className="h-4 w-4 mr-2" />MonitorHub</Link>
+
+
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
