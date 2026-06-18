@@ -60,6 +60,7 @@ const CalendarioPage = lazy(() => import("./pages/Calendario"));
 const AnotacoesPage = lazy(() => import("./pages/Anotacoes"));
 const UtilitariosPage = lazy(() => import("./pages/Utilitarios"));
 const RelatoriosPage = lazy(() => import("./pages/Relatorios"));
+const IntegracaoMonitorHubPage = lazy(() => import("./pages/admin/IntegracaoMonitorHub"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -360,6 +361,17 @@ const App = () => (
               element={
                 <AdminRoute>
                   <Admin />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/integracao-monitorhub"
+              element={
+                <AdminRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <IntegracaoMonitorHubPage />
+                  </Suspense>
                 </AdminRoute>
               }
             />
