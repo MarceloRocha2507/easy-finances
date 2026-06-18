@@ -304,7 +304,9 @@ export default function Admin() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
+
         </div>
 
         {/* Stats Row */}
