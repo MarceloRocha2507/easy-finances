@@ -685,6 +685,78 @@ export type Database = {
         }
         Relationships: []
       }
+      monitorhub_config: {
+        Row: {
+          enabled: boolean
+          hub_url: string
+          id: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
+          owner_user_id: string | null
+          send_events: boolean
+          send_saldo: boolean
+          send_total_a_pagar: boolean
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hub_url?: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          owner_user_id?: string | null
+          send_events?: boolean
+          send_saldo?: boolean
+          send_total_a_pagar?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hub_url?: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          owner_user_id?: string | null
+          send_events?: boolean
+          send_saldo?: boolean
+          send_total_a_pagar?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monitorhub_log: {
+        Row: {
+          created_at: string
+          detail: string | null
+          error: string | null
+          id: string
+          kind: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          error?: string | null
+          id?: string
+          kind: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          error?: string | null
+          id?: string
+          kind?: string
+          status?: string
+        }
+        Relationships: []
+      }
       movimentacoes_investimento: {
         Row: {
           created_at: string
