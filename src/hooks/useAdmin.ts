@@ -54,6 +54,7 @@ export function useAdmin() {
 
   useEffect(() => {
     async function checkAdminRole() {
+      setIsCheckingRole(true);
       if (!user) { setIsAdmin(false); setIsCheckingRole(false); return; }
       try {
         const { data, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
@@ -68,6 +69,7 @@ export function useAdmin() {
     }
     checkAdminRole();
   }, [user]);
+
 
   async function callAdminFunction(body: Record<string, unknown>) {
     const { data: { session } } = await supabase.auth.getSession();
