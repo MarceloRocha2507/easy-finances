@@ -264,7 +264,9 @@ export default function Admin() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <a href="/admin/integracao-monitorhub"><Shield className="h-4 w-4 mr-2" />MonitorHub</a>
+              <a></a>
+              <Link to="/admin/integracao-monitorhub"><Shield className="h-4 w-4 mr-2" />MonitorHub</Link>
+
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
