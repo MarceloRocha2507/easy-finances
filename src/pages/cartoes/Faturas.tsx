@@ -12,11 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Receipt, CheckCircle2, Clock, CreditCard } from "lucide-react";
+import { ChevronLeft, ChevronRight, Receipt, CheckCircle2, Clock, CreditCard, Download } from "lucide-react";
 import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import type { Cartao } from "@/services/cartoes";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 function monthLabel(d: Date) {
   return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
