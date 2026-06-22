@@ -285,15 +285,30 @@ export default function Faturas() {
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right flex flex-col items-end gap-1">
                         <p className="font-semibold text-lg">
                           {formatCurrency(cartao.faturaAtual)}
                         </p>
-                        {isAlto && (
-                          <Badge variant="destructive" className="text-xs">
-                            Uso alto
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isAlto && (
+                            <Badge variant="destructive" className="text-xs">
+                              Uso alto
+                            </Badge>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              exportarFaturaNubank(cartao, mesRef);
+                            }}
+                            title="Exportar fatura no padrão Nubank (CSV)"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Exportar CSV
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
