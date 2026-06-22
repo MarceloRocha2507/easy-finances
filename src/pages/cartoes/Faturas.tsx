@@ -31,6 +31,81 @@ function addMonths(base: Date, delta: number) {
   return d;
 }
 
+function formatAmountBR(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value));
+}
+
+function csvEscape(s: string): string {
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+async function exportarFaturaNubank(cartao: Cartao, mesRef: Date) {
+  try {
+    const mesRefStr = format(new Date(mesRef.getFullYear(), mesRef.getMonth(), 1), "yyyy-MM-dd");
+    const { data, error } = await supabase
+      .from("parcelas_cartao")
+      .select(
+        "valor, numero_parcela, total_parcelas, mes_referencia, compras_cartao!inner(cartao_id, descricao, nome_fatura, data_compra, ativo, compra_estornada_id, tipo_lancamento)"
+      )
+      .eq("ativo", true)
+      .eq("mes_referencia", mesRefStr)
+      .eq("compras_cartao.cartao_id", cartao.id)
+      .eq("compras_cartao.ativo", true)
+      .limit(10000);
+
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      toast.info("Nenhum lançamento nessa fatura para exportar.");
+      return;
+    }
+
+    const linhas = data
+      .map((p: any) => {
+        const compra = p.compras_cartao;
+        const baseNome = (compra?.nome_fatura || compra?.descricao || "Lançamento").trim();
+        const sufixo =
+          p.total_parcelas && p.total_parcelas > 1
+            ? ` - ${p.numero_parcela}/${p.total_parcelas}`
+            : "";
+        const title = `${baseNome}${sufixo}`;
+        const isCredito =
+          !!compra?.compra_estornada_id ||
+          /estorno|crédito|credito|pagamento recebido/i.test(baseNome);
+        const valor = Number(p.valor) || 0;
+        const amount = isCredito ? -valor : valor;
+        const date: string = compra?.data_compra || p.mes_referencia;
+        return { date, title, amount };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    const header = "date,title,amount";
+    const linhasCsv = linhas.map((l) => {
+      const valorStr = l.amount < 0 ? `- ${formatAmountBR(l.amount)}` : formatAmountBR(l.amount);
+      return `${l.date},${csvEscape(l.title)},${csvEscape(valorStr)}`;
+    });
+    const csv = [header, ...linhasCsv].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const mesLabel = format(mesRef, "yyyy-MM");
+    a.href = url;
+    a.download = `nubank-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Fatura exportada no padrão Nubank.");
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Falha ao exportar fatura.", { description: e?.message });
+  }
+}
+
 export default function Faturas() {
   const [mesRef, setMesRef] = useState(() => {
     const now = new Date();
