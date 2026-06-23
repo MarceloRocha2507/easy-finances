@@ -374,19 +374,38 @@ export default function Faturas() {
                               Uso alto
                             </Badge>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              exportarFaturaNubank(cartao, mesRef);
-                            }}
-                            title="Exportar fatura no padrão Nubank (CSV)"
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Exportar CSV
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                                title="Exportar fatura em CSV"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Exportar CSV
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  exportarFaturaNubank(cartao, mesRef);
+                                }}
+                              >
+                                Padrão Nubank
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  exportarFaturaInter(cartao, mesRef);
+                                }}
+                              >
+                                Padrão Inter
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </div>
