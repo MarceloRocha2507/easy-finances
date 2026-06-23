@@ -18,7 +18,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
+
 import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
