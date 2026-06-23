@@ -18,7 +18,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
+
 import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
@@ -49,12 +54,12 @@ function csvEscape(s: string): string {
   return s;
 }
 
-async function buscarLancamentosFatura(cartaoId: string, mesRef: Date) {
+async function buscarLancamentosFatura(cartaoId: string, mesRef: Date, apenasTitular = false) {
   const mesRefStr = format(new Date(mesRef.getFullYear(), mesRef.getMonth(), 1), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("parcelas_cartao")
     .select(
-      "valor, numero_parcela, total_parcelas, mes_referencia, compras_cartao!inner(cartao_id, descricao, nome_fatura, data_compra, ativo, compra_estornada_id, tipo_lancamento)"
+      "valor, numero_parcela, total_parcelas, mes_referencia, compras_cartao!inner(cartao_id, descricao, nome_fatura, data_compra, ativo, compra_estornada_id, tipo_lancamento, responsavel:responsaveis(is_titular))"
     )
     .eq("ativo", true)
     .eq("mes_referencia", mesRefStr)
@@ -62,23 +67,30 @@ async function buscarLancamentosFatura(cartaoId: string, mesRef: Date) {
     .eq("compras_cartao.ativo", true)
     .limit(10000);
   if (error) throw error;
-  return (data || []).map((p: any) => {
-    const compra = p.compras_cartao;
-    const baseNome = (compra?.nome_fatura || compra?.descricao || "Lançamento").trim();
-    const sufixo =
-      p.total_parcelas && p.total_parcelas > 1
-        ? ` - ${p.numero_parcela}/${p.total_parcelas}`
-        : "";
-    const title = `${baseNome}${sufixo}`;
-    const isCredito =
-      !!compra?.compra_estornada_id ||
-      /estorno|crédito|credito|pagamento recebido/i.test(baseNome);
-    const valor = Number(p.valor) || 0;
-    const amount = isCredito ? -valor : valor;
-    const date: string = compra?.data_compra || p.mes_referencia;
-    return { date, title, amount };
-  });
+  return (data || [])
+    .filter((p: any) => {
+      if (!apenasTitular) return true;
+      const resp = p.compras_cartao?.responsavel;
+      return resp === null || resp === undefined || resp?.is_titular === true;
+    })
+    .map((p: any) => {
+      const compra = p.compras_cartao;
+      const baseNome = (compra?.nome_fatura || compra?.descricao || "Lançamento").trim();
+      const sufixo =
+        p.total_parcelas && p.total_parcelas > 1
+          ? ` - ${p.numero_parcela}/${p.total_parcelas}`
+          : "";
+      const title = `${baseNome}${sufixo}`;
+      const isCredito =
+        !!compra?.compra_estornada_id ||
+        /estorno|crédito|credito|pagamento recebido/i.test(baseNome);
+      const valor = Number(p.valor) || 0;
+      const amount = isCredito ? -valor : valor;
+      const date: string = compra?.data_compra || p.mes_referencia;
+      return { date, title, amount };
+    });
 }
+
 
 function baixarArquivo(conteudo: string, nome: string, mime = "text/csv;charset=utf-8;") {
   const blob = new Blob([conteudo], { type: mime });
@@ -92,9 +104,9 @@ function baixarArquivo(conteudo: string, nome: string, mime = "text/csv;charset=
   URL.revokeObjectURL(url);
 }
 
-async function exportarFaturaInter(cartao: Cartao, mesRef: Date) {
+async function exportarFaturaInter(cartao: Cartao, mesRef: Date, apenasTitular = false) {
   try {
-    const lancamentos = (await buscarLancamentosFatura(cartao.id, mesRef)).sort((a, b) =>
+    const lancamentos = (await buscarLancamentosFatura(cartao.id, mesRef, apenasTitular)).sort((a, b) =>
       a.date.localeCompare(b.date)
     );
     if (lancamentos.length === 0) {
@@ -111,79 +123,47 @@ async function exportarFaturaInter(cartao: Cartao, mesRef: Date) {
     });
     const csv = [header, ...linhas].join("\n");
     const mesLabel = format(mesRef, "yyyy-MM");
+    const sufixoArquivo = apenasTitular ? "-titular" : "";
     baixarArquivo(
       csv,
-      `inter-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}.csv`
+      `inter-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}${sufixoArquivo}.csv`
     );
-    toast.success("Fatura exportada no padrão Inter.");
+    toast.success(`Fatura exportada no padrão Inter${apenasTitular ? " (somente titular)" : ""}.`);
   } catch (e: any) {
     console.error(e);
     toast.error("Falha ao exportar fatura.", { description: e?.message });
   }
 }
 
-async function exportarFaturaNubank(cartao: Cartao, mesRef: Date) {
+async function exportarFaturaNubank(cartao: Cartao, mesRef: Date, apenasTitular = false) {
   try {
-    const mesRefStr = format(new Date(mesRef.getFullYear(), mesRef.getMonth(), 1), "yyyy-MM-dd");
-    const { data, error } = await supabase
-      .from("parcelas_cartao")
-      .select(
-        "valor, numero_parcela, total_parcelas, mes_referencia, compras_cartao!inner(cartao_id, descricao, nome_fatura, data_compra, ativo, compra_estornada_id, tipo_lancamento)"
-      )
-      .eq("ativo", true)
-      .eq("mes_referencia", mesRefStr)
-      .eq("compras_cartao.cartao_id", cartao.id)
-      .eq("compras_cartao.ativo", true)
-      .limit(10000);
-
-    if (error) throw error;
-    if (!data || data.length === 0) {
+    const lancamentos = (await buscarLancamentosFatura(cartao.id, mesRef, apenasTitular)).sort((a, b) =>
+      b.date.localeCompare(a.date)
+    );
+    if (lancamentos.length === 0) {
       toast.info("Nenhum lançamento nessa fatura para exportar.");
       return;
     }
 
-    const linhas = data
-      .map((p: any) => {
-        const compra = p.compras_cartao;
-        const baseNome = (compra?.nome_fatura || compra?.descricao || "Lançamento").trim();
-        const sufixo =
-          p.total_parcelas && p.total_parcelas > 1
-            ? ` - ${p.numero_parcela}/${p.total_parcelas}`
-            : "";
-        const title = `${baseNome}${sufixo}`;
-        const isCredito =
-          !!compra?.compra_estornada_id ||
-          /estorno|crédito|credito|pagamento recebido/i.test(baseNome);
-        const valor = Number(p.valor) || 0;
-        const amount = isCredito ? -valor : valor;
-        const date: string = compra?.data_compra || p.mes_referencia;
-        return { date, title, amount };
-      })
-      .sort((a, b) => b.date.localeCompare(a.date));
-
     const header = "date,title,amount";
-    const linhasCsv = linhas.map((l) => {
+    const linhasCsv = lancamentos.map((l) => {
       const valorStr = l.amount < 0 ? `- ${formatAmountBR(l.amount)}` : formatAmountBR(l.amount);
       return `${l.date},${csvEscape(l.title)},${csvEscape(valorStr)}`;
     });
     const csv = [header, ...linhasCsv].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
     const mesLabel = format(mesRef, "yyyy-MM");
-    a.href = url;
-    a.download = `nubank-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Fatura exportada no padrão Nubank.");
+    const sufixoArquivo = apenasTitular ? "-titular" : "";
+    baixarArquivo(
+      csv,
+      `nubank-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}${sufixoArquivo}.csv`
+    );
+    toast.success(`Fatura exportada no padrão Nubank${apenasTitular ? " (somente titular)" : ""}.`);
   } catch (e: any) {
     console.error(e);
     toast.error("Falha ao exportar fatura.", { description: e?.message });
   }
 }
+
 
 export default function Faturas() {
   const [mesRef, setMesRef] = useState(() => {
@@ -388,23 +368,54 @@ export default function Faturas() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  exportarFaturaNubank(cartao, mesRef);
-                                }}
-                              >
-                                Padrão Nubank
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  exportarFaturaInter(cartao, mesRef);
-                                }}
-                              >
-                                Padrão Inter
-                              </DropdownMenuItem>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>Padrão Nubank</DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaNubank(cartao, mesRef, false);
+                                      }}
+                                    >
+                                      Fatura completa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaNubank(cartao, mesRef, true);
+                                      }}
+                                    >
+                                      Somente titular (EU)
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                              </DropdownMenuSub>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>Padrão Inter</DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaInter(cartao, mesRef, false);
+                                      }}
+                                    >
+                                      Fatura completa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaInter(cartao, mesRef, true);
+                                      }}
+                                    >
+                                      Somente titular (EU)
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                              </DropdownMenuSub>
                             </DropdownMenuContent>
+
                           </DropdownMenu>
                         </div>
                       </div>
