@@ -30,7 +30,8 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
     let totalGeral = 0;
 
     parcelas.forEach((p) => {
-      const valor = Math.abs(p.valor);
+      // Mantém o sinal: parcelas negativas (adiantamentos/estornos) reduzem o total
+      const valor = p.valor;
       totalGeral += valor;
 
       const isTitular = p.is_titular === true || !p.responsavel_id;
@@ -51,6 +52,12 @@ export function ResumoPorResponsavel({ parcelas, acertos, className }: Props) {
 
       porResponsavel[respId].total += valor;
     });
+
+    // Garante que totais não fiquem negativos para o cálculo de percentual
+    Object.values(porResponsavel).forEach((item) => {
+      if (item.total < 0) item.total = 0;
+    });
+    if (totalGeral < 0) totalGeral = 0;
 
     // Verificar se a fatura foi paga (todas parcelas pagas)
     const faturaPaga = parcelas.length > 0 && parcelas.every((p) => p.paga);
