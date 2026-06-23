@@ -43,6 +43,79 @@ function csvEscape(s: string): string {
   return s;
 }
 
+async function buscarLancamentosFatura(cartaoId: string, mesRef: Date) {
+  const mesRefStr = format(new Date(mesRef.getFullYear(), mesRef.getMonth(), 1), "yyyy-MM-dd");
+  const { data, error } = await supabase
+    .from("parcelas_cartao")
+    .select(
+      "valor, numero_parcela, total_parcelas, mes_referencia, compras_cartao!inner(cartao_id, descricao, nome_fatura, data_compra, ativo, compra_estornada_id, tipo_lancamento)"
+    )
+    .eq("ativo", true)
+    .eq("mes_referencia", mesRefStr)
+    .eq("compras_cartao.cartao_id", cartaoId)
+    .eq("compras_cartao.ativo", true)
+    .limit(10000);
+  if (error) throw error;
+  return (data || []).map((p: any) => {
+    const compra = p.compras_cartao;
+    const baseNome = (compra?.nome_fatura || compra?.descricao || "Lançamento").trim();
+    const sufixo =
+      p.total_parcelas && p.total_parcelas > 1
+        ? ` - ${p.numero_parcela}/${p.total_parcelas}`
+        : "";
+    const title = `${baseNome}${sufixo}`;
+    const isCredito =
+      !!compra?.compra_estornada_id ||
+      /estorno|crédito|credito|pagamento recebido/i.test(baseNome);
+    const valor = Number(p.valor) || 0;
+    const amount = isCredito ? -valor : valor;
+    const date: string = compra?.data_compra || p.mes_referencia;
+    return { date, title, amount };
+  });
+}
+
+function baixarArquivo(conteudo: string, nome: string, mime = "text/csv;charset=utf-8;") {
+  const blob = new Blob([conteudo], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function exportarFaturaInter(cartao: Cartao, mesRef: Date) {
+  try {
+    const lancamentos = (await buscarLancamentosFatura(cartao.id, mesRef)).sort((a, b) =>
+      a.date.localeCompare(b.date)
+    );
+    if (lancamentos.length === 0) {
+      toast.info("Nenhum lançamento nessa fatura para exportar.");
+      return;
+    }
+    const header = "Data;Histórico;Valor";
+    const linhas = lancamentos.map((l) => {
+      const [y, m, d] = l.date.split("-");
+      const dataBR = `${d}/${m}/${y}`;
+      const valorStr = formatAmountBR(l.amount).replace(".", "");
+      const valorFinal = l.amount < 0 ? `-${valorStr}` : valorStr;
+      return `${dataBR};${csvEscape(l.title)};${valorFinal}`;
+    });
+    const csv = [header, ...linhas].join("\n");
+    const mesLabel = format(mesRef, "yyyy-MM");
+    baixarArquivo(
+      csv,
+      `inter-${cartao.nome.toLowerCase().replace(/\s+/g, "-")}-${mesLabel}.csv`
+    );
+    toast.success("Fatura exportada no padrão Inter.");
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Falha ao exportar fatura.", { description: e?.message });
+  }
+}
+
 async function exportarFaturaNubank(cartao: Cartao, mesRef: Date) {
   try {
     const mesRefStr = format(new Date(mesRef.getFullYear(), mesRef.getMonth(), 1), "yyyy-MM-dd");
