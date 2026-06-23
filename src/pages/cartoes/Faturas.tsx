@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Receipt, CheckCircle2, Clock, CreditCard, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
