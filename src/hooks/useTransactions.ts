@@ -1328,9 +1328,17 @@ export function useCompleteStats(mesReferencia?: Date) {
             faturaCartaoTitularRaw += valor;
           } else {
             faturaViaParcelasPagas += valor;
+            // Adiantamentos/créditos (parcelas pagas com valor negativo)
+            // reduzem o saldo pendente da fatura no Total Estimado
+            if (valor < 0) {
+              faturaCartaoTitularRaw += valor;
+            }
           }
         } else {
           faturaCartaoOutrosRaw += valor;
+          if (isPaga && valor < 0) {
+            faturaCartaoOutrosRaw += 0; // mantém comportamento
+          }
         }
       });
 
