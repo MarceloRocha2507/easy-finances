@@ -368,23 +368,54 @@ export default function Faturas() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  exportarFaturaNubank(cartao, mesRef);
-                                }}
-                              >
-                                Padrão Nubank
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  exportarFaturaInter(cartao, mesRef);
-                                }}
-                              >
-                                Padrão Inter
-                              </DropdownMenuItem>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>Padrão Nubank</DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaNubank(cartao, mesRef, false);
+                                      }}
+                                    >
+                                      Fatura completa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaNubank(cartao, mesRef, true);
+                                      }}
+                                    >
+                                      Somente titular (EU)
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                              </DropdownMenuSub>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>Padrão Inter</DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaInter(cartao, mesRef, false);
+                                      }}
+                                    >
+                                      Fatura completa
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        exportarFaturaInter(cartao, mesRef, true);
+                                      }}
+                                    >
+                                      Somente titular (EU)
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                              </DropdownMenuSub>
                             </DropdownMenuContent>
+
                           </DropdownMenu>
                         </div>
                       </div>
