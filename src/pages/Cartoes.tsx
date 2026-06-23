@@ -177,10 +177,18 @@ export default function Cartoes() {
 
             <div className="hidden sm:flex items-center gap-2">
               {cartoes.length > 0 && (
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setLoteOpen(true)}>
-                  <FileText className="h-4 w-4 mr-1.5" />
-                  Gerar Mensagens
-                </Button>
+                <>
+                  <Button asChild variant="outline" size="sm" className="rounded-xl">
+                    <Link to="/cartoes/faturas">
+                      <Receipt className="h-4 w-4 mr-1.5" />
+                      Faturas / Exportar
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setLoteOpen(true)}>
+                    <FileText className="h-4 w-4 mr-1.5" />
+                    Gerar Mensagens
+                  </Button>
+                </>
               )}
               <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
               <Button
