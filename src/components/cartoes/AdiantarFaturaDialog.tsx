@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export function AdiantarFaturaDialog({
   onOpenChange,
   onSuccess,
 }: Props) {
+  const queryClient = useQueryClient();
   const [valor, setValor] = useState("");
   const [observacao, setObservacao] = useState("");
   const [marcarParcelas, setMarcarParcelas] = useState(false);
@@ -97,6 +99,10 @@ export function AdiantarFaturaDialog({
             onClick: async () => {
               try {
                 await desfazerAdiantamento(result);
+                queryClient.invalidateQueries({ queryKey: ["complete-stats"], refetchType: "active" });
+                queryClient.invalidateQueries({ queryKey: ["dashboard-completo"], refetchType: "active" });
+                queryClient.invalidateQueries({ queryKey: ["transactions"], refetchType: "active" });
+                queryClient.invalidateQueries({ queryKey: ["faturas-na-listagem"], refetchType: "active" });
                 toast.success("Adiantamento desfeito com sucesso!");
                 onSuccess();
               } catch (error) {
@@ -116,6 +122,10 @@ export function AdiantarFaturaDialog({
       setDesconsiderarCaixa(false);
       
       onSuccess();
+      queryClient.invalidateQueries({ queryKey: ["complete-stats"], refetchType: "active" });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-completo"], refetchType: "active" });
+      queryClient.invalidateQueries({ queryKey: ["transactions"], refetchType: "active" });
+      queryClient.invalidateQueries({ queryKey: ["faturas-na-listagem"], refetchType: "active" });
       onOpenChange(false);
     } catch (error) {
       console.error("Erro ao adiantar fatura:", error);

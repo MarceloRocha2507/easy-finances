@@ -1267,7 +1267,7 @@ export function useCompleteStats(mesReferencia?: Date) {
 
       const metaCategoryIds = new Set(
         (metaCategories || [])
-          .filter(c => c.name !== 'Fatura do Cartão')
+          .filter(c => c.name !== 'Fatura do Cartão' && c.name !== 'Fatura de Cartão')
           .map(c => c.id)
       );
       const faturaCategoryIds = new Set(
@@ -1318,7 +1318,10 @@ export function useCompleteStats(mesReferencia?: Date) {
       let faturaViaParcelasPagas = 0; // titular pagas (para conciliação)
       let faturaTitularTodas = 0; // titular pagas + pendentes (para totalGeralDespesas)
       (parcelasCartao || []).forEach((p: any) => {
-        const isTitular = p.compra?.responsavel?.is_titular === true;
+        // Sem responsável é tratado como titular, inclusive créditos/adiantamentos
+        // criados sem responsavel_id para reduzir a fatura do cartão.
+        const responsavel = p.compra?.responsavel;
+        const isTitular = responsavel === null || responsavel === undefined || responsavel?.is_titular === true;
         const isPaga = p.paga === true;
         const valor = Number(p.valor) || 0;
         
