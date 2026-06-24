@@ -19,7 +19,9 @@ import {
   RefreshCw,
   MoreHorizontal,
   FileText,
+  Download,
 } from "lucide-react";
+import { exportarFaturaInter, exportarFaturaNubank } from "@/lib/exportFatura";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
 import { formatCurrency } from "@/lib/formatters";
