@@ -86,6 +86,7 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
       <AuthProvider>
         <TooltipProvider>
+          <HideValuesProvider>
           <Toaster />
           <Sonner />
         <BrowserRouter>
