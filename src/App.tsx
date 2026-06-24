@@ -382,6 +382,7 @@ const App = () => (
           </Routes>
           </Suspense>
         </BrowserRouter>
+          </HideValuesProvider>
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
