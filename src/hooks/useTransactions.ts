@@ -1462,7 +1462,55 @@ export function useCompleteStats(mesReferencia?: Date) {
       // Para a fatura do titular, usa o MAIOR entre parcelas e lançamento manual pendente,
       // evitando duplicação entre parcelas e eventual lançamento manual da fatura.
       const faturaTitularEstimado = Math.max(faturaCartaoTitular, faturaCartaoPendenteManual);
-      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado;
+      // Acumular saldo estimado dos meses anteriores ao selecionado (somente quando
+      // o mês selecionado é futuro). Isso faz com que o estimado de "próximos meses"
+      // seja influenciado pelo estimado do mês atual e dos meses intermediários.
+      let prevEstimadoAcumulado = 0;
+      if (precisaAcumularPrev) {
+        const [{ data: prevPending }, { data: prevParcelas }] = await Promise.all([
+          supabase
+            .from('transactions')
+            .select('type, amount, category_id, desconsiderada')
+            .eq('user_id', user!.id)
+            .eq('status', 'pending')
+            .is('deleted_at', null)
+            .gte('due_date', inicioMesAtual)
+            .lt('due_date', inicioMes)
+            .limit(10000),
+          supabase
+            .from('parcelas_cartao')
+            .select(`valor, ativo, paga, compra:compras_cartao(responsavel:responsaveis(is_titular))`)
+            .gte('mes_referencia', inicioMesAtual)
+            .lt('mes_referencia', inicioMes)
+            .eq('ativo', true),
+        ]);
+
+        let prevPendingIncome = 0;
+        let prevPendingExpense = 0;
+        let prevFaturaManual = 0;
+        (prevPending || []).forEach((t: any) => {
+          if (t.desconsiderada === true) return;
+          const amount = Number(t.amount);
+          const isFatura = t.category_id && faturaCategoryIds.has(t.category_id);
+          if (t.type === 'income') prevPendingIncome += amount;
+          else if (isFatura) prevFaturaManual += amount;
+          else prevPendingExpense += amount;
+        });
+
+        let prevFaturaTitularRaw = 0;
+        (prevParcelas || []).forEach((p: any) => {
+          const responsavel = p.compra?.responsavel;
+          const isTitular = responsavel == null || responsavel?.is_titular === true;
+          if (!isTitular) return;
+          const valor = Number(p.valor) || 0;
+          if (p.paga !== true) prevFaturaTitularRaw += valor;
+          else if (valor < 0) prevFaturaTitularRaw += valor;
+        });
+        const prevFaturaTitular = Math.max(prevFaturaTitularRaw, prevFaturaManual);
+        prevEstimadoAcumulado = prevPendingIncome - prevPendingExpense - prevFaturaTitular;
+      }
+
+      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado + prevEstimadoAcumulado;
 
       return {
         ...stats,
