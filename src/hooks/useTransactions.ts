@@ -1193,6 +1193,10 @@ export function useCompleteStats(mesReferencia?: Date) {
   const mesRef = mesReferencia || new Date();
   const inicioMes = `${mesRef.getFullYear()}-${String(mesRef.getMonth() + 1).padStart(2, '0')}-01`;
   const fimMes = (() => { const d = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  // Início do mês corrente real (para acumular saldo estimado de meses anteriores ao selecionado, se ele estiver no futuro)
+  const _now = new Date();
+  const inicioMesAtual = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-01`;
+  const precisaAcumularPrev = inicioMes > inicioMesAtual;
 
   return useQuery({
     queryKey: ['complete-stats', user?.id, inicioMes],
