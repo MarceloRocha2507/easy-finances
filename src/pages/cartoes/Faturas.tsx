@@ -28,9 +28,7 @@ import { useCartoes } from "@/services/cartoes";
 import { formatCurrency } from "@/lib/formatters";
 import { DetalhesCartaoDialog } from "@/components/cartoes/DetalhesCartaoDialog";
 import type { Cartao } from "@/services/cartoes";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { toast } from "sonner";
+import { exportarFaturaInter, exportarFaturaNubank } from "@/lib/exportFatura";
 
 function monthLabel(d: Date) {
   return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
