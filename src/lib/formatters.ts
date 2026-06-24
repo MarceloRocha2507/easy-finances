@@ -1,4 +1,7 @@
+import { __hideValuesFlag } from '@/hooks/useHideValues';
+
 export function formatCurrency(value: number): string {
+  if (__hideValuesFlag) return 'R$ ••••';
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',

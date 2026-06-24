@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, ChevronLeft } from "lucide-react";
+import { Menu, X, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { GlobalSearch } from "@/components/dashboard";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHideValues } from "@/hooks/useHideValues";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -24,6 +25,7 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const isDashboard = location.pathname === "/dashboard";
+  const { hideValues, toggleHideValues } = useHideValues();
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
@@ -81,18 +83,34 @@ export function Layout({ children }: LayoutProps) {
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
           <span className="font-display font-extrabold text-lg text-foreground tracking-tight">Fina</span>
         </div>
-        <div className="flex-1 max-w-[140px] ml-auto">
+        <div className="flex-1 max-w-[140px] ml-auto flex items-center gap-1">
+          <button
+            onClick={toggleHideValues}
+            className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0"
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
           <GlobalSearch variant="minimal" />
         </div>
       </header>
 
       {/* Desktop Sidebar - Flush, minimal */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
-        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0">
+        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0 justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
             <span className="font-display font-extrabold text-2xl text-foreground tracking-tight">Fina</span>
           </div>
+          <button
+            onClick={toggleHideValues}
+            className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
         <div className="px-4 py-3 border-b border-border/30 shrink-0">
           <GlobalSearch />
@@ -153,7 +171,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
-        <div className="p-6 flex-1">
+        <div className="p-6 flex-1" key={hideValues ? "hidden" : "shown"}>
           {!isDashboard && (
             <button
               onClick={() => navigate(-1)}
