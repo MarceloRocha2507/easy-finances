@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SidebarNav, SidebarUserSection } from "@/components/sidebar";
-import { Menu, X, ChevronLeft } from "lucide-react";
+import { Menu, X, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { GlobalSearch } from "@/components/dashboard";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHideValues } from "@/hooks/useHideValues";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
