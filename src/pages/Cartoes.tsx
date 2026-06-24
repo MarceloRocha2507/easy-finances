@@ -19,7 +19,9 @@ import {
   RefreshCw,
   MoreHorizontal,
   FileText,
+  Download,
 } from "lucide-react";
+import { exportarFaturaInter, exportarFaturaNubank } from "@/lib/exportFatura";
 import { regenerarParcelasFaltantes } from "@/services/compras-cartao";
 import { useRegenerarParcelas } from "@/hooks/useRegenerarParcelas";
 import { formatCurrency } from "@/lib/formatters";
@@ -401,16 +403,43 @@ function CartaoCard({ cartao, mesReferencia, onClick, index }: CartaoCardProps) 
               </p>
             </div>
           </div>
-          <span className={cn(
-            "text-[10px] font-display font-semibold px-2.5 py-1 rounded-full shrink-0",
-            cartao.statusFaturaExibida === "paga"
-              ? "bg-[#DCFCE7] text-[#16A34A] dark:text-[#16A34A]"
-              : cartao.statusFaturaExibida === "fechada"
-              ? "bg-[#FEF3C7] text-[#D97706] dark:text-[#D97706]"
-              : "bg-muted text-muted-foreground"
-          )}>
-            {statusLabel}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className={cn(
+              "text-[10px] font-display font-semibold px-2.5 py-1 rounded-full",
+              cartao.statusFaturaExibida === "paga"
+                ? "bg-[#DCFCE7] text-[#16A34A] dark:text-[#16A34A]"
+                : cartao.statusFaturaExibida === "fechada"
+                ? "bg-[#FEF3C7] text-[#D97706] dark:text-[#D97706]"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {statusLabel}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  title="Exportar fatura em CSV"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportarFaturaNubank(cartao, mesParaExibir, false); }}>
+                  Nubank — completa
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportarFaturaNubank(cartao, mesParaExibir, true); }}>
+                  Nubank — somente titular
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportarFaturaInter(cartao, mesParaExibir, false); }}>
+                  Inter — completa
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportarFaturaInter(cartao, mesParaExibir, true); }}>
+                  Inter — somente titular
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
 
