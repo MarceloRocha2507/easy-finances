@@ -171,7 +171,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
-        <div className="p-6 flex-1">
+        <div className="p-6 flex-1" key={hideValues ? "hidden" : "shown"}>
           {!isDashboard && (
             <button
               onClick={() => navigate(-1)}
