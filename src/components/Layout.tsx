@@ -98,11 +98,19 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop Sidebar - Flush, minimal */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 z-40 sidebar-premium flex-col overflow-hidden">
-        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0">
+        <div className="h-14 flex items-center px-5 border-b border-border/30 shrink-0 justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
             <span className="font-display font-extrabold text-2xl text-foreground tracking-tight">Fina</span>
           </div>
+          <button
+            onClick={toggleHideValues}
+            className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
         <div className="px-4 py-3 border-b border-border/30 shrink-0">
           <GlobalSearch />
