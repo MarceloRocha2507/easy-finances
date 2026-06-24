@@ -83,7 +83,15 @@ export function Layout({ children }: LayoutProps) {
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'hsl(var(--accent-violet))' }} />
           <span className="font-display font-extrabold text-lg text-foreground tracking-tight">Fina</span>
         </div>
-        <div className="flex-1 max-w-[140px] ml-auto">
+        <div className="flex-1 max-w-[140px] ml-auto flex items-center gap-1">
+          <button
+            onClick={toggleHideValues}
+            className="p-2 rounded-lg hover:bg-muted/50 transition-colors shrink-0"
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
           <GlobalSearch variant="minimal" />
         </div>
       </header>
