@@ -15,11 +15,15 @@ export let __hideValuesFlag = false;
 export function HideValuesProvider({ children }: { children: ReactNode }) {
   const [hideValues, setHideValues] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
+    const initial = window.localStorage.getItem(STORAGE_KEY) === "1";
+    __hideValuesFlag = initial;
+    return initial;
   });
 
+  // Sincroniza o flag módulo-level ANTES do render dos filhos
+  __hideValuesFlag = hideValues;
+
   useEffect(() => {
-    __hideValuesFlag = hideValues;
     window.localStorage.setItem(STORAGE_KEY, hideValues ? "1" : "0");
   }, [hideValues]);
 
