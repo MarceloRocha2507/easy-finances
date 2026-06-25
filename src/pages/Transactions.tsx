@@ -651,6 +651,10 @@ export default function Transactions() {
     markAsPaidMutation.mutate(id);
   };
 
+  const handleMarkAsPending = (id: string) => {
+    markAsPendingMutation.mutate(id);
+  };
+
   const handleDelete = (transaction: Transaction) => {
     const isRecurring = transaction.is_recurring || transaction.tipo_lancamento === 'fixa' || transaction.tipo_lancamento === 'parcelada';
     if (isRecurring) {
