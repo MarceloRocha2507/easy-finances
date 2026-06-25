@@ -1539,7 +1539,13 @@ export function useCompleteStats(mesReferencia?: Date) {
         prevEstimadoAcumulado = prevPendingIncome - prevPendingExpense - prevFaturaTitular;
       }
 
-      const estimatedBalance = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado + prevEstimadoAcumulado;
+      // "Estimado só do mês": APENAS as movimentações pendentes do mês selecionado,
+      // sem acumular meses anteriores. Marcar uma receita como recebida em outro mês
+      // não deve alterar este valor.
+      const estimatedBalanceMes = stats.pendingIncome - stats.pendingExpense - faturaTitularEstimado;
+      // "Estimado incluindo tudo": projeção do fim do mês, que acumula o pendente dos
+      // meses anteriores quando o mês selecionado é futuro (somado ao Saldo Real).
+      const estimatedBalance = estimatedBalanceMes + prevEstimadoAcumulado;
 
       return {
         ...stats,
@@ -1547,6 +1553,7 @@ export function useCompleteStats(mesReferencia?: Date) {
         saldoDisponivel,
         patrimonioTotal,
         estimatedBalance,
+        estimatedBalanceMes,
         faturaCartaoTitularRaw, // Para debug se necessário
         faturaCartaoOutrosRaw,
         totalMetas,
@@ -1563,7 +1570,7 @@ export function useCompleteStats(mesReferencia?: Date) {
           saldoInicial: 0, completedIncome: 0, completedExpense: 0, completedExpenseWithFatura: 0,
           pendingIncome: 0, pendingExpense: 0, overdueCount: 0, pendingCount: 0,
           faturaCartao: 0, totalInvestido: 0, allCompletedIncome: 0, allCompletedExpense: 0,
-          realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0,
+          realBalance: 0, saldoDisponivel: 0, patrimonioTotal: 0, estimatedBalance: 0, estimatedBalanceMes: 0,
           totalMetas: 0, totalGuardado: 0, totalGeralDespesas: 0, faturaCartaoOutros: 0,
           completedExpenseWithFaturaCash: 0,
         };

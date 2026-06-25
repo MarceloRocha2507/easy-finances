@@ -1433,9 +1433,9 @@ export default function Transactions() {
                         </Tooltip>
                         <p className={cn(
                           "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
-                          (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
+                          (stats?.estimatedBalanceMes || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                         )}>
-                          {formatCurrency(stats?.estimatedBalance || 0)}
+                          {formatCurrency(stats?.estimatedBalanceMes || 0)}
                         </p>
                       </div>
 
