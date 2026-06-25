@@ -1494,7 +1494,10 @@ export function useCompleteStats(mesReferencia?: Date) {
             .from('transactions')
             .select('type, amount, category_id, desconsiderada, status')
             .eq('user_id', user!.id)
-            .in('status', ['pending', 'completed'])
+            // Apenas PENDENTES: o que já está 'completed' nesses meses já entra no
+            // realBalance (caixa de agora). Contar 'completed' aqui causaria dupla
+            // contagem na previsão (realBalance + estimatedBalance).
+            .eq('status', 'pending')
             .is('deleted_at', null)
             .gte('due_date', inicioMesAtual)
             .lt('due_date', inicioMes)
@@ -1514,7 +1517,6 @@ export function useCompleteStats(mesReferencia?: Date) {
           if (t.desconsiderada === true) return;
           const amount = Number(t.amount);
           const isFatura = t.category_id && faturaCategoryIds.has(t.category_id);
-          // Conta TANTO pending quanto completed para que alternar status não mexa no estimado
           if (t.type === 'income') prevPendingIncome += amount;
           else if (isFatura) prevFaturaManual += amount;
           else prevPendingExpense += amount;
@@ -1522,11 +1524,14 @@ export function useCompleteStats(mesReferencia?: Date) {
 
         let prevFaturaTitularRaw = 0;
         (prevParcelas || []).forEach((p: any) => {
+          // Apenas parcelas NÃO pagas: uma fatura paga vira despesa 'completed'
+          // ("Fatura do Cartão") que já reduz o realBalance. Contá-la aqui também
+          // duplicaria o valor na previsão.
+          if (p.paga === true) return;
           const responsavel = p.compra?.responsavel;
           const isTitular = responsavel == null || responsavel?.is_titular === true;
           if (!isTitular) return;
           const valor = Number(p.valor) || 0;
-          // Conta pagas e pendentes igualmente (estabilidade ao quitar fatura)
           prevFaturaTitularRaw += valor;
         });
         const prevFaturaTitular = Math.max(prevFaturaTitularRaw, prevFaturaManual);
