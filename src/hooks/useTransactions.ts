@@ -1470,9 +1470,9 @@ export function useCompleteStats(mesReferencia?: Date) {
         const [{ data: prevPending }, { data: prevParcelas }] = await Promise.all([
           supabase
             .from('transactions')
-            .select('type, amount, category_id, desconsiderada')
+            .select('type, amount, category_id, desconsiderada, status')
             .eq('user_id', user!.id)
-            .eq('status', 'pending')
+            .in('status', ['pending', 'completed'])
             .is('deleted_at', null)
             .gte('due_date', inicioMesAtual)
             .lt('due_date', inicioMes)
@@ -1492,6 +1492,7 @@ export function useCompleteStats(mesReferencia?: Date) {
           if (t.desconsiderada === true) return;
           const amount = Number(t.amount);
           const isFatura = t.category_id && faturaCategoryIds.has(t.category_id);
+          // Conta TANTO pending quanto completed para que alternar status não mexa no estimado
           if (t.type === 'income') prevPendingIncome += amount;
           else if (isFatura) prevFaturaManual += amount;
           else prevPendingExpense += amount;
@@ -1503,10 +1504,11 @@ export function useCompleteStats(mesReferencia?: Date) {
           const isTitular = responsavel == null || responsavel?.is_titular === true;
           if (!isTitular) return;
           const valor = Number(p.valor) || 0;
-          if (p.paga !== true) prevFaturaTitularRaw += valor;
-          else if (valor < 0) prevFaturaTitularRaw += valor;
+          // Conta pagas e pendentes igualmente (estabilidade ao quitar fatura)
+          prevFaturaTitularRaw += valor;
         });
         const prevFaturaTitular = Math.max(prevFaturaTitularRaw, prevFaturaManual);
+
         prevEstimadoAcumulado = prevPendingIncome - prevPendingExpense - prevFaturaTitular;
       }
 
