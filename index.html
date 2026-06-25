@@ -13,6 +13,14 @@
     <meta name="theme-color" content="#3d4b5c" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+    <!-- PWA: instalável no celular -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AppFinance" />
+
     <!-- Apply theme before first paint to avoid flash of wrong theme (next-themes FOUC fix) -->
     <script>
       (function() {

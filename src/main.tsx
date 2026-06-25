@@ -32,3 +32,13 @@ window.addEventListener("unhandledrejection", (e) => {
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Registra o service worker (PWA) para permitir instalação no celular.
+// Estratégia network-first definida em /sw.js — não cacheia chunks hasheados.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Falha no registro não deve quebrar o app.
+    });
+  });
+}
