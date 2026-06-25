@@ -1396,10 +1396,18 @@ export default function Transactions() {
                   valueContent={
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 min-w-0">
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
-                          Saldo Real
-                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="flex items-center gap-1 text-[10px] text-muted-foreground/70 leading-none mb-1 cursor-help w-fit">
+                              <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
+                              Saldo Real
+                              <Info className="w-2.5 h-2.5 opacity-50 shrink-0" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[230px] text-xs leading-snug">
+                            O dinheiro que você já tem hoje — soma de tudo que já foi pago e recebido. Não inclui o que ainda está pendente.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className={cn(
                           "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.realBalance || 0) >= 0 ? "text-[#111827] dark:text-white" : "text-[#DC2626]"
@@ -1408,27 +1416,48 @@ export default function Transactions() {
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 leading-none mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                          Estimado
-                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="flex items-center gap-1 text-[10px] text-muted-foreground/70 leading-none mb-1 cursor-help w-fit">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              Estimado
+                              <Info className="w-2.5 h-2.5 opacity-50 shrink-0" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[250px] text-xs leading-snug">
+                            Apenas o que ainda falta acontecer neste mês: <strong>a receber − a pagar − fatura do cartão</strong>. Não inclui o Saldo Real.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className={cn(
                           "text-sm sm:text-lg font-display font-bold tabular-nums leading-tight break-all",
                           (stats?.estimatedBalance || 0) >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                         )}>
                           {formatCurrency(stats?.estimatedBalance || 0)}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/70 leading-none mt-1.5">
-                          previsão {format(dataFinal || endOfMonth(new Date()), "dd/MM", { locale: ptBR })}:{" "}
-                          <span className={cn(
-                            "font-semibold tabular-nums",
-                            ((stats?.realBalance || 0) + (stats?.estimatedBalance || 0)) >= 0
-                              ? "text-[#16A34A]"
-                              : "text-[#DC2626]"
-                          )}>
-                            {formatCurrency((stats?.realBalance || 0) + (stats?.estimatedBalance || 0))}
-                          </span>
-                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="mt-1.5 cursor-help w-fit">
+                              <p className="flex items-center gap-1 text-[10px] text-muted-foreground/70 leading-none">
+                                previsão {format(dataFinal || endOfMonth(new Date()), "dd/MM", { locale: ptBR })}:{" "}
+                                <span className={cn(
+                                  "font-semibold tabular-nums",
+                                  ((stats?.realBalance || 0) + (stats?.estimatedBalance || 0)) >= 0
+                                    ? "text-[#16A34A]"
+                                    : "text-[#DC2626]"
+                                )}>
+                                  {formatCurrency((stats?.realBalance || 0) + (stats?.estimatedBalance || 0))}
+                                </span>
+                                <Info className="w-2.5 h-2.5 opacity-50 shrink-0" />
+                              </p>
+                              <p className="text-[9px] text-muted-foreground/50 leading-none mt-1">
+                                Saldo Real + Estimado
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[250px] text-xs leading-snug">
+                            Onde seu saldo deve chegar no fim do mês = <strong>Saldo Real + Estimado</strong>. Junta o que você já tem com o que ainda falta acontecer até essa data.
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   }
