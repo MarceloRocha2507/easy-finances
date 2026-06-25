@@ -5,7 +5,7 @@ import { RecurringDeleteDialog } from '@/components/transactions/RecurringDelete
 import { RecurringEditDialog } from '@/components/transactions/RecurringEditDialog';
 import { LixeiraDialog } from '@/components/transactions/LixeiraDialog';
 import { Layout } from '@/components/Layout';
-import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useUpdateRecurringTransactions, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento, useMarkFaturaAsPaid } from '@/hooks/useTransactions';
+import { useTransactions, useTransactionsWithBalance, useCreateTransaction, useCreateInstallmentTransaction, useUpdateTransaction, useUpdateRecurringTransactions, useDeleteTransaction, useDeleteRecurringTransactions, useMarkAsPaid, useMarkAsPending, useToggleDesconsiderada, useCompleteStats, Transaction, TransactionInsert, TransactionStatus, TipoLancamento, useMarkFaturaAsPaid } from '@/hooks/useTransactions';
 import { useFaturasNaListagem, FaturaVirtual } from '@/hooks/useFaturasNaListagem';
 import { Badge } from '@/components/ui/badge';
 import { StatCardMinimal } from '@/components/dashboard/StatCardMinimal';
@@ -408,6 +408,7 @@ export default function Transactions() {
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
+  const markAsPendingMutation = useMarkAsPending();
   const markFaturaAsPaidMutation = useMarkFaturaAsPaid();
   const toggleDesconsideradaMutation = useToggleDesconsiderada();
 
@@ -648,6 +649,10 @@ export default function Transactions() {
 
   const handleMarkAsPaid = (id: string) => {
     markAsPaidMutation.mutate(id);
+  };
+
+  const handleMarkAsPending = (id: string) => {
+    markAsPendingMutation.mutate(id);
   };
 
   const handleDelete = (transaction: Transaction) => {
@@ -1644,6 +1649,7 @@ export default function Transactions() {
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                               onMarkAsPaid={handleMarkAsPaid}
+                              onMarkAsPending={handleMarkAsPending}
                               onDuplicate={handleDuplicate}
                               onView={setViewingTransaction}
                               onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
@@ -1675,6 +1681,7 @@ export default function Transactions() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onMarkAsPaid={handleMarkAsPaid}
+                    onMarkAsPending={handleMarkAsPending}
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
                     onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
@@ -1791,6 +1798,7 @@ interface TransactionRowProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
   onMarkAsPaid: (id: string) => void;
+  onMarkAsPending: (id: string) => void;
   onDuplicate: (transaction: Transaction) => void;
   onView: (transaction: Transaction) => void;
   onToggleDesconsiderada: (id: string, desconsiderada: boolean) => void;
@@ -1800,7 +1808,7 @@ interface TransactionRowProps {
   totalGuardado?: number;
 }
 
-function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplicate, onView, onToggleDesconsiderada, actionClickedRef, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
+function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onMarkAsPending, onDuplicate, onView, onToggleDesconsiderada, actionClickedRef, saldoApos, isUltimaTransacao, totalGuardado = 0 }: TransactionRowProps) {
   const isFaturaCartaoPaga = transaction.category?.name === 'Fatura de Cartão' || transaction.category?.name === 'Fatura do Cartão' || transaction.description?.startsWith('Fatura ');
   const IconComponent = isFaturaCartaoPaga ? CreditCard : getIconComponent(transaction.category?.icon || 'package');
   const isPending = transaction.status === 'pending';
@@ -1951,6 +1959,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
                   Marcar como pago
                 </DropdownMenuItem>
               )}
+              {!isPending && (
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPending(transaction.id); }}>
+                  <Clock className="w-4 h-4 mr-2 text-amber-600" />
+                  Marcar como pendente
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}>
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicar
@@ -1991,6 +2005,17 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onDuplica
               title="Marcar como pago"
             >
               <Check className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          {!isPending && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 text-amber-600 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+              onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPending(transaction.id); }}
+              title="Marcar como pendente"
+            >
+              <Clock className="w-3.5 h-3.5" />
             </Button>
           )}
           <Button 

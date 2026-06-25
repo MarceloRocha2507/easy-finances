@@ -921,6 +921,28 @@ export function useMarkAsPaid() {
   });
 }
 
+export function useMarkAsPending() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'pending', paid_date: null })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateTransactionCaches(queryClient);
+      toast({ title: 'Marcado como pendente', description: 'O lançamento foi atualizado.' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o status.', variant: 'destructive' });
+    },
+  });
+}
+
 export function useMarkFaturaAsPaid() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
