@@ -1959,6 +1959,12 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onMarkAsP
                   Marcar como pago
                 </DropdownMenuItem>
               )}
+              {!isPending && (
+                <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPending(transaction.id); }}>
+                  <Clock className="w-4 h-4 mr-2 text-amber-600" />
+                  Marcar como pendente
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => { actionClickedRef.current = Date.now(); onDuplicate(transaction); }}>
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicar
