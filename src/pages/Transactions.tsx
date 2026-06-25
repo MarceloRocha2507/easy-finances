@@ -408,6 +408,7 @@ export default function Transactions() {
   const deleteMutation = useDeleteTransaction();
   const deleteRecurringMutation = useDeleteRecurringTransactions();
   const markAsPaidMutation = useMarkAsPaid();
+  const markAsPendingMutation = useMarkAsPending();
   const markFaturaAsPaidMutation = useMarkFaturaAsPaid();
   const toggleDesconsideradaMutation = useToggleDesconsiderada();
 
