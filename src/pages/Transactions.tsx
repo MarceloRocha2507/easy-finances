@@ -1676,6 +1676,7 @@ export default function Transactions() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onMarkAsPaid={handleMarkAsPaid}
+                    onMarkAsPending={handleMarkAsPending}
                     onDuplicate={handleDuplicate}
                     onView={setViewingTransaction}
                     onToggleDesconsiderada={(id, desc) => toggleDesconsideradaMutation.mutate({ id, desconsiderada: desc })}
