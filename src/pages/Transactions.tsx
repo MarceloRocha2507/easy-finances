@@ -2007,6 +2007,17 @@ function TransactionRow({ transaction, onEdit, onDelete, onMarkAsPaid, onMarkAsP
               <Check className="w-3.5 h-3.5" />
             </Button>
           )}
+          {!isPending && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 text-amber-600 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+              onClick={() => { actionClickedRef.current = Date.now(); onMarkAsPending(transaction.id); }}
+              title="Marcar como pendente"
+            >
+              <Clock className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
