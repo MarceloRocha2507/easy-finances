@@ -5,9 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/formatters";
-import { BarChart3, CreditCard, Wallet, Loader2 } from "lucide-react";
+import { BarChart3, CreditCard, Wallet, Loader2, Users, Crown, CheckCircle2 } from "lucide-react";
 import { FiltroPeriodo } from "@/components/dashboard/FiltroPeriodo";
 import { useMesesComMovimentacao } from "@/hooks/useMesesComMovimentacao";
+import { useRelatorioCartoes } from "@/hooks/useRelatorioCartoes";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 
 interface CategoryRow {
@@ -106,6 +107,8 @@ export default function Relatorios() {
   const totalCartao = rows.reduce((s, r) => s + r.totalCartao, 0);
   const isLoading = loadingTx || loadingCard;
 
+  const { data: relCartoes, isLoading: loadingRelCartoes } = useRelatorioCartoes(mesRef);
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
@@ -183,6 +186,120 @@ export default function Relatorios() {
                 );
               })}
             </ul>
+          )}
+        </div>
+
+        {/* Relatório detalhado de cartões por responsável */}
+        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <CreditCard className="h-4 w-4 text-[#374151] shrink-0" />
+              <h2 className="text-sm font-semibold text-[#111827] truncate">
+                Cartões — falta para quitar
+              </h2>
+            </div>
+            {relCartoes && relCartoes.totalAQuitar > 0 && (
+              <div className="text-right shrink-0">
+                <div className="text-sm font-semibold text-[#111827]">
+                  {formatCurrency(relCartoes.totalAQuitar)}
+                </div>
+                <div className="text-[11px] text-[#9CA3AF]">
+                  {relCartoes.totalParcelas} parcela{relCartoes.totalParcelas === 1 ? "" : "s"} em aberto
+                </div>
+              </div>
+            )}
+          </div>
+
+          {loadingRelCartoes ? (
+            <div className="p-8 flex justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
+            </div>
+          ) : !relCartoes || relCartoes.responsaveis.length === 0 ? (
+            <div className="p-8 text-center text-sm text-[#6B7280] flex flex-col items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-[#22C55E]" />
+              Nenhuma parcela de cartão em aberto. Tudo quitado!
+            </div>
+          ) : (
+            <div className="divide-y divide-[#F3F4F6]">
+              {relCartoes.responsaveis.map((resp) => {
+                const pctDoTotal =
+                  relCartoes.totalAQuitar > 0
+                    ? (resp.aQuitar / relCartoes.totalAQuitar) * 100
+                    : 0;
+                return (
+                  <div key={resp.id} className="px-4 py-3.5">
+                    <div className="flex items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="h-7 w-7 rounded-full bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                          {resp.isTitular ? (
+                            <Crown className="h-3.5 w-3.5 text-[#B45309]" />
+                          ) : (
+                            <Users className="h-3.5 w-3.5 text-[#6B7280]" />
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-[#111827] truncate">
+                            {resp.nome}
+                            {resp.isTitular && (
+                              <span className="ml-1.5 text-[10px] font-medium text-[#B45309] align-middle">
+                                Titular
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[#9CA3AF]">
+                            {resp.parcelas} parcela{resp.parcelas === 1 ? "" : "s"}
+                            {resp.aVencerNoMes > 0 && (
+                              <> · {formatCurrency(resp.aVencerNoMes)} vence no mês</>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-semibold text-[#111827]">
+                          {formatCurrency(resp.aQuitar)}
+                        </div>
+                        <div className="text-[11px] text-[#9CA3AF]">
+                          {pctDoTotal.toFixed(0)}% do total
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detalhamento por cartão */}
+                    <div className="space-y-1.5 pl-9">
+                      {resp.cartoes.map((c) => {
+                        const pctResp =
+                          resp.aQuitar > 0 ? (c.aQuitar / resp.aQuitar) * 100 : 0;
+                        return (
+                          <div key={c.cartaoId}>
+                            <div className="flex items-center justify-between gap-2 text-[12px]">
+                              <span className="flex items-center gap-1.5 min-w-0 text-[#374151]">
+                                <span
+                                  className="h-2 w-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: c.cor }}
+                                />
+                                <span className="truncate">{c.cartaoNome}</span>
+                                <span className="text-[#9CA3AF]">
+                                  ({c.parcelas})
+                                </span>
+                              </span>
+                              <span className="font-medium text-[#111827] shrink-0">
+                                {formatCurrency(c.aQuitar)}
+                              </span>
+                            </div>
+                            <div className="h-1 rounded-full bg-[#F3F4F6] overflow-hidden mt-1">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${pctResp}%`, backgroundColor: c.cor }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
