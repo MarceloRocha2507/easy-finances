@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +8,24 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, parseBrazilianCurrency } from "@/lib/formatters";
 import { Cartao } from "@/services/cartoes";
-import { ParcelaFatura } from "@/services/compras-cartao";
-import { calcularResumoPorResponsavel } from "@/services/compras-cartao";
-import { pagarFaturaComTransacao } from "@/services/compras-cartao";
-import { CreditCard, User, Check, Wallet, AlertCircle, Loader2, SplitSquareHorizontal, Building2 } from "lucide-react";
+import {
+  ParcelaFatura,
+  calcularResumoPorResponsavel,
+  pagarFaturaComTransacao,
+} from "@/services/compras-cartao";
+import {
+  CreditCard,
+  User,
+  Check,
+  Wallet,
+  AlertCircle,
+  Loader2,
+  Pencil,
+} from "lucide-react";
 import { BancoSelector } from "@/components/bancos/BancoSelector";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -33,18 +41,17 @@ interface Props {
   onPaid: () => void;
 }
 
-type ModoPagamento = "eu_pago_tudo" | "cada_um_pagou" | "dividir_valores";
-
-interface ResponsavelPagamento {
+interface Participante {
   responsavel_id: string;
-  responsavel_nome: string;
-  responsavel_apelido: string | null;
+  nome: string;
   is_titular: boolean;
-  total: number;
-  qtd_compras: number;
-  recebido: boolean;
-  valorCustom: string;
+  parteOriginal: number; // parte devida por essa pessoa (só referência)
+  valor: number;         // quanto vai pagar ao banco
+  editando: boolean;
 }
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const fmtInput = (n: number) => n.toFixed(2).replace(".", ",");
 
 export function PagarFaturaDialog({
   cartao,
@@ -55,175 +62,158 @@ export function PagarFaturaDialog({
   onPaid,
 }: Props) {
   const queryClient = useQueryClient();
-  const [modo, setModo] = useState<ModoPagamento>("eu_pago_tudo");
-  const [responsaveis, setResponsaveis] = useState<ResponsavelPagamento[]>([]);
+  const [participantes, setParticipantes] = useState<Participante[]>([]);
+  const [ajuste, setAjuste] = useState(0); // "sem-responsavel" (créditos/estornos)
   const [loading, setLoading] = useState(false);
   const [carregandoResumo, setCarregandoResumo] = useState(false);
-  const [bancoIdSelecionado, setBancoIdSelecionado] = useState<string | null>(cartao?.banco_id || null);
+  const [bancoIdSelecionado, setBancoIdSelecionado] = useState<string | null>(
+    cartao?.banco_id || null,
+  );
 
-  // Calcular resumo por responsável quando abrir
+  const totalFatura = useMemo(
+    () => round2(participantes.reduce((s, p) => s + p.parteOriginal, 0) + ajuste),
+    [participantes, ajuste],
+  );
+
+  const somaAtual = useMemo(
+    () => round2(participantes.reduce((s, p) => s + p.valor, 0)),
+    [participantes],
+  );
+
+  const somaValida = Math.abs(somaAtual - totalFatura) < 0.01;
+
+  const titular = participantes.find((p) => p.is_titular);
+  const valorQueEuPago = titular?.valor ?? 0;
+
   useEffect(() => {
     if (!open || !cartao) return;
+    let cancelado = false;
 
-    async function carregarResumo() {
+    async function carregar() {
       setCarregandoResumo(true);
       try {
         const resumo = await calcularResumoPorResponsavel(cartao.id, mesReferencia);
-        
-        // No modo dividir_valores, queremos que o input do titular 
-        // contenha APENAS a parte dele, sem o adiantamento embutido no valor do input,
-        // pois o adiantamento já aparece como uma linha de "Ajuste de fatura" subtraindo do total.
-        setResponsaveis(
-          resumo.map((r) => ({
-            ...r,
-            recebido: false,
-            valorCustom: r.total.toFixed(2).replace(".", ","),
-          }))
-        );
-      } catch (error) {
-        console.error("Erro ao carregar resumo:", error);
+        if (cancelado) return;
+
+        const semResp = resumo.find((r) => r.responsavel_id === "sem-responsavel");
+        const ajusteVal = semResp ? round2(semResp.total) : 0;
+
+        // Titular absorve o ajuste (créditos/estornos abatem da parte dele)
+        const lista: Participante[] = resumo
+          .filter((r) => r.responsavel_id !== "sem-responsavel")
+          .map((r) => {
+            const parte = r.is_titular ? round2(r.total + ajusteVal) : round2(r.total);
+            return {
+              responsavel_id: r.responsavel_id,
+              nome: r.responsavel_apelido || r.responsavel_nome,
+              is_titular: r.is_titular,
+              parteOriginal: parte,
+              valor: parte,
+              editando: false,
+            };
+          });
+
+        // Garantir que o titular exista
+        if (!lista.some((p) => p.is_titular)) {
+          lista.unshift({
+            responsavel_id: "titular-implicito",
+            nome: "Eu",
+            is_titular: true,
+            parteOriginal: 0,
+            valor: 0,
+            editando: false,
+          });
+        }
+
+        // Titular sempre no topo
+        lista.sort((a, b) => (a.is_titular === b.is_titular ? 0 : a.is_titular ? -1 : 1));
+
+        setAjuste(0); // ajuste já foi absorvido no titular; total = soma das partes
+        setParticipantes(lista);
+      } catch (e) {
+        console.error(e);
         toast.error("Erro ao carregar resumo de responsáveis");
       } finally {
-        setCarregandoResumo(false);
+        if (!cancelado) setCarregandoResumo(false);
       }
     }
 
-    carregarResumo();
-    setModo("eu_pago_tudo");
+    carregar();
+    return () => {
+      cancelado = true;
+    };
   }, [open, cartao?.id, mesReferencia]);
 
-  // Encontrar o titular
-  const titular = useMemo(() => {
-    return responsaveis.find((r) => r.is_titular);
-  }, [responsaveis]);
+  // Redistribuição automática: ao alterar `idx`, ajusta os demais para que a soma = totalFatura
+  function alterarValor(idx: number, novoValorStr: string) {
+    setParticipantes((prev) => {
+      const total = round2(prev.reduce((s, p) => s + p.parteOriginal, 0));
+      const novo = round2(parseBrazilianCurrency(novoValorStr) || 0);
 
-  // Outros responsáveis (não titulares e não o "sem-responsavel" que já embutimos no titular)
-  const outrosResponsaveis = useMemo(() => {
-    return responsaveis.filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel");
-  }, [responsaveis]);
+      // Trava: não permitir negativo ou maior que o total
+      const clamped = Math.max(0, Math.min(novo, total));
 
+      const restante = round2(total - clamped);
+      const outros = prev.filter((_, i) => i !== idx);
+      const somaOutrosAntigo = round2(outros.reduce((s, p) => s + p.valor, 0));
 
-  // Total geral da fatura
-  const totalFatura = useMemo(() => {
-    return responsaveis.reduce((sum, r) => sum + r.total, 0);
-  }, [responsaveis]);
+      return prev.map((p, i) => {
+        if (i === idx) return { ...p, valor: clamped };
+        if (outros.length === 1) {
+          return { ...p, valor: restante };
+        }
+        // Distribuir proporcionalmente ao valor anterior; se todos zerados, dividir igualmente
+        const proporcao =
+          somaOutrosAntigo > 0 ? p.valor / somaOutrosAntigo : 1 / outros.length;
+        return { ...p, valor: round2(restante * proporcao) };
+      });
+    });
+  }
 
-  // Total apenas dos responsáveis com valor positivo (alvo do modo dividir)
-  const totalPositivos = useMemo(() => {
-    return responsaveis
-      .filter(r => r.total > 0)
-      .reduce((sum, r) => sum + r.total, 0);
-  }, [responsaveis]);
-
-  // Total que terceiros pagaram (quando "cada um pagou sua parte")
-  const totalRecebido = useMemo(() => {
-    if (modo === "eu_pago_tudo") return 0;
-    return responsaveis
-      .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
-      .reduce((sum, r) => sum + r.total, 0);
-  }, [responsaveis, modo]);
-
-  // Total informado no modo dividir_valores
-  const totalDividido = useMemo(() => {
-    if (modo !== "dividir_valores") return 0;
-    return responsaveis.reduce((sum, r) => {
-      // Se for um item de ajuste (negativo), ele deve SUBTRAIR do total informado.
-      // Como o r.total já é negativo (ex: -136,67), somar r.total fará a subtração correta.
-      if (r.responsavel_id === "sem-responsavel") {
-        console.log("Ajuste encontrado:", r.total);
-        return sum + r.total;
-      }
-      const val = parseBrazilianCurrency(r.valorCustom);
-      return sum + (isNaN(val) ? 0 : val);
-    }, 0);
-  }, [responsaveis, modo]);
-
-  const dividirValido = useMemo(() => {
-    if (modo !== "dividir_valores") return true;
-    // Precisamos que a soma do que cada um pagou + créditos seja igual ao total da fatura
-    return Math.abs(totalDividido - totalFatura) < 0.01;
-  }, [modo, totalDividido, totalFatura]);
-
-  // Valor que EU (titular) vou pagar ao banco
-  const valorQueEuPago = useMemo(() => {
-    if (modo === "eu_pago_tudo") {
-      return totalFatura;
-    }
-    if (modo === "dividir_valores") {
-      const titularVal = titular ? parseBrazilianCurrency(titular.valorCustom) : 0;
-      return isNaN(titularVal) ? 0 : titularVal;
-    }
-    return totalFatura - totalRecebido;
-  }, [modo, totalFatura, totalRecebido, titular, responsaveis]);
-
-  // Toggle recebimento de um responsável
-  function toggleRecebido(responsavelId: string) {
-    setResponsaveis((prev) =>
-      prev.map((r) =>
-        r.responsavel_id === responsavelId ? { ...r, recebido: !r.recebido } : r
-      )
+  function toggleEdicao(idx: number) {
+    setParticipantes((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, editando: !p.editando } : p)),
     );
   }
 
-  // Atualizar valor custom
-  function updateValorCustom(responsavelId: string, valor: string) {
-    setResponsaveis((prev) =>
-      prev.map((r) =>
-        r.responsavel_id === responsavelId ? { ...r, valorCustom: valor } : r
-      )
-    );
-  }
-
-  // Confirmar pagamento
   async function handleConfirmar() {
     if (!cartao) return;
+    if (!somaValida) {
+      toast.error("A soma dos valores deve ser igual ao total da fatura");
+      return;
+    }
+    if (participantes.some((p) => p.valor < 0)) {
+      toast.error("Valores negativos não são permitidos");
+      return;
+    }
 
     setLoading(true);
     try {
-      let acertosRecebidos: { responsavel_id: string; valor: number; nome: string }[] = [];
-
-      if (modo === "cada_um_pagou") {
-        acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel" && r.recebido)
-          .map((r) => ({
-            responsavel_id: r.responsavel_id,
-            valor: r.total,
-            nome: r.responsavel_apelido || r.responsavel_nome,
-          }));
-      } else if (modo === "dividir_valores") {
-        acertosRecebidos = responsaveis
-          .filter((r) => !r.is_titular && r.responsavel_id !== "sem-responsavel")
-          .map((r) => ({
-            responsavel_id: r.responsavel_id,
-            valor: parseFloat(parseBrazilianCurrency(r.valorCustom).toFixed(2)),
-            nome: r.responsavel_apelido || r.responsavel_nome,
-          }))
-          .filter((a) => a.valor > 0);
-      }
+      const acertosRecebidos = participantes
+        .filter((p) => !p.is_titular && p.responsavel_id !== "titular-implicito" && p.valor > 0)
+        .map((p) => ({
+          responsavel_id: p.responsavel_id,
+          valor: round2(p.valor),
+          nome: p.nome,
+        }));
 
       await pagarFaturaComTransacao({
         cartaoId: cartao.id,
         nomeCartao: cartao.nome,
         mesReferencia,
-        valorTotal: parseFloat(valorQueEuPago.toFixed(2)),
+        valorTotal: round2(valorQueEuPago),
         bancoId: bancoIdSelecionado,
         acertosRecebidos,
       });
 
-      toast.success(
-        modo === "eu_pago_tudo"
-          ? "Fatura paga! Você pagou tudo ao banco."
-          : `Fatura paga! Você pagou ${formatCurrency(valorQueEuPago)} ao banco.`
-      );
+      toast.success(`Fatura paga! Você pagou ${formatCurrency(valorQueEuPago)} ao banco.`);
 
-      // MonitorHub: evento de fatura paga (fire-and-forget)
-      pushMonitorHubEvent("fatura_paga", parseFloat(valorQueEuPago.toFixed(2)), {
+      pushMonitorHubEvent("fatura_paga", round2(valorQueEuPago), {
         cartao_id: cartao.id,
         cartao: cartao.nome,
         mes_referencia: mesReferencia,
       });
 
-      // Invalidar caches para atualizar saldo real imediatamente
       queryClient.invalidateQueries({ queryKey: ["complete-stats"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-completo"] });
       queryClient.invalidateQueries({ queryKey: ["bancos"] });
@@ -239,7 +229,6 @@ export function PagarFaturaDialog({
     }
   }
 
-  // Formatar mês
   const mesLabel = mesReferencia.toLocaleDateString("pt-BR", {
     month: "long",
     year: "numeric",
@@ -266,7 +255,6 @@ export function PagarFaturaDialog({
     );
   }
 
-  // Se total da fatura é zero ou negativo (ex: estornos), avisar o usuário
   if (totalFatura <= 0 && !carregandoResumo) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -279,7 +267,6 @@ export function PagarFaturaDialog({
             <DialogDescription>
               O total da fatura de <span className="capitalize">{mesLabel}</span> é{" "}
               <strong>{formatCurrency(totalFatura)}</strong> (provavelmente devido a estornos).
-              Não há valor a ser debitado do seu saldo.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end pt-2">
@@ -292,376 +279,219 @@ export function PagarFaturaDialog({
     );
   }
 
-  const canConfirm = modo !== "dividir_valores" || dividirValido;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden flex flex-col">
-        <div className="px-4 sm:px-5 pt-4 pb-4 bg-muted border-b">
+        <div className="px-5 pt-4 pb-4 bg-muted border-b">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-muted-foreground" />
               Pagar Fatura - {cartao.nome}
             </DialogTitle>
-            <DialogDescription className="capitalize">
-              {mesLabel}
-            </DialogDescription>
+            <DialogDescription className="capitalize">{mesLabel}</DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="px-4 sm:px-5 pb-4 pt-4 overflow-y-auto overflow-x-hidden min-h-0 max-h-[calc(90vh-80px)]">
-        {carregandoResumo ? (
-          <div className="py-8 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Total da fatura */}
-            <div className="p-4 rounded-lg bg-muted/50 border">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Valor total da fatura
-                </span>
+        <div className="px-5 py-4 overflow-y-auto min-h-0 max-h-[calc(90vh-80px)]">
+          {carregandoResumo ? (
+            <div className="py-8 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Total da fatura */}
+              <div className="p-4 rounded-lg bg-muted/50 border flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Valor total da fatura</span>
                 <span className="text-xl font-bold text-destructive">
                   {formatCurrency(totalFatura)}
                 </span>
               </div>
-            </div>
 
-            {/* Banco de débito */}
-            {!cartao.banco_id && (
-              <BancoSelector
-                value={bancoIdSelecionado}
-                onChange={setBancoIdSelecionado}
-                label="Debitar do banco"
-                placeholder="Selecione o banco"
-                showAddButton={false}
-                autoSelectDefault
-              />
-            )}
+              {/* Banco */}
+              {!cartao.banco_id && (
+                <BancoSelector
+                  value={bancoIdSelecionado}
+                  onChange={setBancoIdSelecionado}
+                  label="Debitar do banco"
+                  placeholder="Selecione o banco"
+                  showAddButton={false}
+                  autoSelectDefault
+                />
+              )}
 
-            {/* Responsáveis com débito */}
-            {outrosResponsaveis.length > 0 && modo !== "dividir_valores" && (
+              {/* Quem pagou quanto */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Responsáveis com débito
-                </Label>
-                <ScrollArea className="max-h-[150px]">
-                  <div className="space-y-2">
-                    {outrosResponsaveis.map((r) => (
-                      <div
-                        key={r.responsavel_id}
-                        className={cn(
-                          "flex items-center justify-between p-3 rounded-lg border transition-colors",
-                          modo === "cada_um_pagou" && r.recebido
-                            ? "bg-emerald-500/10 border-emerald-500/30"
-                            : "bg-muted/30"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {r.responsavel_apelido || r.responsavel_nome}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {r.qtd_compras} compra{r.qtd_compras > 1 ? "s" : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-semibold text-destructive">
-                            {formatCurrency(r.total)}
-                          </span>
-                          {modo === "cada_um_pagou" && (
-                            <Button
-                              size="sm"
-                              variant={r.recebido ? "default" : "outline"}
-                              className={cn(
-                                "h-7 text-xs gap-1",
-                                r.recebido && "bg-emerald-600 hover:bg-emerald-700"
-                              )}
-                              onClick={() => toggleRecebido(r.responsavel_id)}
-                            >
-                              {r.recebido ? (
-                                <>
-                                  <Check className="h-3 w-3" />
-                                  Recebido
-                                </>
-                              ) : (
-                                "Receber"
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-
-            {/* Dividir valores - inputs por pessoa */}
-            {modo === "dividir_valores" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Quanto cada um pagou?
-                </Label>
-                <ScrollArea className="max-h-[200px]">
-                  <div className="space-y-2">
-                    {responsaveis.map((r) => (
-                      <div
-                        key={r.responsavel_id}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border",
-                          r.responsavel_id === "sem-responsavel"
-                            ? "bg-blue-500/10 border-blue-500/30"
-                            : "bg-muted/30"
-                        )}
-                      >
-                        <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: r.responsavel_id === "sem-responsavel" ? "hsl(210 100% 50% / 0.15)" : r.is_titular ? "hsl(var(--primary) / 0.2)" : "hsl(var(--primary) / 0.1)" }}
-                        >
-                          {r.responsavel_id === "sem-responsavel" ? (
-                            <AlertCircle className="h-4 w-4 text-blue-600" />
-                          ) : r.is_titular ? (
-                            <Wallet className="h-4 w-4 text-primary" />
-                          ) : (
-                            <User className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {r.responsavel_id === "sem-responsavel"
-                              ? "Ajuste de fatura"
-                              : r.is_titular
-                                ? `Eu (${r.responsavel_apelido || r.responsavel_nome})`
-                                : (r.responsavel_apelido || r.responsavel_nome)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {r.responsavel_id === "sem-responsavel" ? "Crédito/Estorno" : `Deve: ${formatCurrency(r.total)}`}
-                          </p>
-                        </div>
-                        <div className="w-28 shrink-0">
-                          {r.responsavel_id === "sem-responsavel" ? (
-                            <p className="text-sm text-right font-semibold text-blue-600">
-                              {formatCurrency(r.total)}
-                            </p>
-                          ) : (
-                            <Input
-                              inputMode="decimal"
-                              placeholder={r.total.toFixed(2).replace(".", ",")}
-                              value={r.valorCustom}
-                              onChange={(e) => updateValorCustom(r.responsavel_id, e.target.value)}
-                              className="h-8 text-sm text-right"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                <Label className="text-sm font-medium">Quem pagou quanto?</Label>
+                <div className="space-y-2">
+                  {participantes.map((p, idx) => (
+                    <LinhaParticipante
+                      key={p.responsavel_id}
+                      p={p}
+                      total={totalFatura}
+                      onToggleEdit={() => toggleEdicao(idx)}
+                      onChange={(v) => alterarValor(idx, v)}
+                    />
+                  ))}
+                </div>
 
                 {/* Totalizador */}
-                <div className={cn(
-                  "p-3 rounded-lg border text-sm flex items-center justify-between",
-                  dividirValido
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                    : "bg-destructive/10 border-destructive/30 text-destructive"
-                )}>
+                <div
+                  className={cn(
+                    "p-3 rounded-lg border text-sm flex items-center justify-between",
+                    somaValida
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                      : "bg-destructive/10 border-destructive/30 text-destructive",
+                  )}
+                >
                   <div className="flex items-center gap-1.5">
-                    {dividirValido ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    {somaValida ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
                     <span>Total informado</span>
                   </div>
                   <span className="font-bold">
-                    {formatCurrency(totalDividido)} / {formatCurrency(totalFatura)}
+                    {formatCurrency(somaAtual)} / {formatCurrency(totalFatura)}
                   </span>
                 </div>
               </div>
-            )}
 
-            {/* Parte do titular (só nos modos não-dividir) */}
-            {titular && modo !== "dividir_valores" && (
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-primary/5 border-primary/20">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Wallet className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      Eu ({titular.responsavel_apelido || titular.responsavel_nome})
-                    </p>
-                    <p className="text-xs text-muted-foreground">Titular</p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end">
-                  {(() => {
-                    const semResponsavel = responsaveis.find(r => r.responsavel_id === "sem-responsavel");
-                    const totalComAjuste = titular.total + (semResponsavel?.total || 0);
-                    return (
-                      <>
-                        <span className="text-sm font-semibold">
-                          {formatCurrency(totalComAjuste)}
-                        </span>
-                        {semResponsavel && semResponsavel.total !== 0 && (
-                          <span className={cn(
-                            "text-[10px] font-medium",
-                            semResponsavel.total < 0 ? "text-blue-600" : "text-destructive"
-                          )}>
-                            {semResponsavel.total < 0 ? "Adiantamento deduzido" : "Sem responsável somado"}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Modo de pagamento */}
-            {outrosResponsaveis.length > 0 ? (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">
-                  Quem vai pagar ao banco?
-                </Label>
-                <RadioGroup
-                  value={modo}
-                  onValueChange={(v) => setModo(v as ModoPagamento)}
-                  className="space-y-2"
-                >
-                  <div
-                    className={cn(
-                      "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                      modo === "eu_pago_tudo"
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-muted/50"
-                    )}
-                    onClick={() => setModo("eu_pago_tudo")}
-                  >
-                    <RadioGroupItem value="eu_pago_tudo" id="eu_pago_tudo" />
-                    <Label
-                      htmlFor="eu_pago_tudo"
-                      className="flex-1 cursor-pointer"
-                    >
-                      <p className="font-medium">Eu pago tudo</p>
-                      <p className="text-xs text-muted-foreground">
-                        Pago {formatCurrency(totalFatura)} ao banco. Outros me
-                        devem.
-                      </p>
-                    </Label>
-                  </div>
-                  <div
-                    className={cn(
-                      "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                      modo === "cada_um_pagou"
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-muted/50"
-                    )}
-                    onClick={() => setModo("cada_um_pagou")}
-                  >
-                    <RadioGroupItem value="cada_um_pagou" id="cada_um_pagou" />
-                    <Label
-                      htmlFor="cada_um_pagou"
-                      className="flex-1 cursor-pointer"
-                    >
-                      <p className="font-medium">Cada um pagou sua parte</p>
-                      <p className="text-xs text-muted-foreground">
-                        Marque quem já me pagou acima
-                      </p>
-                    </Label>
-                  </div>
-                  <div
-                    className={cn(
-                      "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                      modo === "dividir_valores"
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-muted/50"
-                    )}
-                    onClick={() => setModo("dividir_valores")}
-                  >
-                    <RadioGroupItem value="dividir_valores" id="dividir_valores" />
-                    <Label
-                      htmlFor="dividir_valores"
-                      className="flex-1 cursor-pointer"
-                    >
-                      <p className="font-medium">Dividir valores</p>
-                      <p className="text-xs text-muted-foreground">
-                        Informe quanto cada pessoa pagou
-                      </p>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                Todas as compras são suas. Valor integral será debitado.
-              </div>
-            )}
-
-            {/* Resumo do pagamento */}
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total da fatura</span>
-                <span>{formatCurrency(totalFatura)}</span>
-              </div>
-              {modo === "cada_um_pagou" && totalRecebido > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Recebido de terceiros
-                  </span>
-                  <span className="text-emerald-600">
-                    - {formatCurrency(totalRecebido)}
-                  </span>
-                </div>
-              )}
-              {modo === "dividir_valores" && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Pago por terceiros
-                  </span>
-                  <span className="text-emerald-600">
-                    - {formatCurrency(Math.max(0, totalDividido - valorQueEuPago))}
-                  </span>
-                </div>
-              )}
               <Separator />
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Valor que eu pago</span>
+
+              {/* Resumo */}
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between">
+                <span className="font-medium">Valor que eu pago ao banco</span>
                 <span className="text-lg font-bold text-primary">
                   {formatCurrency(valorQueEuPago)}
                 </span>
               </div>
-            </div>
 
-            {/* Botão de confirmação */}
-            <Button
-              className="w-full gap-2"
-              size="lg"
-              onClick={handleConfirmar}
-              disabled={loading || !canConfirm}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
+              <Button
+                className="w-full gap-2"
+                size="lg"
+                onClick={handleConfirmar}
+                disabled={loading || !somaValida}
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Confirmar Pagamento
+              </Button>
+
+              {!somaValida && (
+                <p className="text-xs text-destructive text-center">
+                  A soma dos valores deve ser exatamente igual ao total da fatura
+                </p>
               )}
-              Confirmar Pagamento
-            </Button>
-
-            {modo === "dividir_valores" && !dividirValido && (
-              <p className="text-xs text-destructive text-center">
-                A soma dos valores deve ser igual ao total da fatura
-              </p>
-            )}
-          </div>
-        )}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LinhaParticipante({
+  p,
+  total,
+  onToggleEdit,
+  onChange,
+}: {
+  p: Participante;
+  total: number;
+  onToggleEdit: () => void;
+  onChange: (v: string) => void;
+}) {
+  const [rascunho, setRascunho] = useState(fmtInput(p.valor));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!p.editando) setRascunho(fmtInput(p.valor));
+  }, [p.valor, p.editando]);
+
+  useEffect(() => {
+    if (p.editando) inputRef.current?.focus();
+  }, [p.editando]);
+
+  const valorNum = parseBrazilianCurrency(rascunho) || 0;
+  const invalido = valorNum < 0 || valorNum > total + 0.01;
+
+  function confirmar() {
+    if (invalido) {
+      toast.error(`Valor inválido — deve estar entre R$ 0,00 e ${formatCurrency(total)}`);
+      setRascunho(fmtInput(p.valor));
+      onToggleEdit();
+      return;
+    }
+    onChange(rascunho);
+    onToggleEdit();
+  }
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+      <div
+        className={cn(
+          "h-9 w-9 rounded-full flex items-center justify-center shrink-0",
+          p.is_titular ? "bg-primary/20" : "bg-primary/10",
+        )}
+      >
+        {p.is_titular ? (
+          <Wallet className="h-4 w-4 text-primary" />
+        ) : (
+          <User className="h-4 w-4 text-primary" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">
+          {p.is_titular ? `Eu (${p.nome}) paguei` : `${p.nome} pagou`}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          Parte devida: {formatCurrency(p.parteOriginal)}
+        </p>
+      </div>
+
+      {p.editando ? (
+        <div className="flex items-center gap-1.5">
+          <Input
+            ref={inputRef}
+            inputMode="decimal"
+            value={rascunho}
+            onChange={(e) => setRascunho(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") confirmar();
+              if (e.key === "Escape") {
+                setRascunho(fmtInput(p.valor));
+                onToggleEdit();
+              }
+            }}
+            className={cn(
+              "h-8 w-24 text-sm text-right",
+              invalido && "border-destructive focus-visible:ring-destructive",
+            )}
+          />
+          <Button size="sm" variant="ghost" className="h-8 px-2" onClick={confirmar}>
+            <Check className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold tabular-nums">
+            {formatCurrency(p.valor)}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            onClick={onToggleEdit}
+            aria-label="Editar valor"
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
