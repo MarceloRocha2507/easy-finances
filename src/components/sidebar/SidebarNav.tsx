@@ -36,6 +36,7 @@ const transacoesMenu = {
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
+    { icon: Repeat, label: "Recorrentes", href: "/recorrentes" },
     { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
   ],
 };

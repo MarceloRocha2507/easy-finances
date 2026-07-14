@@ -56,6 +56,7 @@ const SegurancaPage = lazy(() => import("./pages/profile/Seguranca"));
 
 
 const AssinaturasPage = lazy(() => import("./pages/Assinaturas"));
+const RecorrentesPage = lazy(() => import("./pages/Recorrentes"));
 const SimuladorCompraPage = lazy(() => import("./pages/transactions/SimuladorCompra"));
 const CalendarioPage = lazy(() => import("./pages/Calendario"));
 const AnotacoesPage = lazy(() => import("./pages/Anotacoes"));
@@ -309,6 +310,17 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingScreen />}>
                     <AssinaturasPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/recorrentes"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <RecorrentesPage />
                   </Suspense>
                 </ProtectedRoute>
               }
