@@ -488,7 +488,7 @@ export function DetalhesCartaoDialog({
                 onOpenChange(false);
 
                 // Usa o mês da fatura exibida no card (mesma lógica do resumo)
-                const faturaAtiva = new Date(cartao.mesExibicao);
+                const faturaAtiva = cartao.mesExibicao ? new Date(cartao.mesExibicao) : new Date();
                 const month = faturaAtiva.getMonth() + 1;
                 const year = faturaAtiva.getFullYear();
 
