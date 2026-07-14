@@ -484,29 +484,18 @@ export function DetalhesCartaoDialog({
             {/* Ver todas as despesas - CTA principal */}
             <Button
               className="w-full h-11 text-sm gap-2 rounded-xl font-semibold shadow-sm"
-              onClick={async () => {
+              onClick={() => {
                 onOpenChange(false);
 
-                const { data: openParcela } = await supabase
-                  .from("parcelas_cartao")
-                  .select("mes_referencia, compra:compras_cartao!inner(cartao_id)")
-                  .eq("compra.cartao_id", cartao.id)
-                  .eq("paga", false)
-                  .eq("ativo", true)
-                  .order("mes_referencia", { ascending: true })
-                  .limit(1)
-                  .maybeSingle();
-
-                let month, year;
-
-                if (openParcela?.mes_referencia) {
-                  const openDate = new Date(openParcela.mes_referencia + "T12:00:00");
-                  month = openDate.getMonth() + 1;
-                  year = openDate.getFullYear();
-                } else {
-                  month = mesRef.getMonth() + 1;
-                  year = mesRef.getFullYear();
+                // Fatura atual: se hoje >= dia_fechamento, é o mês atual; senão, mês anterior
+                const hoje = new Date();
+                const faturaAtiva = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                if (cartao.dia_fechamento && hoje.getDate() < cartao.dia_fechamento) {
+                  faturaAtiva.setMonth(faturaAtiva.getMonth() - 1);
                 }
+
+                const month = faturaAtiva.getMonth() + 1;
+                const year = faturaAtiva.getFullYear();
 
                 navigate(`/cartoes/${cartao.id}/despesas?month=${month}&year=${year}`);
               }}
