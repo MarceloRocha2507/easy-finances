@@ -203,8 +203,8 @@ export async function listarCartoesComResumo(
       ? mesProximo
       : mesFaturaAtiva;
 
-    // Valor a exibir: apenas do titular (EU)
-    const faturaExibida = faturaAtualPaga ? proximaFaturaTitular : faturaTitular;
+    // Valor a exibir: total da fatura (soma de todos os responsáveis)
+    const faturaExibida = faturaAtualPaga ? proximaFatura : faturaAtual;
 
     const limiteDisponivel = Math.max(cartao.limite - limiteUsado, 0);
     const percentualUsado = cartao.limite > 0 ? (limiteUsado / cartao.limite) * 100 : 0;
