@@ -433,17 +433,10 @@ export function DetalhesCartaoDialog({
               </Button>
             </div>
 
-            {/* Status cards — Pendente / Pago / Meu */}
+            {/* Status cards — Pago / Meu */}
             {parcelas.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-destructive/70 rounded-l-xl" />
-                  <div className="flex items-center gap-1 pl-1.5">
-                    <Clock className="h-3 w-3 text-destructive/60" />
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Pendente</span>
-                  </div>
-                  <p className="text-sm font-bold text-destructive pl-1.5">{formatCurrency(totalMes)}</p>
-                </div>
+              <div className="grid grid-cols-2 gap-2">
+
                 <div className="rounded-xl border bg-card p-3 space-y-1.5 relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#16A34A] rounded-l-xl" />
                   <div className="flex items-center gap-1 pl-1.5">
