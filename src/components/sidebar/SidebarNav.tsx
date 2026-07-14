@@ -36,6 +36,7 @@ const transacoesMenu = {
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
+    { icon: Repeat, label: "Recorrentes", href: "/recorrentes" },
     { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
   ],
 };
@@ -65,7 +66,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
 
   type MenuKey = "transacoes" | "cartoes";
   const getActiveMenu = useCallback((path: string): MenuKey | null => {
-    if (path.startsWith("/transactions") || path === "/assinaturas") return "transacoes";
+    if (path.startsWith("/transactions") || path === "/assinaturas" || path === "/recorrentes") return "transacoes";
     if (path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/responsaveis") return "cartoes";
     return null;
   }, []);
@@ -135,7 +136,7 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
         icon={transacoesMenuWithBadge.icon}
         label={transacoesMenuWithBadge.label}
         subItems={transacoesMenuWithBadge.subItems}
-        basePath={["/transactions", "/assinaturas"]}
+        basePath={["/transactions", "/assinaturas", "/recorrentes"]}
         open={openMenus.transacoes}
         onOpenChange={handleMenuChange("transacoes")}
         onItemClick={onItemClick}
