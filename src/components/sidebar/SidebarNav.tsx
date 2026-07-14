@@ -29,14 +29,6 @@ const mainMenuItems = [
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
 
-const transacoesMenu = {
-  icon: ArrowLeftRight,
-  label: "Transações",
-  subItems: [
-    { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
-    { icon: Repeat, label: "Recorrentes", href: "/recorrentes" },
-  ],
-};
 
 interface SidebarNavProps {
   isAdmin: boolean;
@@ -47,9 +39,8 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
   const location = useLocation();
   const pathname = location.pathname;
 
-  type MenuKey = "transacoes" | "cartoes";
+  type MenuKey = "cartoes";
   const getActiveMenu = useCallback((path: string): MenuKey | null => {
-    if (path.startsWith("/transactions") || path === "/recorrentes") return "transacoes";
     if (path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/responsaveis") return "cartoes";
     return null;
   }, []);
