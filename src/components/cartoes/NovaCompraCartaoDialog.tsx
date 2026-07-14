@@ -1062,7 +1062,11 @@ export function NovaCompraCartaoDialog({
 
           {/* Valor */}
           <div>
-            <PremiumLabel required htmlFor="valor">Valor total (R$)</PremiumLabel>
+            <PremiumLabel required htmlFor="valor">
+              {form.tipoLancamento === "parcelada" && form.valorTipo === "parcela"
+                ? "Valor da parcela (R$)"
+                : "Valor total (R$)"}
+            </PremiumLabel>
             <div className="flex gap-2">
               <PremiumInput
                 id="valor"
