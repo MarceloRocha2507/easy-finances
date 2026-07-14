@@ -521,6 +521,7 @@ export function NovaCompraCartaoDialog({
     descricao: "",
     nomeFatura: "",
     valor: "",
+    valorTipo: "total" as "total" | "parcela",
     tipoLancamento: "unica" as TipoLancamento,
     parcelas: "2",
     parcelaInicial: "1",
@@ -564,6 +565,7 @@ export function NovaCompraCartaoDialog({
         descricao: "",
         nomeFatura: "",
         valor: "",
+        valorTipo: "total",
         tipoLancamento: "unica",
         parcelas: "2",
         parcelaInicial: "1",
@@ -612,11 +614,17 @@ export function NovaCompraCartaoDialog({
       toast({ title: "Informe a descrição", variant: "destructive" });
       return;
     }
-    const valor = parseFloat(form.valor.replace(",", "."));
-    if (isNaN(valor) || valor <= 0) {
+    const valorDigitado = parseFloat(form.valor.replace(",", "."));
+    if (isNaN(valorDigitado) || valorDigitado <= 0) {
       toast({ title: "Informe um valor válido", variant: "destructive" });
       return;
     }
+    const numParcelasForm =
+      form.tipoLancamento === "parcelada" ? parseInt(form.parcelas) || 1 : 1;
+    const valor =
+      form.tipoLancamento === "parcelada" && form.valorTipo === "parcela"
+        ? valorDigitado * numParcelasForm
+        : valorDigitado;
     if (!form.responsavelId) {
       toast({ title: "Selecione o responsável", variant: "destructive" });
       return;
@@ -706,14 +714,16 @@ export function NovaCompraCartaoDialog({
   }
 
   const resumoParcelas = useMemo(() => {
-    const valor = parseFloat(form.valor.replace(",", ".")) || 0;
-    if (valor <= 0) return null;
-    if (form.tipoLancamento === "unica") return { tipo: "unica" as const, valor };
+    const valorDigitado = parseFloat(form.valor.replace(",", ".")) || 0;
+    if (valorDigitado <= 0) return null;
+    if (form.tipoLancamento === "unica") return { tipo: "unica" as const, valor: valorDigitado };
     if (form.tipoLancamento === "parcelada") {
       const numParcelas = parseInt(form.parcelas) || 2;
       const parcelaInicial = parseInt(form.parcelaInicial) || 1;
       const numParcelasACriar = numParcelas - parcelaInicial + 1;
-      const valorParcela = valor / numParcelas;
+      const valorTotal =
+        form.valorTipo === "parcela" ? valorDigitado * numParcelas : valorDigitado;
+      const valorParcela = valorTotal / numParcelas;
       return {
         tipo: "parcelada" as const,
         valorParcela,
@@ -723,9 +733,9 @@ export function NovaCompraCartaoDialog({
       };
     }
     if (form.tipoLancamento === "fixa")
-      return { tipo: "fixa" as const, valorMensal: valor };
+      return { tipo: "fixa" as const, valorMensal: valorDigitado };
     return null;
-  }, [form.valor, form.tipoLancamento, form.parcelas, form.parcelaInicial]);
+  }, [form.valor, form.valorTipo, form.tipoLancamento, form.parcelas, form.parcelaInicial]);
 
   const tabs: { value: TipoLancamento; label: string; icon?: React.ReactNode }[] = [
     { value: "unica", label: "Avulsa" },
@@ -1052,7 +1062,11 @@ export function NovaCompraCartaoDialog({
 
           {/* Valor */}
           <div>
-            <PremiumLabel required htmlFor="valor">Valor total (R$)</PremiumLabel>
+            <PremiumLabel required htmlFor="valor">
+              {form.tipoLancamento === "parcelada" && form.valorTipo === "parcela"
+                ? "Valor da parcela (R$)"
+                : "Valor total (R$)"}
+            </PremiumLabel>
             <div className="flex gap-2">
               <PremiumInput
                 id="valor"
@@ -1164,6 +1178,55 @@ export function NovaCompraCartaoDialog({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          )}
+
+          {/* Interpretação do valor digitado */}
+          {form.tipoLancamento === "parcelada" && (
+            <div>
+              <PremiumLabel>O valor informado é</PremiumLabel>
+              <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                {[
+                  { value: "total" as const, label: "Valor total" },
+                  { value: "parcela" as const, label: "Valor da parcela" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, valorTipo: opt.value })}
+                    style={{
+                      flex: 1,
+                      padding: "8px 0",
+                      fontSize: 13,
+                      fontWeight: form.valorTipo === opt.value ? 600 : 400,
+                      color: form.valorTipo === opt.value ? "#111827" : "#6B7280",
+                      background: "none",
+                      border: "none",
+                      borderBottom:
+                        form.valorTipo === opt.value
+                          ? "2px solid #111827"
+                          : "2px solid transparent",
+                      cursor: "pointer",
+                      transition: "all 150ms",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {(() => {
+                const v = parseFloat(form.valor.replace(",", ".")) || 0;
+                const n = parseInt(form.parcelas) || 2;
+                if (v <= 0) return null;
+                const total = form.valorTipo === "parcela" ? v * n : v;
+                const parcela = total / n;
+                return (
+                  <p style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>
+                    {n}x de R$ {parcela.toFixed(2).replace(".", ",")} · Total R${" "}
+                    {total.toFixed(2).replace(".", ",")}
+                  </p>
+                );
+              })()}
             </div>
           )}
 
