@@ -521,6 +521,7 @@ export function NovaCompraCartaoDialog({
     descricao: "",
     nomeFatura: "",
     valor: "",
+    valorTipo: "total" as "total" | "parcela",
     tipoLancamento: "unica" as TipoLancamento,
     parcelas: "2",
     parcelaInicial: "1",
