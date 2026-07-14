@@ -1181,6 +1181,55 @@ export function NovaCompraCartaoDialog({
             </div>
           )}
 
+          {/* Interpretação do valor digitado */}
+          {form.tipoLancamento === "parcelada" && (
+            <div>
+              <PremiumLabel>O valor informado é</PremiumLabel>
+              <div className="flex" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                {[
+                  { value: "total" as const, label: "Valor total" },
+                  { value: "parcela" as const, label: "Valor da parcela" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, valorTipo: opt.value })}
+                    style={{
+                      flex: 1,
+                      padding: "8px 0",
+                      fontSize: 13,
+                      fontWeight: form.valorTipo === opt.value ? 600 : 400,
+                      color: form.valorTipo === opt.value ? "#111827" : "#6B7280",
+                      background: "none",
+                      border: "none",
+                      borderBottom:
+                        form.valorTipo === opt.value
+                          ? "2px solid #111827"
+                          : "2px solid transparent",
+                      cursor: "pointer",
+                      transition: "all 150ms",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {(() => {
+                const v = parseFloat(form.valor.replace(",", ".")) || 0;
+                const n = parseInt(form.parcelas) || 2;
+                if (v <= 0) return null;
+                const total = form.valorTipo === "parcela" ? v * n : v;
+                const parcela = total / n;
+                return (
+                  <p style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>
+                    {n}x de R$ {parcela.toFixed(2).replace(".", ",")} · Total R${" "}
+                    {total.toFixed(2).replace(".", ",")}
+                  </p>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Mês da fatura */}
           <div>
             <PremiumLabel htmlFor="mesFatura">Mês da fatura</PremiumLabel>
