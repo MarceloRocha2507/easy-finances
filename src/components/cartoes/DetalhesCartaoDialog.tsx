@@ -97,7 +97,7 @@ function addMonths(base: Date, delta: number) {
 ====================================================== */
 
 interface Props {
-  cartao: Cartao | null;
+  cartao: (Cartao & { mesExibicao?: Date }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
@@ -487,13 +487,8 @@ export function DetalhesCartaoDialog({
               onClick={() => {
                 onOpenChange(false);
 
-                // Fatura atual: se hoje >= dia_fechamento, é o mês atual; senão, mês anterior
-                const hoje = new Date();
-                const faturaAtiva = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-                if (cartao.dia_fechamento && hoje.getDate() < cartao.dia_fechamento) {
-                  faturaAtiva.setMonth(faturaAtiva.getMonth() - 1);
-                }
-
+                // Usa o mês da fatura exibida no card (mesma lógica do resumo)
+                const faturaAtiva = cartao.mesExibicao ? new Date(cartao.mesExibicao) : new Date();
                 const month = faturaAtiva.getMonth() + 1;
                 const year = faturaAtiva.getFullYear();
 
