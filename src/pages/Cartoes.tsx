@@ -152,59 +152,38 @@ export default function Cartoes() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex sm:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {cartoes.length > 0 && (
+            <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ações</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {cartoes.length > 0 && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/cartoes/faturas">
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Faturas / Exportar
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setLoteOpen(true)}>
                       <FileText className="h-4 w-4 mr-2" />
                       Gerar Mensagens
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onClick={async () => { await regenerarParcelas.mutateAsync(); refetch(); }}
-                    disabled={regenerarParcelas.isPending}
-                  >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
-                    {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2">
-              {cartoes.length > 0 && (
-                <>
-                  <Button asChild variant="outline" size="sm" className="rounded-xl">
-                    <Link to="/cartoes/faturas">
-                      <Receipt className="h-4 w-4 mr-1.5" />
-                      Faturas / Exportar
-                    </Link>
-                  </Button>
-                  <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setLoteOpen(true)}>
-                    <FileText className="h-4 w-4 mr-1.5" />
-                    Gerar Mensagens
-                  </Button>
-                </>
-              )}
-              <DesfazerAlteracaoDialog onSuccess={() => refetch()} />
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={async () => { await regenerarParcelas.mutateAsync(); refetch(); }}
-                disabled={regenerarParcelas.isPending}
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
-                {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
-              </Button>
-            </div>
-
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={async () => { await regenerarParcelas.mutateAsync(); refetch(); }}
+                  disabled={regenerarParcelas.isPending}
+                >
+                  <RefreshCw className={cn("h-4 w-4 mr-2", regenerarParcelas.isPending && "animate-spin")} />
+                  {regenerarParcelas.isPending ? "Verificando..." : "Verificar Parcelas"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <NovoCartaoDialog onSaved={() => refetch()} />
           </div>
         </div>
