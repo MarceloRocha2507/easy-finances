@@ -1,19 +1,13 @@
 import React, { memo, useCallback, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { MenuCollapsible } from "./MenuCollapsible";
 import {
   LayoutDashboard,
   ArrowLeftRight,
-  Tags,
   CreditCard,
   PiggyBank,
-  Repeat,
   Shield,
-  Users,
-  Building2,
   CalendarDays,
-  Sparkles,
   StickyNote,
   Wrench,
   BarChart3,
@@ -21,6 +15,7 @@ import {
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: ArrowLeftRight, label: "Transações", href: "/transactions" },
   { icon: CalendarDays, label: "Calendário", href: "/calendario" },
   { icon: CreditCard, label: "Cartões", href: "/cartoes" },
   { icon: BarChart3, label: "Relatórios", href: "/relatorios" },
@@ -28,7 +23,6 @@ const mainMenuItems = [
   { icon: PiggyBank, label: "Metas", href: "/economia/metas" },
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
-
 
 interface SidebarNavProps {
   isAdmin: boolean;
@@ -38,44 +32,6 @@ interface SidebarNavProps {
 export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
-
-  type MenuKey = "cartoes";
-  const getActiveMenu = useCallback((path: string): MenuKey | null => {
-    if (path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/responsaveis") return "cartoes";
-    return null;
-  }, []);
-
-  const [openMenus, setOpenMenus] = useState(() => {
-    const active = getActiveMenu(pathname);
-    return {
-      transacoes: active === "transacoes",
-      cartoes: active === "cartoes",
-    };
-  });
-
-  useEffect(() => {
-    const active = getActiveMenu(pathname);
-    if (active) {
-      setOpenMenus(prev => {
-        if (prev[active]) return prev;
-        return {
-          transacoes: active === "transacoes",
-          cartoes: active === "cartoes",
-        };
-      });
-    }
-  }, [pathname, getActiveMenu]);
-
-  const handleMenuChange = useCallback((menu: MenuKey) => (open: boolean) => {
-    if (open) {
-      setOpenMenus({
-        transacoes: menu === "transacoes",
-        cartoes: menu === "cartoes",
-      });
-    } else {
-      setOpenMenus(prev => ({ ...prev, [menu]: false }));
-    }
-  }, []);
 
   const isActive = useCallback((href: string) => pathname === href, [pathname]);
 
@@ -104,16 +60,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           {item.label}
         </Link>
       ))}
-
-      <MenuCollapsible
-        icon={transacoesMenu.icon}
-        label={transacoesMenu.label}
-        subItems={transacoesMenu.subItems}
-        basePath={["/transactions", "/recorrentes"]}
-        open={openMenus.transacoes}
-        onOpenChange={handleMenuChange("transacoes")}
-        onItemClick={onItemClick}
-      />
 
       {isAdmin && (
         <>

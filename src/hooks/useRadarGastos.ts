@@ -2,7 +2,7 @@ import { useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useDespesasRecorrentes } from "@/hooks/useDespesasRecorrentes";
+
 import { toast } from "sonner";
 
 export type FrequenciaEstimada = "semanal" | "mensal" | "trimestral" | "anual";
@@ -44,7 +44,7 @@ const multiplicadorAnual: Record<FrequenciaEstimada, number> = {
 export function useRadarGastos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { recorrentes } = useDespesasRecorrentes();
+  
 
   // Fetch ignored patterns
   const ignoradosQuery = useQuery({
@@ -89,7 +89,6 @@ export function useRadarGastos() {
     if (!transacoes.length) return [];
 
     const ignoradosSet = new Set(ignorados.map((i: any) => normalize(i.descricao_pattern)));
-    const recorrentesNomes = (recorrentes || []).map((r) => normalize(r.nome));
 
     // Group by normalized description
     const groups = new Map<string, Array<{ amount: number; date: string }>>();
@@ -108,8 +107,7 @@ export function useRadarGastos() {
       // Check ignored
       if (ignoradosSet.has(desc)) continue;
 
-      // Check already registered as recurring expense
-      if (recorrentesNomes.some((nome) => desc.includes(nome) || nome.includes(desc))) continue;
+
 
       // Check value similarity
       const values = items.map((i) => i.amount);
@@ -135,7 +133,7 @@ export function useRadarGastos() {
     }
 
     return result.sort((a, b) => b.custoAnualEstimado - a.custoAnualEstimado);
-  }, [transacoes, ignorados, recorrentes]);
+  }, [transacoes, ignorados]);
 
   const ignorar = useMutation({
     mutationFn: async (descricao: string) => {
