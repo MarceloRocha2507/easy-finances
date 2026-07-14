@@ -614,11 +614,17 @@ export function NovaCompraCartaoDialog({
       toast({ title: "Informe a descrição", variant: "destructive" });
       return;
     }
-    const valor = parseFloat(form.valor.replace(",", "."));
-    if (isNaN(valor) || valor <= 0) {
+    const valorDigitado = parseFloat(form.valor.replace(",", "."));
+    if (isNaN(valorDigitado) || valorDigitado <= 0) {
       toast({ title: "Informe um valor válido", variant: "destructive" });
       return;
     }
+    const numParcelasForm =
+      form.tipoLancamento === "parcelada" ? parseInt(form.parcelas) || 1 : 1;
+    const valor =
+      form.tipoLancamento === "parcelada" && form.valorTipo === "parcela"
+        ? valorDigitado * numParcelasForm
+        : valorDigitado;
     if (!form.responsavelId) {
       toast({ title: "Selecione o responsável", variant: "destructive" });
       return;
