@@ -66,20 +66,7 @@ export function useSimuladorCompra() {
     enabled: !!user,
   });
 
-  // Fetch active subscriptions
-  const { data: assinaturas } = useQuery({
-    queryKey: ["assinaturas-simulador", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("assinaturas" as any)
-        .select("valor, frequencia")
-        .eq("user_id", user!.id)
-        .eq("status", "ativa");
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: !!user,
-  });
+  // Assinaturas migradas para despesas_recorrentes → suas ocorrências já vivem em transactions.
 
   // Fetch pending future transactions
   const { data: despesasFuturas } = useQuery({
@@ -115,12 +102,6 @@ export function useSimuladorCompra() {
     enabled: !!user,
   });
 
-  const mesesPorFrequencia: Record<string, number> = {
-    mensal: 1,
-    trimestral: 3,
-    semestral: 6,
-    anual: 12,
-  };
 
   const calcularProjecao = useCallback(
     (dados: DadosSimulacao): ProjecaoMes[] => {
@@ -135,13 +116,7 @@ export function useSimuladorCompra() {
         .filter((t) => t.type === "expense")
         .reduce((s, t) => s + Number(t.amount), 0);
 
-      // Normalized monthly subscriptions
-      const totalAssinaturas = (assinaturas || []).reduce((s, a) => {
-        const meses = mesesPorFrequencia[a.frequencia] || 1;
-        return s + Number(a.valor) / meses;
-      }, 0);
-
-      // Group future expenses by month
+      // Group future expenses by month (recorrências já estão pré-geradas aqui)
       const futurasPorMes: Record<string, number> = {};
       (despesasFuturas || []).forEach((t) => {
         if (t.due_date) {
@@ -170,7 +145,7 @@ export function useSimuladorCompra() {
 
         const receitas = receitaRecorrente;
         const despesas =
-          despesaRecorrente + totalAssinaturas + (futurasPorMes[mesKey] || 0);
+          despesaRecorrente + (futurasPorMes[mesKey] || 0);
 
         let parcelaCompra = 0;
         if (dados.formaPagamento === "a_vista") {
@@ -205,7 +180,7 @@ export function useSimuladorCompra() {
       setProjecao(resultado);
       return resultado;
     },
-    [completeStats, recorrentes, assinaturas, despesasFuturas]
+    [completeStats, recorrentes, despesasFuturas]
   );
 
   const salvarSimulacao = useMutation({

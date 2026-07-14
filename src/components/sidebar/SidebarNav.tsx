@@ -133,10 +133,10 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       ))}
 
       <MenuCollapsible
-        icon={transacoesMenuWithBadge.icon}
-        label={transacoesMenuWithBadge.label}
-        subItems={transacoesMenuWithBadge.subItems}
-        basePath={["/transactions", "/assinaturas", "/recorrentes"]}
+        icon={transacoesMenu.icon}
+        label={transacoesMenu.label}
+        subItems={transacoesMenu.subItems}
+        basePath={["/transactions", "/recorrentes"]}
         open={openMenus.transacoes}
         onOpenChange={handleMenuChange("transacoes")}
         onItemClick={onItemClick}

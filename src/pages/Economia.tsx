@@ -270,7 +270,7 @@ export default function Economia() {
 
                   <div className="p-4 rounded-xl border bg-muted/50">
                     <h4 className="font-medium text-sm mb-1.5">
-                      Revise assinaturas
+                      Revise recorrentes
                     </h4>
                     <p className="text-sm text-muted-foreground">
                       Cancele serviços que você não usa. Pequenos valores somam

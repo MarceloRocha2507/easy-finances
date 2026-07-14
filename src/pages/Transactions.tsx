@@ -37,7 +37,7 @@ import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
 
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
-import { useAssinaturas } from '@/hooks/useAssinaturas';
+import { useDespesasRecorrentes } from '@/hooks/useDespesasRecorrentes';
 import { useAutoCategory } from '@/hooks/useAutoCategory';
 import { BancoSelector } from '@/components/bancos/BancoSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -389,18 +389,13 @@ export default function Transactions() {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
   }, [queryClient, user?.id]);
   const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
-  const { assinaturas, isLoading: isAssinaturasLoading } = useAssinaturas();
+  const { recorrentes, isLoading: isRecorrentesLoading } = useDespesasRecorrentes();
 
-  const assinaturasAtivas = useMemo(() => assinaturas.filter(a => a.status === 'ativa'), [assinaturas]);
-  const totalMensalAssinaturas = useMemo(() => assinaturasAtivas.reduce((sum, a) => {
-    const divisor = ({ mensal: 1, trimestral: 3, semestral: 6, anual: 12 } as Record<string, number>)[a.frequencia] || 1;
-    return sum + a.valor / divisor;
-  }, 0), [assinaturasAtivas]);
-  const renovamEssaSemana = useMemo(() => assinaturasAtivas.filter(a => {
-    const prox = new Date(a.proxima_cobranca + 'T12:00:00');
-    const diff = (prox.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    return diff >= 0 && diff <= 7;
-  }).length, [assinaturasAtivas]);
+  const recorrentesAtivas = useMemo(() => recorrentes.filter(r => r.status === 'ativa'), [recorrentes]);
+  const totalMensalRecorrentes = useMemo(() => recorrentesAtivas.reduce((sum, r) => {
+    const divisor = ({ diaria: 1/30, semanal: 1/4, quinzenal: 1/2, mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 } as Record<string, number>)[r.frequencia] || 1;
+    return sum + Number(r.valor) / divisor;
+  }, 0), [recorrentesAtivas]);
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
@@ -1533,22 +1528,13 @@ export default function Transactions() {
                 />
 
                 <UnifiedMetricTile
-                  title="Assinaturas"
-                  value={totalMensalAssinaturas}
+                  title="Recorrentes"
+                  value={totalMensalRecorrentes}
                   icon={Repeat}
                   valueColor="violet"
-                  subInfo={
-                    <>
-                      {assinaturasAtivas.length} ativas
-                      {renovamEssaSemana > 0 && (
-                        <span className="text-amber-500 ml-1">
-                          · {renovamEssaSemana} renovam
-                        </span>
-                      )}
-                    </>
-                  }
-                  onClick={() => navigate('/assinaturas')}
-                  isLoading={isStatsFetching || isAssinaturasLoading}
+                  subInfo={<>{recorrentesAtivas.length} ativas</>}
+                  onClick={() => navigate('/recorrentes')}
+                  isLoading={isStatsFetching || isRecorrentesLoading}
                 />
               </div>
             </div>

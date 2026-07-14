@@ -76,7 +76,7 @@ export function GlobalSearch({ variant = "default" }: { variant?: "default" | "m
       case "Categorias": return <Tag className="mr-2 h-4 w-4 text-primary" />;
       case "Responsáveis": return <Users className="mr-2 h-4 w-4 text-primary" />;
       case "Bancos": return <Landmark className="mr-2 h-4 w-4 text-primary" />;
-      case "Assinaturas": return <Repeat className="mr-2 h-4 w-4 text-primary" />;
+      
       case "Metas": return <Target className="mr-2 h-4 w-4 text-primary" />;
       case "Investimentos": return <BarChart3 className="mr-2 h-4 w-4 text-primary" />;
       default: return <Search className="mr-2 h-4 w-4 text-primary" />;
