@@ -427,7 +427,6 @@ export type Database = {
           observacao: string | null
           parcela_inicial: number
           parcelas: number
-          recorrencia_id: string | null
           responsavel_id: string | null
           subcategoria_id: string | null
           tipo_lancamento: string
@@ -449,7 +448,6 @@ export type Database = {
           observacao?: string | null
           parcela_inicial?: number
           parcelas?: number
-          recorrencia_id?: string | null
           responsavel_id?: string | null
           subcategoria_id?: string | null
           tipo_lancamento?: string
@@ -471,7 +469,6 @@ export type Database = {
           observacao?: string | null
           parcela_inicial?: number
           parcelas?: number
-          recorrencia_id?: string | null
           responsavel_id?: string | null
           subcategoria_id?: string | null
           tipo_lancamento?: string
@@ -502,13 +499,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "compras_cartao_recorrencia_id_fkey"
-            columns: ["recorrencia_id"]
-            isOneToOne: false
-            referencedRelation: "despesas_recorrentes"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "compras_cartao_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -517,129 +507,6 @@ export type Database = {
           },
           {
             foreignKeyName: "compras_cartao_subcategoria_id_fkey"
-            columns: ["subcategoria_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      despesas_recorrentes: {
-        Row: {
-          banco_id: string | null
-          cartao_id: string | null
-          category_id: string | null
-          created_at: string
-          data_fim: string | null
-          data_inicio: string
-          descricao: string | null
-          dia_lembrete: number | null
-          frequencia: string
-          horizonte_geracao_meses: number
-          id: string
-          intervalo: number
-          link_cancelamento: string | null
-          metodo_pagamento: string
-          moeda: string
-          nome: string
-          observacoes: string | null
-          origem_migracao: string
-          responsavel_id: string | null
-          status: string
-          subcategoria_id: string | null
-          ultima_geracao_ate: string | null
-          updated_at: string
-          user_id: string
-          valor: number
-          vinculo_automatico: boolean
-        }
-        Insert: {
-          banco_id?: string | null
-          cartao_id?: string | null
-          category_id?: string | null
-          created_at?: string
-          data_fim?: string | null
-          data_inicio?: string
-          descricao?: string | null
-          dia_lembrete?: number | null
-          frequencia?: string
-          horizonte_geracao_meses?: number
-          id?: string
-          intervalo?: number
-          link_cancelamento?: string | null
-          metodo_pagamento?: string
-          moeda?: string
-          nome: string
-          observacoes?: string | null
-          origem_migracao?: string
-          responsavel_id?: string | null
-          status?: string
-          subcategoria_id?: string | null
-          ultima_geracao_ate?: string | null
-          updated_at?: string
-          user_id: string
-          valor: number
-          vinculo_automatico?: boolean
-        }
-        Update: {
-          banco_id?: string | null
-          cartao_id?: string | null
-          category_id?: string | null
-          created_at?: string
-          data_fim?: string | null
-          data_inicio?: string
-          descricao?: string | null
-          dia_lembrete?: number | null
-          frequencia?: string
-          horizonte_geracao_meses?: number
-          id?: string
-          intervalo?: number
-          link_cancelamento?: string | null
-          metodo_pagamento?: string
-          moeda?: string
-          nome?: string
-          observacoes?: string | null
-          origem_migracao?: string
-          responsavel_id?: string | null
-          status?: string
-          subcategoria_id?: string | null
-          ultima_geracao_ate?: string | null
-          updated_at?: string
-          user_id?: string
-          valor?: number
-          vinculo_automatico?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "despesas_recorrentes_banco_id_fkey"
-            columns: ["banco_id"]
-            isOneToOne: false
-            referencedRelation: "bancos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "despesas_recorrentes_cartao_id_fkey"
-            columns: ["cartao_id"]
-            isOneToOne: false
-            referencedRelation: "cartoes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "despesas_recorrentes_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "despesas_recorrentes_responsavel_id_fkey"
-            columns: ["responsavel_id"]
-            isOneToOne: false
-            referencedRelation: "responsaveis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "despesas_recorrentes_subcategoria_id_fkey"
             columns: ["subcategoria_id"]
             isOneToOne: false
             referencedRelation: "categories"
@@ -1379,7 +1246,6 @@ export type Database = {
           numero_parcela: number | null
           paid_date: string | null
           parent_id: string | null
-          recorrencia_id: string | null
           recurrence_day: number | null
           status: string
           tipo_lancamento: string | null
@@ -1403,7 +1269,6 @@ export type Database = {
           numero_parcela?: number | null
           paid_date?: string | null
           parent_id?: string | null
-          recorrencia_id?: string | null
           recurrence_day?: number | null
           status?: string
           tipo_lancamento?: string | null
@@ -1427,7 +1292,6 @@ export type Database = {
           numero_parcela?: number | null
           paid_date?: string | null
           parent_id?: string | null
-          recorrencia_id?: string | null
           recurrence_day?: number | null
           status?: string
           tipo_lancamento?: string | null
@@ -1456,13 +1320,6 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_recorrencia_id_fkey"
-            columns: ["recorrencia_id"]
-            isOneToOne: false
-            referencedRelation: "despesas_recorrentes"
             referencedColumns: ["id"]
           },
         ]
