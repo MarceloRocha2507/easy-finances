@@ -37,7 +37,7 @@ import { EditarSaldoDialog } from '@/components/EditarSaldoDialog';
 
 import { AnimatedSection, AnimatedItem } from '@/components/ui/animated-section';
 import { AjustarSaldoDialog } from '@/components/AjustarSaldoDialog';
-import { useDespesasRecorrentes } from '@/hooks/useDespesasRecorrentes';
+
 import { useAutoCategory } from '@/hooks/useAutoCategory';
 import { BancoSelector } from '@/components/bancos/BancoSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -389,13 +389,7 @@ export default function Transactions() {
     await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
   }, [queryClient, user?.id]);
   const { data: stats, isFetching: isStatsFetching } = useCompleteStats(dataInicial);
-  const { recorrentes, isLoading: isRecorrentesLoading } = useDespesasRecorrentes();
 
-  const recorrentesAtivas = useMemo(() => recorrentes.filter(r => r.status === 'ativa'), [recorrentes]);
-  const totalMensalRecorrentes = useMemo(() => recorrentesAtivas.reduce((sum, r) => {
-    const divisor = ({ diaria: 1/30, semanal: 1/4, quinzenal: 1/2, mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 } as Record<string, number>)[r.frequencia] || 1;
-    return sum + Number(r.valor) / divisor;
-  }, 0), [recorrentesAtivas]);
   const createMutation = useCreateTransaction();
   const createInstallmentMutation = useCreateInstallmentTransaction();
   const updateMutation = useUpdateTransaction();
@@ -1478,7 +1472,7 @@ export default function Transactions() {
 
               <div className="border-t border-[#E5E7EB] dark:border-white/5" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-white/5 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-white/5 flex-1">
                 <UnifiedMetricTile
                   title="Receitas"
                   value={stats?.completedIncome || 0}
@@ -1522,19 +1516,8 @@ export default function Transactions() {
                       </div>
                     </div>
                   }
-
                   valueColor="expense"
                   isLoading={isStatsFetching}
-                />
-
-                <UnifiedMetricTile
-                  title="Recorrentes"
-                  value={totalMensalRecorrentes}
-                  icon={Repeat}
-                  valueColor="violet"
-                  subInfo={<>{recorrentesAtivas.length} ativas</>}
-                  onClick={() => navigate('/recorrentes')}
-                  isLoading={isStatsFetching || isRecorrentesLoading}
                 />
               </div>
             </div>
