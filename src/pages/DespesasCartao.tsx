@@ -610,11 +610,7 @@ export default function DespesasCartao() {
         {/* Resumo inline */}
         <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-muted/50 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-destructive" />
-            <span>Pendente:</span>
-            <span className="font-semibold text-destructive">{formatCurrency(totalMes)}</span>
-          </div>
-          <div className="flex items-center gap-2">
+
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>Pago:</span>
             <span className="font-semibold text-emerald-500">{formatCurrency(Math.abs(totalPago))}</span>
