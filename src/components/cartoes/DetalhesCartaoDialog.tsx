@@ -97,7 +97,7 @@ function addMonths(base: Date, delta: number) {
 ====================================================== */
 
 interface Props {
-  cartao: Cartao | null;
+  cartao: (Cartao & { mesExibicao?: Date }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
