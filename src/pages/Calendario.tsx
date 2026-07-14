@@ -59,9 +59,6 @@ export default function Calendario() {
       case "fechamento":
         navigate(`/cartoes/${e.origemId}/despesas`);
         break;
-      case "assinatura":
-        navigate("/assinaturas");
-        break;
       case "meta":
         navigate("/economia/metas");
         break;
@@ -83,7 +80,6 @@ export default function Calendario() {
     { tipo: "despesa", label: "Despesa" },
     { tipo: "fatura", label: "Fatura" },
     { tipo: "fechamento", label: "Fechamento" },
-    { tipo: "assinatura", label: "Assinatura" },
     { tipo: "meta", label: "Meta" },
     { tipo: "investimento", label: "Investimento" },
   ];

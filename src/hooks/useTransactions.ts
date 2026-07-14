@@ -233,23 +233,8 @@ export function useTransactionStats(filters?: TransactionFilters) {
         });
       }
 
-      // Somar assinaturas ativas do período (apenas sem vínculo com cartão)
-      if (filters?.startDate && filters?.endDate) {
-        const { data: assinaturas } = await (supabase as any)
-          .from('assinaturas')
-          .select('valor, category_id')
-          .eq('user_id', user!.id)
-          .eq('status', 'ativa')
-          .is('compra_cartao_id', null)
-          .gte('proxima_cobranca', filters.startDate)
-          .lte('proxima_cobranca', filters.endDate);
-
-        (assinaturas || []).forEach((a: any) => {
-          const catId = a.category_id;
-          if (metaCategoryIds.length > 0 && catId && metaCategoryIds.includes(catId)) return;
-          stats.totalExpense += Number(a.valor) || 0;
-        });
-      }
+      // Nota: assinaturas antigas foram migradas para despesas_recorrentes e
+      // suas ocorrências agora vivem em transactions/compras_cartao — já contabilizadas acima.
 
       stats.balance = stats.totalIncome - stats.totalExpense;
 
@@ -371,39 +356,7 @@ export function useExpensesByCategory(filters?: TransactionFilters) {
         }
       });
 
-      // Somar assinaturas ativas do período por categoria (apenas sem vínculo com cartão)
-      if (filters?.startDate && filters?.endDate) {
-        const { data: assinaturas } = await (supabase as any)
-          .from('assinaturas')
-          .select('valor, category_id, categoria:categories!assinaturas_category_id_fkey(id, name, icon, color)')
-          .eq('user_id', user!.id)
-          .eq('status', 'ativa')
-          .is('compra_cartao_id', null)
-          .gte('proxima_cobranca', filters.startDate)
-          .lte('proxima_cobranca', filters.endDate);
-
-        (assinaturas || []).forEach((a: any) => {
-          const cat = a.categoria as any;
-          const catId = a.category_id || 'uncategorized';
-          if (metaCategoryIds.length > 0 && metaCategoryIds.includes(catId)) return;
-
-          const valor = Number(a.valor) || 0;
-          const categoryName = cat?.name || 'Sem categoria';
-          const categoryIcon = cat?.icon || '📦';
-          const categoryColor = cat?.color || '#111827';
-
-          if (categoryMap.has(catId)) {
-            categoryMap.get(catId)!.total += valor;
-          } else {
-            categoryMap.set(catId, {
-              name: categoryName,
-              icon: categoryIcon,
-              color: categoryColor,
-              total: valor,
-            });
-          }
-        });
-      }
+      // Assinaturas migradas para despesas_recorrentes: ocorrências já em transactions/parcelas_cartao.
 
       return Array.from(categoryMap.entries()).map(([id, data]) => ({
         id,

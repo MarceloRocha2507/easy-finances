@@ -1,8 +1,7 @@
-import React, { memo, useCallback, useState, useEffect, useMemo } from "react";
+import React, { memo, useCallback, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { MenuCollapsible } from "./MenuCollapsible";
-import { useRadarGastos } from "@/hooks/useRadarGastos";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -30,20 +29,14 @@ const mainMenuItems = [
   { icon: StickyNote, label: "Anotações", href: "/anotacoes" },
 ];
 
-
 const transacoesMenu = {
   icon: ArrowLeftRight,
   label: "Transações",
   subItems: [
     { icon: ArrowLeftRight, label: "Visão Geral", href: "/transactions" },
     { icon: Repeat, label: "Recorrentes", href: "/recorrentes" },
-    { icon: Repeat, label: "Assinaturas", href: "/assinaturas" },
   ],
 };
-
-
-
-
 
 interface SidebarNavProps {
   isAdmin: boolean;
@@ -53,20 +46,10 @@ interface SidebarNavProps {
 export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: SidebarNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
-  const { totalDetectados } = useRadarGastos();
-
-  const transacoesMenuWithBadge = useMemo(() => ({
-    ...transacoesMenu,
-    subItems: transacoesMenu.subItems.map((item) =>
-      item.href === "/assinaturas" && totalDetectados > 0
-        ? { ...item, badge: { count: totalDetectados, variant: "warning" as const } }
-        : item
-    ),
-  }), [totalDetectados]);
 
   type MenuKey = "transacoes" | "cartoes";
   const getActiveMenu = useCallback((path: string): MenuKey | null => {
-    if (path.startsWith("/transactions") || path === "/assinaturas" || path === "/recorrentes") return "transacoes";
+    if (path.startsWith("/transactions") || path === "/recorrentes") return "transacoes";
     if (path.startsWith("/cartoes") && path !== "/cartoes/bancos" && path !== "/cartoes/responsaveis") return "cartoes";
     return null;
   }, []);
@@ -83,7 +66,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
     const active = getActiveMenu(pathname);
     if (active) {
       setOpenMenus(prev => {
-        // Only update if it actually changes, to avoid unnecessary re-renders
         if (prev[active]) return prev;
         return {
           transacoes: active === "transacoes",
@@ -133,18 +115,14 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
       ))}
 
       <MenuCollapsible
-        icon={transacoesMenuWithBadge.icon}
-        label={transacoesMenuWithBadge.label}
-        subItems={transacoesMenuWithBadge.subItems}
-        basePath={["/transactions", "/assinaturas", "/recorrentes"]}
+        icon={transacoesMenu.icon}
+        label={transacoesMenu.label}
+        subItems={transacoesMenu.subItems}
+        basePath={["/transactions", "/recorrentes"]}
         open={openMenus.transacoes}
         onOpenChange={handleMenuChange("transacoes")}
         onItemClick={onItemClick}
       />
-
-
-
-
 
       {isAdmin && (
         <>
@@ -164,8 +142,6 @@ export const SidebarNav = memo(function SidebarNav({ isAdmin, onItemClick }: Sid
           </Link>
         </>
       )}
-
-      
     </nav>
   );
 });

@@ -8,7 +8,6 @@ export type CalendarioEventoTipo =
   | "despesa"
   | "fatura"
   | "fechamento"
-  | "assinatura"
   | "meta"
   | "investimento"
   | "acerto";
@@ -31,7 +30,6 @@ export const CORES_TIPO: Record<CalendarioEventoTipo, string> = {
   despesa: "#DC2626",
   fatura: "#111827",
   fechamento: "#F59E0B",
-  assinatura: "#EC4899",
   meta: "#0EA5E9",
   investimento: "#14B8A6",
   acerto: "#6B7280",
@@ -42,7 +40,6 @@ export const LABELS_TIPO: Record<CalendarioEventoTipo, string> = {
   despesa: "Despesa",
   fatura: "Fatura",
   fechamento: "Fechamento",
-  assinatura: "Assinatura",
   meta: "Meta",
   investimento: "Investimento",
   acerto: "Acerto",
@@ -80,7 +77,6 @@ export function useCalendarioEventos(mesReferencia: Date) {
       const [
         transacoesRes,
         cartoesRes,
-        assinaturasRes,
         metasRes,
         investimentosRes,
         acertosRes,
@@ -98,14 +94,6 @@ export function useCalendarioEventos(mesReferencia: Date) {
           .from("cartoes")
           .select("id,nome,cor,dia_vencimento,dia_fechamento")
           .eq("user_id", user.id)
-          .limit(1000),
-        supabase
-          .from("assinaturas")
-          .select("id,nome,valor,proxima_cobranca,status,categoria")
-          .eq("user_id", user.id)
-          .eq("status", "ativa")
-          .gte("proxima_cobranca", inicioISO)
-          .lte("proxima_cobranca", fimISO)
           .limit(1000),
         supabase
           .from("metas")
@@ -202,22 +190,7 @@ export function useCalendarioEventos(mesReferencia: Date) {
         });
       });
 
-      // 3) Assinaturas
-      (assinaturasRes.data || []).forEach((a: any) => {
-        const dt = parseLocalDate(a.proxima_cobranca);
-        eventos.push({
-          id: `assin-${a.id}`,
-          data: dt,
-          dataISO: a.proxima_cobranca,
-          tipo: "assinatura",
-          titulo: a.nome,
-          valor: Number(a.valor) || 0,
-          status: "pendente",
-          cor: CORES_TIPO.assinatura,
-          origemId: a.id,
-          metadados: { assinatura: a },
-        });
-      });
+      // 3) Assinaturas → migradas para despesas_recorrentes; ocorrências viram transactions e já foram tratadas acima.
 
       // 4) Metas
       (metasRes.data || []).forEach((m: any) => {

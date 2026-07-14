@@ -16,7 +16,6 @@ const TIPOS: { value: FiltroTipo; label: string }[] = [
   { value: "receita", label: "Receitas" },
   { value: "despesa", label: "Despesas" },
   { value: "fatura", label: "Faturas" },
-  { value: "assinatura", label: "Assinaturas" },
   { value: "meta", label: "Metas" },
   { value: "investimento", label: "Investimentos" },
 ];

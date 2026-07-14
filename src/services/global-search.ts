@@ -4,7 +4,7 @@ export type SearchResult = {
   id: string;
   title: string;
   subtitle?: string;
-  category: "Cartões" | "Transações" | "Compras no Cartão" | "Categorias" | "Responsáveis" | "Bancos" | "Assinaturas" | "Metas" | "Investimentos";
+  category: "Cartões" | "Transações" | "Compras no Cartão" | "Categorias" | "Responsáveis" | "Bancos" | "Metas" | "Investimentos";
   type: string;
   url?: string;
   amount?: number;
@@ -150,25 +150,6 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
       });
     }
 
-    // 7. Search in Assinaturas
-    const { data: assinaturas } = await supabase
-      .from("assinaturas")
-      .select("id, nome, valor")
-      .ilike("nome", searchTerm)
-      .limit(5);
-
-    if (assinaturas) {
-      assinaturas.forEach((a) => {
-        results.push({
-          id: a.id,
-          title: a.nome,
-          category: "Assinaturas",
-          type: "assinatura",
-          amount: a.valor,
-          url: "/assinaturas",
-        });
-      });
-    }
 
     // 8. Search in Metas
     const { data: metas } = await supabase
